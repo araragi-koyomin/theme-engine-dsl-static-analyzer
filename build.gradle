@@ -1,0 +1,73 @@
+plugins {
+    id 'org.jetbrains.intellij' version '1.13.3' apply false
+}
+
+allprojects {
+    group 'com.intellij.plugin'
+    apply plugin: 'java'
+
+    sourceCompatibility = 17
+    compileJava.options.encoding = 'UTF-8'
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+
+    repositories {
+        maven { url 'https://www.jetbrains.com/intellij-repository/releases' }
+        maven { url 'https://plugins.jetbrains.com/maven' }
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'org.jetbrains.intellij'
+    apply plugin: 'idea'
+
+    sourceSets {
+        main.java.srcDirs 'src/main/java'
+        main.resources.srcDirs 'src/main/resources'
+
+        test.java.srcDirs 'src/test/java'
+    }
+
+    processResources {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+
+    task sourceJar(type: Jar) {
+        archiveClassifier = 'sources'
+        from sourceSets.main.allSource
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+
+    artifacts {
+        archives sourceJar
+        archives jar
+    }
+
+    intellij {
+        version = 'IU-2024.1.7'
+        downloadSources = true
+        updateSinceUntilBuild = false
+    }
+
+    tasks.named('initializeIntelliJPlugin').configure {
+        onlyIf {false}
+    }
+
+    gradle.projectsEvaluated {
+        tasks.matching {it.name == 'buildSearchableOptions'}.configureEach {
+            onlyIf {false}
+        }
+    }
+
+    tasks.matching { it.name.contains('Test') && it.name != 'test' && it.name != 'check' }.configureEach {
+        onlyIf {false}
+    }
+
+    patchPluginXml {
+        sinceBuild = '241'
+        untilBuild = '999.*'
+    }
+
+}
