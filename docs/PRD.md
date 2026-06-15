@@ -3,13 +3,13 @@
 ## 1. 产品概述
 
 ### 1.1 产品名称
-主题引擎DSL静态分析工具
+Theme Engine DSL静态分析工具
 
 ### 1.2 产品类型
 IntelliJ IDEA插件
 
 ### 1.3 产品目标
-为主题开发者提供DSL文件的语法实时检测与自动修正（Quick Fix）功能，提升在IDEA中编辑DSL文件的效率与准确性。
+为主题开发者提供Theme Engine XML DSL文件的语法实时检测与自动修正（Quick Fix）功能，覆盖Lockscreen、Wallpaper、Widget、ChargingSkin四大应用场景，提升在IDEA中编辑DSL文件的效率与准确性。
 
 ### 1.4 目标用户
 - 主题开发者
@@ -20,6 +20,9 @@ IntelliJ IDEA插件
 - 语法错误难以定位，无上下文提示
 - 修正错误需手动查阅文档，效率低
 - 缺乏项目级别的批量质量检查手段
+- 表达式语法错误（如`-#varName`）无提示，运行时静默失败
+- 变量引用`#varName`/`@varName`不存在时无警告
+- 元素在不适用的应用位置中使用无检测
 
 ## 2. 功能需求
 
@@ -49,7 +52,15 @@ IntelliJ IDEA插件
   - 数值范围越界
   - 父子结构不合法
 
-#### 2.1.4 Quick Fix
+#### 2.1.4 DSL表达式与引用检测
+- **表达式语法验证**：检测无效的`-#varName`模式，建议`-1*#varName`或`0-#varName`
+- **全局变量引用验证**：检查`#varName`和`@varName`引用是否在全局变量表中存在
+- **作用域约束验证**：检测元素在不支持的应用位置中使用（如Button在Wallpaper中）
+- **互斥属性检测**：检测同一元素上互斥属性共存（如VideoCommand的play+sound）
+- **禁止属性组合检测**：检测不允许的属性组合（如persist作用于time/date变量，VariableCommand带persist）
+- **数值精度警告**：表达式中数值超过7位有效数字时发出警告
+
+#### 2.1.5 Quick Fix
 - 对每种可检测的错误类型提供自动修复建议
 - 支持的修复类型：
   - 补闭合标签、补属性引号、删除多余结束标签
@@ -60,8 +71,13 @@ IntelliJ IDEA插件
   - 单位换算或删除错误单位（需确认）
   - 替换为最接近合法枚举值（需确认）
   - clamp到合法范围（需确认）
+  - 表达式语法修正：`-#varName` → `-1*#varName`或`0-#varName`
+  - 移除不适用的元素或将元素迁移到支持的应用位置
+  - 移除互斥属性之一
+  - 移除禁止的属性组合（如删除persist）
+  - 截断超精度数值至7位
 
-#### 2.1.5 规则来源说明
+#### 2.1.6 规则来源说明
 - 每个诊断问题和Quick Fix都附带明确的规则来源和文档链接
 - 用户可追溯每条诊断的规则依据
 
@@ -108,6 +124,18 @@ IntelliJ IDEA插件
 
 场景3：团队提交前质量检查
 → 执行批量检查 → 生成项目级别错误汇总 → 批量Quick Fix修正 → 确保全部通过
+
+场景4：开发者在表达式中写入`-#screen_height`
+→ 工具标记表达式语法错误 → 提示"`-#varName`无效，负号不可直接接变量引用" → Quick Fix建议`-1*#screen_height`或`0-#screen_height` → 一键修正
+
+场景5：开发者在Wallpaper中使用`<Button>`元素
+→ 工具标记作用域违规 → 提示"Button不支持Wallpaper应用位置" → Quick Fix建议移除元素或迁移至Lockscreen → 一键修正
+
+场景6：开发者设置`persist="true"`于time变量
+→ 工具标记禁止属性组合 → 提示"persist属性不允许作用于time/date类型变量" → Quick Fix移除persist属性 → 一键修正
+
+场景7：开发者写入`<VideoCommand play="true" sound="1"/>`
+→ 工具标记互斥属性 → 提示"play与sound属性互斥，不可同时使用" → Quick Fix移除其一 → 一键修正
 
 ## 5. 相关文档
 
