@@ -1,0 +1,112 @@
+{
+  "elementRules": [
+    {
+      "elementName": "Var",
+      "requiredAttrs": ["name"],
+      "optionalAttrs": ["expression", "type", "threshold", "persist", "index", "values", "size", "const"],
+      "attrTypes": {
+        "name": "string",
+        "expression": "string",
+        "type": {"enum": ["number", "string", "number[]", "string[]"]},
+        "threshold": "number",
+        "persist": {"enum": ["true", "false"]},
+        "index": "string",
+        "values": "string",
+        "size": "number",
+        "const": {"enum": ["true", "false"]}
+      },
+      "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
+      "allowedChildren": ["Trigger", "VariableAnimation"],
+      "inherits": null
+    },
+    {
+      "elementName": "Lockscreen",
+      "requiredAttrs": [],
+      "optionalAttrs": ["frameRate", "screenWidth"],
+      "attrTypes": {
+        "frameRate": "number",
+        "screenWidth": "number"
+      },
+      "allowedParents": [],
+      "allowedChildren": ["Var", "Group", "Text", "Image", "Time", "DateTime", "Button", "Video", "SourceImage"],
+      "inherits": null
+    },
+    {
+      "elementName": "Wallpaper",
+      "requiredAttrs": [],
+      "optionalAttrs": ["screenWidth"],
+      "attrTypes": {
+        "screenWidth": "number"
+      },
+      "allowedParents": [],
+      "allowedChildren": ["Var", "Group", "Text", "Image", "Time", "DateTime"],
+      "inherits": null
+    },
+    {
+      "elementName": "Widget",
+      "requiredAttrs": ["screenWidth", "screenHeight"],
+      "optionalAttrs": ["frameRate"],
+      "attrTypes": {
+        "screenWidth": "number",
+        "screenHeight": "number",
+        "frameRate": "number"
+      },
+      "allowedParents": [],
+      "allowedChildren": ["Var", "Group", "Text", "Image", "Button"],
+      "inherits": null
+    },
+    {
+      "elementName": "ChargingSkin",
+      "requiredAttrs": [],
+      "optionalAttrs": ["screenWidth"],
+      "attrTypes": {
+        "screenWidth": "number"
+      },
+      "allowedParents": [],
+      "allowedChildren": ["Var", "Group", "Text", "Image"],
+      "inherits": null
+    },
+    {
+      "elementName": "Group",
+      "requiredAttrs": [],
+      "optionalAttrs": ["name", "x", "y", "w", "h", "alpha", "rotation", "visibility", "clip", "layered", "align", "alignV"],
+      "attrTypes": {
+        "name": "string",
+        "x": "number",
+        "y": "number",
+        "w": {"type": "number", "aliases": ["width"]},
+        "h": {"type": "number", "aliases": ["height"]},
+        "alpha": "number",
+        "rotation": {"type": "number", "aliases": ["angle"]},
+        "visibility": "number",
+        "clip": {"enum": ["true", "false"]},
+        "layered": {"enum": ["true", "false"]},
+        "align": {"enum": ["left", "center", "right"]},
+        "alignV": {"enum": ["top", "center", "bottom"]}
+      },
+      "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
+      "allowedChildren": ["Var", "Group", "Text", "Image", "Time", "DateTime", "AlphaAnimation", "PositionAnimation", "RotationAnimation", "SizeAnimation"],
+      "inherits": null
+    }
+  ],
+  "ruleSources": [
+    {
+      "ruleId": "SYN-001",
+      "category": "SYN",
+      "description": "XML标签未闭合",
+      "docUrl": "https://dsl-docs.example.com/rules/SYN-001"
+    },
+    {
+      "ruleId": "SYN-002",
+      "category": "SYN",
+      "description": "标签嵌套违反父子约束",
+      "docUrl": "https://dsl-docs.example.com/rules/SYN-002"
+    },
+    {
+      "ruleId": "SEM-PERSIST-001",
+      "category": "SEM",
+      "description": "禁止对时间/日期/星期变量使用persist",
+      "docUrl": "https://dsl-docs.example.com/rules/SEM-PERSIST-001"
+    }
+  ]
+}
