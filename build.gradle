@@ -8,6 +8,7 @@ allprojects {
 
     sourceCompatibility = 17
     compileJava.options.encoding = 'UTF-8'
+    compileTestJava.options.encoding = 'UTF-8'
     configurations.all {
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
@@ -28,9 +29,14 @@ subprojects {
         main.resources.srcDirs 'src/main/resources'
 
         test.java.srcDirs 'src/test/java'
+        test.resources.srcDirs 'src/test/resources'
     }
 
     processResources {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+
+    processTestResources {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
     }
 
@@ -59,11 +65,12 @@ subprojects {
         tasks.matching {it.name == 'buildSearchableOptions'}.configureEach {
             onlyIf {false}
         }
+        tasks.matching { it.name == 'testClasses' && it.project.plugins.hasPlugin('org.jetbrains.intellij') }.configureEach {
+            onlyIf {true}
+        }
     }
 
-    tasks.matching { it.name.contains('Test') && it.name != 'test' && it.name != 'check' }.configureEach {
-        onlyIf {false}
-    }
+
 
     patchPluginXml {
         sinceBuild = '241'
