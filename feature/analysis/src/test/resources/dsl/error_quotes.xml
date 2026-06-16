@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate=60 screenWidth="1080">
+    <Var name="testVar" expression="1" type="number"/>
+</Lockscreen>

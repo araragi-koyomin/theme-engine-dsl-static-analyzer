@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Widget screenWidth="1080" screenHeight="530">
+    <Var name="batteryExp" expression="#battery_level" type="number"/>
+    <Group name="widgetGroup" x="0" y="0" w="1080" h="530">
+        <Text name="batteryText" x="500" y="200" size="48" color="#FFFFFF"/>
+    </Group>
+</Widget>
