@@ -9,7 +9,13 @@
   ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.xml</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.huawei.theme.analysis.DslAnalysisService"/>
+        <language id="Dsl" implementationClass="com.huawei.theme.analysis.syntax.DslLanguage"/>
+        <parserDefinition language="Dsl" implementationClass="com.huawei.theme.analysis.syntax.DslParserDefinition"/>
+        <languageSubstitutor language="XML" implementationClass="com.huawei.theme.analysis.syntax.DslLanguageSubstitutor"/>
+        <annotator language="Dsl" implementationClass="com.huawei.theme.analysis.syntax.DslSyntaxAnnotator"/>
     </extensions>
 </idea-plugin>
