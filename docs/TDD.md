@@ -1,331 +1,620 @@
-主题引擎DSL静态分析工具-技术设计文档
+# 主题引擎DSL静态分析工具 - 技术设计文档
 
-1. 技术架构
+## 1. 技术架构
 
-1.1 整体架构
-基于编译器前端技术构建，采用经典的词法分析→语法分析→语义分析三层架构：
-- Lexer：DSL文本 → Token流
-- Parser：Token流 → AST
-- SemanticAnalyzer：AST + 规则库 → 诊断结果
+### 1.1 整体架构
 
-整体架构划分为以下子系统：
-- 语法分析子系统：负责DSL XML结构的PSI树构建与基础语法检查
-- 表达式解析子系统：负责数字表达式（NumericExpression）和字符串表达式（StringExpression）的独立解析、语法验证与语义检查
-- 语义分析子系统：负责规则驱动约束检查、上下文分析、变量引用验证、作用域检测等
-- Trigger/Command链分析子系统：负责触发器-命令链的结构与语义约束检查
+基于编译器前端技术构建，采用模块化分层架构：
 
-1.2 技术选型
-- 开发框架：IntelliJ Platform Plugin SDK
-- 构建工具：Gradle
-- 语言：Java
-- PSI体系：基于IntelliJ PSI自定义DSL文件解析树
-- 检测引擎：Annotator + LocalInspectionTool双通道
-- 表达式解析器：独立的双模式表达式解析器（NumericExprParser + StringExprParser），与PSI体系并行但共享诊断输出通道
-- 规则库数据源：`docs/themes_engine_next/`目录下的爬取规范页面（82页、437节），包含元素定义、属性表、支持范围矩阵、约束说明与示例代码
-
-1.3 检测策略
-- 实时检测：通过Annotator实现，编辑即触发，仅检测当前文件可见范围
-- 扩量检测：通过LocalInspectionTool实现，可全项目扫描，支持批量Quick Fix
-- 异步与增量：所有检测任务在后台线程执行，采用增量解析策略，仅重分析变更部分
-- 规则来源：每个诊断明确引用DSL规范中的具体章节/条款，提供可追溯的规则依据
-- 规则库基于预定义的DSL规范规则进行检查，以数据驱动方式定义
-- 规则库数据来源：`docs/themes_engine_next/`目录中的规范页面，包含元素定义（如Button、Var、Command等）、属性参数说明表、支持范围矩阵（5个应用位置）、约束注意事项、函数签名表及代码示例。规则库应从这些页面自动提取或手动整理生成。
-
-2. 核心模块设计
-
-2.1 语法分析模块
-- 自定义PSI Tree结构，定义各DSL元素的NodeType
-- Parser定义完整的DSL语法规则，生成PSI Tree
-- 语法错误通过PSI构建过程中的ErrorElement标记
-- 基础XML语法分析（标签未闭合、嵌套错误、属性引号缺失）利用IDEA内置XML PSI API完成
-
-2.2 语义分析模块
-- 规则库：以数据驱动方式定义所有元素的约束规则（必填属性、类型、枚举值等）
-- 上下文分析：根据元素层级关系（父子、继承）进行约束检查
-- 语义相似度匹配：对未知元素/属性提供最接近的合法建议
-
-2.2.1 表达式验证
-DSL包含两套独立的表达式系统，需分别进行语法与语义验证：
-
-**数字表达式（NumericExpression）验证：**
-- 返回值类型：float
-- 变量引用语法：`#varName`（引用数值型变量）
-- 数组引用语法：`#arrName[expression]`（索引支持表达式解析）
-- 支持运算符：`+`、`-`、`*`、`/`、`%`（算术运算，`+`为加法）
-- 支持函数（含参数数量约束）：
-  - 单参数：sin, cos, tan, asin, acos, atan, sqrt, abs, int, round, digit, not, len, isnull
-  - 双参数：eq, ne, ge, gt, le, lt, min, max, pow
-  - 三参数及以上：ifelse(x1,y1,x2,y2,...,z)（至少3个参数）
-  - 无参数：rand()
-- 关键语法规则验证：
-  - `-#varName`模式检测：禁止负号直接前缀变量引用（如`-#w`），应写成`-1*#varName`或`0-#varName`
-  - 数值精度警告：当数值超过7位时发出精度问题警告，建议范围在7位及以内
-  - 变量引用验证：`#varName`必须引用已定义的数值型变量或已知全局数值变量
-  - 函数参数数量验证：检测函数调用的参数数量是否符合签名要求（如eq必须2参数，ifelse至少3参数）
-
-**字符串表达式（StringExpression）验证：**
-- 返回值类型：string
-- 变量引用语法：`@varName`（引用字符串型变量）、`#varName`（引用数值型变量）
-- 数组引用语法：`@arrName[expression]`（索引支持表达式解析）
-- 运算符：`+`（字符串拼接，非数值加法）
-- 嵌套数字表达式语法：`{numericExpr}`（花括号包裹）
-- 字符串常量必须使用单引号：如`'hello'`，双引号不合法
-- 支持函数（含参数数量约束）：
-  - substr(str, start, length) — 3参数
-  - strIsEmpty(str) — 1参数
-  - strIndexOf(str1, str2) — 2参数
-  - strLastIndexOf(str1, str2) — 2参数
-  - strContains(str1, str2) — 2参数
-  - strReplaceAll(str1, str2, str3) — 3参数
-  - preciseeval(str, digits) — 2参数（注意：preciseeval后不能使用其他运算符和+连接符）
-  - formatDate(format, timeVar) — 2参数
-  - plus(a, b) — 2参数（返回整数的和）
-  - ifelse(x1,y1,x2,y2,...,z) — 至少3参数（xi为数字表达式，yi/z为字符串结果）
-  - strEqual(str1, str2) — 2参数
-  - argb(a, r, g, b) — 4参数
-- 关键语法规则验证：
-  - 字符串常量单引号检测：字符串表达式中的字符串必须使用单引号
-  - `+`语义歧义检测：在字符串表达式中`+`为拼接而非加法，检测可能混淆的数值加法用法
-  - `#varName*10`模式检测：字符串表达式以`#varName`开头后接运算符时会被误认为变量名（如`#num*10`被解析为名为"num*10"的变量），正确写法为`10*#num`
-  - `{numericExpr}`嵌套验证：花括号内必须是合法的数字表达式
-  - 变量引用验证：`@varName`必须引用已定义的字符串型变量或已知全局字符串变量；`#varName`必须引用数值型变量
-
-2.2.2 作用域（Scope）验证
-每个DSL元素在5个应用位置上有明确的支持矩阵，根元素决定当前文件的应用位置：
-
-**应用位置定义：**
-- Lockscreen（锁屏） — 根元素 `<Lockscreen>`
-- Wallpaper（桌面） — 根元素 `<Wallpaper>`
-- Widget（百变卡片） — 根元素 `<HwWidget>`
-- ChargingSkin（充电动效） — 根元素 `<ChargingSkin>`
-- LongTake（一镜到底） — 根元素 `<LongTake>`
-
-**检测逻辑：**
-- 从DSL文件根元素标签识别应用位置
-- 查询规则库中该元素的支持范围矩阵，判断当前应用位置是否支持
-- 当元素在不支持的应用位置中使用时，生成错误诊断
-- 示例：Button仅支持Lockscreen✓和Widget✓，在Wallpaper中使用Button应报错
-
-**典型不支持组合（来自规范页面）：**
-| 元素 | Lockscreen | Wallpaper | LongTake | Widget | ChargingSkin |
-|------|-----------|-----------|----------|--------|-------------|
-| Button | ✓ | ✗ | ✗ | ✓ | ✗ |
-| Command | ✓ | ✓ | ✗ | ✓ | ✓ |
-| ExternCommand | ✓ | ✗ | ✗ | ✗ | ✓ |
-| StyleCommand | ✓ | ✓ | ✗ | ✓ | ✗ |
-| VideoCommand | ✓ | ✓ | ✗ | ✓ | ✓ |
-| NumericExpression | ✓ | ✓ | ✓ | ✓ | ✓ |
-| StringExpression | ✓ | ✓ | ✓ | ✓ | ✓ |
-
-2.2.3 全局变量验证
-引擎预置了一系列固定名称的全局变量，需验证引用的正确性与约束：
-
-**全局变量分类：**
-- 触摸类：touch_x, touch_y, touch_begin_x, touch_begin_y, touch_begin_time
-- 解锁类：name.move_x, name.move_y, name.move_dist, name.state
-- 时间日期类：year, month, date, day_of_week, hour, hour12, hour24, minute, ishour12, lunarYear, lunarMonth, lunarDay, system.time.hour1/hour2/min1/min2/ampm
-- 电量类：battery_level(数值), battery_state(数值)
-- 深色模式：darkMode(数值)
-- 屏幕宽高：screen_width(数值), screen_height(数值)
-- 图片宽高：name.actual_w, name.actual_h
-- 文本宽高：name.text_width, name.text_height
-- 组件属性：name.visibility, name.actual_x/y, name.actual_w/h
-- 视频状态：src.state, src.currentTime
-- 灭屏时间：screenOnLeftTime
-- AI语音：matchSkill_value(字符串)
-- 设备间隔：public_deviceUsageIntervalTime
-- 碰一碰：enableCollaboration（仅Widget）
-- 情绪感知：emotionValue
-- 隔空手势：dynamicSwingValue, staticSwingValue
-- 场景感知：Scenarios.ID.text(字符串), Scenarios.ID.jumpable(数值), Scenarios.ID.appName(字符串), Scenarios.topId(字符串)
-
-**验证规则：**
-- 全局变量名匹配验证：`#varName`和`@varName`引用的变量名必须匹配已知全局变量名或自定义变量名
-- 类型匹配验证：数值型全局变量必须用`#`引用，字符串型全局变量必须用`@`引用（如`@ishour12`为字符串，`#battery_level`为数值）
-- 禁止persist约束：针对时间、日期、星期相关变量（year/month/date/day_of_week/hour/minute/system.time.*等），禁止使用persist/globalPersist/styleGlobalPersist属性
-- 应用位置限制验证：如enableCollaboration仅限Widget，matchSkill_value仅限特定场景
-
-2.3 表达式解析器设计
-
-表达式解析器是独立于PSI体系的子模块，负责解析属性值中的表达式文本。因DSL表达式语法与XML属性值语法不同，需独立的Tokenizer和Parser。
-
-**双模式架构：**
 ```
-ExpressionAnalyzer
-├── NumericExprParser（数字表达式解析器）
-│   ├── NumericExprLexer → Token流（运算符、函数名、变量引用#varName、数组引用#arr[expr]、数值常量、括号）
-│   ├── NumericExprParser → AST（算术表达式树、函数调用树、变量引用节点）
-│   └── NumericExprValidator → 诊断（语法检查、函数参数数量、变量存在性、-#var模式、精度警告）
-├── StringExprParser（字符串表达式解析器）
-│   ├── StringExprLexer → Token流（运算符+、函数名、变量引用@varName/#varName、数组引用@arr[expr]、字符串常量'...'、花括号嵌套{expr}）
-│   ├── StringExprParser → AST（拼接表达式树、函数调用树、花括号嵌套数字表达式节点）
-│   └── StringExprValidator → 诊断（语法检查、单引号字符串、+语义、函数参数数量、变量存在性、嵌套表达式合法性）
+┌─────────────────────────────────────────────────┐
+│                  dsl-intellij-plugin             │
+│  PSI Adapter │ M6 UI │ M5-UI │ M8 Navigation    │
+│         ↓ 依赖 IDEA SDK + core层                 │
+├─────────────────────────────────────────────────┤
+│                  dsl-analyzer-core               │
+│  M0 Parser │ M1 FileID │ M2 Rules │ M3 Syntax   │
+│  M4 Semantic+Type │ M5 Fix │ M7 Batch │ CLI     │
+│         ↓ 无IDEA依赖，可独立运行                  │
+├─────────────────────────────────────────────────┤
+│                  外部依赖                        │
+│  dom4j(XML解析) │ ANTLR4(表达式+规则DSL) │ GSON   │
+└─────────────────────────────────────────────────┘
 ```
 
-**触发时机：**
-- 当属性声明支持表达式时（如expression、paras、x、y、w、h、visibility、condition等），调用对应类型的表达式解析器
-- NumericExpression适用于类型为数值且支持表达式的属性
-- StringExpression适用于类型为字符串且支持表达式的属性（如textExp、srcExp）
-- 从属性元数据（规则库）确定表达式类型，自动选择解析器
+- **Core层**：无IDEA SDK依赖，可独立运行（CLI jar只打包core包）
+- **Plugin层**：依赖IDEA SDK + core层，在core基础上叠加交互能力
+- **隔离保障**：编译期扫描core包内无com.intellij import
 
-**解析与验证流程：**
-1. 从规则库获取属性的"表达式类型"标记（numeric/string/none）
-2. 将属性值文本传入对应ExpressionParser
-3. Parser执行词法分析→语法分析→构建表达式AST
-4. Validator遍历AST进行语义检查：
-   - 变量引用存在性检查（#/@varName → 查询自定义变量表 + 全局变量目录）
-   - 函数签名检查（函数名 + 参数数量）
-   - 语法规则检查（-#var模式、单引号、+语义、花括号嵌套）
-   - 精度警告（数值>7位）
-5. 输出诊断信息，附加规则来源引用
+### 1.2 技术选型
 
-2.4 Trigger/Command链分析模块
+| 组件 | 选型 | 用途 |
+|---|---|---|
+| 语言 | Java 17 | 全项目开发语言 |
+| 构建工具 | Gradle 8.2 + gradle-intellij-plugin 1.13.3 | 插件构建 + CLI fat jar |
+| XML结构解析 | dom4j 2.1.3 | DSL文件XML结构解析（不使用ANTLR4） |
+| 表达式解析 | ANTLR4 | DSL表达式 + 规则DSL条件解析（.g4 grammar自动生成） |
+| 规则库数据格式 | GSON 2.9.0 | 规则JSON反序列化 |
+| 数据模型简化 | Lombok 1.18.22 | @Data/@Builder注解 |
+| IDEA集成 | IntelliJ Platform Plugin SDK | 仅Plugin层使用 |
+| CLI参数解析 | 手写或args4j | CLI入口参数解析 |
+
+### 1.3 检测策略
+
+- **实时检测**：Plugin层Annotator实现，编辑即触发（依赖PSI Adapter桥接core诊断）
+- **批量检测**：Plugin层LocalInspectionTool + CLI入口双重通道
+- **异步与增量**：Plugin层任务提交至DumbService后台线程；CLI单线程顺序执行
+- **Core层纯分析**：所有分析逻辑在core层完成，产出Diagnostic列表；Plugin层只负责展示与交互
+- **规则来源**：每个诊断引用DSL规范具体章节/条款，提供可追溯规则依据
+
+### 1.4 解析策略分层
+
+| 解析层级 | 工具 | 职责 | 输出 |
+|---|---|---|---|
+| XML结构解析 | dom4j | XML文件→Element树，捕获XML格式错误 | SAXParseException → Diagnostic(SYN-001/SYN-003/SYN-009) |
+| DSL AST构建 | M3 AstBuilder | dom4j Element树→DslAstNode独立AST | DslFileNode（含DslElementNode、DslAttributeNode） |
+| DSL表达式解析 | ANTLR4 (DslExpression.g4) | 仅expression/reference类型属性值解析 | ExpressionNode子树 |
+| 规则DSL条件解析 | ANTLR4 (DslRuleCondition.g4) | 声明式约束条件字符串解析 | ConditionNode |
+| 纯字面量验证 | 直接比对 | 非expression类型属性值直接验证 | 不走解析器 |
+
+**重要边界**：ANTLR4仅用于表达式和规则DSL条件解析，不用于XML结构解析（dom4j保留）。
+
+## 2. 模块设计（10个模块）
+
+### 2.1 M0 解析器基础设施
+
+**职责**：ANTLR4 grammar + 自动生成的解析器，仅解析层，无分析逻辑。
+
+**两个.g4 grammar文件**：
+
+| Grammar | 职责 | 生成代码 | 调用方 |
+|---|---|---|---|
+| DslExpression.g4 | DSL表达式（数值+字符串）词法/语法分析 | DslExpressionLexer/Parser/Visitor | M3（属性值表达式解析） |
+| DslRuleCondition.g4 | 规则DSL条件表达式词法/语法分析 | DslRuleConditionLexer/Parser/Visitor | M4（ConstraintAnalyzer） |
+
+**DslExpression.g4核心规则**：
+
+```
+expression : conditionalExpr | binaryExpr | unaryExpr | functionCall | variableRef | literal ;
+conditionalExpr : 'ifelse' '(' exprList ')' ;
+binaryExpr : left=expression op=('+'|'-'|'*'|'/'|'%') right=expression ;
+unaryExpr : 'not' '(' expression ')' ;
+functionCall : ID '(' exprList ')' ;
+variableRef : '#' ID | '@' ID | '#' ID '[' expression ']' ;
+literal : NUMBER | STRING | BOOLEAN ;
+exprList : expression (',' expression)* ;
+```
+
+**DslRuleCondition.g4核心规则**：
+
+```
+condition : logicExpr ;
+logicExpr : logicExpr op=('AND'|'OR') compareExpr | NOT logicExpr | compareExpr ;
+compareExpr : valueExpr op=('=='|'!='|'>'|'<'|'>='|'<=') valueExpr | valueExpr 'IN' setLiteral | valueExpr 'NOT' 'IN' setLiteral ;
+valueExpr : elementAttr | literal | 'null' | 'true' | 'false' ;
+elementAttr : 'element.attrs[' STRING ']' | 'element.tagName' | 'element.parent.tagName' ;
+setLiteral : '[' literal (',' literal)* ']' ;
+literal : NUMBER | STRING ;
+```
+
+**重要边界**：规则DSL不做类型推断。typeOf()不在语法中——类型推断完全由M4 TypeInferenceEngine驱动。规则DSL职责边界为：属性存在性、值比较、集合包含、逻辑组合。
+
+**解析范围边界**：仅对标记为expression/reference类型或显式包含表达式语法（#var、@var、函数调用）的属性值做解析。纯字面量属性（x="100"）直接走字面量验证，不走解析器。
+
+### 2.2 M1 文件识别
+
+**接口重构**：去除PSI依赖，使用纯字符串参数。
+
+```java
+public interface DslFileMatcher {
+    boolean isDslFile(String filePath, String content);
+}
+
+public class DslFileIdentifier implements DslFileMatcher {
+    // 1. 检查扩展名是否为.xml
+    // 2. 解析content前N行，提取根元素标签名
+    // 3. 从M2 RuleRepository.getRootElementNames() 匹配
+}
+```
+
+Plugin层提供PsiDslFileMatcherAdapter将VirtualFile/PsiFile适配为String参数。
+
+### 2.3 M2 规则库
+
+**保持纯数据层定位**，不依赖M0。新增数据模型：
+
+```java
+@Data @Builder
+public class DslElementRule {
+    String elementName;
+    List<String> requiredAttrs;
+    List<String> optionalAttrs;
+    Map<String, AttrTypeSpec> attrTypes;
+    List<String> allowedParents;
+    List<String> allowedChildren;
+    String inherits;
+    Map<String, Boolean> scope;              // 作用域支持矩阵
+    List<RuleConstraint> constraints;        // 声明式约束条件列表
+}
+
+@Data @Builder
+public class AttrTypeSpec {
+    String type;
+    List<String> enumValues;
+    List<String> aliases;
+    boolean supportsExpression;              // 是否支持表达式
+    String expressionKind;                   // 表达式类别 "number"/"string"
+}
+
+@Data @Builder
+public class RuleConstraint {
+    String ruleId;
+    String condition;                        // 声明式条件表达式
+    String message;
+    DiagnosticSeverity severity;
+    List<String> suggestedFixes;
+}
+```
+
+RuleRepository新增接口：
+```java
+List<RuleConstraint> getConstraints(String elementName);
+```
+
+函数签名库独立于M2，归属M0的function包，但JSON文件与规则库同级存放。M2只负责存储和查询约束条件数据，执行归M0的RuleDslEvaluator。
+
+### 2.4 M3 语法分析
+
+**完全重构**：自有独立AST替代PSI依赖。
+
+**DslAst节点类型**：
+
+```java
+public abstract class DslAstNode {
+    String text;
+    int line;
+    int column;
+    List<DslAstNode> children;
+}
+
+public class DslFileNode extends DslAstNode {
+    String xmlDeclaration;
+    DslElementNode rootElement;
+}
+
+public class DslElementNode extends DslAstNode {
+    String tagName;
+    List<DslAttributeNode> attributes;
+    List<DslAstNode> children;
+    boolean selfClosing;
+    boolean hasError;
+    String errorMessage;
+}
+
+public class DslAttributeNode extends DslAstNode {
+    String name;
+    DslAttributeValueNode value;
+}
+
+public class DslAttributeValueNode extends DslAstNode {
+    String rawValue;
+    ExpressionNode expression;       // M0解析的表达式AST（仅expression/reference类型）
+    boolean isLiteral;
+}
+```
+
+**DslAstProvider接口**（替代原PsiTreeProvider）：
+
+```java
+public interface DslAstProvider {
+    DslFileNode getDslAst(String filePath, String content);
+    List<DslElementNode> findElementsByName(DslFileNode ast, String elementName);
+    List<DslElementNode> findElementsByTag(DslFileNode ast, String tagName);
+}
+```
+
+**语法错误检测分层**：
+
+| 错误层级 | 检测机制 | 规则ID | 说明 |
+|---|---|---|---|
+| XML结构语法 | dom4j SAXParseException包装 | SYN-001, SYN-003, SYN-009 | 标签未闭合、属性引号缺失、缺少XML声明 |
+| DSL结构语法 | M3 AST构建+M2规则库比对 | SYN-002, SYN-004, SYN-005, SYN-006, SYN-010 | 嵌套约束、未知元素/属性、必填缺失、根元素错误 |
+| DSL表达式语法 | ANTLR4 DslExpressionParser | SEM-EXPR-001~006 | `-#var`模式、单引号缺失、花括号嵌套等 |
+
+### 2.5 M4 语义分析与类型系统
+
+M4包含三层检查机制并行运行：
+
+#### 2.5.1 类型推断类 — TypeAnalyzer
+
+**TypeInferenceEngine**：从表达式AST + 符号表 + 函数签名库，推断表达式类型，验证与属性期望类型是否匹配。
+
+**类型系统定义**：
+
+```
+DslType (抽象基类)
+├── DslNumberType        // 数值类型
+├── DslStringType        // 字符串类型
+├── DslBooleanType       // 布尔类型（语义：0/非0）
+├── DslEnumType          // 枚举类型（携带合法值集合）
+├── DslExpressionType    // 表达式类型（标记：数值表达式 | 字符串表达式）
+├── DslReferenceType     // 引用类型（#varName取数值, @varName取字符串）
+└── DslVoidType          // 无返回值（命令类属性）
+```
+
+**推断规则**：
+- NumberLiteral → DslNumberType
+- StringLiteral → DslStringType（仅在字符串表达式中）
+- VariableReference(#var) → 查符号表 → Var.type → 对应DslType
+- VariableReference(@var) → 查符号表 → DslStringType
+- FunctionCall → 查函数签名库 → 返回类型
+- BinaryExpression(+,-,*,/,%) → 上下文决定：目标属性为number→数值运算；目标属性为string且含+→字符串拼接
+- ConditionalExpression(ifelse) → y/z类型必须兼容，返回公共类型
+
+**推断签名**：inferType(ExpressionNode, DslType expectedContext) — 携带目标属性期望类型作为上下文。
+
+**检查逻辑**：
+1. 从M2获取元素的AttrTypeSpec
+2. 对supportsExpression=true的属性，调用TypeInferenceEngine.inferType()
+3. 比较推断类型与期望类型
+4. 类型不匹配 → 产出SEM-TYPE-001/SEM-TYPE-002诊断
+
+**重要边界**：不做常量折叠（不对表达式求值），不做符号执行。isConstAttr仅反映Var的const="true"属性声明。
+
+#### 2.5.2 函数签名库 — FunctionSignatureLibrary
+
+```java
+@Data @Builder
+public class FunctionSignature {
+    String name;
+    List<FunctionParam> params;
+    DslType returnType;
+    String expressionKind;          // "number" | "string"
+}
+
+@Data @Builder
+public class FunctionParam {
+    String name;
+    DslType type;
+    boolean isVariadic;
+}
+```
+
+**存储方式**：JSON文件，存放于resources/functions/目录，零代码扩展。
+
+#### 2.5.3 符号表收集器 — SymbolTableBuilder
+
+遍历M3产出的AST，收集所有Var声明和变量引用，构建符号表。
+
+```java
+public class SymbolTable {
+    Map<String, VarDeclaration> declarations;   // name → Var声明信息
+    List<VarReference> references;              // 所有#/@引用位置
+}
+
+@Data @Builder
+public class VarDeclaration {
+    String name;
+    DslType type;               // 从Var的type属性推断
+    String expression;           // expression属性值
+    boolean isConstAttr;         // 仅反映const="true"属性声明，不做常量折叠
+    DslAstNode astNode;          // 对应的AST节点（用于跳转定位）
+}
+
+@Data @Builder
+public class VarReference {
+    String name;
+    ReferenceKind kind;          // # (数值) | @ (字符串)
+    DslAstNode astNode;          // 引用位置AST节点
+}
+```
+
+#### 2.5.4 规则驱动类 — ConstraintAnalyzer
+
+使用M0 DslRuleConditionParser生成的visitor，解释执行规则库中的声明式约束条件。
+
+**执行机制**：
+1. 遍历AST每个DslElement
+2. 从RuleRepository获取该元素的RuleConstraint列表
+3. 对每个constraint.condition，RuleDslEvaluator执行：
+   - 用M0的DslRuleConditionParser解析condition字符串
+   - 使用visitor模式，将element引用替换为当前AST节点的属性值
+   - 递归求值条件表达式
+   - 条件为true → 产出Diagnostic
+
+#### 2.5.5 模式匹配类 — 各Analyzer
+
+| Analyzer | 检测方式 | 数据来源 |
+|---|---|---|
+| UnknownElementAnalyzer | 名称集合比对 | M2 DslElementRule |
+| RequiredAttrAnalyzer | 属性存在性检查 | M2 requiredAttrs |
+| UnknownAttrAnalyzer | 属性名比对 | M2 optionalAttrs+requiredAttrs |
+| EnumValueAnalyzer | 枚举值比对 | M2 enumValues |
+| ParentChildAnalyzer | 父子关系比对 | M2 allowedParents/allowedChildren |
+| ScopeAnalyzer | 作用域矩阵比对 | M2 scope |
+| VarRefAnalyzer | 变量引用存在性 | SymbolTable + 全局变量目录 |
+
+#### 2.5.6 Trigger/Command链分析
 
 Trigger-Command链是DSL的核心交互机制，需进行结构和语义层面的约束检查。
 
-**Trigger宿主元素：**
+**Trigger宿主元素**：
 - `<Button>` — 按钮触发
 - `<Unlocker>` — 解锁触发
 - `<Slider>` — 滑动触发
 - `<Var>`（threshold属性） — 变量阈值触发
-- `<ExternalCommands>` — 外部命令触发（开屏resume/关屏pause）
+- `<ExternalCommands>` — 外部命令触发
 
-**Trigger action类型：**
-- down（按下）
-- up（抬起）
-- double（双击）
-- click（点击）
-- long（长按）
-- resume（亮屏触发）
-- pause（熄屏触发）
+**Trigger action类型**：down, up, double, click, long, resume, pause
 
-**Command类型及其约束：**
+**Command类型约束**（部分以声明式RuleConstraint实现，部分仍需硬编码Analyzer）：
 
-| Command类型 | 关键约束 |
-|-------------|---------|
-| Command | target格式为`name.property`，目前仅支持visibility和animation属性 |
-| VariableCommand | **不支持persist属性**；expression中不能用表达式（如#countNum+5）作为变量定义的expression（仅赋值时可用）；name必须引用已定义变量 |
-| VideoCommand | **play与sound互斥**：当存在sound参数时不能使用play参数；反之无sound参数时才能使用play |
-| SoundCommand | 音频文件大小限制1MB；声音与播放互斥场景（锁屏来电等冻结场景不执行） |
-| ExternCommand | 仅支持unlock命令；仅在锁屏(Lockscreen)和充电动效(ChargingSkin)有效 |
-| IntentCommand | 一次只能跳转一个应用；不能跳转二级页面 |
-| StyleCommand | index不支持表达式；切换耗时1.5-2秒需避免频繁切换；搭配styleGlobalPersist |
-| GroupCommands | method缺省值"perform"；params传入Trigger action名称 |
-| CycleCommand | 与Array配合使用；indexFlag必填；frequency与begin/end互斥（frequency优先） |
-| VisibilityCommand | visibility支持表达式，true/>0可见，false/≤0不可见 |
+| Command类型 | 关键约束 | 实现方式 |
+|---|---|---|
+| VideoCommand | play与sound互斥 | RuleConstraint: `element.attrs['play'] != null AND element.attrs['sound'] != null` |
+| VariableCommand | 不支持persist | RuleConstraint: `element.attrs['persist'] != null` |
+| Var(时间/日期) | 禁止persist | RuleConstraint: `element.attrs['persist'] != null AND element.tagName == 'Var' AND type in ['time','date','week']` |
+| StyleCommand | index不支持表达式 | Analyzer硬编码 |
+| ExternCommand | 仅unlock命令+作用域限制 | Analyzer硬编码 |
 
-**检测逻辑：**
-1. 结构检查：Trigger必须位于合法宿主元素内（Button/Unlocker/Slider/Var(threshold)/ExternalCommands）
-2. Command类型合法性：Trigger内只能包含已知Command类型子元素
-3. VideoCommand互斥检查：同一VideoCommand元素中play和sound属性不能同时存在
-4. VariableCommand persist检查：VariableCommand不能使用persist属性
-5. Var persist禁止检查：时间日期星期相关变量禁止使用persist/globalPersist/styleGlobalPersist
-6. ExternCommand作用域检查：unlock命令仅在Lockscreen和ChargingSkin根元素下有效
-7. Trigger action合法性：action值必须在宿主元素支持的action列表中
+### 2.6 M5 修复逻辑
 
-2.5 Quick Fix模块
-- 每种诊断类型对应一个IntentionAction / QuickFixAction
-- 修复策略包括：删除、替换为建议值、补全必填属性、修正嵌套关系
-- 修复策略明细：
-  - 补闭合标签、补属性引号、删除多余结束标签
-  - 插入必填属性占位值或默认值
-  - 数字/布尔/路径格式归一化
-  - 根据编辑距离和知识库候选替换组件名（需确认）
-  - 替换为别名属性、删除属性、转为通用属性（需确认）
-  - 单位换算或删除错误单位（需确认）
-  - 替换为最接近合法枚举值（需确认）
-  - clamp到合法范围（需确认）
-  - 表达式修复：`-#varName` → `-1*#varName` 或 `0-#varName`
-  - 字符串表达式修复：双引号字符串 → 单引号字符串
-  - VideoCommand互斥修复：删除冲突的play或sound属性（需确认）
-  - VariableCommand persist修复：删除persist属性（需确认）
-  - Var persist禁止修复：删除时间日期变量的persist/globalPersist/styleGlobalPersist属性（需确认）
-- 需确认类修复通过IntentionAction弹窗让用户选择确认后执行
+**接口重构**：产出FixAction（纯文本操作描述），不依赖PsiElement。
 
-2.6 组件关系建模
-- 定义DSL元素的父子关系约束树
-- 定义组件继承关系及其属性传递规则
-- 属性上下文约束：同一元素在不同父级下拥有不同的合法属性集
-- Trigger宿主关系建模：定义哪些元素可以包含Trigger子元素
+```java
+@Data @Builder
+public class TextRange {
+    int startLine;
+    int startColumn;
+    int endLine;
+    int endColumn;
+}
 
-2.7 DSL文件识别模块
-- 双重识别机制：文件扩展名（.xml）+ 根节点声明
-- 非DSL XML文件不默认触发Theme Engine规则检查，需通过FileType或根元素过滤
-- 根元素识别应用位置：Lockscreen/Wallpaper/HwWidget/ChargingSkin/LongTake → 确定Scope矩阵
+@Data @Builder
+public class FixAction {
+    String fixType;            // "close_tag"/"add_quotes"/"insert_attr"/"replace_element"/...
+    TextRange targetRange;     // 目标文本范围（起止行列）
+    String replacementText;    // 替换文本内容
+    List<CandidateItem> candidates;  // 需确认类修复的候选列表
+    String description;
+}
 
-2.8 悬浮说明与依据追踪模块
-- 在IDEA工具提示（DocumentationTooltip）中集成详细诊断信息
-- 显示内容：错误摘要、建议修复、当前组件/属性说明、来源文档链接、规则置信度
-- 表达式相关诊断附带函数签名说明与规范示例
+@Data @Builder
+public class CandidateItem {
+    String description;
+    String previewText;
+    double similarityScore;
+}
+```
 
-2.9 批量检查模块
-- 通过菜单选项和快捷键触发批量检查
-- 检查范围：当前文件、当前目录、整个项目
-- 报告导出格式：Markdown/JSON
-- 报告内容按error/warning/info分组，包含文件路径、行列号、诊断code、修复建议、规则来源
+**修复策略明细**：
 
-3. 规则库数据源设计
+| 修复类型 | 确认要求 | 说明 |
+|---|---|---|
+| 补闭合标签/补属性引号/删除多余结束标签 | 无需确认 | 直接执行 |
+| 插入必填属性占位值/默认值 | 无需确认 | 直接执行 |
+| 数字/布尔/路径格式归一化 | 无需确认 | 直接执行 |
+| 表达式语法修正（`-#varName`→`-1*#varName`） | 无需确认 | 直接执行 |
+| 移除互斥属性/禁止属性组合 | 无需确认 | 直接执行 |
+| 替换为最接近的合法组件名 | 需确认 | 基于编辑距离匹配 |
+| 替换为别名属性/删除属性/转为通用属性 | 需确认 | 候选列表+diff预览 |
+| 替换为最接近合法枚举值 | 需确认 | 候选列表 |
+| clamp到合法范围 | 需确认 | diff预览 |
 
-3.1 规则来源
+Plugin层M5-UI将FixAction桥接为IntentionAction：无需确认类直接执行WriteCommandAction文本替换；需确认类弹出CandidateSelectionDialog。
+
+### 2.7 M6 UI交互（Plugin层）
+
+| 功能 | IDEA API | 数据来源 |
+|---|---|---|
+| 编辑器标注 | Annotator | Core M4 Diagnostic → PSI Adapter映射 |
+| 悬浮提示（错误） | DocumentationProvider | Core Diagnostic |
+| 悬浮提示（变量信息） | DocumentationProvider | Core SymbolTable → 变量类型+声明位置 |
+| 悬浮提示（元素规则） | DocumentationProvider | Core M2 RuleRepository |
+| 悬浮提示（Var声明） | DocumentationProvider | Core SymbolTable → 类型+isConstAttr |
+| 诊断面板 | ToolWindow | Core M4 Diagnostic |
+| 右键菜单批量检查 | ActionGroup | Core M7 BatchInspectionRunner |
+| 文件图标标注 | FileType + IconProvider | Core M1 DslFileMatcher |
+
+### 2.8 M7 批量检查与报告
+
+**接口重构**：使用core抽象而非PSI。
+
+```java
+public interface BatchInspectionRunner {
+    BatchInspectionResult runOnFile(String filePath);
+    BatchInspectionResult runOnDirectory(String directoryPath);
+    BatchInspectionResult runOnProject(String projectPath);
+}
+```
+
+**报告导出格式**：
+- JSON：结构化诊断数据（CLI stdout + 报告文件）
+- Markdown：按严重级别分组（报告文件）
+- Terminal：gcc/clang格式（CLI stdout）
+
+**报告内容**：severity/file/line/col/ruleId/message/suggestedFixes/ruleDocUrl，多文件扫描时按文件聚合+汇总统计。
+
+### 2.9 M8 导航与重构（Plugin层）
+
+| 功能 | IDEA API | 数据来源 |
+|---|---|---|
+| 跳转定义 | PsiReference.resolve() | Core SymbolTable → PSI定位 |
+| 查找所有引用 | FindUsagesProvider | Core SymbolTable → PSI定位 |
+| 重命名重构 | RenamePsiElementProcessor | Core SymbolTable + PSI Tree文本替换 |
+
+PsiReference实现：对属性值中#varName/@varName文本创建PsiReference，resolve()返回对应Var声明的PSI元素。
+
+### 2.10 PSI Adapter
+
+**桥接策略**：不重新解析XML，在IDEA原生XML PSI Tree上叠加DSL语义标注。DslAstNode记录对应PSI元素的offset/范围。
+
+```java
+public class DslPsiBridge {
+    Map<DslAstNode, Integer> astToOffset;     // AST节点 → PSI文本offset
+    Map<Integer, DslAstNode> offsetToAst;     // PSI文本offset → AST节点
+
+    DslAstNode getAstNode(PsiElement psiElement);  // 通过psiElement.getTextOffset()查offset
+    PsiElement getPsiElement(DslAstNode astNode);   // 通过offset在PSI Tree中定位
+    Diagnostic mapDiagnostic(DslDiagnostic coreDiagnostic);
+}
+```
+
+### 2.11 CLI入口
+
+```java
+public class DslAnalyzerCli {
+    public static void main(String[] args) {
+        // 1. 解析参数
+        // 2. 加载规则库（内置 or --rule-dir）
+        // 3. 识别DSL文件（M1）
+        // 4. 构建AST（M3）
+        // 5. 语义分析+类型推断（M4）
+        // 6. 格式化输出（JSON/terminal/markdown）
+        // 7. 退出码：0=无error, 1=有error, 2=异常
+    }
+}
+```
+
+## 3. 模块依赖关系
+
+```
+dsl-analyzer-core:
+    M0 ← 无上游依赖（ANTLR4解析器基础设施）
+    M1 ← M2 (获取根元素集合)
+    M2 ← 独立（纯数据层）
+    M3 ← M0 (表达式解析器) + M2 (合法元素名)
+    M4 ← M0 (规则DSL解析器) + M2 (规则+约束条件) + M3 (AST) + 内含类型推断引擎+符号表+函数签名库
+    M5 ← M4 (符号表+诊断) + M2 (修复建议数据)
+    M7 ← M1 (文件过滤) + M2 (规则) + M3 (AST) + M4 (诊断)
+    CLI ← M1+M3+M4+M7 (组合入口)
+
+dsl-intellij-plugin:
+    PSI Adapter ← core M3 (AST转PSI) + M4 (符号表→引用定位)
+    M6 ← PSI Adapter + core M4 (诊断) + M5 (修复注册)
+    M8 ← PSI Adapter (符号解析) + M4 (符号表)
+    M5-UI ← core M5 (修复逻辑) + PSI Adapter (PSI操作)
+```
+
+## 4. Diagnostic数据模型（跨模块共享）
+
+```java
+@Data @Builder
+public class Diagnostic {
+    DiagnosticSeverity severity;    // error/warning/info
+    String filePath;
+    int line;
+    int column;
+    String ruleId;                  // SYN-001, SEM-EXPR-001, SEM-TYPE-001等
+    String message;
+    List<String> suggestedFixes;
+    String ruleDocUrl;
+    TextRange textRange;            // 诊断精确范围
+}
+```
+
+Diagnostic使用filePath+line+column定位，不依赖PsiElement，core与plugin共享。
+
+## 5. 规则库数据源
+
+### 5.1 规则来源
+
 规则库数据来源于`docs/themes_engine_next/`目录，该目录包含从华为开发者官网爬取的规范页面：
 - 82个规范页面，437个章节
 - 每个页面包含：功能概述、支持范围矩阵、XML规范、参数说明表、约束注意事项、应用示例
-- 页面覆盖：基础功能（视图/控件/变量/命令/表达式）、2D基础动效、2D高级动效、3D高级动效、一镜到底、注意事项
 
-3.2 规则提取策略
-- 自动提取：从规范页面的Markdown结构化数据（表格、代码块、注意事项标注）中自动解析规则
-- 手动补充：对注意事项页面中的隐含规则（如`-#var`禁止、精度限制、persist约束等）手动录入规则库
+### 5.2 规则提取策略
+
+- 自动提取：从规范页面的Markdown结构化数据中自动解析规则
+- 手动补充：对注意事项页面中的隐含规则手动录入规则库
 - 规则分类存储：
   - 元素定义规则：标签名、属性列表、属性类型、必填/选填、枚举值
   - 支持范围矩阵：元素 × 5个应用位置的✓/✗映射
-  - 函数签名规则：函数名、参数数量、参数类型、返回类型
-  - 全局变量目录：变量名、类型（数值/字符串）、所属分类、约束（如persist禁止）
-  - 约束规则：互斥约束（VideoCommand.play/sound）、禁止约束（VariableCommand不支持persist、时间变量禁止persist）
-  - 注意事项规则：从precautions页面提取的通用/视图/变量/控件/命令/数据开放类规则
+  - 函数签名规则：函数名、参数数量、参数类型、返回类型（独立JSON文件）
+  - 全局变量目录：变量名、类型、所属分类、约束
+  - 声明式约束规则：互斥约束、禁止约束等（RuleConstraint condition字段）
+  - 注意事项规则：从precautions页面提取
 
-3.3 规则库格式
-- 规则以声明式数据结构定义（JSON/Kotlin DSL），不硬编码
-- 新增元素规则只需在规则库中追加条目，无需修改分析引擎代码
-- 规则条目包含source_url字段，指向规范原始页面，实现规则可追溯
+### 5.3 规则库格式
 
-4. 扩展性设计
+- 规则以声明式JSON定义，不硬编码
+- 新增元素规则只需在JSON中追加条目
+- 新增检测逻辑通过constraints数组追加声明式条件条目（零代码扩展）
+- 规则条目包含source_url字段，指向规范原始页面
+- 函数签名库独立JSON文件（resources/functions/目录）
 
-4.1 规则库扩展
-- 规则以声明式数据结构定义（JSON/Kotlin DSL），不硬编码
-- 新增元素规则只需在规则库中追加条目，无需修改分析引擎代码
-- 规范页面更新时，可重新执行爬取与规则提取流程，增量更新规则库
+## 6. 扩展性设计
 
-4.2 检测类型扩展
-- 诊断类型通过注册机制管理，新增检测类型只需实现对应Analyzer并注册
+### 6.1 零代码扩展（声明式规则DSL）
+
+新增检测逻辑无需编写Analyzer代码：
+- 在元素规则的constraints数组中追加RuleConstraint条目
+- condition字段使用规则DSL语法：`element.attrs['play'] != null AND element.attrs['sound'] != null`
+- ConstraintAnalyzer自动执行，无需手动注册
+- CLI可通过`--rule-dir`指定外部规则库目录
+
+### 6.2 规则库扩展
+
+- 新增元素/属性/枚举值/作用域：在JSON中追加条目
+- 新增函数签名：在functions JSON中追加条目
+- 规范页面更新时重新执行爬取+规则提取流程
+
+### 6.3 硬编码Analyzer扩展
+
+部分复杂约束仍需编写Analyzer代码：
+- Trigger/Command链结构约束（宿主元素合法性、action值合法性）
+- 资源文件约束（视频大小、图片命名序列）
+- 上下文依赖约束（Group clip+layered组合）
+
+新增Analyzer只需实现接口并注册到M4引擎。
+
+### 6.4 Plugin层扩展
+
 - Quick Fix通过IntentionAction注册机制扩展
-- 表达式解析器可扩展新增函数签名（通过规则库更新）
+- PsiReference可扩展新的引用类型
+- DocumentationProvider可扩展新的悬浮场景
 
-4.3 表达式解析器扩展
-- NumericExprParser和StringExprParser的函数签名表来自规则库，新增函数只需更新规则库
-- 运算符扩展通过Tokenizer配置实现
-- 新增表达式类型时，可注册新的ExpressionParser子类
+## 7. 性能设计
 
-5. 性能设计
+### 7.1 响应时间目标
 
-5.1 响应时间目标
-- 单文件实时检测响应时间 ≤ 50ms
-- 全项目批量检查响应时间 ≤ 5s / 100文件
-- 表达式解析单次耗时 ≤ 5ms（表达式通常短小）
+| 场景 | 目标 |
+|---|---|
+| 单文件实时检测（IDEA插件） | ≤ 50ms |
+| CLI单文件检查 | ≤ 100ms |
+| CLI批量检查 | ≤ 5s/100文件 |
+| 表达式类型推断单属性 | ≤ 5ms |
 
-5.2 性能保障措施
-- 异步执行：所有分析任务提交至DumbService后台线程
-- 增量分析：基于PSI增量解析，仅分析变更节点及其依赖范围
-- 规则库缓存：规则库数据预加载并缓存，避免重复IO
-- 表达式解析缓存：同一属性值未变更时跳过重复解析
-- 全局变量目录常驻内存：预置全局变量目录作为不可变数据常驻
+### 7.2 性能保障措施
 
-6. 兼容性
+- **异步执行**：Plugin层任务提交至DumbService后台线程；CLI单线程顺序执行
+- **增量分析**：Plugin层基于PSI增量解析，仅分析变更节点；CLI无增量能力
+- **规则库缓存**：RuleRepository预加载并缓存，避免重复IO
+- **表达式解析缓存**：同一属性值未变更时跳过重复解析
+- **全局变量目录常驻内存**：预置全局变量目录作为不可变数据常驻
+- **ANTLR4解析优化**：expression/reference类型属性才走解析器，纯字面量直接验证
 
-6.1 平台兼容
-- 目标平台：IntelliJ IDEA 2024.1+
-- 兼容范围：Ultimate / Community Edition
+## 8. 兼容性
 
-6.2 规范版本兼容
+### 8.1 平台兼容
+
+| 形态 | 要求 |
+|---|---|
+| IDEA插件 | IntelliJ IDEA 2024.1+（Ultimate/Community Edition） |
+| CLI jar | Java 17+ |
+
+### 8.2 规范版本兼容
+
 - 规范起始版本：HarmonyOS 5.0
 - 规则库标注每个元素的起始规范版本，检测时可按目标版本过滤规则
 - 部分属性标注更高起始版本（如IntentCommand.uri/type起始HarmonyOS 6.0），低版本目标时应报警告
+
+## 9. 相关文档
+
+| 文档 | 说明 |
+|---|---|
+| [PRD.md](PRD.md) | 产品需求文档（双形态交付） |
+| [DSL-Rule-Spec.md](DSL-Rule-Spec.md) | DSL规则规范、错误检测类型定义、规则库数据结构、声明式约束 |
+| [Architecture.md](Architecture.md) | 软件架构总览 |
+| [Development-Plan.md](Development-Plan.md) | 开发计划与Phase划分 |
+| [UX-Design.md](UX-Design.md) | UX交互设计文档 |
