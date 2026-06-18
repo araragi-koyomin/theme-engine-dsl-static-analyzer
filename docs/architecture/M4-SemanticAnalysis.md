@@ -1,18 +1,20 @@
-# M4 语义分析模块 - 架构设计
+# M4 语义分析与类型系统模块 - 架构设计
 
 ## 1. 模块职责
 
-基于PSI Tree和规则库，对DSL文件进行语义和规则层面的约束检查，产出诊断结果（Diagnostic）供M5/M6/M7消费。同时提供语义相似度匹配，为未知元素/属性推荐最接近的合法候选。
+基于AST和规则库，对DSL文件进行语义约束检查、类型推断、符号表构建、函数签名验证、声明式约束条件执行。产出诊断结果（Diagnostic）供M5/M7/PSI Adapter消费。
 
-**单一职责**：语义约束检查 + 诊断结果产出。
+**单一职责**：语义约束检查 + 类型推断 + 符号表 + 函数签名验证 + 约束检查 + 诊断结果产出。
+
+**深度重构**：原M0的分析层组件（TypeInferenceEngine、FunctionSignatureLibrary、SymbolTableBuilder）并入M4，类型推断自然位于M3之后。Analyzer接口从PsiElement改为DslAstNode。
 
 ## 2. 三层划分
 
 | 层级 | 功能 | 说明 |
 |---|---|---|
-| **Core** | 基础语义Analyzer + Diagnostic模型 + Analyzer注册机制 | MVP必交 |
-| **Extension** | 语义相似度匹配 + 上下文约束分析（属性在不同父级下的差异） | 正式版本 |
-| **Optional** | 继承链分析 + 引用完整性校验 | 后续迭代 |
+| **Core** | 7个模式匹配Analyzer + TypeAnalyzer + ConstraintAnalyzer + Diagnostic模型 + AnalyzerRegistry + SymbolTableBuilder | MVP必交 |
+| **Extension** | 符号表增量更新 + 语义相似度匹配 + 上下文约束分析 | 正式版本 |
+| **Optional** | 继承链分析 + 重复ID检测 + 完整引用完整性 | 后续迭代 |
 
 ## 3. 核心组件
 
@@ -23,22 +25,27 @@
 @Builder
 public class Diagnostic {
     DiagnosticSeverity severity;     // ERROR | WARNING | INFO
-    String ruleId;                   // 规则ID，如 SEM-001
+    String ruleId;                   // 规则ID，如 SEM-REF-001
     String message;                  // 诊断描述
-    PsiElement targetElement;        // 诊断目标PSI元素
+    String filePath;                 // 文件路径
+    int line;                        // 行号
+    int column;                      // 列号
     List<String> suggestedFixes;     // 建议修复描述列表
     String ruleDocUrl;               // 规则文档URL
 }
 ```
 
+**关键变更**：Diagnostic定位使用filePath+line+column，不使用PsiElement。Core层无IDEA类型依赖。
+
 ### 3.2 DiagnosticProvider（接口）
 
 ```java
 public interface DiagnosticProvider {
-    List<Diagnostic> analyzeFile(PsiFile file);
-    List<Diagnostic> analyzeElement(PsiElement element);
+    List<Diagnostic> analyzeFile(String filePath, String content);
 }
 ```
+
+**纯字符串参数**：Core层接口使用(filePath, content)参数。
 
 ### 3.3 Analyzer注册机制
 
@@ -46,49 +53,149 @@ public interface DiagnosticProvider {
 
 ```java
 public interface DslAnalyzer {
-    List<Diagnostic> analyze(PsiElement element, RuleRepository ruleRepo);
+    List<Diagnostic> analyze(DslAstNode element, RuleRepository ruleRepo);
 }
+```
 
+**关键变更**：analyze参数从PsiElement改为DslAstNode。
+
+```java
 public class AnalyzerRegistry {
-    private AnalyzerRegistry() {}    // 工具类：私有构造函数
+    private AnalyzerRegistry() {}
 
     public static void register(DslAnalyzer analyzer);
     public static List<DslAnalyzer> getAnalyzers();
 }
 ```
 
-**Core层Analyzer列表**：
+### 3.4 三层检查机制并行
 
-| Analyzer | 检测内容 | 规则ID |
-|---|---|---|
-| UnknownElementAnalyzer | 未知组件 | SYN-004 |
-| RequiredAttrAnalyzer | 必填属性缺失 | SYN-006 |
-| UnknownAttrAnalyzer | 未知属性 | SYN-005 |
-| AttrTypeAnalyzer | 属性类型不匹配 | SYN-007 |
-| EnumValueAnalyzer | 枚举值不合法 | SYN-008 |
-| ParentChildAnalyzer | 父子结构不合法 | SYN-002 |
-| ScopeAnalyzer | 元素不支持当前应用位置 | SEM-SCOPE-001 |
+M4包含三类检查机制并行运行：
 
-### 3.4 语义分析流程
+| 类别 | Analyzer | 检测方式 | 数据来源 |
+|---|---|---|---|
+| **类型推断类** | TypeAnalyzer | M0 TypeInferenceEngine | M0函数签名库 + M2 AttrTypeSpec + SymbolTable |
+| **规则驱动类** | ConstraintAnalyzer | M0 RuleDslEvaluator | M2 RuleConstraint |
+| **模式匹配类** | UnknownElementAnalyzer等 | 名称/属性/关系集合比对 | M2 DslElementRule |
 
-```mermaid
-flowchart TD
-    Input[PSI Tree输入] --> Traverse[遍历PSI Tree中的每个DslElement]
-    Traverse --> GetAnalyzers[从AnalyzerRegistry获取所有已注册Analyzer]
-    GetAnalyzers --> Execute[对每个DslElement依次执行<br/>所有Analyzer.analyze]
-    Execute --> QueryRule[每个Analyzer从RuleRepository<br/>查询规则数据]
-    QueryRule --> Compare[Analyzer基于规则数据与PSI元素内容进行比对]
-    Compare --> Output[产出Diagnostic列表]
-    Output --> Merge[合并所有Diagnostic<br/>去重排序]
-    Traverse --> Merge
-    Merge --> Result[Diagnostic列表输出]
+#### 3.4.1 类型推断类 — TypeAnalyzer
 
-    style Result fill:#c8e6c9,stroke:#388e3c
+**TypeInferenceEngine**：从表达式AST + 符号表 + 函数签名库，推断表达式类型，验证与属性期望类型是否匹配。
+
+**类型系统定义**：
+
+```
+DslType (抽象基类)
+├── DslNumberType        // 数值类型
+├── DslStringType        // 字符串类型
+├── DslBooleanType       // 布尔类型（语义：0/非0）
+├── DslEnumType          // 枚举类型（携带合法值集合）
+├── DslExpressionType    // 表达式类型（标记：数值表达式 | 字符串表达式）
+├── DslReferenceType     // 引用类型（#varName取数值, @varName取字符串）
+└── DslVoidType          // 无返回值（命令类属性）
 ```
 
-### 3.5 语义相似度匹配（Extension层）
+**推断规则**：
 
-当检测到未知元素或未知属性时，基于相似度算法推荐最接近的合法候选：
+| 表达式类型 | 推断方式 |
+|---|---|
+| NumberLiteral | → DslNumberType |
+| StringLiteral | → DslStringType（仅在字符串表达式中） |
+| VariableReference(#var) | 查符号表 → Var.type → 对应DslType |
+| VariableReference(@var) | 查符号表 → DslStringType |
+| FunctionCall | 查函数签名库 → 返回类型 |
+| BinaryExpression(+,-,*,/,%) | 上下文决定：目标属性为number→数值运算；string且含+→字符串拼接 |
+| ConditionalExpression(ifelse) | y/z类型必须兼容，返回公共类型 |
+
+**推断签名**：`inferType(ExpressionNode, DslType expectedContext)` — 携带目标属性期望类型作为上下文。
+
+**检查逻辑**：
+1. 从M2获取元素的AttrTypeSpec
+2. 对supportsExpression=true的属性，调用TypeInferenceEngine.inferType()
+3. 比较推断类型与期望类型
+4. 类型不匹配 → 产出SEM-TYPE-001诊断
+5. 函数参数类型不匹配 → 产出SEM-TYPE-002诊断
+
+**重要边界**：不做常量折叠（不对表达式求值），不做符号执行。isConstAttr仅反映Var的const="true"属性声明。
+
+#### 3.4.2 规则驱动类 — ConstraintAnalyzer
+
+使用M0 RuleDslEvaluator解释执行规则库中的声明式约束条件：
+
+1. 遍历AST每个DslElement
+2. 从RuleRepository获取该元素的RuleConstraint列表
+3. 对每个constraint.condition，调用M0 RuleDslEvaluator.evaluate()
+4. 条件为true → 产出对应Diagnostic（使用constraint.ruleId + message + severity + suggestedFixes）
+
+**示例**：
+
+| 规则ID | 检测内容 | 声明式条件 |
+|---|---|---|
+| SEM-CMD-001 | VideoCommand中sound和play共存 | `element.attrs['play'] != null AND element.attrs['sound'] != null` |
+| SEM-PERSIST-001 | 时间/日期变量使用persist | `element.attrs['persist'] != null AND element.attrs['type'] IN ['time','date','week']` |
+| SEM-PERSIST-002 | VariableCommand使用persist | `element.attrs['persist'] != null AND element.tagName == 'VariableCommand'` |
+
+#### 3.4.3 模式匹配类 — 各Analyzer
+
+| Analyzer | 检测方式 | 数据来源 | 规则ID范围 |
+|---|---|---|---|
+| UnknownElementAnalyzer | 名称集合比对 | M2 DslElementRule | SYN-004 |
+| RequiredAttrAnalyzer | 属性存在性检查 | M2 requiredAttrs | SYN-006 |
+| UnknownAttrAnalyzer | 属性名比对 | M2 optionalAttrs+requiredAttrs | SYN-005 |
+| EnumValueAnalyzer | 枚举值比对 | M2 enumValues | SYN-008 |
+| ParentChildAnalyzer | 父子关系比对 | M2 allowedParents/allowedChildren | SYN-002 |
+| ScopeAnalyzer | 作用域矩阵比对 | M2 scope | SEM-SCOPE-001/002 |
+| VarRefAnalyzer | 变量引用存在性 | SymbolTable + 全局变量目录 | SEM-REF-001/002/003 |
+
+### 3.5 SymbolTableBuilder
+
+遍历M3产出的AST，收集所有Var声明和变量引用，构建符号表：
+
+```java
+public class SymbolTable {
+    Map<String, VarDeclaration> declarations;   // name → Var声明信息
+    List<VarReference> references;              // 所有#/@引用位置
+}
+
+@Data
+@Builder
+public class VarDeclaration {
+    String name;
+    DslType type;               // 从Var的type属性推断
+    String expression;           // expression属性值
+    boolean isConstAttr;         // 仅反映const="true"属性声明，不做常量折叠
+    DslAstNode astNode;          // 对应的AST节点（用于跳转定位）
+}
+
+@Data
+@Builder
+public class VarReference {
+    String name;
+    ReferenceKind kind;          // # (数值) | @ (字符串)
+    DslAstNode astNode;          // 引用位置AST节点
+}
+```
+
+**关键设计决策**：
+- isConstAttr仅反映Var的const="true"属性声明，不做表达式求值判断
+- 不存储constantValue，不做常量折叠
+- astNode字段用于M8导航定位（Plugin层通过PSI Adapter桥接）
+
+### 3.6 Trigger/Command链分析
+
+Trigger-Command链是DSL的核心交互机制，部分以声明式RuleConstraint实现，部分需硬编码Analyzer：
+
+| Command类型 | 关键约束 | 实现方式 |
+|---|---|---|
+| VideoCommand | play与sound互斥 | RuleConstraint声明式 |
+| VariableCommand | 不支持persist | RuleConstraint声明式 |
+| Var(时间/日期) | 禁止persist | RuleConstraint声明式 |
+| StyleCommand | index不支持表达式 | Analyzer硬编码 |
+| ExternCommand | 仅unlock命令+作用域限制 | Analyzer硬编码 |
+
+### 3.7 语义相似度匹配（Extension层）
+
+当检测到SYN-004(未知元素)或SYN-005(未知属性)时，基于相似度推荐最接近的合法候选：
 
 ```java
 public interface SimilarityMatcher {
@@ -97,51 +204,132 @@ public interface SimilarityMatcher {
 }
 ```
 
-**匹配策略优先级**：完全匹配 > 编辑距离匹配 > 语义匹配
+**匹配策略优先级**：完全匹配 > 编辑距离匹配(Levenshtein) > 语义匹配（关键词）
+**候选排序**：按similarityScore降序，上限5条。CandidateItem被M5 FixAction使用。
 
-**候选排序**：按相似度分数降序，候选数量上限5条。
+### 3.8 继承链分析 + 引用完整性（Optional层）
 
-**实现方案**：
-- 编辑距离：Levenshtein Distance算法
-- 语义匹配：基于规则库中元素的分类/功能描述进行关键词匹配
-
-### 3.6 上下文约束分析（Extension层）
-
-同一元素在不同父级下拥有不同的合法属性集：
-
-```java
-public interface ContextConstraintAnalyzer {
-    List<Diagnostic> analyzeInContext(PsiElement element, PsiElement parent, RuleRepository ruleRepo);
-}
-```
-
-场景：某属性在父元素A下合法但在父元素B下非法，需要根据上下文判定。
-
-### 3.7 继承链分析 + 引用完整性（Optional层）
-
-| Optional Analyzer | 检测内容 | 规则ID |
-|---|---|---|
-| InheritanceAnalyzer | 继承链断裂 | SEM-013 |
-| DuplicateIdAnalyzer | 重复定义 | SEM-011 |
-| ReferenceAnalyzer | 引用不存在 | SEM-014 |
+| Optional Analyzer | 检测内容 |
+|---|---|
+| InheritanceAnalyzer | 继承链断裂检测 |
+| DuplicateIdAnalyzer | 重复ID/名称定义 |
+| ReferenceAnalyzer | 完整引用完整性校验 |
 
 ## 4. 模块依赖
 
-| 上游依赖 | 用途 |
+| 上游依赖 | 说明 |
 |---|---|
-| M2 规则库 | `RuleRepository` 查询元素规则、属性规范 |
-| M3 语法分析 | `PsiTreeProvider` 获取PSI Tree |
+| M0 解析器基础设施 | DslRuleConditionParser + RuleDslEvaluator（约束条件执行） + FunctionSignatureLibrary（函数签名查询） |
+| M2 规则库 | DslElementRule + AttrTypeSpec + RuleConstraint + DslGlobalVar（所有规则数据） |
+| M3 语法分析 | DslAstProvider → DslFileNode（AST供遍历+类型推断+符号表构建） |
 
-| 下游消费 | 提供接口 |
-|---|---|
-| M5 Quick Fix | `DiagnosticProvider` + `SimilarityMatcher` 获取诊断与修复候选 |
-| M6 UI交互 | `DiagnosticProvider` 获取诊断结果用于标注展示 |
-| M7 批量检查 | `DiagnosticProvider.analyzeFile()` 批量扫描 |
+| 下游消费 | 提供接口 | 说明 |
+|---|---|---|
+| M5 修复逻辑 | DiagnosticProvider + SymbolTable + SimilarityMatcher | 诊断定位+变量信息+修复候选 |
+| M7 批量检查 | DiagnosticProvider.analyzeFile() | 批量扫描管线 |
+| PSI Adapter | Diagnostic列表 + SymbolTable | Diagnostic→Annotation映射 + 引用定位 |
+| CLI入口 | DiagnosticProvider.analyzeFile() | CLI管线语义分析 |
 
-## 5. 设计要点
+## 5. CLI相关
 
-- **Analyzer注册机制**：新增检测类型只需实现DslAnalyzer并注册，不修改引擎核心代码；AnalyzerRegistry遵循工具类模式（私有构造函数、静态方法）
+### 5.1 CLI命令调用
+
+M4是CLI管线语义分析步骤：
+
+```
+java -jar dsl-analyzer.jar [options] <file-or-directory>
+```
+
+M4在CLI管线中的位置：
+
+```
+文件输入 → M1识别 → M3语法分析 → M4语义分析+类型推断 → Diagnostic列表 → 输出
+```
+
+### 5.2 CLI参数与M4的关系
+
+| 参数 | 影响范围 | M4相关说明 |
+|---|---|---|
+| `--semantic-only` | 只做语义检查 | 仅执行M4语义分析（不含类型推断），跳过TypeAnalyzer |
+| `--type-check` | 启用类型推断检查 | 全量检查时默认启用；关闭时跳过TypeAnalyzer和函数签名验证 |
+| `--syntax-only` | 只做语法检查 | 不进入M4阶段，CLI直接输出M3语法诊断 |
+| `--rule-dir <path>` | M2规则库目录 | 影响M2提供的RuleConstraint和AttrTypeSpec，间接影响M4约束检查和类型推断 |
+| `--verbose` | 详细输出 | 开启时CLI输出包含类型推断过程（推断类型链、函数签名匹配详情、符号表内容摘要） |
+| `--quiet` | 只输出error级别 | 过滤WARNING/INFO级别诊断，M4 ScopeAnalyzer部分诊断可能被过滤 |
+
+### 5.3 CLI输出中M4的贡献
+
+| CLI输出字段 | 来源路径 | M4贡献 |
+|---|---|---|
+| `ruleId: SEM-TYPE-001/002` | TypeAnalyzer → TypeInferenceEngine | 类型不匹配+函数参数不匹配诊断 |
+| `ruleId: SEM-CMD-xxx` | ConstraintAnalyzer → M0 RuleDslEvaluator | 声明式约束条件诊断 |
+| `ruleId: SEM-REF-001/002/003` | VarRefAnalyzer → SymbolTable | 变量/元素引用诊断 |
+| `ruleId: SEM-SCOPE-001/002` | ScopeAnalyzer → M2 scope/deviceSupport | 作用域+设备类型诊断 |
+| `ruleId: SEM-ATTR-xxx/SEM-VAR-xxx` | 各模式匹配Analyzer | 属性组合+变量使用诊断 |
+| `summary.errors/warnings/info` | DiagnosticProvider | 各级别诊断计数 |
+
+### 5.4 CLI异常场景
+
+| 异常场景 | 退出码 | 说明 |
+|---|---|---|
+| M3产出的AST为null（XML严重格式错误） | 1 | M4无法执行，跳过语义分析 |
+| SymbolTable构建异常 | 1 | Var声明解析失败，VarRefAnalyzer产出SEM-REF-001诊断 |
+| RuleDslEvaluator执行异常 | 1（降级运行） | 约束条件求值失败时跳过该约束，终端输出warning |
+
+### 5.5 CLI输出示例
+
+**全量检查**（M3+M4合并输出）：
+
+```
+$ java -jar dsl-analyzer.jar theme.xml
+
+theme.xml:3:5: error: 未知元素标签 'UnknownTag' [SYN-004]            ← M3产出
+theme.xml:15:3: error: 引用未定义变量 #steps_value [SEM-REF-001]     ← M4产出
+theme.xml:20:8: error: 类型不匹配，期望number实际string [SEM-TYPE-001] ← M4产出
+theme.xml:22:2: error: VideoCommand中play和sound互斥 [SEM-CMD-001]   ← M4产出
+
+4 errors, 0 warnings, 0 info
+```
+
+**`--semantic-only`模式**（跳过类型推断）：
+
+```
+$ java -jar dsl-analyzer.jar --semantic-only theme.xml
+
+theme.xml:15:3: error: 引用未定义变量 #steps_value [SEM-REF-001]
+theme.xml:22:2: error: VideoCommand中play和sound互斥 [SEM-CMD-001]
+
+2 errors, 0 warnings, 0 info
+```
+
+**`--verbose`模式**（含推断过程）：
+
+```
+$ java -jar dsl-analyzer.jar --verbose theme.xml
+
+[TypeAnalyzer] visibility="ifelse(#steps_value,1,0)"
+  #steps_value → SymbolTable: Var type=number → DslNumberType ✓
+  1 → NumberLiteral → DslNumberType ✓
+  0 → NumberLiteral → DslNumberType ✓
+  ifelse(number, number, number) → signature: returnType=number ✓
+  visibility期望: DslNumberType → 类型匹配 ✓
+
+[ConstraintAnalyzer] VideoCommand → constraint SEM-CMD-001
+  element.attrs['play'] != null → true (play="1")
+  element.attrs['sound'] != null → true (sound="0.5")
+  condition result: true → 产出诊断
+
+theme.xml:22:2: error: VideoCommand中play和sound互斥 [SEM-CMD-001]
+...
+```
+
+## 6. 设计要点
+
+- **三层检查并行**：类型推断类(TypeAnalyzer)、规则驱动类(ConstraintAnalyzer)、模式匹配类(7个Analyzer)三类检查机制并行运行
+- **Analyzer注册机制**：新增检测类型只需实现DslAnalyzer并注册，不修改引擎核心代码
+- **DslAstNode替代PsiElement**：所有Analyzer.analyze参数从PsiElement改为DslAstNode，Core层无IDEA依赖
+- **Diagnostic纯字符串定位**：filePath+line+column定位，不使用PsiElement
+- **类型推断边界**：不做常量折叠/符号执行，仅推断类型+验证签名匹配
+- **规则DSL不做类型推断**：typeOf()不在语法中，类型推断归TypeInferenceEngine
+- **符号表含astNode**：VarDeclaration和VarReference的astNode字段用于M8导航定位
 - **数据驱动**：Analyzer从RuleRepository查询规则数据进行比对，规则变更不影响Analyzer逻辑
-- **诊断与修复分离**：M4仅产出Diagnostic（问题描述+建议描述），不包含修复执行逻辑（修复逻辑归M5）
-- **相似度匹配独立**：SimilarityMatcher作为独立子组件，可被M5 Quick Fix模块直接引用获取候选列表
-- **POJO规范**：Diagnostic使用@Data/@Builder注解简化数据模型
