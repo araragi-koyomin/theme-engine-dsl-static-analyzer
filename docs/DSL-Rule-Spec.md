@@ -115,12 +115,14 @@ DSL有4种应用位置，每种对应一个根元素标签：
 | type | string | 选填 | false | — | number/string/number[]/string[]，默认number |
 | threshold | number | 选填 | true | number | 阈值，变化超阈值触发Trigger |
 | persist | string | 选填 | false | — | 持久化，默认false |
-| index | string | 选填 | false | — | 数组索引(从0开始) |
+| index | string | 选填 | false* | — | 数组索引(从0开始)；\*VarArray内index支持表达式(supportsExpression=true) |
 | values | string | 选填 | false | — | "val,val,...批量赋值" |
 | size | number | 选填 | false | — | 数组长度 |
 | const | string | 选填 | false | — | true/false，赋值后不再改变，默认false |
 
 **⚠ 禁止对时间/日期/星期变量使用persist/globalPersist/styleGlobalPersist**
+
+**⚠ Var type属性缺失时默认为number**（类型推断需处理type属性缺失场景）
 
 Var可包含子元素：`<Trigger>`（threshold触发时）、`<VariableAnimation>`
 
@@ -130,11 +132,55 @@ Var可包含子元素：`<Trigger>`（threshold触发时）、`<VariableAnimatio
 
 #### `<VarArray>` - 变量数组
 
-数组变量声明机制，集成在Var标签中通过type="number[]"或type="string[]"实现。
+独立XML元素，通过`<Vars>`+`<Items>`子结构声明变量数组：
+
+```
+<VarArray type="">
+    <Vars>
+        <Var name="" index=""/>
+    </Vars>
+    <Items>
+        <Item value=""/>
+        <Item value=""/>
+    </Items>
+</VarArray>
+```
+
+**VarArray自身属性**：
+
+| 属性 | 类型 | 必填 | supportsExpression | expressionKind | 说明 |
+|---|---|---|---|---|---|
+| type | string | 选填 | false | — | number/string，默认number |
+
+**Vars内Var属性**（与standalone Var不同）：
+
+| 属性 | 类型 | 必填 | supportsExpression | expressionKind | 说明 |
+|---|---|---|---|---|---|
+| name | string | 必填 | false | — | 变量名，@name返回字符串数组中index位置的值 |
+| index | string | 选填 | **true** | auto | 数组索引（支持表达式），Item顺序决定index取值 |
+
+**Items内Item属性**：
+
+| 属性 | 类型 | 必填 | supportsExpression | expressionKind | 说明 |
+|---|---|---|---|---|---|
+| value | string | 选填 | false | — | 数组值 |
 
 #### `<Array>` - 控件数组
 
-控件数组，用于批量创建相似控件。
+独立XML元素，批量创建相似控件：
+
+```
+<Array indexFlag="" frequency="">
+    <Image src="" srcid="" w="" h="" x="" y=""/>
+</Array>
+```
+
+| 属性 | 类型 | 必填 | supportsExpression | expressionKind | 说明 |
+|---|---|---|---|---|---|
+| indexFlag | string | **必填** | false | — | 索引变量名，可在子元素中用#indexFlag引用循环序号 |
+| frequency | expression | **必填** | true | number | 重复生成元素的次数 |
+
+**Array内变量引用**：子元素中`#__i`（indexFlag值）可用作循环变量，如`#arr[#__i]`数组访问模式。
 
 ### 2.5 全局变量目录
 
@@ -164,6 +210,9 @@ Var可包含子元素：`<Trigger>`（threshold触发时）、`<VariableAnimatio
 | **视频** | src.state | number | IDLE(0)~RELEASED(7) |
 | | src.currentTime | number | 视频播放进度(ms) |
 | **灭屏时间** | screenOnLeftTime | number | 距离灭屏时间(秒) |
+| **AI语音** | matchSkill_value | string | 小艺语音匹配能力值 |
+| **设备使用间隔** | public_deviceUsageIntervalTime | number | 用户使用设备间隔时长(秒) |
+| **碰一碰** | enableCollaboration | number | 碰一碰能力开关(0关/1开)，仅百变卡片 |
 | **手势** | dynamicSwingValue | number | 动态手势 |
 | | staticSwingValue | number | 静态手势 |
 | **场景感知** | Scenarios.ID.text | string | 场景文案 |
@@ -277,9 +326,9 @@ Trigger子元素：各种Command元素
 | rand() | () | number | number | 0-1随机浮点数 |
 | eq(x,y), ne(x,y) | (number,number) | number | number | 相等/不相等判断，返回0或1 |
 | ge(x,y), gt(x,y), le(x,y), lt(x,y) | (number,number) | number | number | 比较，返回0或1 |
-| isnull(x) | (number|string) | number | number | 变量是否无值 |
+| isnull(x) | (number\|string\|reference) | number | number | 变量是否无值；x可为#varName或@varName引用 |
 | not(x) | (number) | number | number | 逻辑非 |
-| ifelse(x,y,z) | (number,T,T...) | T | number/string | 多条件 |
+| ifelse(x,y,z) | (number,T,T...) | T | number/string | 多条件判断；支持variadic形式ifelse(x1,y1,x2,y2,...,z) |
 | pow(x,y) | (number,number) | number | number | x的y次方 |
 | len(x) | (number) | number | number | 数字位数 |
 
@@ -308,7 +357,7 @@ Trigger子元素：各种Command元素
 | strReplaceAll(str1,str2,str3) | (string,string,string) | string | string | 全替换 |
 | preciseeval(str,precision) | (string,number) | string | string | 计算字符串公式；其后不能再用运算符或+ |
 | formatDate(format,timeVar) | (string,string) | string | string | 格式化时间 |
-| plus(a,b) | (number|string,number|string) | string | string | 返回整数和的字符串 |
+| plus(a,b) | (number\|string,number\|string) | string | string | 返回a+b整数和的字符串；a/b可为数值、字符串、变量或函数的混合类型 |
 | ifelse(x1,y1,...,z) | (number,string,string...) | string | string | 多条件 |
 | strEqual(str1,str2) | (string,string) | string | string | 字符串相等判断 |
 | argb(a,r,g,b) | (number,number,number,number) | string | string | 返回8位16进制颜色字符串 |
@@ -366,20 +415,20 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 
 | 规则ID | 检测内容 | 检测机制 | 严重级别 |
 |---|---|---|---|
-| SYN-010 | 根元素标签错误 | M1文件识别+M3 AST根节点检测 | error |
+| SYN-001 | 根元素标签错误 | M1文件识别+M3 AST根节点检测 | error |
 
-> 注：SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，XML格式错误由dom4j直接报出。
+> 注：原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，XML格式错误由dom4j直接报出。编号已重新排列为连续序号。
 
 ### 5.2 DSL结构语法错误（M3语法分析+M2规则库比对）
 
 | 规则ID | 检测内容 | 检测机制 | 严重级别 |
 |---|---|---|---|
 | SYN-002 | 标签嵌套违反父子约束 | M3 AST遍历 + M2 allowedParents/allowedChildren比对 | error |
-| SYN-004 | 未知元素标签 | M3 AST tagName + M2 DslElementRule名称集合比对 | error |
-| SYN-005 | 未知属性名 | M3属性名 + M2 optionalAttrs+requiredAttrs比对 | warning |
-| SYN-006 | 缺失必填属性 | M3属性存在性 + M2 requiredAttrs比对 | error |
-| SYN-007 | 属性值类型错误（纯字面量） | 直接类型比对 | error |
-| SYN-008 | 枚举值错误 | M2 enumValues比对 | error |
+| SYN-003 | 未知元素标签 | M3 AST tagName + M2 DslElementRule名称集合比对 | error |
+| SYN-004 | 未知属性名 | M3属性名 + M2 optionalAttrs+requiredAttrs比对 | warning |
+| SYN-005 | 缺失必填属性 | M3属性存在性 + M2 requiredAttrs比对 | error |
+| SYN-006 | 属性值类型错误（纯字面量） | 直接类型比对 | error |
+| SYN-007 | 枚举值错误 | M2 enumValues比对 | error |
 
 ### 5.3 DSL表达式语法错误（ANTLR4 DslExpressionParser捕获）
 
@@ -407,7 +456,7 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 | 规则ID | 检测内容 | 声明式条件 | 严重级别 |
 |---|---|---|---|
 | SEM-CMD-001 | VideoCommand中sound和play共存 | `element.attrs['play'] != null AND element.attrs['sound'] != null` | error |
-| SEM-PERSIST-001 | 时间/日期/星期变量使用persist | `element.attrs['persist'] != null AND type in ['time','date','week']` | error |
+| SEM-PERSIST-001 | 时间/日期/星期变量使用persist/globalPersist/styleGlobalPersist | `element.attrs['persist'] != null OR element.attrs['globalPersist'] != null OR element.attrs['styleGlobalPersist'] != null AND type in ['time','date','week']` | error |
 | SEM-PERSIST-002 | VariableCommand使用persist属性 | `element.attrs['persist'] != null AND element.tagName == 'VariableCommand'` | error |
 
 **模式匹配类（各Analyzer）**：
@@ -427,6 +476,10 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 | SEM-VAR-002 | Var声明字符串常量缺少双套单引号 | 表达式解析检查 | error |
 | SEM-VAR-003 | Var values与size同时存在 | 属性组合检查 | warning |
 | SEM-VAR-004 | 数组变量使用前未声明size | 属性存在性检查 | error |
+| SEM-VAR-005 | Var type属性缺失时expression值不是数值表达式 | type默认number，expression必须为数值表达式 | warning |
+| SEM-ARR-001 | VarArray内Var的index超出Items数量范围 | Items数量与index值范围比对 | warning |
+| SEM-ARR-002 | Array frequency值不是正整数 | 数值范围检查(frequency>0) | error |
+| SEM-ARR-003 | Array indexFlag变量在Array外引用 | SymbolTable作用域检查 | warning |
 | SEM-TRIG-001 | Trigger action值不在合法集合中 | 枚举值比对 | error |
 | SEM-TRIG-002 | Button缺少Trigger子元素 | 子元素存在性检查 | error |
 | SEM-IMG-001 | ImageNumber资源不从0开始命名或序列缺失 | 资源命名检查 | error |
@@ -444,7 +497,7 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 
 ### 5.5 语义相似度匹配
 
-当检测到SYN-004(未知元素)或SYN-005(未知属性)时：
+当检测到SYN-003(未知元素)或SYN-004(未知属性)时：
 - 基于编辑距离推荐最接近的合法标签/属性名
 - 优先级：完全匹配 > 编辑距离匹配 > 语义匹配
 - Quick Fix候选列表使用CandidateItem（含similarityScore）
@@ -467,7 +520,7 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
     "type": {"type": "string", "enumValues": ["number", "string", "number[]", "string[]"], "supportsExpression": false},
     "threshold": {"type": "number", "supportsExpression": true, "expressionKind": "number"},
     "persist": {"type": "string", "enumValues": ["true", "false"], "supportsExpression": false},
-    "index": {"type": "string", "supportsExpression": false},
+    "index": {"type": "string", "supportsExpression": false, "contextExpression": {"VarArray.Vars.Var": true}},
     "values": {"type": "string", "supportsExpression": false},
     "size": {"type": "number", "supportsExpression": false},
     "const": {"type": "string", "enumValues": ["true", "false"], "supportsExpression": false}
@@ -490,8 +543,8 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
   "constraints": [
     {
       "ruleId": "SEM-PERSIST-001",
-      "condition": "element.attrs['persist'] != null AND element.attrs['type'] IN ['time','date','week']",
-      "message": "禁止对时间/日期/星期变量使用persist",
+      "condition": "element.attrs['persist'] != null OR element.attrs['globalPersist'] != null OR element.attrs['styleGlobalPersist'] != null AND element.attrs['type'] IN ['time','date','week']",
+      "message": "禁止对时间/日期/星期变量使用persist/globalPersist/styleGlobalPersist",
       "severity": "error",
       "suggestedFixes": ["移除persist属性"]
     }
@@ -541,7 +594,89 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 }
 ```
 
-### 6.3 全局变量条目Schema
+### 6.3 VarArray规则条目Schema
+
+```json
+{
+  "element": "VarArray",
+  "category": "variable",
+  "requiredAttrs": [],
+  "optionalAttrs": ["type"],
+  "attrTypes": {
+    "type": {"type": "string", "enumValues": ["number", "string"], "supportsExpression": false}
+  },
+  "childElements": {
+    "Vars": {
+      "Var": {
+        "requiredAttrs": ["name"],
+        "optionalAttrs": ["index"],
+        "attrTypes": {
+          "name": {"type": "string", "supportsExpression": false},
+          "index": {"type": "string", "supportsExpression": true, "expressionKind": "auto"}
+        }
+      }
+    },
+    "Items": {
+      "Item": {
+        "requiredAttrs": [],
+        "optionalAttrs": ["value"],
+        "attrTypes": {
+          "value": {"type": "string", "supportsExpression": false}
+        }
+      }
+    }
+  },
+  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
+  "allowedChildren": ["Vars", "Items"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}
+```
+
+### 6.4 Array规则条目Schema
+
+```json
+{
+  "element": "Array",
+  "category": "container",
+  "requiredAttrs": ["indexFlag", "frequency"],
+  "optionalAttrs": [],
+  "attrTypes": {
+    "indexFlag": {"type": "string", "supportsExpression": false},
+    "frequency": {"type": "number", "supportsExpression": true, "expressionKind": "number"}
+  },
+  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
+  "allowedChildren": ["Image", "Text", "Group"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}
+```
+
+### 6.5 全局变量条目Schema
 
 ```json
 {
@@ -554,7 +689,7 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 }
 ```
 
-### 6.4 函数签名条目Schema（独立JSON文件：resources/functions/signatures.json）
+### 6.6 函数签名条目Schema（独立JSON文件：resources/functions/signatures.json）
 
 ```json
 {
@@ -589,7 +724,7 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 }
 ```
 
-### 6.5 规则条目扩展指南
+### 6.7 规则条目扩展指南
 
 | 扩展类型 | 方式 | 是否需要编码 |
 |---|---|---|
@@ -601,7 +736,7 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 | 新增函数 | 在functions JSON中追加条目 | 否 |
 | 复杂约束（如Trigger链结构） | 编写Analyzer并注册到M4引擎 | 是 |
 
-规则ID格式：`[类别]-[子类]-[编号]`，如SYN-001, SEM-EXPR-001, SEM-TYPE-001, SEM-CMD-001
+规则ID格式：`[类别]-[子类]-[编号]`，如SYN-001~007(语法), SEM-EXPR-001~007(表达式), SEM-TYPE-001~002(类型), SEM-CMD-001~004(命令), SEM-PERSIST-001~003(持久化), SEM-ARR-001~003(数组), SEM-VAR-001~005(变量), SEM-REF-001~003(引用), SEM-ATTR-001~005(属性), SEM-SCOPE-001~002(作用域), SEM-TRIG-001~002(触发器), SEM-VID-001~005(视频), SEM-IMG-001(图片), SEM-GEN-001~002(通用)
 
 CLI可通过`--rule-dir`指定外部规则库目录，实现完全零代码的自定义规则集。
 
