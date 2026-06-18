@@ -2,17 +2,19 @@
 
 ## 1. 模块职责
 
-负责所有IDEA侧的用户交互层，包括编辑器内标注、悬浮提示、DSL诊断面板、右键菜单注册。不包含Quick Fix交互UI（归属M5）。
+负责所有IDEA侧的用户交互层，包括编辑器标注、悬浮提示（含变量信息）、DSL诊断面板、右键菜单、Quick Fix交互UI（M5-UI桥接）。
 
 **单一职责**：IDEA界面集成与用户交互展示。
+
+**M5-UI纳入说明**：M5的Plugin层交互UI（IntentionAction桥接+候选对话框+diff预览）归属于M6的Quick Fix交互部分，不单独成模块。原因：Quick Fix UI是IDEA交互能力，与M6其他UI共享Annotator注册通道，且FixAction→IntentionAction桥接逻辑量小。
 
 ## 2. 三层划分
 
 | 层级 | 功能 | 说明 |
 |---|---|---|
-| **Core** | Annotator标注 + 悬浮提示 | MVP必交 |
-| **Extension** | DSL诊断面板（ToolWindow） + 右键菜单注册 | 正式版本 |
-| **Optional** | 诊断面板筛选/排序高级功能 | 后续迭代 |
+| **Core** | Annotator标注 + 错误悬浮提示 + Quick Fix交互UI基础 | MVP必交 |
+| **Extension** | 变量信息悬浮 + 元素规则悬浮 + Var声明悬浮 + 诊断面板 + 右键菜单 + 需确认类Quick Fix交互 | 正式版本 |
+| **Optional** | 面板筛选/排序/搜索 | 后续迭代 |
 
 ## 3. 核心组件
 
@@ -24,11 +26,10 @@
 public class DslAnnotator implements Annotator {
     @Override
     void annotate(@NotNull PsiElement element, @NotNull AnnotationHolder holder) {
-        // 1. 通过M1 DslFileMatcher判断是否为DSL文件
+        // 1. PsiDslFileMatcherAdapter判断是否为DSL文件
         // 2. 非DSL文件跳过
-        // 3. DSL文件：从M3获取PSI语法错误，从M4获取语义诊断
-        // 4. 为每个Diagnostic创建Annotation
-        // 5. 为每个Annotation注册对应的M5 Quick Fix
+        // 3. DSL文件：PSI Adapter.mapDiagnostic()将Core Diagnostic映射为Annotation
+        // 4. 为每个Annotation注册M5-UI的IntentionAction
     }
 }
 ```
@@ -37,14 +38,10 @@ public class DslAnnotator implements Annotator {
 
 ```mermaid
 flowchart TD
-    Annotate[编辑器触发annotate] --> Check{M1 DslFileMatcher<br/>是否DSL文件?}
+    Annotate[编辑器触发annotate] --> Check{PsiDslFileMatcherAdapter<br/>是否DSL文件?}
     Check -->|否| Skip[跳过]
-    Check -->|是| Syntax[M3语法错误<br/>PSI ErrorElement]
-    Syntax --> ErrAnnotation[创建ERROR级别Annotation]
-    Check -->|是| Semantic[M4 DiagnosticProvider<br/>analyzeElement]
-    Semantic --> Annotations[创建对应级别Annotation]
-    ErrAnnotation --> Register[为每个Annotation注册<br/>M5 QuickFixProvider]
-    Annotations --> Register
+    Check -->|是| Bridge[PSI Adapter.mapDiagnostic<br/>Core Diagnostic → Annotation]
+    Bridge --> Register[为每个Annotation注册<br/>M5-UI IntentionAction]
     Register --> Display[编辑器展示波浪线<br/>Alt+Enter触发Quick Fix]
 
     style Display fill:#c8e6c9,stroke:#388e3c
@@ -52,29 +49,93 @@ flowchart TD
 
 **配色方案**：沿用IDEA原生配色（Error红色、Warning黄色、Info蓝色）。
 
-### 3.2 精简版悬浮提示（Core层）
+### 3.2 DslDocumentationProvider（Core+Extension层）
 
-鼠标悬停在波浪线标注处时展示精简Tooltip：
+鼠标悬停时展示Tooltip。扩展为非错误场景也响应：
 
 ```java
 public class DslDocumentationProvider extends DocumentationProvider {
     @Override
     String generateDoc(PsiElement element, PsiElement originalElement) {
-        // 从M4获取该元素的Diagnostic
-        // 组装精简版Tooltip文本：
-        //   错误摘要 + 建议修复 + 规则ID + 规则文档链接
+        // 1. 有Diagnostic → 显示错误信息（原有逻辑）
+        // 2. 无Diagnostic → 查询Core符号表
+        //    → 变量引用(#/@var) → 显示变量类型+声明位置
+        //    → 元素标签 → 显示元素规则摘要
+        // 3. Var声明 → 显示变量类型+isConstAttr标记
     }
 }
 ```
 
 **Tooltip内容规范**：
-- 错误摘要：一行描述
-- 建议修复：一行描述
-- 规则来源：规则ID + 可点击文档链接
 
-**不展示**：组件完整说明、规则置信度、详细枚举列表。
+| 场景 | Tooltip内容 | 数据来源 |
+|---|---|---|
+| 有Diagnostic | 错误摘要 + 建议修复 + 规则ID + 文档链接 | PSI Adapter → Core Diagnostic |
+| 变量引用(#/@var) | 变量类型 + 声明位置(name:xxx, type:number) | PSI Adapter → Core SymbolTable |
+| 元素标签 | 元素规则摘要(requiredAttrs/optionalAttrs概要) | Core M2 RuleRepository |
+| Var声明 | 变量类型 + isConstAttr标记 | PSI Adapter → Core SymbolTable |
 
-### 3.3 DSL诊断面板（Extension层）
+### 3.3 M5-UI Quick Fix交互（Core+Extension层）
+
+将Core FixAction桥接为IDEA IntentionAction：
+
+**无需确认类**：直接将FixAction的TextRange映射为PSI范围，执行WriteCommandAction文本替换。
+
+```java
+public class DirectFixIntentionAction implements IntentionAction {
+    FixAction fixAction;
+    FixActionAdapter adapter;
+
+    @Override
+    void invoke(@NotNull Project project, Editor editor, PsiFile file) {
+        // FixActionAdapter将TextRange映射为PSI offset范围
+        // WriteCommandAction执行文本替换
+    }
+}
+```
+
+**需确认类**：弹出CandidateSelectionDialog，选中后执行FixAction。
+
+```java
+public class ConfirmFixIntentionAction implements IntentionAction {
+    FixAction fixAction;
+    FixActionAdapter adapter;
+
+    @Override
+    void invoke(@NotNull Project project, Editor editor, PsiFile file) {
+        // 弹出CandidateSelectionDialog
+        // 用户选中候选 → FixActionAdapter映射并执行
+    }
+}
+```
+
+**修复完成后通知**：
+
+```java
+Dispatcher.instance().send(EventId.QUICK_FIX_EXECUTED, fixAction);
+```
+
+M6 Annotator监听此事件刷新标注。
+
+### 3.4 CandidateSelectionDialog（Extension层）
+
+需确认类修复的候选选择对话框：
+
+```java
+public class CandidateSelectionDialog {
+    List<CandidateItem> candidates;
+    PsiElement targetElement;
+    Diagnostic diagnostic;
+
+    Optional<CandidateItem> showAndSelect();
+}
+```
+
+- 每个候选含简要描述+预览图标
+- 用户选中后展示diff预览（IDEA原生diff视图）
+- 用户确认后执行FixAction
+
+### 3.5 DSL诊断面板（Extension层）
 
 基于IDEA ToolWindow API，在底部创建DSL Analysis面板：
 
@@ -82,7 +143,7 @@ public class DslDocumentationProvider extends DocumentationProvider {
 public class DslAnalysisToolWindowFactory implements ToolWindowFactory {
     @Override
     void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        // 创建面板内容：JTree展示诊断列表
+        // JTree展示诊断列表
         // 底部工具栏：Run Analysis按钮 + Export下拉按钮
     }
 }
@@ -96,49 +157,35 @@ public class DslAnalysisToolWindowFactory implements ToolWindowFactory {
 ├──────────────────────────────────────────────┤
 │  ▼ Errors (3)                                │
 │    ── 问题条目1                               │
-│    ── 问题条目2                               │
 │  ▼ Warnings (2)                              │
 │    ── 问题条目3                               │
-│  ▼ Info (1)                                  │
-│    ── 问题条目4                               │
 ├──────────────────────────────────────────────┤
 │  [▶ Run Analysis]       [📥 Export▾] | 6     │
 └──────────────────────────────────────────────┘
 ```
 
-**面板数据来源**：从M4 DiagnosticProvider获取当前文件级诊断结果；项目级诊断结果通过Dispatcher监听M7事件获取。
-
-**面板事件注册**：
-```java
-Dispatcher.instance().register(EventId.BATCH_INSPECTION_COMPLETED, (event) -> {
-    BatchInspectionResult result = event.getData();
-    dslAnalysisPanel.refresh(result);
-});
-```
+**面板数据来源**：
+- 当前文件诊断：PSI Adapter → Core DiagnosticProvider
+- 项目级诊断：Dispatcher监听M7 BATCH_INSPECTION_COMPLETED事件
 
 **面板交互**：
 - 点击问题条目 → 编辑器跳转定位
 - 右键问题条目 → Quick Fix / 查看规则文档 / 复制
 
-### 3.4 右键菜单注册（Extension层）
+### 3.6 右键菜单注册（Extension层）
 
 在项目树节点注册"Check DSL Rules"菜单项：
 
 ```java
 public class DslCheckActionGroup extends DefaultActionGroup {
-    // 注册到ProjectViewPopupMenu
-    // 子菜单：
-    //   - CheckDSLFileAction (文件级)
-    //   - CheckDSLDirectoryAction (目录级)
-    //   - CheckDSLProjectAction (项目级)
+    // CheckDSLFileAction (文件级)
+    // CheckDSLDirectoryAction (目录级)
 }
 ```
 
-右键菜单触发后调用M7 BatchInspectionRunner执行批量检查。
+右键菜单触发后调用M7 BatchInspectionRunner（Plugin Adapter适配后）执行批量检查。
 
-### 3.5 面板筛选/排序（Optional层）
-
-诊断面板高级功能：
+### 3.7 面板筛选/排序/搜索（Optional层）
 
 - 按文件/规则类别分组切换
 - 搜索过滤（按文件名/规则ID搜索）
@@ -146,23 +193,43 @@ public class DslCheckActionGroup extends DefaultActionGroup {
 
 ## 4. 模块依赖
 
-| 上游依赖 | 用途 |
+| 上游依赖 | 说明 |
 |---|---|
-| M1 文件识别 | `DslFileMatcher.isDslFile()` 过滤DSL文件 |
-| M3 语法分析 | PSI Tree + ErrorElement获取语法错误 |
-| M4 语义分析 | `DiagnosticProvider` 获取语义诊断结果 |
-| M5 Quick Fix | `QuickFixProvider.getQuickFixes()` 注册到Annotation |
-| M7 批量检查 | `BatchInspectionRunner` 右键菜单触发执行 |
+| PSI Adapter | DslPsiBridge（Diagnostic→Annotation映射） + FixActionAdapter（FixAction→IntentionAction） + SymbolTableAdapter（符号表→Reference） |
+| Core M4 语义分析 | DiagnosticProvider（诊断结果，经PSI Adapter桥接） |
+| Core M5 修复逻辑 | QuickFixProvider（FixAction列表，经FixActionAdapter桥接） |
+| Core M7 批量检查 | BatchInspectionRunner（Plugin Adapter适配后，右键菜单触发） |
+| Core M2 规则库 | RuleRepository（元素规则摘要，悬浮提示用） |
 
 | 下游消费 | 说明 |
 |---|---|
-| 无 | UI交互模块是最终展示层，不向其他模块提供接口 |
+| 无 | UI交互模块是Plugin层终端交互层，不向其他模块提供接口 |
 
-## 5. 设计要点
+## 5. CLI相关
 
-- **Annotator + LocalInspectionTool双通道**：Annotator负责实时标注（编辑即触发），LocalInspectionTool供批量检查调用（M7使用）
-- **纯展示层**：M6不包含任何分析逻辑或修复逻辑，仅负责将其他模块的结果展示到IDEA界面
-- **事件驱动通信**：M6通过Dispatcher.register监听M7批量检查完成事件，接收BatchInspectionResult刷新面板，模块间无直接方法调用
-- **Quick Fix UI归属明确**：编辑器内Alt+Enter弹出的Quick Fix列表由M6 Annotator注册，但Quick Fix的具体交互UI（下拉候选、diff预览）归属M5
-- **面板数据实时同步**：编辑器中代码变更时，Annotator实时更新标注，面板监听PSI变更事件同步刷新
-- **原生交互一致性**：所有交互复用IDEA原生API（Annotator、ToolWindow、ActionGroup），与IDEA原生功能体验一致
+### 5.1 CLI与M6的关系
+
+**M6不存在于CLI模式**。CLI jar不打包plugin/**中的UI交互代码。M6的所有功能（Annotator、DocumentationProvider、ToolWindow、IntentionAction等）仅在IDEA环境中生效。
+
+**CLI替代方案**：M6的交互功能在CLI模式中由以下机制替代：
+
+| M6功能 | CLI替代 |
+|---|---|
+| 编辑器标注（波浪线） | Terminal彩色输出（error红色、warning黄色） |
+| 悬浮提示（变量信息） | `--verbose`模式输出符号表内容摘要 |
+| Quick Fix交互UI | CLI输出suggestedFixes和FixAction文本 |
+| 诊断面板 | JSON/Markdown报告文件（`--output`参数） |
+| 右键菜单批量检查 | CLI命令行直接指定文件/目录路径 |
+
+### 5.2 CLI参数不受M6影响
+
+M6的所有参数和配置仅在IDEA环境中生效，不影响CLI参数和输出。
+
+## 6. 设计要点
+
+- **M5-UI纳入M6**：Quick Fix交互UI归M6模块，不单独成模块。FixAction→IntentionAction桥接逻辑量小，共享Annotator注册通道
+- **PSI Adapter桥接所有Core数据**：M6不直接依赖Core内部实现，所有数据通过PSI Adapter桥接
+- **Annotator + LocalInspectionTool双通道**：Annotator实时标注（编辑触发），LocalInspectionTool供批量检查调用
+- **悬浮提示扩展**：非错误场景也响应（变量信息、元素规则、Var声明），增强IDEA交互体验
+- **事件驱动通信**：M6通过Dispatcher监听M7批量检查完成事件和M5-UI修复执行事件，刷新标注和面板
+- **CLI替代**：所有M6交互功能在CLI模式中有对应替代机制
