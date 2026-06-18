@@ -247,7 +247,7 @@ M2不直接产出Diagnostic，但为下游模块提供诊断规则数据：
 
 | CLI输出字段 | 来源路径 | M2贡献 |
 |---|---|---|
-| `ruleId: SYN-004/005/006/007/008` | M3语法分析 → M2 DslElementRule名称集合+属性集合+enumValues | 未知元素/未知属性/缺失必填/类型错误/枚举错误的比对数据 |
+| `ruleId: SYN-003/004/005/006/007` | M3语法分析 → M2 DslElementRule名称集合+属性集合+enumValues | 未知元素/未知属性/缺失必填/类型错误/枚举错误的比对数据 |
 | `ruleId: SEM-SCOPE-001/002` | M4 ScopeAnalyzer → M2 scope/deviceSupport | 作用域/设备类型比对数据 |
 | `ruleId: SEM-CMD-xxx` | M4 ConstraintAnalyzer → M2 RuleConstraint | 声明式约束条件数据和消息模板 |
 | `ruleId: SEM-TYPE-001/002` | M4 TypeAnalyzer → M2 AttrTypeSpec.expressionKind | 属性期望类型比对数据 |

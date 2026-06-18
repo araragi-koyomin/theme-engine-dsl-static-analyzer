@@ -170,7 +170,7 @@ public class FunctionParam {
 }
 ```
 
-**DslType与JSON映射**：JSON中type字段为字符串（"number"/"string"/"boolean"/"enum"/"expression"/"reference"/"void"），加载时映射为DslType子类实例。
+**DslType与JSON映射**：JSON中type字段为字符串（"number"/"string"/"enum"/"number[]"/"string[]"/"void"），加载时映射为DslType子类实例（DslNumberType/DslStringType/DslEnumType/DslArrayType/DslVoidType）。
 
 **示例JSON定义**：
 

@@ -256,7 +256,7 @@ CLI入口 → 参数解析 → 加载规则库(M2) → 加载函数签名库(M0)
 ```
 $ java -jar dsl-analyzer.jar theme.xml
 
-theme.xml:3:5: error: 未知元素标签 'UnknownTag' [SYN-004]
+theme.xml:3:5: error: 未知元素标签 'UnknownTag' [SYN-003]
 theme.xml:15:3: error: 引用未定义变量 #steps_value [SEM-REF-001]
   建议修复: 声明Var name="steps_value"
 theme.xml:20:8: error: 类型不匹配，期望number实际string [SEM-TYPE-001]

@@ -104,22 +104,22 @@ M3产出的语法诊断分三层：
 | 错误层级 | 检测机制 | 规则ID | 说明 |
 |---|---|---|---|
 | XML结构语法 | dom4j SAXParseException直接报出 | — | 标签未闭合、属性引号缺失、缺少XML声明等XML格式错误，不做额外包装映射 |
-| DSL结构语法 | M3 AST构建 + M2规则库比对 | SYN-002, SYN-004, SYN-005, SYN-006, SYN-010 | 嵌套约束、未知元素/属性、必填缺失、根元素错误 |
+| DSL结构语法 | M3 AST构建 + M2规则库比对 | SYN-001, SYN-002, SYN-003, SYN-004, SYN-005, SYN-006, SYN-007 | 嵌套约束、未知元素/属性、必填缺失、根元素错误 |
 | DSL表达式语法 | ANTLR4 DslExpressionParser | SEM-EXPR-001~006, SEM-EXPR-ANTLR | `-#var`模式、单引号缺失、花括号嵌套等 |
 
-**XML格式错误处理**：dom4j解析XML遇格式错误直接抛出SAXParseException，M3捕获后转换为Diagnostic产出（保留dom4j原始行列号和错误消息），不包装映射为自定义SYN-xxx规则ID。SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)已废弃为自定义规则ID。
+**XML格式错误处理**：dom4j解析XML遇格式错误直接抛出SAXParseException，M3捕获后转换为Diagnostic产出（保留dom4j原始行列号和错误消息），不包装映射为自定义SYN-xxx规则ID。原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，编号已重新排列为连续序号SYN-001~007。
 
 **DSL结构语法检测详情**：
 
 | 规则ID | 检测内容 | 检测机制 | 严重级别 |
 |---|---|---|---|
+| SYN-001 | 根元素标签错误 | M1文件识别+M3 AST根节点检测 | error |
 | SYN-002 | 标签嵌套违反父子约束 | M3 AST遍历 + M2 allowedParents/allowedChildren比对 | error |
-| SYN-004 | 未知元素标签 | M3 AST tagName + M2 DslElementRule名称集合比对 | error |
-| SYN-005 | 未知属性名 | M3属性名 + M2 optionalAttrs+requiredAttrs比对 | warning |
-| SYN-006 | 缺失必填属性 | M3属性存在性 + M2 requiredAttrs比对 | error |
-| SYN-007 | 属性值类型错误（纯字面量） | 直接类型比对（不走解析器） | error |
-| SYN-008 | 枚举值错误 | M2 enumValues比对 | error |
-| SYN-010 | 根元素标签错误 | M1文件识别+M3 AST根节点检测 | error |
+| SYN-003 | 未知元素标签 | M3 AST tagName + M2 DslElementRule名称集合比对 | error |
+| SYN-004 | 未知属性名 | M3属性名 + M2 optionalAttrs+requiredAttrs比对 | warning |
+| SYN-005 | 缺失必填属性 | M3属性存在性 + M2 requiredAttrs比对 | error |
+| SYN-006 | 属性值类型错误（纯字面量） | 直接类型比对 | error |
+| SYN-007 | 枚举值错误 | M2 enumValues比对 | error |
 
 **DSL表达式语法检测详情**：
 
@@ -193,7 +193,7 @@ M3在CLI管线中的位置：
 | CLI输出字段 | 来源路径 | M3贡献 |
 |---|---|---|
 | XML格式错误诊断 | M3 → dom4j SAXParseException | 标签未闭合、属性引号缺失等XML格式错误 |
-| `ruleId: SYN-002/004/005/006/007/008/010` | M3语法比对 → M2规则库 | DSL结构语法错误 |
+| `ruleId: SYN-001/002/003/004/005/006/007` | M3语法比对 → M2规则库 | DSL结构语法错误 |
 | `ruleId: SEM-EXPR-001~006/ANTLR` | M3表达式解析 → M0 ANTLR4 | DSL表达式语法错误 |
 | `summary.skippedFiles`（非DSL XML） | M1 → M3跳过 | M1识别为非DSL，M3不处理 |
 
@@ -212,8 +212,8 @@ M3在CLI管线中的位置：
 ```
 $ java -jar dsl-analyzer.jar --syntax-only theme.xml
 
-theme.xml:3:5: error: 未知元素标签 'UnknownTag' [SYN-004]
-theme.xml:5:10: warning: 未知属性 'unknownAttr' [SYN-005]
+theme.xml:3:5: error: 未知元素标签 'UnknownTag' [SYN-003]
+theme.xml:5:10: warning: 未知属性 'unknownAttr' [SYN-004]
 theme.xml:8:1: error: 标签嵌套违反父子约束 [SYN-002]
 
 2 errors, 1 warning, 0 info
@@ -224,7 +224,7 @@ theme.xml:8:1: error: 标签嵌套违反父子约束 [SYN-002]
 ```
 $ java -jar dsl-analyzer.jar theme.xml
 
-theme.xml:3:5: error: 未知元素标签 'UnknownTag' [SYN-004]     ← M3产出
+theme.xml:3:5: error: 未知元素标签 'UnknownTag' [SYN-003]     ← M3产出
 theme.xml:15:3: error: 引用未定义变量 #steps_value [SEM-REF-001]  ← M4产出
 theme.xml:20:8: error: 类型不匹配，期望number实际string [SEM-TYPE-001] ← M4产出
 

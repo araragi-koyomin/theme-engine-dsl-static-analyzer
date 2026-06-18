@@ -86,12 +86,10 @@ M4包含三类检查机制并行运行：
 
 ```
 DslType (抽象基类)
-├── DslNumberType        // 数值类型
-├── DslStringType        // 字符串类型
-├── DslBooleanType       // 布尔类型（语义：0/非0）
-├── DslEnumType          // 枚举类型（携带合法值集合）
-├── DslExpressionType    // 表达式类型（标记：数值表达式 | 字符串表达式）
-├── DslReferenceType     // 引用类型（#varName取数值, @varName取字符串）
+├── DslNumberType        // 数值类型（含数值表达式结果、#varName引用结果）
+├── DslStringType        // 字符串类型（含字符串表达式结果、@varName引用结果）
+├── DslEnumType          // 枚举类型（携带合法值集合；boolean归入此类enumValues=["true","false"]）
+├── DslArrayType         // 数组类型（携带baseType: number|string）
 └── DslVoidType          // 无返回值（命令类属性）
 ```
 
@@ -101,13 +99,17 @@ DslType (抽象基类)
 |---|---|
 | NumberLiteral | → DslNumberType |
 | StringLiteral | → DslStringType（仅在字符串表达式中） |
-| VariableReference(#var) | 查符号表 → Var.type → 对应DslType |
-| VariableReference(@var) | 查符号表 → DslStringType |
+| #varName | → DslNumberType（始终返回数值） |
+| @varName | → DslStringType（始终返回字符串） |
+| #arr[expr] | → DslNumberType（数值数组访问） |
+| @arr[expr] | → DslStringType（字符串数组访问） |
 | FunctionCall | 查函数签名库 → 返回类型 |
 | BinaryExpression(+,-,*,/,%) | 上下文决定：目标属性为number→数值运算；string且含+→字符串拼接 |
 | ConditionalExpression(ifelse) | y/z类型必须兼容，返回公共类型 |
 
 **推断签名**：`inferType(ExpressionNode, DslType expectedContext)` — 携带目标属性期望类型作为上下文。
+
+**重构说明**：原DslBooleanType/DslExpressionType/DslReferenceType已删除。Boolean属性归入DslEnumType(enumValues=["true","false"])；expressionKind为AttrTypeSpec的解析上下文标记而非类型；#var→DslNumberType、@var→DslStringType由前缀决定无需单独类型。新增DslArrayType支持Var type="number[]"/"string[]"和#arr[expr]/@arr[expr]引用验证。
 
 **检查逻辑**：
 1. 从M2获取元素的AttrTypeSpec
@@ -139,10 +141,10 @@ DslType (抽象基类)
 
 | Analyzer | 检测方式 | 数据来源 | 规则ID范围 |
 |---|---|---|---|
-| UnknownElementAnalyzer | 名称集合比对 | M2 DslElementRule | SYN-004 |
-| RequiredAttrAnalyzer | 属性存在性检查 | M2 requiredAttrs | SYN-006 |
-| UnknownAttrAnalyzer | 属性名比对 | M2 optionalAttrs+requiredAttrs | SYN-005 |
-| EnumValueAnalyzer | 枚举值比对 | M2 enumValues | SYN-008 |
+| UnknownElementAnalyzer | 名称集合比对 | M2 DslElementRule | SYN-003 |
+| RequiredAttrAnalyzer | 属性存在性检查 | M2 requiredAttrs | SYN-005 |
+| UnknownAttrAnalyzer | 属性名比对 | M2 optionalAttrs+requiredAttrs | SYN-004 |
+| EnumValueAnalyzer | 枚举值比对 | M2 enumValues | SYN-007 |
 | ParentChildAnalyzer | 父子关系比对 | M2 allowedParents/allowedChildren | SYN-002 |
 | ScopeAnalyzer | 作用域矩阵比对 | M2 scope | SEM-SCOPE-001/002 |
 | VarRefAnalyzer | 变量引用存在性 | SymbolTable + 全局变量目录 | SEM-REF-001/002/003 |
@@ -195,7 +197,7 @@ Trigger-Command链是DSL的核心交互机制，部分以声明式RuleConstraint
 
 ### 3.7 语义相似度匹配（Extension层）
 
-当检测到SYN-004(未知元素)或SYN-005(未知属性)时，基于相似度推荐最接近的合法候选：
+当检测到SYN-003(未知元素)或SYN-004(未知属性)时，基于相似度推荐最接近的合法候选：
 
 ```java
 public interface SimilarityMatcher {
@@ -283,7 +285,7 @@ M4在CLI管线中的位置：
 ```
 $ java -jar dsl-analyzer.jar theme.xml
 
-theme.xml:3:5: error: 未知元素标签 'UnknownTag' [SYN-004]            ← M3产出
+theme.xml:3:5: error: 未知元素标签 'UnknownTag' [SYN-003]            ← M3产出
 theme.xml:15:3: error: 引用未定义变量 #steps_value [SEM-REF-001]     ← M4产出
 theme.xml:20:8: error: 类型不匹配，期望number实际string [SEM-TYPE-001] ← M4产出
 theme.xml:22:2: error: VideoCommand中play和sound互斥 [SEM-CMD-001]   ← M4产出
