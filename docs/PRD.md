@@ -49,10 +49,9 @@ java -jar dsl-analyzer.jar [options] <file-or-directory>
 
 #### 2.1.3 语法错误检测
 
-**XML结构语法错误（dom4j解析阶段捕获）**：
-- XML标签未闭合（SYN-001）：dom4j SAXParseException包装为Diagnostic
-- 属性引号缺失（SYN-003）：dom4j SAXParseException包装为Diagnostic
-- 缺少XML声明头（SYN-009）：dom4j解析阶段检测
+**XML结构语法错误（dom4j解析阶段）**：
+- dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包装映射
+- 包含：标签未闭合、属性引号缺失、缺少XML声明头等XML well-formedness错误
 - 根元素标签错误（SYN-010）：M1文件识别阶段检测
 
 **DSL结构语法错误（M3语法分析阶段捕获，基于dom4j解析后的AST+规则库）**：

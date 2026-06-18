@@ -236,7 +236,7 @@ flowchart TD
     Input[DSL文件/目录] --> M1[M1 文件识别<br/>filePath+content]
     M1 -->|否| Skip[跳过非DSL文件]
     M1 -->|是| M3[M3 语法分析<br/>dom4j→AST+ANTLR4表达式]
-    M3 --> AST[完整DslFileNode<br/>+XML语法错误]
+    M3 --> AST[完整DslFileNode<br/>XML格式错误由dom4j直接报出]
     AST --> M4[M4 语义分析+类型推断<br/>Analyzer引擎]
     M2[M2 规则库] --> M3
     M2 --> M4
