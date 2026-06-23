@@ -1,0 +1,28 @@
+{
+  "element": "CountDownTime",
+  "category": "view",
+  "requiredAttrs": ["name", "countDownType", "date"],
+  "optionalAttrs": ["unit"],
+  "attrTypes": {
+    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "countDownType": {"type": "string", "enumValues": ["concrete", "loop"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "date": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "unit": {"type": "string", "enumValues": ["day", "hour", "minute", "second", "hourOnly", "minuteOnly", "secondOnly"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "day"}
+  },
+  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

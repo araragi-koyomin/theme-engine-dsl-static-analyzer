@@ -1,0 +1,25 @@
+{
+  "element": "Vibrate",
+  "category": "command_sub",
+  "requiredAttrs": ["loop"],
+  "optionalAttrs": [],
+  "attrTypes": {
+    "loop": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "false"}
+  },
+  "allowedParents": ["VibrateCommand"],
+  "allowedChildren": ["Wave"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

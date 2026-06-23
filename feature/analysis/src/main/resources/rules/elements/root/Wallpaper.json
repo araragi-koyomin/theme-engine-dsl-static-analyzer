@@ -1,0 +1,25 @@
+{
+  "element": "Wallpaper",
+  "category": "root",
+  "requiredAttrs": [],
+  "optionalAttrs": ["screenWidth"],
+  "attrTypes": {
+    "screenWidth": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+  },
+  "allowedParents": [],
+  "allowedChildren": ["Var", "GlobalVariable", "VarArray", "Array", "Group", "Text", "Image", "Video", "Time", "DateTime", "CountDownTime", "ImageNumber", "ImageSeries", "SourceImage", "Mask", "GroupImage", "Swiper", "Arc", "Circle", "Ellipse", "Line", "Rectangle", "PathUtil", "ExternalCommands", "StereoView", "MultiLayer", "AlphaAnimation", "PositionAnimation", "RotationAnimation", "SizeAnimation", "SourcesAnimation", "VariableAnimation", "MeshImage", "ParticleView", "DropPhysicalView", "CollisionWorld", "FluidsComponent"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": false,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

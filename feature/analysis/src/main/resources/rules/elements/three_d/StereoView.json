@@ -1,0 +1,33 @@
+{
+  "element": "StereoView",
+  "category": "three_d",
+  "requiredAttrs": ["w", "h", "x", "y"],
+  "optionalAttrs": ["sAngle", "can3D", "resistance", "fixed", "vertical"],
+  "attrTypes": {
+    "w": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "h": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "sAngle": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "90"},
+    "can3D": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"},
+    "resistance": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1.8"},
+    "fixed": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
+    "vertical": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"}
+  },
+  "allowedParents": ["Lockscreen"],
+  "allowedChildren": ["StereoGroup"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

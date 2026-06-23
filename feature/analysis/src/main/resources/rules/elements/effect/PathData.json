@@ -1,0 +1,23 @@
+{
+  "element": "PathData",
+  "category": "effect_sub",
+  "requiredAttrs": [],
+  "optionalAttrs": [],
+  "attrTypes": {},
+  "allowedParents": ["ParticleView"],
+  "allowedChildren": ["Range"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

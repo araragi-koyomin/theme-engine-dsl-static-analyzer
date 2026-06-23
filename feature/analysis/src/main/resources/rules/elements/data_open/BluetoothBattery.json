@@ -1,0 +1,31 @@
+{
+  "element": "BluetoothBattery",
+  "category": "data_open",
+  "requiredAttrs": [],
+  "optionalAttrs": [],
+  "attrTypes": {},
+  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "Group"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-BT-001",
+      "condition": "using BluetoothBattery data variables without BluetoothBattery element declared",
+      "message": "使用蓝牙耳机数据变量前必须声明BluetoothBattery节点",
+      "severity": "error",
+      "suggestedFixes": ["添加<BluetoothBattery/>声明"]
+    }
+  ]
+}

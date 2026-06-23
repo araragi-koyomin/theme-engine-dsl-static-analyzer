@@ -1,0 +1,23 @@
+{
+  "element": "VariableBinders",
+  "category": "data_open",
+  "requiredAttrs": [],
+  "optionalAttrs": [],
+  "attrTypes": {},
+  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
+  "allowedChildren": ["SensorBinder"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

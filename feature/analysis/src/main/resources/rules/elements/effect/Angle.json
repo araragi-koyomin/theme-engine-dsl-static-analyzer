@@ -1,0 +1,26 @@
+{
+  "element": "Angle",
+  "category": "effect_sub",
+  "requiredAttrs": ["isRandom"],
+  "optionalAttrs": ["angle"],
+  "attrTypes": {
+    "isRandom": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "angle": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"}
+  },
+  "allowedParents": ["Item"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

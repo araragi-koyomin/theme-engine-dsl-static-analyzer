@@ -1,0 +1,43 @@
+{
+  "element": "StyleCommand",
+  "category": "command",
+  "requiredAttrs": ["index"],
+  "optionalAttrs": ["name", "contentTypes", "condition"],
+  "attrTypes": {
+    "index": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "contentTypes": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "aod|skin"},
+    "condition": {"type": "expression", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null}
+  },
+  "allowedParents": ["Trigger"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-CMD-004",
+      "condition": "element.attrs['index'] != null AND containsExpression(element.attrs['index'])",
+      "message": "StyleCommand的index属性不支持表达式",
+      "severity": "error",
+      "suggestedFixes": ["将index改为纯数字值"]
+    },
+    {
+      "ruleId": "SEM-CMD-003",
+      "condition": "element.parentTrigger != null AND element.parentTrigger.parentElement.attrs['styleGlobalPersist'] != 'true'",
+      "message": "StyleCommand搭配的变量需要设置styleGlobalPersist为true",
+      "severity": "warning",
+      "suggestedFixes": ["为相关变量添加styleGlobalPersist='true'属性"]
+    }
+  ]
+}

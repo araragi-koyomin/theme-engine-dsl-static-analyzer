@@ -1,0 +1,33 @@
+{
+  "element": "FluidsComponent",
+  "category": "effect",
+  "requiredAttrs": [],
+  "optionalAttrs": ["gravityRatio", "viscosity", "color", "waterAlpha", "waterAlphaThreshold", "bgSrc", "scaleType", "srcid", "persist"],
+  "attrTypes": {
+    "gravityRatio": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"},
+    "viscosity": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "color": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "string", "defaultValue": null},
+    "waterAlpha": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"},
+    "waterAlphaThreshold": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0.7"},
+    "bgSrc": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "scaleType": {"type": "string", "enumValues": ["fill", "center_crop"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "center_crop"},
+    "srcid": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "persist": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+  },
+  "allowedParents": ["Lockscreen", "Wallpaper", "ChargingSkin"],
+  "allowedChildren": ["CircleShape", "PolygonShape"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": false,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

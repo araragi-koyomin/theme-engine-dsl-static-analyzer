@@ -1,0 +1,25 @@
+{
+  "element": "VarArray",
+  "category": "variable",
+  "requiredAttrs": [],
+  "optionalAttrs": ["type"],
+  "attrTypes": {
+    "type": {"type": "string", "enumValues": ["number", "string"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "number"}
+  },
+  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
+  "allowedChildren": ["Vars", "Items"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

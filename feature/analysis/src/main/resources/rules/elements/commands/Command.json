@@ -1,0 +1,29 @@
+{
+  "element": "Command",
+  "category": "command",
+  "requiredAttrs": ["target", "value"],
+  "optionalAttrs": ["condition", "delay", "delayCondition"],
+  "attrTypes": {
+    "target": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "value": {"type": "string", "enumValues": ["true", "false", "toggle", "play", "stop"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "condition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "delay": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "delayCondition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"}
+  },
+  "allowedParents": ["Trigger"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

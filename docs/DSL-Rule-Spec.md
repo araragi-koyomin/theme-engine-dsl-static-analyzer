@@ -472,6 +472,10 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 | SEM-ATTR-003 | category枚举值不合法 | M2 enumValues比对 | error |
 | SEM-ATTR-004 | Group clip=true但无w/h | 属性组合检查 | warning |
 | SEM-ATTR-005 | Group layered=true但最后一个Image无hybridMode | 属性组合检查 | error |
+| SEM-ATTR-006 | Text autoLineFeed=true但无width | 属性组合检查 | warning |
+| SEM-ATTR-007 | Text marqueeRepeatLimit但无scrollDisplay | 属性依赖检查 | warning |
+| SEM-ATTR-008 | Text clickable但无scrollDisplay | 属性依赖检查 | warning |
+| SEM-ATTR-009 | Text delayTime但无scrollDisplay | 属性依赖检查 | warning |
 | SEM-VAR-001 | 变量未用Var标签定义直接使用 | SymbolTable比对 | warning |
 | SEM-VAR-002 | Var声明字符串常量缺少双套单引号 | 表达式解析检查 | error |
 | SEM-VAR-003 | Var values与size同时存在 | 属性组合检查 | warning |
@@ -483,6 +487,10 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 | SEM-TRIG-001 | Trigger action值不在合法集合中 | 枚举值比对 | error |
 | SEM-TRIG-002 | Button缺少Trigger子元素 | 子元素存在性检查 | error |
 | SEM-IMG-001 | ImageNumber资源不从0开始命名或序列缺失 | 资源命名检查 | error |
+| SEM-IMG-002 | Image src与srcExp同时存在 | 属性互斥检查 | error |
+| SEM-IMG-003 | Image isBackground与align同时使用 | 属性组合检查 | warning |
+| SEM-SRCIMG-001 | SourceImage direction=0但loop≠true或unlockTo未设 | 属性组合检查 | error |
+| SEM-SRCIMG-002 | SourceImage unlockTo已设但同级无Button触控区域 | 属性组合+同级元素存在性检查 | warning |
 | SEM-VID-001 | 视频文件>25MB | 文件大小检查 | error |
 | SEM-VID-002 | 透明视频非mp4格式 | 属性组合+资源检查 | error |
 | SEM-VID-003 | 视频分辨率>4096x4096 | 资源分辨率检查 | error |
@@ -515,15 +523,15 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
   "requiredAttrs": ["name"],
   "optionalAttrs": ["expression", "type", "threshold", "persist", "index", "values", "size", "const"],
   "attrTypes": {
-    "name": {"type": "string", "supportsExpression": false},
-    "expression": {"type": "string", "supportsExpression": true, "expressionKind": "auto"},
-    "type": {"type": "string", "enumValues": ["number", "string", "number[]", "string[]"], "supportsExpression": false},
-    "threshold": {"type": "number", "supportsExpression": true, "expressionKind": "number"},
-    "persist": {"type": "string", "enumValues": ["true", "false"], "supportsExpression": false},
-    "index": {"type": "string", "supportsExpression": false, "contextExpression": {"VarArray.Vars.Var": true}},
-    "values": {"type": "string", "supportsExpression": false},
-    "size": {"type": "number", "supportsExpression": false},
-    "const": {"type": "string", "enumValues": ["true", "false"], "supportsExpression": false}
+    "name": {"type": "string", "supportsExpression": false, "defaultValue": null},
+    "expression": {"type": "string", "supportsExpression": true, "expressionKind": "auto", "defaultValue": null},
+    "type": {"type": "string", "enumValues": ["number", "string", "number[]", "string[]"], "supportsExpression": false, "defaultValue": "number"},
+    "threshold": {"type": "number", "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "persist": {"type": "string", "enumValues": ["true", "false"], "supportsExpression": false, "defaultValue": "false"},
+    "index": {"type": "string", "supportsExpression": false, "defaultValue": null},
+    "values": {"type": "string", "supportsExpression": false, "defaultValue": null},
+    "size": {"type": "number", "supportsExpression": false, "defaultValue": null},
+    "const": {"type": "string", "enumValues": ["true", "false"], "supportsExpression": false, "defaultValue": "false"}
   },
   "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
   "allowedChildren": ["Trigger", "VariableAnimation"],
@@ -547,10 +555,62 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
       "message": "禁止对时间/日期/星期变量使用persist/globalPersist/styleGlobalPersist",
       "severity": "error",
       "suggestedFixes": ["移除persist属性"]
+    },
+    {
+      "ruleId": "SEM-VAR-003",
+      "condition": "element.attrs['values'] != null AND element.attrs['size'] != null",
+      "message": "Var的values与size属性同时存在，优先取size",
+      "severity": "warning",
+      "suggestedFixes": ["移除values属性", "移除size属性"]
     }
   ]
 }
 ```
+
+**AttrTypeSpec字段语义说明**：
+
+| 字段 | 语义 | 说明 |
+|---|---|---|
+| `type` | 属性期望值类型 | 描述字面量或表达式返回值的类型，而非值的形式（number/string/boolean/enum/expression/action/object/reference） |
+| `supportsExpression` | 值是否可以是表达式形式 | 与type独立：`type=number, supportsExpression=true`表示属性可以是数值表达式如`#var*2` |
+| `expressionKind` | 表达式语义类别 | "number"→期望数值表达式，"string"→期望字符串表达式，"auto"→根据上下文(如Var的type属性)动态推断 |
+| `aliases` | 属性别名列表 | 规范名在optionalAttrs/attrTypes中，别名仅在aliases字段。M3通过resolveAttrAlias()映射到规范名；M5 QuickFix别名替换建议 |
+| `defaultValue` | 属性默认值 | 省略该属性时引擎使用的隐式值。null表示无默认值（省略=属性不存在）。M4消费：如Var.type默认"number"用于SEM-VAR-005推断 |
+
+
+**`type`与`supportsExpression`组合示例**：
+
+| 组合 | 语义 | 实例 |
+|---|---|---|
+| `type=number, supportsExpression=false` | 纯字面量数值 | Lockscreen.frameRate="60" |
+| `type=number, supportsExpression=true, expressionKind=number` | 可以是数值表达式 | x="#screen_width/2", threshold="#x*2" |
+| `type=string, supportsExpression=false` | 纯字面量字符串 | Image.src="icon.png" |
+| `type=string, supportsExpression=true, expressionKind=string` | 可以是字符串表达式 | textExp="@var+'hello'" |
+| `type=string, supportsExpression=true, expressionKind=auto` | 根据上下文动态推断 | Var.expression（type=number→数值表达式，type=string→字符串表达式） |
+
+**别名处理机制**：
+
+optionalAttrs和attrTypes中只包含属性规范名（如`width`、`height`、`pivotX`等）。属性别名（如`w`、`h`、`centerX`等）仅出现在attrTypes规范名条目的`aliases`字段中，不作为独立条目。
+
+消费方通过`RuleRepository.resolveAttrAlias(elementName, attrName)`方法将别名映射到规范名；`getAttrTypeSpec(elementName, attrName)`自动处理别名——传入别名时先resolve到规范名再查询。
+
+示例：Text元素中，`width`是规范名，`w`是别名：
+```json
+"width": {"type": "number", "aliases": ["w"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null}
+```
+查询`getAttrTypeSpec("Text", "w")`时，内部resolve `"w"` → `"width"`，返回width的AttrTypeSpec。
+
+**规范名/别名对照表**：
+
+| 规范名 | 别名 | 适用元素 |
+|---|---|---|
+| width | w | 视图元素(有width属性的) |
+| height | h | 视图元素(有height属性的) |
+| pivotX | centerX | 视图元素 |
+| pivotY | centerY | 视图元素 |
+| rotation | angle | 视图元素 |
+| rotationX | angleX | 视图元素 |
+| rotationY | angleY | 视图元素 |
 
 ### 6.2 命令规则条目Schema
 
@@ -650,12 +710,14 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 ```json
 {
   "element": "Array",
-  "category": "container",
+  "category": "variable",
   "requiredAttrs": ["indexFlag", "frequency"],
-  "optionalAttrs": [],
+  "optionalAttrs": ["x", "y"],
   "attrTypes": {
-    "indexFlag": {"type": "string", "supportsExpression": false},
-    "frequency": {"type": "number", "supportsExpression": true, "expressionKind": "number"}
+    "indexFlag": {"type": "string", "supportsExpression": false, "defaultValue": null},
+    "frequency": {"type": "number", "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "x": {"type": "number", "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "y": {"type": "number", "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"}
   },
   "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
   "allowedChildren": ["Image", "Text", "Group"],
@@ -675,6 +737,8 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
   "constraints": []
 }
 ```
+
+> 注：Array作为控件数组容器，同时具有视图通用属性(x,y)。Array的x/y定义整个数组容器在屏幕上的起始偏移，默认为0。
 
 ### 6.5 全局变量条目Schema
 
@@ -736,7 +800,7 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 | 新增函数 | 在functions JSON中追加条目 | 否 |
 | 复杂约束（如Trigger链结构） | 编写Analyzer并注册到M4引擎 | 是 |
 
-规则ID格式：`[类别]-[子类]-[编号]`，如SYN-001~007(语法), SEM-EXPR-001~007(表达式), SEM-TYPE-001~002(类型), SEM-CMD-001~004(命令), SEM-PERSIST-001~003(持久化), SEM-ARR-001~003(数组), SEM-VAR-001~005(变量), SEM-REF-001~003(引用), SEM-ATTR-001~005(属性), SEM-SCOPE-001~002(作用域), SEM-TRIG-001~002(触发器), SEM-VID-001~005(视频), SEM-IMG-001(图片), SEM-GEN-001~002(通用)
+规则ID格式：`[类别]-[子类]-[编号]`，如SYN-001~007(语法), SEM-EXPR-001~006(表达式), SEM-TYPE-001~002(类型), SEM-CMD-001~004(命令), SEM-PERSIST-001~003(持久化), SEM-ARR-001~003(数组), SEM-VAR-001~005(变量), SEM-REF-001~003(引用), SEM-ATTR-001~009(属性), SEM-SCOPE-001~002(作用域), SEM-TRIG-001~002(触发器), SEM-VID-001~005(视频), SEM-IMG-001~003(图片), SEM-GEN-001~002(通用)
 
 CLI可通过`--rule-dir`指定外部规则库目录，实现完全零代码的自定义规则集。
 

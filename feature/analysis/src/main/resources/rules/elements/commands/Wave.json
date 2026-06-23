@@ -1,0 +1,31 @@
+{
+  "element": "Wave",
+  "category": "command_sub",
+  "requiredAttrs": [],
+  "optionalAttrs": [],
+  "attrTypes": {},
+  "allowedParents": ["Vibrate"],
+  "allowedChildren": ["Slice"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-VIBRATE-003",
+      "condition": "countChildElements(element, 'Slice') > 64",
+      "message": "一个Wave中Slice的数量不能超过64",
+      "severity": "error",
+      "suggestedFixes": ["减少Slice数量至64个以内"]
+    }
+  ]
+}

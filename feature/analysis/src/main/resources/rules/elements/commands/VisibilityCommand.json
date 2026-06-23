@@ -1,0 +1,25 @@
+{
+  "element": "VisibilityCommand",
+  "category": "command",
+  "requiredAttrs": ["visibility"],
+  "optionalAttrs": [],
+  "attrTypes": {
+    "visibility": {"type": "expression", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null}
+  },
+  "allowedParents": ["Trigger"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

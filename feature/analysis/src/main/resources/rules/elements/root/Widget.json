@@ -1,0 +1,27 @@
+{
+  "element": "Widget",
+  "category": "root",
+  "requiredAttrs": ["screenWidth", "screenHeight"],
+  "optionalAttrs": ["frameRate"],
+  "attrTypes": {
+    "screenWidth": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "screenHeight": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "frameRate": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "60"}
+  },
+  "allowedParents": [],
+  "allowedChildren": ["Var", "GlobalVariable", "VarArray", "Array", "Group", "Text", "Image", "Time", "DateTime", "CountDownTime", "ImageNumber", "ImageSeries", "SourceImage", "Mask", "GroupImage", "Swiper", "Arc", "Circle", "Ellipse", "Line", "Rectangle", "PathUtil", "Button", "ExternalCommands", "CollaborationCommands", "AlphaAnimation", "PositionAnimation", "RotationAnimation", "SizeAnimation", "SourcesAnimation", "VariableAnimation", "MeshImage", "DropPhysicalView", "CollisionWorld"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": false,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

@@ -1,0 +1,33 @@
+{
+  "element": "Layer",
+  "category": "three_d_sub",
+  "requiredAttrs": ["w", "h", "src"],
+  "optionalAttrs": ["x", "y", "z", "staticCondition", "delay", "repeat"],
+  "attrTypes": {
+    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "z": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "w": {"type": "number", "enumValues": [], "aliases": ["width"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "h": {"type": "number", "enumValues": [], "aliases": ["height"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "src": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "staticCondition": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
+    "delay": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "repeat": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+  },
+  "allowedParents": ["MultiLayer"],
+  "allowedChildren": ["Source"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

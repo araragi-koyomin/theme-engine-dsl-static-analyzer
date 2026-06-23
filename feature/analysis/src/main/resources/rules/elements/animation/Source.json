@@ -1,0 +1,26 @@
+{
+  "element": "Source",
+  "category": "animation_frame",
+  "requiredAttrs": ["src", "time"],
+  "optionalAttrs": [],
+  "attrTypes": {
+    "src": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "time": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+  },
+  "allowedParents": ["SourcesAnimation"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

@@ -1,0 +1,42 @@
+{
+  "element": "MediaCommand",
+  "category": "data_open",
+  "requiredAttrs": ["command"],
+  "optionalAttrs": ["voiceStep100", "condition"],
+  "attrTypes": {
+    "command": {"type": "string", "enumValues": ["mediaPlay", "mediaPause", "mediaLike", "mediaDislike", "skipToPrevious", "skipToNext", "addVoice", "subVoice", "mediaRepeatMode"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "voiceStep100": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "10"},
+    "condition": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null}
+  },
+  "allowedParents": ["Trigger"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-MEDIA-001",
+      "condition": "no MediaController declared in document",
+      "message": "使用MediaCommand前必须声明MediaController",
+      "severity": "error",
+      "suggestedFixes": ["添加<MediaController/>声明"]
+    },
+    {
+      "ruleId": "SEM-MEDIA-002",
+      "condition": "element.attrs['command'] IN ['mediaLike','mediaDislike'] AND no MediaController with packageName='com.huawei.hmsapp.music'",
+      "message": "mediaLike和mediaDislike仅华为音乐(com.huawei.hmsapp.music)支持",
+      "severity": "warning",
+      "suggestedFixes": ["确认MediaController指定华为音乐包名"]
+    }
+  ]
+}

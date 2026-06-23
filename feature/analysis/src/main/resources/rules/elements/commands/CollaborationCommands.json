@@ -1,0 +1,42 @@
+{
+  "element": "CollaborationCommands",
+  "category": "command",
+  "requiredAttrs": ["collaborationId"],
+  "optionalAttrs": ["abilityId", "enable"],
+  "attrTypes": {
+    "collaborationId": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "abilityId": {"type": "number", "enumValues": ["0", "1"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
+    "enable": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"}
+  },
+  "allowedParents": ["Lockscreen", "Widget"],
+  "allowedChildren": ["Trigger", "DataShare"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": false
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-COLLAB-001",
+      "condition": "element.attrs['collaborationId'] != null AND NOT matchesPattern(element.attrs['collaborationId'], '^[A-Za-z0-9]{4}$')",
+      "message": "collaborationId必须是长度为4的字符串，内容为A-Z、a-z或0-9",
+      "severity": "error",
+      "suggestedFixes": ["修改collaborationId为4位A-Z/a-z/0-9字符串"]
+    },
+    {
+      "ruleId": "SEM-COLLAB-002",
+      "condition": "countElementsByType('CollaborationCommands') > 1",
+      "message": "一个脚本中只能有一个CollaborationCommands节点",
+      "severity": "error",
+      "suggestedFixes": ["删除多余的CollaborationCommands节点"]
+    }
+  ]
+}

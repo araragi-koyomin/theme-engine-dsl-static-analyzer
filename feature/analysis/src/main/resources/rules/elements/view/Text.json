@@ -1,0 +1,91 @@
+{
+  "element": "Text",
+  "category": "view",
+  "requiredAttrs": [],
+  "optionalAttrs": ["name", "x", "y", "width", "height", "pivotX", "pivotY", "rotation", "rotationX", "rotationY", "alpha", "visibility", "category", "align", "alignV", "enableMove", "moveRect", "active", "color", "size", "format", "paras", "text", "textExp", "autoLineFeed", "textalign", "bold", "isSupportClipping", "spaceTimes", "spaceExtraAdd", "shadowDx", "shadowDy", "Radius", "shadowColor", "scrollDisplay", "marqueeRepeatLimit", "clickable", "delayTime"],
+  "attrTypes": {
+    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "width": {"type": "number", "enumValues": [], "aliases": ["w"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "height": {"type": "number", "enumValues": [], "aliases": ["h"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "pivotX": {"type": "number", "enumValues": [], "aliases": ["centerX"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "pivotY": {"type": "number", "enumValues": [], "aliases": ["centerY"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "rotation": {"type": "number", "enumValues": [], "aliases": ["angle"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "rotationX": {"type": "number", "enumValues": [], "aliases": ["angleX"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "rotationY": {"type": "number", "enumValues": [], "aliases": ["angleY"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "alpha": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "255"},
+    "visibility": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"},
+    "category": {"type": "string", "enumValues": ["Normal", "Charging", "BatteryLow", "BatteryFull"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "align": {"type": "string", "enumValues": ["left", "center", "right"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "alignV": {"type": "string", "enumValues": ["top", "center", "bottom"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "enableMove": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
+    "moveRect": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "active": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"},
+    "color": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "string", "defaultValue": null},
+    "size": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "40"},
+    "format": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "paras": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "auto", "defaultValue": null},
+    "text": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "textExp": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "string", "defaultValue": null},
+    "autoLineFeed": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
+    "textalign": {"type": "string", "enumValues": ["left", "right", "center"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "bold": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
+    "isSupportClipping": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
+    "spaceTimes": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"},
+    "spaceExtraAdd": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "shadowDx": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "shadowDy": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "Radius": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "shadowColor": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "string", "defaultValue": null},
+    "scrollDisplay": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
+    "marqueeRepeatLimit": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "clickable": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
+    "delayTime": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null}
+  },
+  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group", "Array"],
+  "allowedChildren": ["AlphaAnimation", "PositionAnimation", "RotationAnimation", "SizeAnimation", "SourcesAnimation", "VariableAnimation"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-ATTR-006",
+      "condition": "element.attrs['color'] != null AND element.attrs['autoLineFeed'] == 'true' AND element.attrs['width'] == null",
+      "message": "autoLineFeed=true时必须设置width才能自动换行",
+      "severity": "warning",
+      "suggestedFixes": ["添加width属性"]
+    },
+    {
+      "ruleId": "SEM-ATTR-007",
+      "condition": "element.attrs['marqueeRepeatLimit'] != null AND element.attrs['scrollDisplay'] == null",
+      "message": "marqueeRepeatLimit仅在scrollDisplay=true时有意义",
+      "severity": "warning",
+      "suggestedFixes": ["添加scrollDisplay属性"]
+    },
+    {
+      "ruleId": "SEM-ATTR-008",
+      "condition": "element.attrs['clickable'] != null AND element.attrs['scrollDisplay'] == null",
+      "message": "clickable仅在scrollDisplay=true时有意义",
+      "severity": "warning",
+      "suggestedFixes": ["添加scrollDisplay属性"]
+    },
+    {
+      "ruleId": "SEM-ATTR-009",
+      "condition": "element.attrs['delayTime'] != null AND element.attrs['scrollDisplay'] == null",
+      "message": "delayTime仅在scrollDisplay=true时有意义",
+      "severity": "warning",
+      "suggestedFixes": ["添加scrollDisplay属性"]
+    }
+  ]
+}

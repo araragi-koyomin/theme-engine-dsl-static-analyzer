@@ -1,0 +1,47 @@
+{
+  "element": "MeshImage",
+  "category": "effect",
+  "requiredAttrs": ["mesh"],
+  "optionalAttrs": ["x", "y", "w", "h", "center_point", "sensor", "src"],
+  "attrTypes": {
+    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "w": {"type": "number", "enumValues": [], "aliases": ["width"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "h": {"type": "number", "enumValues": [], "aliases": ["height"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "mesh": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "center_point": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "sensor": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
+    "src": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "string", "defaultValue": null}
+  },
+  "allowedParents": ["Lockscreen", "Wallpaper", "Widget"],
+  "allowedChildren": ["Translation", "SinMotion"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-EFFECT-001",
+      "condition": "element.children.where(c => c.name == 'Translation').count() == 0 AND element.children.where(c => c.name == 'SinMotion').count() == 0",
+      "message": "MeshImage必须包含Translation或SinMotion子标签之一",
+      "severity": "error",
+      "suggestedFixes": ["添加Translation子标签", "添加SinMotion子标签"]
+    },
+    {
+      "ruleId": "SEM-EFFECT-002",
+      "condition": "element.children.where(c => c.name == 'Translation').count() > 0 AND element.children.where(c => c.name == 'SinMotion').count() > 0",
+      "message": "MeshImage不应同时包含Translation和SinMotion子标签",
+      "severity": "warning",
+      "suggestedFixes": ["移除SinMotion子标签(若使用位移效果)", "移除Translation子标签(若使用水波纹效果)"]
+    }
+  ]
+}

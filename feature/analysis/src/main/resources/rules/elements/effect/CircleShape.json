@@ -1,0 +1,28 @@
+{
+  "element": "CircleShape",
+  "category": "effect_sub",
+  "requiredAttrs": ["radius", "xPosition", "yPosition"],
+  "optionalAttrs": ["type"],
+  "attrTypes": {
+    "type": {"type": "string", "enumValues": ["water", "solid"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "water"},
+    "radius": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "xPosition": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "yPosition": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+  },
+  "allowedParents": ["FluidsComponent"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": false,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

@@ -1,0 +1,25 @@
+{
+  "element": "DataShare",
+  "category": "variable",
+  "requiredAttrs": [],
+  "optionalAttrs": ["name"],
+  "attrTypes": {
+    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+  },
+  "allowedParents": ["CollaborationCommands"],
+  "allowedChildren": ["Var"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": false
+  },
+  "constraints": []
+}

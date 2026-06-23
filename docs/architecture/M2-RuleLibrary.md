@@ -39,25 +39,18 @@ public class DslElementRule {
 }
 ```
 
-**新增字段说明**：
-
-| 新增字段 | 说明 | 来源 |
-|---|---|---|
-| `scope` | 元素在各应用位置的支持矩阵（Lockscreen/Wallpaper/LongTake/Widget/ChargingSkin → true/false） | DSL-Rule-Spec §4.1 |
-| `deviceSupport` | 元素在各设备类型的支持矩阵（barPhone/foldable/tablet → true/false） | DSL-Rule-Spec §4.2 |
-| `constraints` | 声明式约束条件列表（RuleConstraint），零代码新增检测逻辑 | DSL-Rule-Spec §5.4 |
-
 ### 3.2 AttrTypeSpec — 属性类型规范
 
 ```java
 @Data
 @Builder
 public class AttrTypeSpec {
-    String type;                             // 属性类型（开放式字符串，非硬编码枚举）
+    String type;                             // 属性期望值类型（开放式字符串，非硬编码枚举）
     List<String> enumValues;                 // 枚举类型的合法取值集合
-    List<String> aliases;                    // 属性别名列表
+    List<String> aliases;                    // 属性别名列表，规范名在optionalAttrs/attrTypes中，别名仅在aliases字段
     boolean supportsExpression;              // 是否支持表达式语法
     String expressionKind;                   // 表达式类别 "number"/"string"/"auto"
+    String defaultValue;                     // 属性默认值，省略该属性时引擎使用的隐式值。null=无默认值
 }
 ```
 
@@ -66,7 +59,27 @@ public class AttrTypeSpec {
 | 新增字段 | 说明 | 消费方 |
 |---|---|---|
 | `supportsExpression` | 标记属性是否接受表达式语法（#var、@var、函数调用）。false时属性值只能是纯字面量 | M3（决定是否调用ANTLR4解析器）、M4（TypeAnalyzer） |
-| `expressionKind` | 表达式类别："number"表示数值表达式、"string"表示字符串表达式、"auto"表示根据上下文推断 | M4 TypeInferenceEngine（推断期望类型） |
+| `expressionKind` | 表达式类别："number"表示期望数值表达式、"string"表示期望字符串表达式、"auto"表示根据上下文(如Var的type属性)动态推断 | M4 TypeInferenceEngine（推断期望类型） |
+| `defaultValue` | 属性默认值，省略该属性时引擎使用的隐式值。null表示无默认值（省略=属性不存在，不影响分析）。如Var.type默认"number"、persist默认"false"、x/y默认"0"、alpha默认"255" | M4 TypeAnalyzer（推断省略属性的类型）、SEM-VAR-005（type缺失时expression须为数值表达式） |
+**`type` 与 `supportsExpression` 的语义关系**：
+
+* `type`描述的是**属性期望值类型**（字面量或表达式返回值的类型），`supportsExpression`描述值是否可以是表达式形式。两者是独立的维度：
+
+    
+    - `{"type": "number", "supportsExpression": false}` — 纯字面量数值（如x="0"）
+    - `{"type": "number", "supportsExpression": true, "expressionKind": "number"}` — 可以是数值表达式（如x="#screen_width/2"）
+    - `{"type": "string", "supportsExpression": true, "expressionKind": "string"}` — 可以是字符串表达式（如textExp="@var+'hello'"）
+    - `{"type": "string", "supportsExpression": true, "expressionKind": "auto"}` — 根据上下文动态推断（如Var.expression由type决定是数值/字符串表达式）
+
+**别名处理机制**：
+
+    
+    - optionalAttrs和attrTypes只包含规范名（如"width"、"height"、"pivotX"等）
+    - 别名（如"w"、"h"、"centerX"等）仅出现在attrTypes规范名条目的aliases字段
+    - 别名不作为独立条目出现在optionalAttrs或attrTypes中
+    - RuleRepository提供`resolveAttrAlias()`方法：别名→规范名映射
+    - `getAttrTypeSpec()`自动处理别名：传入别名时先resolve到规范名再查询
+    - M3 SYN-004检测使用`getCanonicalAttrNames()`比对规范属性名集合
 
 **`type` 字段完整列表**：
 
@@ -148,6 +161,8 @@ public interface RuleRepository {
     List<String> getAllElementNames();
     List<String> getRootElementNames();
     Optional<AttrTypeSpec> getAttrTypeSpec(String elementName, String attrName);
+    Optional<String> resolveAttrAlias(String elementName, String attrName);
+    Set<String> getCanonicalAttrNames(String elementName);
     List<String> getAllowedParents(String elementName);
     List<String> getAllowedChildren(String elementName);
     List<RuleConstraint> getConstraints(String elementName);
@@ -164,6 +179,10 @@ public interface RuleRepository {
 | `getConstraints(elementName)` | 获取元素的声明式约束条件列表 | M4 ConstraintAnalyzer |
 | `getGlobalVar(varName)` | 获取全局变量条目 | M4 VarRefAnalyzer |
 | `getAllGlobalVars()` | 获取全部全局变量列表 | M4 SymbolTableBuilder |
+| `resolveAttrAlias(elementName, attrName)` | 将属性别名resolve为规范名（如"h"→"height"）；规范名直接返回自身 | M3属性名规范化、M5 QuickFix |
+| `getCanonicalAttrNames(elementName)` | 获取元素规范属性名集合（不含别名），用于SYN-004比对 | M3 SYN-004检测 |
+
+**`getAttrTypeSpec`别名自动处理**：当attrName是别名时，内部自动调用`resolveAttrAlias()`映射到规范名后再查询attrTypes。消费方无需关心传入的是规范名还是别名。
 
 ### 3.7 JsonRuleLoader — Core层实现
 

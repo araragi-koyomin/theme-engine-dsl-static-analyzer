@@ -1,0 +1,52 @@
+{
+  "element": "Button",
+  "category": "control",
+  "requiredAttrs": [],
+  "optionalAttrs": ["name", "x", "y", "width", "height", "alpha", "visibility", "category", "align", "alignV", "enableMove", "moveRect", "active"],
+  "attrTypes": {
+    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "width": {"type": "number", "enumValues": [], "aliases": ["w"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "height": {"type": "number", "enumValues": [], "aliases": ["h"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "alpha": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "255"},
+    "visibility": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"},
+    "category": {"type": "string", "enumValues": ["Normal", "Charging", "BatteryLow", "BatteryFull"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "align": {"type": "string", "enumValues": ["left", "center", "right"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "alignV": {"type": "string", "enumValues": ["top", "center", "bottom"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "enableMove": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
+    "moveRect": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "active": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"}
+  },
+  "allowedParents": ["Lockscreen", "Widget", "Group"],
+  "allowedChildren": ["Trigger"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-TRIG-002",
+      "condition": "element.children.filter(c -> c.tagName == 'Trigger').size() == 0",
+      "message": "Button必须包含至少一个Trigger子元素",
+      "severity": "error",
+      "suggestedFixes": ["添加Trigger子元素"]
+    },
+    {
+      "ruleId": "SEM-SCOPE-001",
+      "condition": "element.scope != 'Lockscreen' AND element.scope != 'Widget'",
+      "message": "Button仅支持在锁屏(Lockscreen)和百变卡片(Widget)中使用",
+      "severity": "error",
+      "suggestedFixes": ["将Button移至Lockscreen或Widget中"]
+    }
+  ]
+}

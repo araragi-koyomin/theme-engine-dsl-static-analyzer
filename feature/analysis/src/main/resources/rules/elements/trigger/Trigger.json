@@ -1,0 +1,33 @@
+{
+  "element": "Trigger",
+  "category": "trigger",
+  "requiredAttrs": ["action"],
+  "optionalAttrs": [],
+  "attrTypes": {
+    "action": {"type": "string", "enumValues": ["down", "up", "double", "click", "long", "resume", "pause", "tapLink", "tapConnected", "tapDisconnected"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+  },
+  "allowedParents": ["Button", "Unlocker", "Slider", "Var", "ExternalCommands", "CollaborationCommands", "Item"],
+  "allowedChildren": ["Command", "VariableCommand", "VideoCommand", "SoundCommand", "VisibilityCommand", "IntentCommand", "ExternCommand", "GroupCommand", "CycleCommand", "StyleCommand", "RefreshWeatherCommand", "RefreshHealthyCommand", "KeepScreenOnCommand", "CollaborationSendCommand", "CollaborationDisconnectCommand", "EmotionCommand", "VibrateCommand", "VoiceCommand", "ScenarioIntentCommand", "SwingCommand", "CardInteractionCommand"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-TRIG-001",
+      "condition": "element.attrs['action'] NOT IN ['down','up','double','click','long','resume','pause','tapLink','tapConnected','tapDisconnected']",
+      "message": "Trigger action值不在合法集合中，合法值为: down, up, double, click, long, resume, pause, tapLink, tapConnected, tapDisconnected",
+      "severity": "error",
+      "suggestedFixes": ["修改action值为合法枚举值"]
+    }
+  ]
+}

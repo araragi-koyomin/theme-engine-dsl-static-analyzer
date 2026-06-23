@@ -1,0 +1,26 @@
+{
+  "element": "KeepScreenOnCommand",
+  "category": "command",
+  "requiredAttrs": ["action"],
+  "optionalAttrs": ["duration"],
+  "attrTypes": {
+    "action": {"type": "string", "enumValues": ["start", "reset"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "start"},
+    "duration": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "10000"}
+  },
+  "allowedParents": ["Trigger"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

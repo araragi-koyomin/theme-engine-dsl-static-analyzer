@@ -1,0 +1,40 @@
+{
+  "element": "VideoCommand",
+  "category": "command",
+  "requiredAttrs": ["name"],
+  "optionalAttrs": ["src", "play", "sound", "seekTime", "condition", "delay", "delayCondition"],
+  "attrTypes": {
+    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "src": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "play": {"type": "expression", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "sound": {"type": "expression", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "seekTime": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "condition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "delay": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "delayCondition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null}
+  },
+  "allowedParents": ["Trigger"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-CMD-001",
+      "condition": "element.attrs['play'] != null AND element.attrs['sound'] != null",
+      "message": "VideoCommand中play和sound互斥，不能同时存在",
+      "severity": "error",
+      "suggestedFixes": ["移除play属性", "移除sound属性"]
+    }
+  ]
+}

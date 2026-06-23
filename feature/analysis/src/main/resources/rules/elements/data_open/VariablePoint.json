@@ -1,0 +1,34 @@
+{
+  "element": "VariablePoint",
+  "category": "data_open",
+  "requiredAttrs": ["frameRate", "time"],
+  "optionalAttrs": [],
+  "attrTypes": {
+    "frameRate": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "60"},
+    "time": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+  },
+  "allowedParents": ["VariableFramerate"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-VPOINT-001",
+      "condition": "parseInt(element.attrs['frameRate']) > 60 OR parseInt(element.attrs['frameRate']) < 1",
+      "message": "frameRate推荐值30，默认60",
+      "severity": "warning",
+      "suggestedFixes": ["设置frameRate为30"]
+    }
+  ]
+}

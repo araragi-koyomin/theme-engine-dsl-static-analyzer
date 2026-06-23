@@ -1,0 +1,27 @@
+{
+  "element": "DropPhysicalView",
+  "category": "effect",
+  "requiredAttrs": [],
+  "optionalAttrs": ["gravityX", "gravityY", "airDensity"],
+  "attrTypes": {
+    "gravityX": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "gravityY": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "airDensity": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "12.93"}
+  },
+  "allowedParents": ["Lockscreen", "Wallpaper", "Widget"],
+  "allowedChildren": ["ItemGroup"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

@@ -1,0 +1,29 @@
+{
+  "element": "Mask",
+  "category": "view",
+  "requiredAttrs": ["src"],
+  "optionalAttrs": ["x", "y", "align", "hybridMode"],
+  "attrTypes": {
+    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "src": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "align": {"type": "string", "enumValues": ["absolute", "relative"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "relative"},
+    "hybridMode": {"type": "string", "enumValues": ["clear", "0", "ori", "1", "tgt", "2", "oriOver", "3", "tgtOver", "4", "oriIn", "5", "tgtIn", "6", "oriOut", "7", "tgtOut", "8", "oriATop", "9", "tgtATop", "10", "xor", "11"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "6"}
+  },
+  "allowedParents": ["Image"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

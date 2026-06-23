@@ -1,0 +1,25 @@
+{
+  "element": "ChargingSkin",
+  "category": "root",
+  "requiredAttrs": [],
+  "optionalAttrs": ["screenWidth"],
+  "attrTypes": {
+    "screenWidth": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+  },
+  "allowedParents": [],
+  "allowedChildren": ["Var", "GlobalVariable", "VarArray", "Group", "Text", "Image", "Video", "Time", "DateTime", "CountDownTime", "ImageNumber", "ImageSeries", "Mask", "GroupImage", "Arc", "Circle", "Ellipse", "Line", "Rectangle", "PathUtil", "AlphaAnimation", "PositionAnimation", "RotationAnimation", "SizeAnimation", "SourcesAnimation", "VariableAnimation", "FluidsComponent"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": false,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": false,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

@@ -1,0 +1,64 @@
+{
+  "element": "SourceImage",
+  "category": "view",
+  "requiredAttrs": ["sourceName", "format", "to"],
+  "optionalAttrs": ["name", "x", "y", "width", "height", "pivotX", "pivotY", "rotation", "rotationX", "rotationY", "alpha", "visibility", "align", "alignV", "enableMove", "moveRect", "active", "from", "space", "loop", "direction", "unlockTo"],
+  "attrTypes": {
+    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "width": {"type": "number", "enumValues": [], "aliases": ["w"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "height": {"type": "number", "enumValues": [], "aliases": ["h"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "pivotX": {"type": "number", "enumValues": [], "aliases": ["centerX"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "pivotY": {"type": "number", "enumValues": [], "aliases": ["centerY"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "rotation": {"type": "number", "enumValues": [], "aliases": ["angle"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "rotationX": {"type": "number", "enumValues": [], "aliases": ["angleX"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "rotationY": {"type": "number", "enumValues": [], "aliases": ["angleY"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "alpha": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "255"},
+    "visibility": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"},
+    "align": {"type": "string", "enumValues": ["left", "center", "right"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "alignV": {"type": "string", "enumValues": ["top", "center", "bottom"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "enableMove": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
+    "moveRect": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "active": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"},
+    "sourceName": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "format": {"type": "string", "enumValues": ["jpg", "png"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "from": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "to": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "space": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "30"},
+    "loop": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "true"},
+    "direction": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"},
+    "unlockTo": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+  },
+  "allowedParents": ["Lockscreen", "Group"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-SRCIMG-001",
+      "condition": "element.attrs['direction'] == '0' AND (element.attrs['loop'] != 'true' OR element.attrs['unlockTo'] == null)",
+      "message": "direction=0(帧动画解锁)时loop必须为true且unlockTo必须有值",
+      "severity": "error",
+      "suggestedFixes": ["设置loop=true", "设置unlockTo属性值", "将direction改为1"]
+    },
+    {
+      "ruleId": "SEM-SRCIMG-002",
+      "condition": "element.attrs['unlockTo'] != null AND element.parent.children.filter(c -> c.tagName == 'Button').size() == 0",
+      "message": "unlockTo设置解锁帧数，但同级无Button元素作为触控区域，解锁功能可能无法触达",
+      "severity": "warning",
+      "suggestedFixes": ["添加Button元素作为触控区域", "移除unlockTo属性"]
+    }
+  ]
+}

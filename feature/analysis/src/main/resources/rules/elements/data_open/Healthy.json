@@ -1,0 +1,41 @@
+{
+  "element": "Healthy",
+  "category": "data_open",
+  "requiredAttrs": [],
+  "optionalAttrs": ["polling", "time"],
+  "attrTypes": {
+    "polling": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
+    "time": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "5"}
+  },
+  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "Group"],
+  "allowedChildren": ["Var"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-HEALTHY-001",
+      "condition": "element.attrs['time'] != null AND parseInt(element.attrs['time']) < 1",
+      "message": "time属性最小值为1(秒)",
+      "severity": "error",
+      "suggestedFixes": ["设置time属性值>=1"]
+    },
+    {
+      "ruleId": "SEM-HEALTHY-002",
+      "condition": "element.attrs['time'] != null AND element.attrs['polling'] != 'true'",
+      "message": "time属性仅在polling=true时有效",
+      "severity": "warning",
+      "suggestedFixes": ["设置polling='true'"]
+    }
+  ]
+}

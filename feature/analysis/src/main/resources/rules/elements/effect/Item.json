@@ -1,0 +1,26 @@
+{
+  "element": "Item",
+  "category": "effect_sub",
+  "requiredAttrs": ["src"],
+  "optionalAttrs": ["count"],
+  "attrTypes": {
+    "src": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "count": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"}
+  },
+  "allowedParents": ["ItemGroup"],
+  "allowedChildren": ["Velocity", "Angle", "AngleVelocity", "weight", "Trigger"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

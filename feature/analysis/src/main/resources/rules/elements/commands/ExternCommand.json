@@ -1,0 +1,28 @@
+{
+  "element": "ExternCommand",
+  "category": "command",
+  "requiredAttrs": ["command"],
+  "optionalAttrs": ["condition", "delay", "delayCondition"],
+  "attrTypes": {
+    "command": {"type": "string", "enumValues": ["unlock"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "condition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "delay": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "delayCondition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"}
+  },
+  "allowedParents": ["Trigger"],
+  "allowedChildren": ["Trigger"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": false,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

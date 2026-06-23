@@ -1,0 +1,59 @@
+{
+  "element": "Group",
+  "category": "layout",
+  "requiredAttrs": [],
+  "optionalAttrs": ["name", "x", "y", "width", "height", "pivotX", "pivotY", "rotation", "rotationX", "rotationY", "alpha", "visibility", "category", "align", "alignV", "enableMove", "moveRect", "active", "clip", "layered"],
+  "attrTypes": {
+    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "width": {"type": "number", "enumValues": [], "aliases": ["w"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "height": {"type": "number", "enumValues": [], "aliases": ["h"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "pivotX": {"type": "number", "enumValues": [], "aliases": ["centerX"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "pivotY": {"type": "number", "enumValues": [], "aliases": ["centerY"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "rotation": {"type": "number", "enumValues": [], "aliases": ["angle"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "rotationX": {"type": "number", "enumValues": [], "aliases": ["angleX"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "rotationY": {"type": "number", "enumValues": [], "aliases": ["angleY"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
+    "alpha": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "255"},
+    "visibility": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"},
+    "category": {"type": "string", "enumValues": ["Normal", "Charging", "BatteryLow", "BatteryFull"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "align": {"type": "string", "enumValues": ["left", "center", "right"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "alignV": {"type": "string", "enumValues": ["top", "center", "bottom"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "enableMove": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
+    "moveRect": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
+    "active": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"},
+    "clip": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
+    "layered": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+  },
+  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
+  "allowedChildren": ["Var", "VarArray", "Array", "GlobalVariable", "Text", "Image", "Video", "Time", "DateTime", "CountDownTime", "ImageNumber", "ImageSeries", "SourceImage", "Mask", "GroupImage", "Swiper", "Arc", "Circle", "Ellipse", "Line", "Rectangle", "PathUtil", "Button", "Unlocker", "Slider", "Group", "AlphaAnimation", "PositionAnimation", "RotationAnimation", "SizeAnimation", "SourcesAnimation", "VariableAnimation", "MeshImage", "ParticleView", "DropPhysicalView", "CollisionWorld", "FluidsComponent", "StereoView", "MultiLayer"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-ATTR-004",
+      "condition": "element.attrs['clip'] == 'true' AND (element.attrs['width'] == null OR element.attrs['height'] == null)",
+      "message": "clip=true时需要设置width和height来定义裁剪边界",
+      "severity": "warning",
+      "suggestedFixes": ["添加width属性", "添加height属性", "移除clip属性"]
+    },
+    {
+      "ruleId": "SEM-ATTR-005",
+      "condition": "element.attrs['layered'] == 'true'",
+      "message": "layered=true时最后一个Image子元素必须有hybridMode属性，前面所有视图不能有hybridMode",
+      "severity": "error",
+      "suggestedFixes": ["为最后一个Image添加hybridMode属性", "移除前面视图的hybridMode属性", "移除layered属性"]
+    }
+  ]
+}

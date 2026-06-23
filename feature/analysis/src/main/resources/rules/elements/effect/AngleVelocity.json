@@ -1,0 +1,27 @@
+{
+  "element": "AngleVelocity",
+  "category": "effect_sub",
+  "requiredAttrs": [],
+  "optionalAttrs": ["isRandom", "angleVelocity", "lowestAngleVelocity"],
+  "attrTypes": {
+    "isRandom": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
+    "angleVelocity": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
+    "lowestAngleVelocity": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"}
+  },
+  "allowedParents": ["Item"],
+  "allowedChildren": [],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": false,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}
