@@ -1,9 +1,9 @@
 package com.huawei.theme.analysis.core.semanticanalysis.model;
 
-import com.huawei.theme.analysis.core.shared.ast.DslAstNode;
-
 import lombok.Builder;
 import lombok.Data;
+
+import com.huawei.theme.analysis.core.shared.ast.DslAstNode;
 
 @Data
 @Builder

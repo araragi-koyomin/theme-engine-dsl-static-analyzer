@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
-import com.huawei.theme.analysis.core.shared.type.DslNumberType;
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
+import com.huawei.theme.analysis.core.shared.type.DslNumberType;
 
 class SymbolTableTest {
 

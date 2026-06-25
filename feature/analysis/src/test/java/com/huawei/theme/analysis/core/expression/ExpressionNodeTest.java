@@ -1,10 +1,10 @@
 package com.huawei.theme.analysis.core.expression;
 
-import com.huawei.theme.analysis.core.shared.ast.ExpressionKind;
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import com.huawei.theme.analysis.core.shared.ast.ExpressionKind;
 
 class ExpressionNodeTest {
 

@@ -1,5 +1,6 @@
 package com.huawei.theme.analysis.core.semanticanalysis.model;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -9,6 +10,6 @@ import lombok.Data;
 @Data
 @Builder
 public class SymbolTable {
-    Map<String, VarDeclaration> declarations;
-    List<VarReference> references;
+    @Builder.Default Map<String, VarDeclaration> declarations = Collections.emptyMap();
+    @Builder.Default List<VarReference> references = Collections.emptyList();
 }

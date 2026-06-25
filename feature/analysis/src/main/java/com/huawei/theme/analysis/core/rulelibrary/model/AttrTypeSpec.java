@@ -1,5 +1,6 @@
 package com.huawei.theme.analysis.core.rulelibrary.model;
 
+import java.util.Collections;
 import java.util.List;
 
 import lombok.Builder;
@@ -19,9 +20,9 @@ public class AttrTypeSpec {
     /** 属性类型标识，已知类型：string/number/boolean/enum/expression/action/object/reference */
     String type;
     /** 枚举类型的合法取值集合，非枚举类型时为空列表。M3 SYN-007枚举检测使用 */
-    List<String> enumValues;
+    @Builder.Default List<String> enumValues = Collections.emptyList();
     /** 属性别名列表，如width的别名w、rotation的别名angle。M5 QuickFix替换建议使用 */
-    List<String> aliases;
+    @Builder.Default List<String> aliases = Collections.emptyList();
     /** 是否支持DSL表达式语法(#var/@var/函数调用)。M3据此决定是否调用ANTLR4解析器，false时纯字面量直接验证 */
     boolean supportsExpression;
     /** 表达式类别："number"→期望数值表达式，"string"→期望字符串表达式，"auto"→根据上下文(如Var的type属性)动态推断。M4 TypeInferenceEngine推断期望类型时使用 */

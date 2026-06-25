@@ -1,6 +1,7 @@
 package com.huawei.theme.analysis.core.rulelibrary;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class DefaultRuleRepository implements RuleRepository {
     }
 
     private static Map<String, String> buildAliasMap(Map<String, DslElementRule> elementRules) {
-        Map<String, String> aliasMap = new java.util.HashMap<>();
+        Map<String, String> aliasMap = new HashMap<>();
         for (Map.Entry<String, DslElementRule> entry : elementRules.entrySet()) {
             String elementName = entry.getKey();
             DslElementRule rule = entry.getValue();

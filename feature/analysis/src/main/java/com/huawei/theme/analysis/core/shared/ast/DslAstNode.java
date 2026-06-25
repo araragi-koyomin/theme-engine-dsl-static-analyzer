@@ -1,9 +1,9 @@
 package com.huawei.theme.analysis.core.shared.ast;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.AllArgsConstructor;
 
 @Getter
 @Setter

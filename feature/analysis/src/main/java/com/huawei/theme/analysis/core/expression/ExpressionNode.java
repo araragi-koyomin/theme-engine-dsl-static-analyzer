@@ -1,9 +1,9 @@
 package com.huawei.theme.analysis.core.expression;
 
+import lombok.Data;
+
 import com.huawei.theme.analysis.core.shared.ast.ExpressionAstNode;
 import com.huawei.theme.analysis.core.shared.ast.ExpressionKind;
-
-import lombok.Data;
 
 @Data
 public abstract class ExpressionNode implements ExpressionAstNode {

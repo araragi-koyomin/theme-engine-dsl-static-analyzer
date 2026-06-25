@@ -1,10 +1,10 @@
 package com.huawei.theme.analysis.core.syntaxanalysis;
 
-import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 
 class DslAstProviderTest {
 

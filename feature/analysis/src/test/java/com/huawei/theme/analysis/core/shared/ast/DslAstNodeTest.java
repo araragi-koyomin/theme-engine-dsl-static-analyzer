@@ -85,8 +85,11 @@ class DslAstNodeTest {
 
     private static class StubExpressionAstNode implements ExpressionAstNode {
         @Override public String getText() { return "#screen_width/2"; }
+
         @Override public int getLine() { return 4; }
+
         @Override public int getColumn() { return 8; }
+
         @Override public ExpressionKind getKind() { return ExpressionKind.BINARY_EXPR; }
     }
 }

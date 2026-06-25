@@ -23,6 +23,11 @@
 ./gradlew :modulename:test --tests "ClassName.methodName"  # 运行单个测试方法
 ```
 
+## Bash 命令约束
+
+- **禁止在 Bash 命令中使用 PowerShell 管道过滤**（如 `| Select-String`、`| Where-Object`、`2>&1 | ...`）。这类管道会导致进程结束检测失败，造成无限等待。
+- 如需搜索文件内容，使用 Grep 工具而非 Bash 管道；如需过滤输出，使用 Grep 工具的 include/path 参数。
+
 ## 代码风格指南
 
 ### 4.1 命名约定
