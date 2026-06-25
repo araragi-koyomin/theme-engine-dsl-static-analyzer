@@ -2,7 +2,7 @@ package com.huawei.theme.analysis.core.rulelibrary.model;
 
 import java.util.List;
 
-import com.huawei.theme.analysis.core.diagnostic.DiagnosticSeverity;
+import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 
 import lombok.Builder;
 import lombok.Data;
