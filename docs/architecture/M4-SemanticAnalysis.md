@@ -30,10 +30,14 @@ public class Diagnostic {
     String filePath;                 // 文件路径
     int line;                        // 行号
     int column;                      // 列号
-    List<String> suggestedFixes;     // 建议修复描述列表
+    @Builder.Default List<String> suggestedFixes = Collections.emptyList();
     String ruleDocUrl;               // 规则文档URL
 }
 ```
+
+> Null安全: 列表字段永不为null, 空列表表示无建议, 消费方无需null检查.
+
+**包路径**: `com.huawei.theme.analysis.core.shared.diagnostic`（已从`core.diagnostic`迁移至`core.shared.diagnostic`）.
 
 **关键变更**：Diagnostic定位使用filePath+line+column，不使用PsiElement。Core层无IDEA类型依赖。
 
@@ -85,13 +89,13 @@ M4包含三类检查机制并行运行：
 **类型系统定义**：
 
 ```
-DslType (抽象基类)
-├── DslNumberType        // 数值类型（含数值表达式结果、#varName引用结果）
-├── DslStringType        // 字符串类型（含字符串表达式结果、@varName引用结果）
-├── DslEnumType          // 枚举类型（携带合法值集合；boolean归入此类enumValues=["true","false"]）
-├── DslArrayType         // 数组类型（携带baseType: number|string）
-└── DslVoidType          // 无返回值（命令类属性）
+DslType (抽象基类, abstract getName())
+├── DslNumberType        // 数值类型
+├── DslStringType        // 字符串类型
+└── DslArrayType         // 数组类型(携带baseType: DslType)
 ```
+
+> 设计决策: Enum/Boolean是值约束(由M2 AttrTypeSpec.enumValues承载), 不作为推断类型; Void在DSL表达式中无使用场景. 保持类型层级精简符合YAGNI原则.
 
 **推断规则**：
 
@@ -109,7 +113,7 @@ DslType (抽象基类)
 
 **推断签名**：`inferType(ExpressionNode, DslType expectedContext)` — 携带目标属性期望类型作为上下文。
 
-**重构说明**：原DslBooleanType/DslExpressionType/DslReferenceType已删除。Boolean属性归入DslEnumType(enumValues=["true","false"])；expressionKind为AttrTypeSpec的解析上下文标记而非类型；#var→DslNumberType、@var→DslStringType由前缀决定无需单独类型。新增DslArrayType支持Var type="number[]"/"string[]"和#arr[expr]/@arr[expr]引用验证。
+**重构说明**：原DslBooleanType/DslExpressionType/DslReferenceType已删除。Boolean属性归入AttrTypeSpec.enumValues约束, 不作为独立DslType子类；expressionKind为AttrTypeSpec的解析上下文标记而非类型；#var→DslNumberType、@var→DslStringType由前缀决定无需单独类型。新增DslArrayType支持Var type="number[]"/"string[]"和#arr[expr]/@arr[expr]引用验证。
 
 **检查逻辑**：
 1. 从M2获取元素的AttrTypeSpec
@@ -166,8 +170,11 @@ public class VarDeclaration {
     DslType type;               // 从Var的type属性推断
     String expression;           // expression属性值
     boolean isConstAttr;         // 仅反映const="true"属性声明，不做常量折叠
-    DslAstNode astNode;          // 对应的AST节点（用于跳转定位）
+    DslElementNode astNode;          // 对应的AST节点（用于跳转定位）
 }
+```
+
+> 类型精度修正: Var声明始终对应DslElementNode(<Var>元素), 使用更具体的类型而非泛型DslAstNode基类.
 
 @Data
 @Builder

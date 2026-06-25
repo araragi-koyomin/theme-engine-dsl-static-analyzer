@@ -1,5 +1,6 @@
 package com.huawei.theme.analysis.core.rulelibrary.model;
 
+import java.util.Collections;
 import java.util.List;
 
 import lombok.Builder;
@@ -29,5 +30,5 @@ public class DslGlobalVar {
     /** 访问模式，如"#battery_level"(数值访问)/"@ishour12"(字符串访问)。M3识别变量引用时使用 */
     String accessPattern;
     /** 全局变量的约束条件列表，如battery_level范围1-100 */
-    List<RuleConstraint> constraints;
+    @Builder.Default List<RuleConstraint> constraints = Collections.emptyList();
 }
