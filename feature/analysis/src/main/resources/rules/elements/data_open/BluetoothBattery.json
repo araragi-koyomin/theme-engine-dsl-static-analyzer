@@ -1,11 +1,15 @@
-{
+﻿{
   "element": "BluetoothBattery",
   "category": "data_open",
-  "requiredAttrs": [],
-  "optionalAttrs": [],
-  "attrTypes": {},
-  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "Group"],
-  "allowedChildren": [],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+  ],
+  "attrTypes": {
+  },
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "Group", "LongTake"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -25,7 +29,9 @@
       "condition": "using BluetoothBattery data variables without BluetoothBattery element declared",
       "message": "使用蓝牙耳机数据变量前必须声明BluetoothBattery节点",
       "severity": "error",
-      "suggestedFixes": ["添加<BluetoothBattery/>声明"]
+      "suggestedFixes": [
+        "添加\u003cBluetoothBattery/\u003e声明"
+      ]
     }
   ]
 }

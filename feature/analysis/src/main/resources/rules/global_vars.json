@@ -1,37 +1,409 @@
 [
-  {"name": "touch_x", "type": "number", "scope": "global", "description": "当前触摸点X坐标", "accessPattern": "#touch_x", "constraints": []},
-  {"name": "touch_y", "type": "number", "scope": "global", "description": "当前触摸点Y坐标", "accessPattern": "#touch_y", "constraints": []},
-  {"name": "touch_begin_x", "type": "number", "scope": "global", "description": "按下屏幕时初始X坐标", "accessPattern": "#touch_begin_x", "constraints": []},
-  {"name": "touch_begin_y", "type": "number", "scope": "global", "description": "按下屏幕时初始Y坐标", "accessPattern": "#touch_begin_y", "constraints": []},
-  {"name": "touch_begin_time", "type": "number", "scope": "global", "description": "触摸开始时间(ms)", "accessPattern": "#touch_begin_time", "constraints": []},
-  {"name": "battery_level", "type": "number", "scope": "global", "description": "当前电量1-100", "accessPattern": "#battery_level", "constraints": []},
-  {"name": "battery_state", "type": "number", "scope": "global", "description": "电量状态: Normal(0), Charging(1), BatteryLow(2), BatteryFull(3)", "accessPattern": "#battery_state", "constraints": []},
-  {"name": "screen_width", "type": "number", "scope": "global", "description": "虚拟屏幕宽度", "accessPattern": "#screen_width", "constraints": []},
-  {"name": "screen_height", "type": "number", "scope": "global", "description": "虚拟屏幕高度", "accessPattern": "#screen_height", "constraints": []},
-  {"name": "darkMode", "type": "number", "scope": "global", "description": "深色模式: 1浅色, 2深色, 0不支持", "accessPattern": "#darkMode", "constraints": []},
-  {"name": "year", "type": "number", "scope": "global", "description": "当前年份", "accessPattern": "#year", "constraints": []},
-  {"name": "month", "type": "number", "scope": "global", "description": "当前月份(0-11, 0=一月)", "accessPattern": "#month", "constraints": []},
-  {"name": "date", "type": "number", "scope": "global", "description": "当前日期", "accessPattern": "#date", "constraints": []},
-  {"name": "day_of_week", "type": "number", "scope": "global", "description": "星期(1=周日, 2=周一...)", "accessPattern": "#day_of_week", "constraints": []},
-  {"name": "hour", "type": "number", "scope": "global", "description": "当前小时(24小时制)", "accessPattern": "#hour", "constraints": []},
-  {"name": "hour12", "type": "number", "scope": "global", "description": "12小时制小时数", "accessPattern": "#hour12", "constraints": []},
-  {"name": "hour24", "type": "number", "scope": "global", "description": "24小时制小时数", "accessPattern": "#hour24", "constraints": []},
-  {"name": "minute", "type": "number", "scope": "global", "description": "当前分钟", "accessPattern": "#minute", "constraints": []},
-  {"name": "ishour12", "type": "string", "scope": "global", "description": "是否12小时制(true/false)", "accessPattern": "@ishour12", "constraints": []},
-  {"name": "lunarYear", "type": "number", "scope": "global", "description": "农历年", "accessPattern": "#lunarYear", "constraints": []},
-  {"name": "lunarMonth", "type": "number", "scope": "global", "description": "农历月(1-12)", "accessPattern": "#lunarMonth", "constraints": []},
-  {"name": "lunarDay", "type": "number", "scope": "global", "description": "农历日", "accessPattern": "#lunarDay", "constraints": []},
-  {"name": "system.time.hour1", "type": "number", "scope": "global", "description": "小时第一位数字", "accessPattern": "#system.time.hour1", "constraints": []},
-  {"name": "system.time.hour2", "type": "number", "scope": "global", "description": "小时第二位数字", "accessPattern": "#system.time.hour2", "constraints": []},
-  {"name": "system.time.min1", "type": "number", "scope": "global", "description": "分钟第一位数字", "accessPattern": "#system.time.min1", "constraints": []},
-  {"name": "system.time.min2", "type": "number", "scope": "global", "description": "分钟第二位数字", "accessPattern": "#system.time.min2", "constraints": []},
-  {"name": "system.time.ampm", "type": "string", "scope": "global", "description": "AM/PM标识", "accessPattern": "@system.time.ampm", "constraints": []},
-  {"name": "screenOnLeftTime", "type": "number", "scope": "global", "description": "距离锁屏灭屏时间(秒)", "accessPattern": "#screenOnLeftTime", "constraints": []},
-  {"name": "matchSkill_value", "type": "string", "scope": "global", "description": "小艺语音匹配能力值", "accessPattern": "@matchSkill_value", "constraints": []},
-  {"name": "public_deviceUsageIntervalTime", "type": "number", "scope": "global", "description": "用户使用设备间隔时长(秒)", "accessPattern": "#public_deviceUsageIntervalTime", "constraints": []},
-  {"name": "enableCollaboration", "type": "number", "scope": "context", "description": "碰一碰能力开关(0关/1开), 仅百变卡片", "accessPattern": "#enableCollaboration", "constraints": []},
-  {"name": "emotionValue", "type": "number", "scope": "global", "description": "情绪值: 0愉悦, 2平静, 4不愉悦, -1未感知", "accessPattern": "#emotionValue", "constraints": []},
-  {"name": "dynamicSwingValue", "type": "number", "scope": "global", "description": "动态手势结果(-1未识别/0抓屏/1下翻/4上翻/8释放)", "accessPattern": "#dynamicSwingValue", "constraints": []},
-  {"name": "staticSwingValue", "type": "number", "scope": "global", "description": "静态手势结果(-1未识别/1掌型/2剪刀/3拳型/4比心)", "accessPattern": "#staticSwingValue", "constraints": []},
-  {"name": "Scenarios.topId", "type": "string", "scope": "global", "description": "最高优先级服务分类ID", "accessPattern": "@Scenarios.topId", "constraints": []}
+  {
+    "name": "touch_x",
+    "type": "number",
+    "scope": "global",
+    "description": "当前触摸点X坐标",
+    "accessPattern": "#touch_x",
+    "constraints": []
+  }, {
+  "name": "touch_y",
+  "type": "number",
+  "scope": "global",
+  "description": "当前触摸点Y坐标",
+  "accessPattern": "#touch_y",
+  "constraints": []
+}, {
+  "name": "touch_begin_x",
+  "type": "number",
+  "scope": "global",
+  "description": "按下屏幕时初始X坐标",
+  "accessPattern": "#touch_begin_x",
+  "constraints": []
+}, {
+  "name": "touch_begin_y",
+  "type": "number",
+  "scope": "global",
+  "description": "按下屏幕时初始Y坐标",
+  "accessPattern": "#touch_begin_y",
+  "constraints": []
+}, {
+  "name": "touch_begin_time",
+  "type": "number",
+  "scope": "global",
+  "description": "触摸开始时间(ms)",
+  "accessPattern": "#touch_begin_time",
+  "constraints": []
+}, {
+  "name": "battery_level",
+  "type": "number",
+  "scope": "global",
+  "description": "当前电量1-100",
+  "accessPattern": "#battery_level",
+  "constraints": []
+}, {
+  "name": "battery_state",
+  "type": "number",
+  "scope": "global",
+  "description": "电量状态: Normal(0), Charging(1), BatteryLow(2), BatteryFull(3)",
+  "accessPattern": "#battery_state",
+  "constraints": []
+}, {
+  "name": "screen_width",
+  "type": "number",
+  "scope": "global",
+  "description": "虚拟屏幕宽度",
+  "accessPattern": "#screen_width",
+  "constraints": []
+}, {
+  "name": "screen_height",
+  "type": "number",
+  "scope": "global",
+  "description": "虚拟屏幕高度",
+  "accessPattern": "#screen_height",
+  "constraints": []
+}, {
+  "name": "darkMode",
+  "type": "number",
+  "scope": "global",
+  "description": "深色模式: 1浅色, 2深色, 0不支持",
+  "accessPattern": "#darkMode",
+  "constraints": []
+}, {
+  "name": "year",
+  "type": "number",
+  "scope": "global",
+  "description": "当前年份",
+  "accessPattern": "#year",
+  "constraints": []
+}, {
+  "name": "month",
+  "type": "number",
+  "scope": "global",
+  "description": "当前月份(0-11, 0=一月)",
+  "accessPattern": "#month",
+  "constraints": []
+}, {
+  "name": "date",
+  "type": "number",
+  "scope": "global",
+  "description": "当前日期",
+  "accessPattern": "#date",
+  "constraints": []
+}, {
+  "name": "day_of_week",
+  "type": "number",
+  "scope": "global",
+  "description": "星期(1=周日, 2=周一...)",
+  "accessPattern": "#day_of_week",
+  "constraints": []
+}, {
+  "name": "hour",
+  "type": "number",
+  "scope": "global",
+  "description": "当前小时(24小时制)",
+  "accessPattern": "#hour",
+  "constraints": []
+}, {
+  "name": "hour12",
+  "type": "number",
+  "scope": "global",
+  "description": "12小时制小时数",
+  "accessPattern": "#hour12",
+  "constraints": []
+}, {
+  "name": "hour24",
+  "type": "number",
+  "scope": "global",
+  "description": "24小时制小时数",
+  "accessPattern": "#hour24",
+  "constraints": []
+}, {
+  "name": "minute",
+  "type": "number",
+  "scope": "global",
+  "description": "当前分钟",
+  "accessPattern": "#minute",
+  "constraints": []
+}, {
+  "name": "ishour12",
+  "type": "string",
+  "scope": "global",
+  "description": "是否12小时制(true/false)",
+  "accessPattern": "@ishour12",
+  "constraints": []
+}, {
+  "name": "lunarYear",
+  "type": "number",
+  "scope": "global",
+  "description": "农历年",
+  "accessPattern": "#lunarYear",
+  "constraints": []
+}, {
+  "name": "lunarMonth",
+  "type": "number",
+  "scope": "global",
+  "description": "农历月(1-12)",
+  "accessPattern": "#lunarMonth",
+  "constraints": []
+}, {
+  "name": "lunarDay",
+  "type": "number",
+  "scope": "global",
+  "description": "农历日",
+  "accessPattern": "#lunarDay",
+  "constraints": []
+}, {
+  "name": "system.time.hour1",
+  "type": "number",
+  "scope": "global",
+  "description": "小时第一位数字",
+  "accessPattern": "#system.time.hour1",
+  "constraints": []
+}, {
+  "name": "system.time.hour2",
+  "type": "number",
+  "scope": "global",
+  "description": "小时第二位数字",
+  "accessPattern": "#system.time.hour2",
+  "constraints": []
+}, {
+  "name": "system.time.min1",
+  "type": "number",
+  "scope": "global",
+  "description": "分钟第一位数字",
+  "accessPattern": "#system.time.min1",
+  "constraints": []
+}, {
+  "name": "system.time.min2",
+  "type": "number",
+  "scope": "global",
+  "description": "分钟第二位数字",
+  "accessPattern": "#system.time.min2",
+  "constraints": []
+}, {
+  "name": "system.time.ampm",
+  "type": "string",
+  "scope": "global",
+  "description": "AM/PM标识",
+  "accessPattern": "@system.time.ampm",
+  "constraints": []
+}, {
+  "name": "screenOnLeftTime",
+  "type": "number",
+  "scope": "global",
+  "description": "距离锁屏灭屏时间(秒)",
+  "accessPattern": "#screenOnLeftTime",
+  "constraints": []
+}, {
+  "name": "matchSkill_value",
+  "type": "string",
+  "scope": "global",
+  "description": "小艺语音匹配能力值",
+  "accessPattern": "@matchSkill_value",
+  "constraints": []
+}, {
+  "name": "public_deviceUsageIntervalTime",
+  "type": "number",
+  "scope": "global",
+  "description": "用户使用设备间隔时长(秒)",
+  "accessPattern": "#public_deviceUsageIntervalTime",
+  "constraints": []
+}, {
+  "name": "enableCollaboration",
+  "type": "number",
+  "scope": "context",
+  "description": "碰一碰能力开关(0关/1开), 仅百变卡片",
+  "accessPattern": "#enableCollaboration",
+  "constraints": []
+}, {
+  "name": "emotionValue",
+  "type": "number",
+  "scope": "global",
+  "description": "情绪值: 0愉悦, 2平静, 4不愉悦, -1未感知",
+  "accessPattern": "#emotionValue",
+  "constraints": []
+}, {
+  "name": "dynamicSwingValue",
+  "type": "number",
+  "scope": "global",
+  "description": "动态手势结果(-1未识别/0抓屏/1下翻/4上翻/8释放)",
+  "accessPattern": "#dynamicSwingValue",
+  "constraints": []
+}, {
+  "name": "staticSwingValue",
+  "type": "number",
+  "scope": "global",
+  "description": "静态手势结果(-1未识别/1掌型/2剪刀/3拳型/4比心)",
+  "accessPattern": "#staticSwingValue",
+  "constraints": []
+}, {
+  "name": "Scenarios.topId",
+  "type": "string",
+  "scope": "global",
+  "description": "最高优先级服务分类ID",
+  "accessPattern": "@Scenarios.topId",
+  "constraints": []
+}, {
+  "name": "{elementName}.move_x",
+  "type": "number",
+  "scope": "element",
+  "description": "元素移动X偏移量(Unlocker/Slider)",
+  "accessPattern": "#{elementName}.move_x",
+  "constraints": []
+}, {
+  "name": "{elementName}.move_y",
+  "type": "number",
+  "scope": "element",
+  "description": "元素移动Y偏移量(Unlocker/Slider)",
+  "accessPattern": "#{elementName}.move_y",
+  "constraints": []
+}, {
+  "name": "{elementName}.move_dist",
+  "type": "number",
+  "scope": "element",
+  "description": "元素移动距离(Unlocker/Slider)",
+  "accessPattern": "#{elementName}.move_dist",
+  "constraints": []
+}, {
+  "name": "{elementName}.state",
+  "type": "number",
+  "scope": "element",
+  "description": "元素状态: 0=NORMAL, 1=PRESSED, 2=REACHED, 3=INVISIBLE",
+  "accessPattern": "#{elementName}.state",
+  "constraints": []
+}, {
+  "name": "{elementName}.actual_w",
+  "type": "number",
+  "scope": "element",
+  "description": "元素实际宽度",
+  "accessPattern": "#{elementName}.actual_w",
+  "constraints": []
+}, {
+  "name": "{elementName}.actual_h",
+  "type": "number",
+  "scope": "element",
+  "description": "元素实际高度",
+  "accessPattern": "#{elementName}.actual_h",
+  "constraints": []
+}, {
+  "name": "{elementName}.visibility",
+  "type": "number",
+  "scope": "element",
+  "description": "元素可见性",
+  "accessPattern": "#{elementName}.visibility",
+  "constraints": []
+}, {
+  "name": "{elementName}.actual_x",
+  "type": "number",
+  "scope": "element",
+  "description": "元素实际X坐标",
+  "accessPattern": "#{elementName}.actual_x",
+  "constraints": []
+}, {
+  "name": "{elementName}.actual_y",
+  "type": "number",
+  "scope": "element",
+  "description": "元素实际Y坐标",
+  "accessPattern": "#{elementName}.actual_y",
+  "constraints": []
+}, {
+  "name": "{elementName}.text_width",
+  "type": "number",
+  "scope": "element",
+  "description": "Text元素文本宽度",
+  "accessPattern": "#{elementName}.text_width",
+  "constraints": []
+}, {
+  "name": "{elementName}.text_height",
+  "type": "number",
+  "scope": "element",
+  "description": "Text元素文本高度",
+  "accessPattern": "#{elementName}.text_height",
+  "constraints": []
+}, {
+  "name": "{videoName}.state",
+  "type": "number",
+  "scope": "element",
+  "description": "视频状态: 0=IDLE, 1=INITIALIZED, 2=PREPARED, 3=PLAYING, 4=PAUSED, 5=COMPLETED, 6=STOPPED, 7=RELEASED",
+  "accessPattern": "#{videoName}.state",
+  "constraints": []
+}, {
+  "name": "{videoName}.currentTime",
+  "type": "number",
+  "scope": "element",
+  "description": "视频当前播放时间(ms)",
+  "accessPattern": "#{videoName}.currentTime",
+  "constraints": []
+}, {
+  "name": "steps_value",
+  "type": "number",
+  "scope": "global",
+  "description": "步数(需声明Healthy)",
+  "accessPattern": "#steps_value",
+  "constraints": []
+}, {
+  "name": "distance_value",
+  "type": "number",
+  "scope": "global",
+  "description": "运动距离(需声明Healthy)",
+  "accessPattern": "#distance_value",
+  "constraints": []
+}, {
+  "name": "calories_value",
+  "type": "number",
+  "scope": "global",
+  "description": "卡路里(需声明Healthy)",
+  "accessPattern": "#calories_value",
+  "constraints": []
+}, {
+  "name": "media_like_status",
+  "type": "number",
+  "scope": "global",
+  "description": "音乐点赞状态(需声明MediaController)",
+  "accessPattern": "#media_like_status",
+  "constraints": []
+}, {
+  "name": "media_play_status",
+  "type": "number",
+  "scope": "global",
+  "description": "音乐播放状态: 6=停止, 2=播放, 3=暂停, 11=缓冲(需声明MediaController)",
+  "accessPattern": "#media_play_status",
+  "constraints": []
+}, {
+  "name": "media_title",
+  "type": "string",
+  "scope": "global",
+  "description": "歌曲标题(需声明MediaController)",
+  "accessPattern": "@media_title",
+  "constraints": []
+}, {
+  "name": "media_subtitle",
+  "type": "string",
+  "scope": "global",
+  "description": "歌曲副标题(需声明MediaController)",
+  "accessPattern": "@media_subtitle",
+  "constraints": []
+}, {
+  "name": "Scenarios.ID.text",
+  "type": "string",
+  "scope": "global",
+  "description": "场景感知服务文本内容",
+  "accessPattern": "@Scenarios.ID.text",
+  "constraints": []
+}, {
+  "name": "Scenarios.ID.jumpable",
+  "type": "number",
+  "scope": "global",
+  "description": "场景感知可跳转标识(0/1)",
+  "accessPattern": "#Scenarios.ID.jumpable",
+  "constraints": []
+}, {
+  "name": "Scenarios.ID.appName",
+  "type": "string",
+  "scope": "global",
+  "description": "场景感知应用名称",
+  "accessPattern": "@Scenarios.ID.appName",
+  "constraints": []
+}
 ]

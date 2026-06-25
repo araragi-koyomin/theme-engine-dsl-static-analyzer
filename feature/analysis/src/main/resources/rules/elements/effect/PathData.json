@@ -1,11 +1,15 @@
-{
+﻿{
   "element": "PathData",
   "category": "effect_sub",
-  "requiredAttrs": [],
-  "optionalAttrs": [],
-  "attrTypes": {},
-  "allowedParents": ["ParticleView"],
-  "allowedChildren": ["Range"],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+  ],
+  "attrTypes": {
+  },
+  "allowedParents": [
+    "ParticleView"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -19,5 +23,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

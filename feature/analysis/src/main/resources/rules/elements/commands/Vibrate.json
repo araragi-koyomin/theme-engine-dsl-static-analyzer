@@ -1,13 +1,27 @@
-{
+﻿{
   "element": "Vibrate",
   "category": "command_sub",
-  "requiredAttrs": ["loop"],
-  "optionalAttrs": [],
+  "requiredAttrs": [
+    "loop"
+  ],
+  "optionalAttrs": [
+  ],
   "attrTypes": {
-    "loop": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "false"}
+    "loop": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    }
   },
-  "allowedParents": ["VibrateCommand"],
-  "allowedChildren": ["Wave"],
+  "allowedParents": [
+    "VibrateCommand"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -21,5 +35,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

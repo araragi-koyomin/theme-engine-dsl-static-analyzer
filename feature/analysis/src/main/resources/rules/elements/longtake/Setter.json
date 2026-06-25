@@ -1,0 +1,60 @@
+﻿{
+  "element": "Setter",
+  "category": "longtake_sub",
+  "requiredAttrs": [
+    "targetName", "targetProperty", "value"
+  ],
+  "optionalAttrs": [
+  ],
+  "attrTypes": {
+    "targetName": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "targetProperty": {
+      "type": "string",
+      "enumValues": [
+        "play", "visibility", "change"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "value": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
+  },
+  "allowedParents": [
+    "StoryBoard"
+  ],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": false,
+    "Wallpaper": false,
+    "LongTake": true,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+  ]
+}

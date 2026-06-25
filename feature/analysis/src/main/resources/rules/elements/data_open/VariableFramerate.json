@@ -1,11 +1,15 @@
-{
+﻿{
   "element": "VariableFramerate",
   "category": "data_open",
-  "requiredAttrs": [],
-  "optionalAttrs": [],
-  "attrTypes": {},
-  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
-  "allowedChildren": ["VariablePoint"],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+  ],
+  "attrTypes": {
+  },
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group", "LongTake"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -22,10 +26,12 @@
   "constraints": [
     {
       "ruleId": "SEM-VFR-001",
-      "condition": "count(child VariablePoint) > 2",
+      "condition": "count(child VariablePoint) \u003e 2",
       "message": "目前只支持改变一次帧率，VariablePoint最多2个",
       "severity": "error",
-      "suggestedFixes": ["减少VariablePoint数量至2个以内"]
+      "suggestedFixes": [
+        "减少VariablePoint数量至2个以内"
+      ]
     }
   ]
 }

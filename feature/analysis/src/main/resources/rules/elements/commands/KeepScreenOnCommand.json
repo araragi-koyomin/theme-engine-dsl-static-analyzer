@@ -1,14 +1,38 @@
-{
+﻿{
   "element": "KeepScreenOnCommand",
   "category": "command",
-  "requiredAttrs": ["action"],
-  "optionalAttrs": ["duration"],
+  "requiredAttrs": [
+    "action"
+  ],
+  "optionalAttrs": [
+    "duration"
+  ],
   "attrTypes": {
-    "action": {"type": "string", "enumValues": ["start", "reset"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "start"},
-    "duration": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "10000"}
+    "action": {
+      "type": "string",
+      "enumValues": [
+        "start", "reset"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "start"
+    },
+    "duration": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "10000"
+    }
   },
-  "allowedParents": ["Trigger"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Trigger"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -22,5 +46,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

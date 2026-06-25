@@ -1,30 +1,207 @@
-{
+﻿{
   "element": "Time",
   "category": "view",
-  "requiredAttrs": ["src"],
-  "optionalAttrs": ["name", "x", "y", "pivotX", "pivotY", "rotation", "rotationX", "rotationY", "alpha", "visibility", "category", "align", "alignV", "enableMove", "moveRect", "active", "space"],
+  "requiredAttrs": [
+    "src"
+  ],
+  "optionalAttrs": [
+    "name", "x", "y", "pivotX", "pivotY", "rotation", "rotationX", "rotationY", "alpha", "visibility", "category",
+    "align", "alignV", "enableMove", "moveRect", "active", "space"
+  ],
   "attrTypes": {
-    "src": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "pivotX": {"type": "number", "enumValues": [], "aliases": ["centerX"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "pivotY": {"type": "number", "enumValues": [], "aliases": ["centerY"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "rotation": {"type": "number", "enumValues": [], "aliases": ["angle"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "rotationX": {"type": "number", "enumValues": [], "aliases": ["angleX"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "rotationY": {"type": "number", "enumValues": [], "aliases": ["angleY"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "alpha": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "255"},
-    "visibility": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"},
-    "category": {"type": "string", "enumValues": ["Normal", "Charging", "BatteryLow", "BatteryFull"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "align": {"type": "string", "enumValues": ["left", "center", "right"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "alignV": {"type": "string", "enumValues": ["top", "center", "bottom"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "enableMove": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
-    "moveRect": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "active": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"},
-    "space": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"}
+    "src": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "name": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "x": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "y": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "pivotX": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "centerX"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "pivotY": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "centerY"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "rotation": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "angle"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "rotationX": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "angleX"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "rotationY": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "angleY"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "alpha": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "255"
+    },
+    "visibility": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "1"
+    },
+    "category": {
+      "type": "string",
+      "enumValues": [
+        "Normal", "Charging", "BatteryLow", "BatteryFull"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "align": {
+      "type": "string",
+      "enumValues": [
+        "left", "center", "right"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "alignV": {
+      "type": "string",
+      "enumValues": [
+        "top", "center", "bottom"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "enableMove": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    },
+    "moveRect": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "active": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "1"
+    },
+    "space": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    }
   },
-  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
-  "allowedChildren": ["AlphaAnimation", "PositionAnimation", "RotationAnimation", "SizeAnimation", "SourcesAnimation", "VariableAnimation"],
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group", "LongTake"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -38,5 +215,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

@@ -32,10 +32,8 @@ public class DslElementRule {
     List<String> optionalAttrs;
     /** 属性类型规范映射，key为属性名，value为AttrTypeSpec。M3表达式嵌入判断和M4类型推断的核心数据来源 */
     Map<String, AttrTypeSpec> attrTypes;
-    /** 合法父元素标签名列表。M3 SYN-002父子嵌套约束检测使用 */
+    /** 合法父元素标签名列表。M3 SYN-002父子嵌套约束检测使用。allowedChildren由RuleRepository从allowedParents反向推导计算，不在JSON中存储 */
     List<String> allowedParents;
-    /** 合法子元素标签名列表。M3 SYN-002父子嵌套约束检测使用 */
-    List<String> allowedChildren;
     /** 继承声明，如VideoCommand inherits="CommandBase"表示继承通用命令属性。Optional层继承链分析使用，Core层仅存储声明 */
     String inherits;
     /** 应用位置支持矩阵，key为应用位置名(Lockscreen/Wallpaper/LongTake/Widget/ChargingSkin)，value为是否支持。M4 ScopeAnalyzer使用scope.get("Wallpaper")查询 */

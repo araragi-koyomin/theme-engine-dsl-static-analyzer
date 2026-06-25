@@ -1,20 +1,99 @@
-{
+﻿{
   "element": "SoundCommand",
   "category": "command",
-  "requiredAttrs": ["sound", "volume"],
-  "optionalAttrs": ["loop", "keepCur", "play", "condition", "delay", "delayCondition"],
+  "requiredAttrs": [
+    "sound", "volume"
+  ],
+  "optionalAttrs": [
+    "loop", "keepCur", "play", "condition", "delay", "delayCondition"
+  ],
   "attrTypes": {
-    "sound": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "volume": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "loop": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
-    "keepCur": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
-    "play": {"type": "expression", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"},
-    "condition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "delay": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "delayCondition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null}
+    "sound": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "volume": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "loop": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    },
+    "keepCur": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    },
+    "play": {
+      "type": "expression",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "1"
+    },
+    "condition": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "delay": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "delayCondition": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Trigger"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Trigger"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -28,5 +107,15 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+    {
+      "ruleId": "SEM-CMD-002",
+      "condition": "element.attrs[\u0027sound\u0027] != null AND getFileSize(element.attrs[\u0027sound\u0027]) \u003e 1048576",
+      "message": "音频文件超过1MB会被截断处理",
+      "severity": "warning",
+      "suggestedFixes": [
+        "压缩音频文件至1MB以内"
+      ]
+    }
+  ]
 }

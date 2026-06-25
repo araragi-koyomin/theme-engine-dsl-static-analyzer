@@ -159,9 +159,6 @@ public class JsonRuleLoader {
         if (rule.getAllowedParents() == null) {
             rule.setAllowedParents(Collections.emptyList());
         }
-        if (rule.getAllowedChildren() == null) {
-            rule.setAllowedChildren(Collections.emptyList());
-        }
 
         normalizeAttrTypes(rule);
         normalizeConstraints(rule);

@@ -1,16 +1,59 @@
-{
+﻿{
   "element": "CountDownTime",
   "category": "view",
-  "requiredAttrs": ["name", "countDownType", "date"],
-  "optionalAttrs": ["unit"],
+  "requiredAttrs": [
+    "name", "countDownType", "date"
+  ],
+  "optionalAttrs": [
+    "unit"
+  ],
   "attrTypes": {
-    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "countDownType": {"type": "string", "enumValues": ["concrete", "loop"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "date": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "unit": {"type": "string", "enumValues": ["day", "hour", "minute", "second", "hourOnly", "minuteOnly", "secondOnly"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "day"}
+    "name": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "countDownType": {
+      "type": "string",
+      "enumValues": [
+        "concrete", "loop"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "date": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "unit": {
+      "type": "string",
+      "enumValues": [
+        "day", "hour", "minute", "second", "hourOnly", "minuteOnly", "secondOnly"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "day"
+    }
   },
-  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group", "LongTake"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -24,5 +67,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

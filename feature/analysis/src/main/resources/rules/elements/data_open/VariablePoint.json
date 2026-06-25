@@ -1,14 +1,36 @@
-{
+﻿{
   "element": "VariablePoint",
   "category": "data_open",
-  "requiredAttrs": ["frameRate", "time"],
-  "optionalAttrs": [],
+  "requiredAttrs": [
+    "frameRate", "time"
+  ],
+  "optionalAttrs": [
+  ],
   "attrTypes": {
-    "frameRate": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "60"},
-    "time": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "frameRate": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "60"
+    },
+    "time": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["VariableFramerate"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "VariableFramerate"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -25,10 +47,12 @@
   "constraints": [
     {
       "ruleId": "SEM-VPOINT-001",
-      "condition": "parseInt(element.attrs['frameRate']) > 60 OR parseInt(element.attrs['frameRate']) < 1",
+      "condition": "parseInt(element.attrs[\u0027frameRate\u0027]) \u003e 60 OR parseInt(element.attrs[\u0027frameRate\u0027]) \u003c 1",
       "message": "frameRate推荐值30，默认60",
       "severity": "warning",
-      "suggestedFixes": ["设置frameRate为30"]
+      "suggestedFixes": [
+        "设置frameRate为30"
+      ]
     }
   ]
 }

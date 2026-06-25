@@ -1,16 +1,58 @@
-{
+﻿{
   "element": "ExternCommand",
   "category": "command",
-  "requiredAttrs": ["command"],
-  "optionalAttrs": ["condition", "delay", "delayCondition"],
+  "requiredAttrs": [
+    "command"
+  ],
+  "optionalAttrs": [
+    "condition", "delay", "delayCondition"
+  ],
   "attrTypes": {
-    "command": {"type": "string", "enumValues": ["unlock"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "condition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "delay": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "delayCondition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"}
+    "command": {
+      "type": "string",
+      "enumValues": [
+        "unlock"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "condition": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "delay": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "delayCondition": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "1"
+    }
   },
-  "allowedParents": ["Trigger"],
-  "allowedChildren": ["Trigger"],
+  "allowedParents": [
+    "Trigger"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -24,5 +66,15 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+    {
+      "ruleId": "SEM-EXTERN-001",
+      "condition": "element.attrs[\u0027delay\u0027] != null AND parseInt(element.attrs[\u0027delay\u0027]) \u003e 3000",
+      "message": "延迟解锁最大时间不超过3000ms",
+      "severity": "error",
+      "suggestedFixes": [
+        "设置delay值不超过3000"
+      ]
+    }
+  ]
 }

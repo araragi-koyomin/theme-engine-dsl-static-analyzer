@@ -1,21 +1,108 @@
-{
+﻿{
   "element": "Translation",
   "category": "effect_sub",
-  "requiredAttrs": ["values"],
-  "optionalAttrs": ["duration", "repeat", "delay", "factor", "max_distance_x", "max_distance_y", "no_move_distance_x", "no_move_distance_y"],
+  "requiredAttrs": [
+    "values"
+  ],
+  "optionalAttrs": [
+    "duration", "repeat", "delay", "factor", "max_distance_x", "max_distance_y", "no_move_distance_x",
+    "no_move_distance_y"
+  ],
   "attrTypes": {
-    "duration": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "2000"},
-    "repeat": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "delay": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "factor": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0.2"},
-    "values": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "max_distance_x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "max_distance_y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "no_move_distance_x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "no_move_distance_y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"}
+    "duration": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "2000"
+    },
+    "repeat": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "delay": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "factor": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0.2"
+    },
+    "values": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "max_distance_x": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "max_distance_y": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "no_move_distance_x": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "no_move_distance_y": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    }
   },
-  "allowedParents": ["MeshImage"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "MeshImage"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -32,17 +119,20 @@
   "constraints": [
     {
       "ruleId": "SEM-EFFECT-003",
-      "condition": "element.attrs['duration'] != null AND number(element.attrs['duration']) < 1000",
+      "condition": "element.attrs[\u0027duration\u0027] != null AND number(element.attrs[\u0027duration\u0027]) \u003c 1000",
       "message": "Translation的duration最小值为1000毫秒",
       "severity": "warning",
-      "suggestedFixes": ["将duration设置为1000或更大"]
-    },
-    {
+      "suggestedFixes": [
+        "将duration设置为1000或更大"
+      ]
+    }, {
       "ruleId": "SEM-EFFECT-004",
-      "condition": "element.attrs['repeat'] != null AND number(element.attrs['repeat']) < -1",
+      "condition": "element.attrs[\u0027repeat\u0027] != null AND number(element.attrs[\u0027repeat\u0027]) \u003c -1",
       "message": "Translation的repeat最小值为-1(无限循环)",
       "severity": "warning",
-      "suggestedFixes": ["将repeat设置为-1或更大"]
+      "suggestedFixes": [
+        "将repeat设置为-1或更大"
+      ]
     }
   ]
 }

@@ -1,11 +1,15 @@
-{
+﻿{
   "element": "CardInteractionCommand",
   "category": "command",
-  "requiredAttrs": [],
-  "optionalAttrs": [],
-  "attrTypes": {},
-  "allowedParents": ["Trigger"],
-  "allowedChildren": [],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+  ],
+  "attrTypes": {
+  },
+  "allowedParents": [
+    "Trigger"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": false,
@@ -19,5 +23,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

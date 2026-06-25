@@ -1,0 +1,52 @@
+﻿{
+  "element": "Action",
+  "category": "longtake_sub",
+  "requiredAttrs": [
+    "name", "storyBoard"
+  ],
+  "optionalAttrs": [
+  ],
+  "attrTypes": {
+    "name": {
+      "type": "string",
+      "enumValues": [
+        "Aod2Lock", "Lock2Home", "Aod2Home", "Lock2Aod", "Home2Aod", "Home2Lock", "Aod", "Lock", "Home"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "storyBoard": {
+      "type": "string",
+      "enumValues": [
+        "OneShotAodLock", "OneShotLockHome", "OneShotAodHome", "OneShotLockAod", "OneShotHomeAod", "OneShotHomeLock",
+        "OneShotAod", "OneShotLock", "OneShotHome"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
+  },
+  "allowedParents": [
+    "EventTrigger"
+  ],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": false,
+    "Wallpaper": false,
+    "LongTake": true,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+  ]
+}

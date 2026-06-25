@@ -1,0 +1,100 @@
+﻿{
+  "element": "AodClock",
+  "category": "longtake_sub",
+  "requiredAttrs": [
+    "baseRect", "hourHighRect", "hourLowRect", "minHighRect", "minLowRect", "numSrcPath"
+  ],
+  "optionalAttrs": [
+    "dotRect"
+  ],
+  "attrTypes": {
+    "numSrcPath": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "baseRect": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "dotRect": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "hourHighRect": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "hourLowRect": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "minHighRect": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "minLowRect": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
+  },
+  "allowedParents": [
+    "GroupClock"
+  ],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": false,
+    "Wallpaper": false,
+    "LongTake": true,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": false
+  },
+  "constraints": [
+  ]
+}

@@ -1,14 +1,48 @@
-{
+﻿{
   "element": "VibrateCommand",
   "category": "command",
-  "requiredAttrs": ["define"],
-  "optionalAttrs": ["vibrateType"],
+  "requiredAttrs": [
+    "define"
+  ],
+  "optionalAttrs": [
+    "vibrateType"
+  ],
   "attrTypes": {
-    "define": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
-    "vibrateType": {"type": "string", "enumValues": ["haptic.grade.strength1", "haptic.grade.strength2", "haptic.grade.strength3", "haptic.grade.strength4", "haptic.grade.strength5", "haptic.camera.focus", "haptic.camera.gear_slip", "haptic.camera.portrait_switch", "haptic.camera.mode_switch", "haptic.camera.long_press", "haptic.common.button", "haptic.common.charging", "haptic.common.delete_long_press", "haptic.common.fail_pattern1", "haptic.common.fail_pattern2", "haptic.common.long_press", "haptic.common.long_press1", "haptic.common.long_press2", "haptic.common.notice", "haptic.common.pinch", "haptic.common.success", "haptic.common.switch", "haptic.common.threshold", "haptic.common.upglide", "haptic.mode.change", "haptic.poweroff", "haptic.slide.type1", "haptic.slide.type2", "haptic.slide.type3", "haptic.slide.type4", "haptic.slide.type5", "haptic.slide.type6", "haptic.common.long_press3", "haptic.common.click_up", "haptic.common.tick", "haptic.common.double_click", "haptic.common.click", "haptic.volume.max", "haptic.volume.min", "haptic.notice.Arrow", "haptic.clock.stopwatch"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "define": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    },
+    "vibrateType": {
+      "type": "string",
+      "enumValues": [
+        "haptic.grade.strength1", "haptic.grade.strength2", "haptic.grade.strength3", "haptic.grade.strength4",
+        "haptic.grade.strength5", "haptic.camera.focus", "haptic.camera.gear_slip", "haptic.camera.portrait_switch",
+        "haptic.camera.mode_switch", "haptic.camera.long_press", "haptic.common.button", "haptic.common.charging",
+        "haptic.common.delete_long_press", "haptic.common.fail_pattern1", "haptic.common.fail_pattern2",
+        "haptic.common.long_press", "haptic.common.long_press1", "haptic.common.long_press2", "haptic.common.notice",
+        "haptic.common.pinch", "haptic.common.success", "haptic.common.switch", "haptic.common.threshold",
+        "haptic.common.upglide", "haptic.mode.change", "haptic.poweroff", "haptic.slide.type1", "haptic.slide.type2",
+        "haptic.slide.type3", "haptic.slide.type4", "haptic.slide.type5", "haptic.slide.type6",
+        "haptic.common.long_press3", "haptic.common.click_up", "haptic.common.tick", "haptic.common.double_click",
+        "haptic.common.click", "haptic.volume.max", "haptic.volume.min", "haptic.notice.Arrow", "haptic.clock.stopwatch"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Trigger"],
-  "allowedChildren": ["Vibrate"],
+  "allowedParents": [
+    "Trigger"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -25,17 +59,20 @@
   "constraints": [
     {
       "ruleId": "SEM-VIBRATE-001",
-      "condition": "element.attrs['define'] == 'false' AND element.attrs['vibrateType'] == null",
+      "condition": "element.attrs[\u0027define\u0027] == \u0027false\u0027 AND element.attrs[\u0027vibrateType\u0027] == null",
       "message": "define为false(系统预置模式)时，vibrateType属性为必填",
       "severity": "error",
-      "suggestedFixes": ["添加vibrateType属性指定系统预置振动类型"]
-    },
-    {
+      "suggestedFixes": [
+        "添加vibrateType属性指定系统预置振动类型"
+      ]
+    }, {
       "ruleId": "SEM-VIBRATE-002",
-      "condition": "element.attrs['define'] == 'true' AND NOT hasChildElement(element, 'Vibrate')",
+      "condition": "element.attrs[\u0027define\u0027] == \u0027true\u0027 AND NOT hasChildElement(element, \u0027Vibrate\u0027)",
       "message": "define为true(自定义模式)时，必须包含Vibrate子标签",
       "severity": "error",
-      "suggestedFixes": ["添加Vibrate子标签及其Wave/Slice子标签"]
+      "suggestedFixes": [
+        "添加Vibrate子标签及其Wave/Slice子标签"
+      ]
     }
   ]
 }

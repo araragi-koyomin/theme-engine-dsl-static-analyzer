@@ -1,16 +1,56 @@
-{
+﻿{
   "element": "SinMotion",
   "category": "effect_sub",
-  "requiredAttrs": [],
-  "optionalAttrs": ["a", "factor_k", "no_move_distance_x", "no_move_distance_y"],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+    "a", "factor_k", "no_move_distance_x", "no_move_distance_y"
+  ],
   "attrTypes": {
-    "a": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "20"},
-    "factor_k": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0.2"},
-    "no_move_distance_x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "no_move_distance_y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"}
+    "a": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "20"
+    },
+    "factor_k": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0.2"
+    },
+    "no_move_distance_x": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "no_move_distance_y": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    }
   },
-  "allowedParents": ["MeshImage"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "MeshImage"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -24,5 +64,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

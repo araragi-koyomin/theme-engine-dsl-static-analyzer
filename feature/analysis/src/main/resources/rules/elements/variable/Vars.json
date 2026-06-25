@@ -1,0 +1,22 @@
+{
+  "element": "Vars",
+  "category": "variable",
+  "requiredAttrs": [],
+  "optionalAttrs": [],
+  "attrTypes": {},
+  "allowedParents": ["VarArray"],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": []
+}

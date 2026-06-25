@@ -1,0 +1,50 @@
+﻿{
+  "element": "StoryBoard",
+  "category": "longtake",
+  "requiredAttrs": [
+    "name"
+  ],
+  "optionalAttrs": [
+  ],
+  "attrTypes": {
+    "name": {
+      "type": "string",
+      "enumValues": [
+        "OneShotAodLock", "OneShotLockHome", "OneShotAodHome", "OneShotLockAod", "OneShotHomeAod", "OneShotHomeLock",
+        "OneShotAod", "OneShotLock", "OneShotHome"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
+  },
+  "allowedParents": [
+    "LongTake"
+  ],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": false,
+    "Wallpaper": false,
+    "LongTake": true,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-LT-001",
+      "condition": "element.attrs[\u0027name\u0027] NOT IN [\u0027OneShotAodLock\u0027, \u0027OneShotLockHome\u0027, \u0027OneShotAodHome\u0027, \u0027OneShotLockAod\u0027, \u0027OneShotHomeAod\u0027, \u0027OneShotHomeLock\u0027, \u0027OneShotAod\u0027, \u0027OneShotLock\u0027, \u0027OneShotHome\u0027]",
+      "message": "StoryBoard name必须为固定命名，不可修改",
+      "severity": "error",
+      "suggestedFixes": [
+        "使用固定StoryBoard名称"
+      ]
+    }
+  ]
+}

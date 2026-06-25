@@ -232,6 +232,6 @@ class FigureLoadTest {
         RuleRepository repo = loader.loadFromDirectory(getRulesDir());
 
         DslElementRule chargingSkin = repo.getElementRule("ChargingSkin").orElseThrow();
-        assertTrue(chargingSkin.getAllowedChildren().contains("PathUtil"));
+        assertTrue(repo.getAllowedChildren("ChargingSkin").contains("PathUtil"));
     }
 }

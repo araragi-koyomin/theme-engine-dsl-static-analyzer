@@ -1,0 +1,91 @@
+﻿{
+  "element": "Unlocker",
+  "category": "control",
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+    "name", "x", "y", "width", "height", "visibility"
+  ],
+  "attrTypes": {
+    "name": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "x": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "y": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "width": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "w"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "height": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "h"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "visibility": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "1"
+    }
+  },
+  "allowedParents": [
+    "Lockscreen", "Group"
+  ],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": false,
+    "LongTake": false,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+  ]
+}

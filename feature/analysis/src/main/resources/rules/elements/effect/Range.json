@@ -1,13 +1,26 @@
-{
+﻿{
   "element": "Range",
   "category": "effect_sub",
-  "requiredAttrs": ["rect"],
-  "optionalAttrs": [],
+  "requiredAttrs": [
+    "rect"
+  ],
+  "optionalAttrs": [
+  ],
   "attrTypes": {
-    "rect": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "rect": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["PathData"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "PathData"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -21,5 +34,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

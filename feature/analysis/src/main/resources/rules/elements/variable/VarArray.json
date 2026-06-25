@@ -1,13 +1,27 @@
-{
+﻿{
   "element": "VarArray",
   "category": "variable",
-  "requiredAttrs": [],
-  "optionalAttrs": ["type"],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+    "type"
+  ],
   "attrTypes": {
-    "type": {"type": "string", "enumValues": ["number", "string"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "number"}
+    "type": {
+      "type": "string",
+      "enumValues": [
+        "number", "string"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "number"
+    }
   },
-  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
-  "allowedChildren": ["Vars", "Items"],
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group", "LongTake"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -21,5 +35,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

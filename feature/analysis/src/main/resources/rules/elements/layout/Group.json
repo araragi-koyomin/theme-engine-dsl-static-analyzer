@@ -1,32 +1,230 @@
-{
+﻿{
   "element": "Group",
   "category": "layout",
-  "requiredAttrs": [],
-  "optionalAttrs": ["name", "x", "y", "width", "height", "pivotX", "pivotY", "rotation", "rotationX", "rotationY", "alpha", "visibility", "category", "align", "alignV", "enableMove", "moveRect", "active", "clip", "layered"],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+    "name", "x", "y", "width", "height", "pivotX", "pivotY", "rotation", "rotationX", "rotationY", "alpha",
+    "visibility", "category", "align", "alignV", "enableMove", "moveRect", "active", "clip", "layered"
+  ],
   "attrTypes": {
-    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "width": {"type": "number", "enumValues": [], "aliases": ["w"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "height": {"type": "number", "enumValues": [], "aliases": ["h"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "pivotX": {"type": "number", "enumValues": [], "aliases": ["centerX"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "pivotY": {"type": "number", "enumValues": [], "aliases": ["centerY"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "rotation": {"type": "number", "enumValues": [], "aliases": ["angle"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "rotationX": {"type": "number", "enumValues": [], "aliases": ["angleX"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "rotationY": {"type": "number", "enumValues": [], "aliases": ["angleY"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "alpha": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "255"},
-    "visibility": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"},
-    "category": {"type": "string", "enumValues": ["Normal", "Charging", "BatteryLow", "BatteryFull"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "align": {"type": "string", "enumValues": ["left", "center", "right"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "alignV": {"type": "string", "enumValues": ["top", "center", "bottom"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "enableMove": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
-    "moveRect": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "active": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"},
-    "clip": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
-    "layered": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "name": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "x": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "y": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "width": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "w"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "height": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "h"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "pivotX": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "centerX"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "pivotY": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "centerY"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "rotation": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "angle"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "rotationX": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "angleX"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "rotationY": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "angleY"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "alpha": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "255"
+    },
+    "visibility": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "1"
+    },
+    "category": {
+      "type": "string",
+      "enumValues": [
+        "Normal", "Charging", "BatteryLow", "BatteryFull"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "align": {
+      "type": "string",
+      "enumValues": [
+        "left", "center", "right"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "alignV": {
+      "type": "string",
+      "enumValues": [
+        "top", "center", "bottom"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "enableMove": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    },
+    "moveRect": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "active": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "1"
+    },
+    "clip": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    },
+    "layered": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
-  "allowedChildren": ["Var", "VarArray", "Array", "GlobalVariable", "Text", "Image", "Video", "Time", "DateTime", "CountDownTime", "ImageNumber", "ImageSeries", "SourceImage", "Mask", "GroupImage", "Swiper", "Arc", "Circle", "Ellipse", "Line", "Rectangle", "PathUtil", "Button", "Unlocker", "Slider", "Group", "AlphaAnimation", "PositionAnimation", "RotationAnimation", "SizeAnimation", "SourcesAnimation", "VariableAnimation", "MeshImage", "ParticleView", "DropPhysicalView", "CollisionWorld", "FluidsComponent", "StereoView", "MultiLayer"],
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group", "LongTake", "Swiper", "AodClock", "LockClock", "Array"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -43,17 +241,28 @@
   "constraints": [
     {
       "ruleId": "SEM-ATTR-004",
-      "condition": "element.attrs['clip'] == 'true' AND (element.attrs['width'] == null OR element.attrs['height'] == null)",
+      "condition": "element.attrs[\u0027clip\u0027] == \u0027true\u0027 AND (element.attrs[\u0027width\u0027] == null OR element.attrs[\u0027height\u0027] == null)",
       "message": "clip=true时需要设置width和height来定义裁剪边界",
       "severity": "warning",
-      "suggestedFixes": ["添加width属性", "添加height属性", "移除clip属性"]
-    },
-    {
+      "suggestedFixes": [
+        "添加width属性", "添加height属性", "移除clip属性"
+      ]
+    }, {
       "ruleId": "SEM-ATTR-005",
-      "condition": "element.attrs['layered'] == 'true'",
+      "condition": "element.attrs[\u0027layered\u0027] == \u0027true\u0027 AND (lastChildImage(element).attrs[\u0027hybridMode\u0027] == null OR precedingChildrenWithHybridMode(element).size() \u003e 0)",
       "message": "layered=true时最后一个Image子元素必须有hybridMode属性，前面所有视图不能有hybridMode",
       "severity": "error",
-      "suggestedFixes": ["为最后一个Image添加hybridMode属性", "移除前面视图的hybridMode属性", "移除layered属性"]
+      "suggestedFixes": [
+        "为最后一个Image添加hybridMode属性", "移除前面视图的hybridMode属性", "移除layered属性"
+      ]
+    }, {
+      "ruleId": "SEM-ATTR-001",
+      "condition": "element.attrs[\u0027alpha\u0027] != null AND (parseInt(element.attrs[\u0027alpha\u0027]) \u003c 0 OR parseInt(element.attrs[\u0027alpha\u0027]) \u003e 255)",
+      "message": "alpha值应在0-255范围内",
+      "severity": "error",
+      "suggestedFixes": [
+        "设置alpha值在0-255范围内"
+      ]
     }
   ]
 }

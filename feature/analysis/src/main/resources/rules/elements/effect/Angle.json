@@ -1,14 +1,38 @@
-{
+﻿{
   "element": "Angle",
   "category": "effect_sub",
-  "requiredAttrs": ["isRandom"],
-  "optionalAttrs": ["angle"],
+  "requiredAttrs": [
+    "isRandom"
+  ],
+  "optionalAttrs": [
+    "angle"
+  ],
   "attrTypes": {
-    "isRandom": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "angle": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"}
+    "isRandom": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "angle": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "0"
+    }
   },
-  "allowedParents": ["Item"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Item"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -22,5 +46,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

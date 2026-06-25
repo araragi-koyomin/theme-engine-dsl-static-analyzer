@@ -1,18 +1,78 @@
-{
+﻿{
   "element": "VariableCommand",
   "category": "command",
-  "requiredAttrs": ["name", "expression"],
-  "optionalAttrs": ["type", "condition", "delay", "delayCondition"],
+  "requiredAttrs": [
+    "name", "expression"
+  ],
+  "optionalAttrs": [
+    "type", "condition", "delay", "delayCondition"
+  ],
   "attrTypes": {
-    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "expression": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "auto", "defaultValue": null},
-    "type": {"type": "string", "enumValues": ["number", "string"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "number"},
-    "condition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "delay": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "delayCondition": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null}
+    "name": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "expression": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "auto",
+      "defaultValue": null
+    },
+    "type": {
+      "type": "string",
+      "enumValues": [
+        "number", "string"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "number"
+    },
+    "condition": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "delay": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "delayCondition": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Trigger"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Trigger"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -29,10 +89,12 @@
   "constraints": [
     {
       "ruleId": "SEM-PERSIST-002",
-      "condition": "element.attrs['persist'] != null",
+      "condition": "element.attrs[\u0027persist\u0027] != null",
       "message": "VariableCommand不支持persist属性",
       "severity": "error",
-      "suggestedFixes": ["移除persist属性"]
+      "suggestedFixes": [
+        "移除persist属性"
+      ]
     }
   ]
 }

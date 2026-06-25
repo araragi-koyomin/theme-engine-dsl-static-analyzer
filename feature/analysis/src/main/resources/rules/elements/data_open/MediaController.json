@@ -1,13 +1,26 @@
-{
+﻿{
   "element": "MediaController",
   "category": "data_open",
-  "requiredAttrs": [],
-  "optionalAttrs": ["packageName"],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+    "packageName"
+  ],
   "attrTypes": {
-    "packageName": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "com.huawei.hmsapp.music"}
+    "packageName": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "com.huawei.hmsapp.music"
+    }
   },
-  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "Group"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "Group", "LongTake"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -27,7 +40,9 @@
       "condition": "using MediaCommand or MediaIcon without MediaController declared",
       "message": "使用MediaCommand或MediaIcon前必须声明MediaController",
       "severity": "error",
-      "suggestedFixes": ["添加<MediaController/>声明"]
+      "suggestedFixes": [
+        "添加\u003cMediaController/\u003e声明"
+      ]
     }
   ]
 }

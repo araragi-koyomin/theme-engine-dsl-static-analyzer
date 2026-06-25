@@ -1,21 +1,134 @@
-{
+﻿{
   "element": "Var",
   "category": "variable",
-  "requiredAttrs": ["name"],
-  "optionalAttrs": ["expression", "type", "threshold", "persist", "index", "values", "size", "const"],
+  "requiredAttrs": [
+    "name"
+  ],
+  "optionalAttrs": [
+    "expression", "type", "threshold", "persist", "globalPersist", "styleGlobalPersist", "index", "values", "size",
+    "const"
+  ],
   "attrTypes": {
-    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "expression": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "auto", "defaultValue": null},
-    "type": {"type": "string", "enumValues": ["number", "string", "number[]", "string[]"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "number"},
-    "threshold": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "persist": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
-    "index": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "values": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "size": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "const": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"}
+    "name": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "expression": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "auto",
+      "defaultValue": null
+    },
+    "type": {
+      "type": "string",
+      "enumValues": [
+        "number", "string", "number[]", "string[]"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "number"
+    },
+    "threshold": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "persist": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    },
+    "index": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "values": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "size": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "const": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    },
+    "globalPersist": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    },
+    "styleGlobalPersist": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    }
   },
-  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
-  "allowedChildren": ["Trigger", "VariableAnimation"],
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group", "Weather", "Calendar", "Healthy", "DataShare",
+    "SensorBinder", "LongTake", "GroupBattery"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -32,17 +145,20 @@
   "constraints": [
     {
       "ruleId": "SEM-PERSIST-001",
-      "condition": "element.attrs['persist'] != null AND element.attrs['type'] IN ['time','date','week']",
+      "condition": "(element.attrs[\u0027persist\u0027] == \u0027true\u0027 OR element.attrs[\u0027globalPersist\u0027] == \u0027true\u0027 OR element.attrs[\u0027styleGlobalPersist\u0027] == \u0027true\u0027) AND element.attrs[\u0027name\u0027] MATCHES \u0027(hour|hour12|hour24|minute|year|month|date|day_of_week|lunarYear|lunarMonth|lunarDay|ishour12|system.time.*)\u0027",
       "message": "禁止对时间/日期/星期变量使用persist/globalPersist/styleGlobalPersist",
       "severity": "error",
-      "suggestedFixes": ["移除persist属性"]
-    },
-    {
+      "suggestedFixes": [
+        "移除persist/globalPersist/styleGlobalPersist属性"
+      ]
+    }, {
       "ruleId": "SEM-VAR-003",
-      "condition": "element.attrs['values'] != null AND element.attrs['size'] != null",
+      "condition": "element.attrs[\u0027values\u0027] != null AND element.attrs[\u0027size\u0027] != null",
       "message": "Var的values与size属性同时存在，优先取size",
       "severity": "warning",
-      "suggestedFixes": ["移除values属性", "移除size属性"]
+      "suggestedFixes": [
+        "移除values属性", "移除size属性"
+      ]
     }
   ]
 }

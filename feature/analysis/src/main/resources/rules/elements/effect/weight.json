@@ -1,15 +1,47 @@
-{
+﻿{
   "element": "weight",
   "category": "effect_sub",
-  "requiredAttrs": [],
-  "optionalAttrs": ["isRandom", "value", "lowestWeight"],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+    "isRandom", "value", "lowestWeight"
+  ],
   "attrTypes": {
-    "isRandom": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
-    "value": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1"},
-    "lowestWeight": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0.1"}
+    "isRandom": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    },
+    "value": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "1"
+    },
+    "lowestWeight": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "0.1"
+    }
   },
-  "allowedParents": ["Item"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Item"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -23,5 +55,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

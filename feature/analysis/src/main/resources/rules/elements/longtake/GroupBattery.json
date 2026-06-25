@@ -1,0 +1,28 @@
+﻿{
+  "element": "GroupBattery",
+  "category": "longtake_sub",
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+  ],
+  "attrTypes": {
+  },
+  "allowedParents": [
+    "AodClock"
+  ],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": false,
+    "Wallpaper": false,
+    "LongTake": true,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": false
+  },
+  "constraints": [
+  ]
+}
