@@ -2,6 +2,7 @@ package com.huawei.theme.analysis.core.rulelibrary;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
@@ -91,7 +92,7 @@ public interface RuleRepository {
      * @param elementName 元素标签名
      * @return 规范属性名集合，元素不存在时返回空Set
      */
-    java.util.Set<String> getCanonicalAttrNames(String elementName);
+    Set<String> getCanonicalAttrNames(String elementName);
 
     /**
      * 获取指定元素的合法父元素标签名列表。

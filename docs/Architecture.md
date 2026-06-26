@@ -17,17 +17,19 @@
 ```
 feature/analysis/src/main/java/com/huawei/theme/analysis/
 ├── core/                       ← 无IDEA依赖，CLI jar只打包这部分
-│   ├── ast/                    ← AST节点定义 + AST构建器
-│   ├── expression/             ← M0: DslExpression.g4 + ANTLR4生成代码
-│   ├── ruledsl/                ← M0: DslRuleCondition.g4 + ANTLR4生成代码 + RuleDslEvaluator
-│   ├── function/               ← M0: 函数签名库JSON + FunctionSignatureLibrary
+│   ├── shared/                  ← 跨模块共享数据模型
+│   │   ├── ast/                 ← AST节点层级（M3产出，M4消费） + ExpressionAstNode接口 + ExpressionKind枚举
+│   │   ├── type/                ← 类型系统层级（DslNumberType/DslStringType/DslArrayType）
+│   │   └── diagnostic/          ← 诊断数据模型（跨模块共享） + DiagnosticSeverityAdapter
+│   ├── expression/             ← M0: 表达式解析基础设施 + ExpressionNode + FunctionSignatureLibrary接口
+│   ├── ruledsl/                ← M0: 规则DSL求值器 + EvaluationContext
+│   ├── function/               ← M0: 函数签名库实现（JSON加载 + 索引构建，骨架阶段占位）
 │   ├── fileidentification/     ← M1: DSL文件识别
 │   ├── rulelibrary/            ← M2: 规则数据模型 + JSON加载 + RuleRepository
-│   ├── syntaxanalysis/         ← M3: dom4j XML解析 + 独立AST构建 + 语法错误
-│   ├── semanticanalysis/       ← M4: 分析引擎 + 类型推断 + 符号表 + 函数签名库 + 约束检查
+│   ├── syntaxanalysis/         ← M3: dom4j XML解析 + AST构建 + 语法错误
+│   ├── semanticanalysis/       ← M4: 语义分析引擎 + 符号表 + DiagnosticProvider接口
 │   ├── quickfix/               ← M5: 修复逻辑（纯文本操作描述）
 │   ├── batchinspection/        ← M7: 批量扫描 + 报告导出
-│   ├── diagnostic/             ← Diagnostic数据模型（跨模块共享）
 │   └── cli/                    ← CLI入口（不在模块总览中展示）
 │
 ├── plugin/                     ← 依赖IDEA SDK + 依赖core层
@@ -176,7 +178,7 @@ graph TD
 |---|---|---|---|
 | `DslFileMatcher` | M1 | M7, CLI入口 | 判断文件是否为DSL文件（filePath+content参数） |
 | `RuleRepository` | M2 | M1, M3, M4, M5, M7 | 提供规则条目查询、约束条件查询、根元素名称集合 |
-| `DslAstProvider` | M3 | M4, M5, M7 | 提供独立AST访问（filePath+content → DslFileNode） |
+| `DslAstProvider` | M3 | M4, M5, M7 | 提供独立AST访问，唯一方法 getDslAst(String filePath, String content) → DslFileNode |
 | `DiagnosticProvider` | M4 | M5, M7 | 提供语义诊断结果（filePath → List&lt;Diagnostic&gt;） |
 | `QuickFixProvider` | M5 | M7 | 提供FixAction修复策略（Diagnostic → List&lt;FixAction&gt;） |
 | `BatchInspectionRunner` | M7 | CLI入口 | 提供批量检查执行入口（filePath/directoryPath → BatchInspectionResult） |

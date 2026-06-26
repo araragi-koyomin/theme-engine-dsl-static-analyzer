@@ -1,2 +1,3 @@
 rootProject.name = 'ThemeDevStudioForIntellij'
+include "common:base"
 include "feature:analysis"

@@ -1,11 +1,12 @@
 package com.huawei.theme.analysis.core.rulelibrary.model;
 
+import java.util.Collections;
 import java.util.List;
-
-import com.huawei.theme.analysis.core.diagnostic.DiagnosticSeverity;
 
 import lombok.Builder;
 import lombok.Data;
+
+import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 
 /**
  * 声明式约束条件，定义一条可零代码新增的检测规则。
@@ -28,5 +29,5 @@ public class RuleConstraint {
     /** 诊断严重级别，JSON中存储为小写字符串("error"/"warning"/"info")，通过DiagnosticSeverityAdapter映射为枚举 */
     DiagnosticSeverity severity;
     /** 修复建议文本列表，M5 FixAction直接消费 */
-    List<String> suggestedFixes;
+    @Builder.Default List<String> suggestedFixes = Collections.emptyList();
 }

@@ -2,12 +2,12 @@ package com.huawei.theme.analysis.core.rulelibrary;
 
 import org.junit.jupiter.api.Test;
 
-import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
-import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
+import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 
 class FigureLoadTest {
 

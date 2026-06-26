@@ -18,13 +18,13 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
-import com.huawei.theme.analysis.core.diagnostic.DiagnosticSeverity;
-import com.huawei.theme.analysis.core.diagnostic.adapter.DiagnosticSeverityAdapter;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleConstraint;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
+import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
+import com.huawei.theme.analysis.core.shared.diagnostic.adapter.DiagnosticSeverityAdapter;
 
 /**
  * JSON规则库加载器，从指定目录加载规则数据并构建RuleRepository所需的三个Map。

@@ -50,6 +50,25 @@ exprList : expression (',' expression)* ;
 
 **自动生成代码**：DslExpressionLexer、DslExpressionParser、DslExpressionVisitor、DslExpressionBaseVisitor。生成代码位于`core/expression/generated/`。
 
+**ExpressionNode数据模型**：
+
+```java
+@Data
+@Builder
+public class ExpressionNode implements ExpressionAstNode {
+    ExpressionKind kind;                     // 表达式类别: number/string
+    String operator;                         // 运算符(二元/一元表达式)
+    List<ExpressionNode> children;           // 子表达式列表
+    String functionName;                     // 函数名(函数调用表达式)
+    String variableName;                     // 变量名(变量引用表达式)
+    String literalValue;                     // 字面量值(字面量表达式)
+    int line;                                // 源码行号
+    int column;                              // 源码列号
+}
+```
+
+> **设计决策(DIP修正)**：ExpressionAstNode是定义在`shared/ast/`包的抽象接口，ExpressionNode在M0中实现该接口。这使M3的DslAttributeValueNode可以引用抽象接口ExpressionAstNode而非M0具体类ExpressionNode，避免M3对M0实现细节的直接依赖。
+
 ### 3.2 DslRuleCondition.g4 — 规则DSL条件语法
 
 **Grammar文件位置**：`core/ruledsl/grammar/DslRuleCondition.g4`
@@ -170,7 +189,9 @@ public class FunctionParam {
 }
 ```
 
-**DslType与JSON映射**：JSON中type字段为字符串（"number"/"string"/"enum"/"number[]"/"string[]"/"void"），加载时映射为DslType子类实例（DslNumberType/DslStringType/DslEnumType/DslArrayType/DslVoidType）。
+**DslType与JSON映射**：JSON中type字段为字符串（"number"/"string"/"number[]"/"string[]"), 加载时映射为DslType子类实例（DslNumberType/DslStringType/DslArrayType)。
+
+> Enum/Boolean由AttrTypeSpec.enumValues承载值约束, Void在DSL表达式中无使用场景, 故不作为DslType子类。
 
 **示例JSON定义**：
 
@@ -192,14 +213,14 @@ public class FunctionParam {
 JSON加载 + 查询接口。从`resources/functions/`目录加载所有JSON文件，构建内存索引。
 
 ```java
-public class FunctionSignatureLibrary {
-    Map<String, List<FunctionSignature>> functionIndex;   // name → 签名列表
-
+public interface FunctionSignatureLibrary {
     Optional<FunctionSignature> getSignature(String name, String expressionKind);
     List<FunctionSignature> getSignatures(String name);
     boolean hasFunction(String name);
 }
 ```
+
+> **设计决策(DIP修正)**：FunctionSignatureLibrary从具体类改为接口, 定义在`core/expression/`包; 实现类(JsonFunctionSignatureLoader等)放在`core/function/`包, 骨架阶段延后。
 
 **加载时机**：CLI启动时预加载；IDEA插件在plugin初始化时预加载。
 

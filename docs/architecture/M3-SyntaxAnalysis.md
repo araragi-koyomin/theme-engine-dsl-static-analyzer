@@ -27,9 +27,12 @@ public abstract class DslAstNode {
     String text;
     int line;
     int column;
-    List<DslAstNode> children;
 }
+```
 
+> 设计决策(LSP原则): 基类只包含所有子类共有的字段(text/line/column); children语义不适用于所有子类(如DslAttributeValueNode无子节点), 因此各子类定义语义专属字段.
+
+```java
 public class DslFileNode extends DslAstNode {
     String xmlDeclaration;
     DslElementNode rootElement;
@@ -38,12 +41,16 @@ public class DslFileNode extends DslAstNode {
 public class DslElementNode extends DslAstNode {
     String tagName;
     List<DslAttributeNode> attributes;
-    List<DslAstNode> children;
+    List<DslElementNode> childElements;
     boolean selfClosing;
     boolean hasError;
     String errorMessage;
 }
+```
 
+> 字段名childElements表明子节点均为元素节点, 类型精度优于泛型List<DslAstNode>.
+
+```java
 public class DslAttributeNode extends DslAstNode {
     String name;
     DslAttributeValueNode value;
@@ -51,10 +58,32 @@ public class DslAttributeNode extends DslAstNode {
 
 public class DslAttributeValueNode extends DslAstNode {
     String rawValue;
-    ExpressionNode expression;       // M0解析的表达式AST（仅expression/reference类型）
+    Optional<ExpressionAstNode> expression;
     boolean isLiteral;
 }
 ```
+
+> DIP修正: expression引用shared/ast/ExpressionAstNode抽象接口而非M0具体类ExpressionNode; Optional处理可空值(纯文本属性无表达式).
+
+#### ExpressionAstNode接口与ExpressionKind枚举（shared/ast/）
+
+M3表达式嵌入使用`shared/ast/`中定义的抽象接口，M0的ExpressionNode实现此接口：
+
+```java
+public interface ExpressionAstNode {
+    String getText();
+    int getLine();
+    int getColumn();
+    ExpressionKind getKind();
+}
+
+public enum ExpressionKind {
+    LITERAL, VARIABLE_REF, FUNCTION_CALL, BINARY_EXPR,
+    UNARY_EXPR, CONDITIONAL, ARRAY_ACCESS, UNKNOWN
+}
+```
+
+> ExpressionAstNode为M0/M3/M4共用的表达式抽象接口, ExpressionKind统一表达式类型分类, M0 ExpressionNode实现此接口.
 
 **AST节点树结构**：
 
@@ -90,10 +119,10 @@ graph TD
 ```java
 public interface DslAstProvider {
     DslFileNode getDslAst(String filePath, String content);
-    List<DslElementNode> findElementsByName(DslFileNode ast, String elementName);
-    List<DslElementNode> findElementsByTag(DslFileNode ast, String tagName);
 }
 ```
+
+> 设计决策: 遍历/查询方法不属于语法分析职责, 延后到实现阶段; 调用方可直接遍历DslFileNode树.
 
 **纯字符串参数**：Core层接口使用(filePath, content)，不依赖VirtualFile/PsiFile。
 

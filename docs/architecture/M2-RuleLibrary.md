@@ -27,6 +27,7 @@
 @Builder
 public class DslElementRule {
     String elementName;
+    String category;                              // 元素分类: root/view/layout/variable/control/command/animation/animation_frame/effect/three_d/trigger/data_open
     List<String> requiredAttrs;
     List<String> optionalAttrs;
     Map<String, AttrTypeSpec> attrTypes;
@@ -107,6 +108,7 @@ public class RuleConstraint {
     String condition;                        // 声明式条件表达式（规则DSL语法）
     String message;                          // 条件满足时的诊断消息
     DiagnosticSeverity severity;             // 诊断严重级别
+                                             // 包路径迁移: DiagnosticSeverity已从com.huawei.theme.analysis.core.diagnostic迁移至com.huawei.theme.analysis.core.shared.diagnostic; RuleConstraint.import路径已同步更新
     List<String> suggestedFixes;             // 修复建议文本列表
 }
 ```
@@ -160,7 +162,7 @@ public interface RuleRepository {
     Optional<DslElementRule> getElementRule(String elementName);
     List<DslElementRule> getAllElementRules();
     List<String> getAllElementNames();
-    List<String> getRootElementNames();
+    List<String> getRootElementNames();          // 基于DslElementRule.category字段过滤, 返回category="root"的元素名称集合
     Optional<AttrTypeSpec> getAttrTypeSpec(String elementName, String attrName);
     Optional<String> resolveAttrAlias(String elementName, String attrName);
     Set<String> getCanonicalAttrNames(String elementName);
