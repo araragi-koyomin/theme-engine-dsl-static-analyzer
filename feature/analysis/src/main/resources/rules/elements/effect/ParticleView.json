@@ -1,20 +1,98 @@
-{
+﻿{
   "element": "ParticleView",
   "category": "effect",
-  "requiredAttrs": ["src"],
-  "optionalAttrs": ["w", "h", "count", "move_radius", "speek_sec", "reduce_size", "set_path"],
+  "requiredAttrs": [
+    "src"
+  ],
+  "optionalAttrs": [
+    "w", "h", "count", "move_radius", "speek_sec", "reduce_size", "set_path"
+  ],
   "attrTypes": {
-    "w": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "30"},
-    "h": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "30"},
-    "count": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "6"},
-    "move_radius": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "32"},
-    "speek_sec": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "2.5"},
-    "reduce_size": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "1.5"},
-    "set_path": {"type": "string", "enumValues": ["true", "false"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "false"},
-    "src": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "w": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "30"
+    },
+    "h": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "30"
+    },
+    "count": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "6"
+    },
+    "move_radius": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "32"
+    },
+    "speek_sec": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "2.5"
+    },
+    "reduce_size": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "1.5"
+    },
+    "set_path": {
+      "type": "string",
+      "enumValues": [
+        "true", "false"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "false"
+    },
+    "src": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Lockscreen"],
-  "allowedChildren": ["PathData"],
+  "allowedParents": [
+    "Lockscreen"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -28,5 +106,23 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+    {
+      "ruleId": "SEM-EFFECT-PV-001",
+      "condition": "element.parent.tagName != \u0027Lockscreen\u0027",
+      "message": "ParticleView必须为根标签的直接子元素",
+      "severity": "error",
+      "suggestedFixes": [
+        "将ParticleView移至根标签下"
+      ]
+    }, {
+      "ruleId": "SEM-EFFECT-PV-002",
+      "condition": "element.attrs[\u0027w\u0027] != null AND parseInt(element.attrs[\u0027w\u0027]) \u003e 120",
+      "message": "粒子尺寸最大为120px",
+      "severity": "warning",
+      "suggestedFixes": [
+        "减小w/h值至120以内"
+      ]
+    }
+  ]
 }

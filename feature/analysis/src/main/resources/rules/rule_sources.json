@@ -1,90 +1,503 @@
 [
-  {"ruleId": "SYN-001", "category": "SYN", "description": "根元素标签错误", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-scope-0000002279698481"},
-  {"ruleId": "SYN-002", "category": "SYN", "description": "标签嵌套违反父子约束", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-lock-0000002244659534"},
-  {"ruleId": "SYN-003", "category": "SYN", "description": "未知元素标签", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-0000002279818413"},
-  {"ruleId": "SYN-004", "category": "SYN", "description": "未知属性名", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"},
-  {"ruleId": "SYN-005", "category": "SYN", "description": "缺失必填属性", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-0000002279818413"},
-  {"ruleId": "SYN-006", "category": "SYN", "description": "属性值类型错误(纯字面量)", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"},
-  {"ruleId": "SYN-007", "category": "SYN", "description": "枚举值错误", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"},
-  {"ruleId": "SEM-EXPR-001", "category": "SEM", "description": "数值表达式使用-#var语法", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"},
-  {"ruleId": "SEM-EXPR-002", "category": "SEM", "description": "数值表达式值超过7位精度限制", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"},
-  {"ruleId": "SEM-EXPR-003", "category": "SEM", "description": "字符串表达式中数值计算以#开头", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"},
-  {"ruleId": "SEM-EXPR-004", "category": "SEM", "description": "字符串表达式未使用单引号", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"},
-  {"ruleId": "SEM-EXPR-005", "category": "SEM", "description": "字符串表达式嵌入数值表达式缺少花括号", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"},
-  {"ruleId": "SEM-EXPR-006", "category": "SEM", "description": "preciseeval后使用运算符或+连接符", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"},
-  {"ruleId": "SEM-EXPR-ANTLR", "category": "SEM", "description": "ANTLR4词法/语法错误", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"},
-  {"ruleId": "SEM-TYPE-001", "category": "SEM", "description": "表达式类型与属性期望类型不匹配", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"},
-  {"ruleId": "SEM-TYPE-002", "category": "SEM", "description": "函数调用参数类型不匹配", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"},
-  {"ruleId": "SEM-CMD-001", "category": "SEM", "description": "VideoCommand中sound和play互斥", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-videocommand-0000002504354923"},
-  {"ruleId": "SEM-CMD-002", "category": "SEM", "description": "SoundCommand音频文件>1MB", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-soundcommand-0000002471395052"},
-  {"ruleId": "SEM-CMD-003", "category": "SEM", "description": "StyleCommand频繁切换", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stylecommand-0000002471235086"},
-  {"ruleId": "SEM-CMD-004", "category": "SEM", "description": "StyleCommand index使用表达式", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stylecommand-0000002471235086"},
-  {"ruleId": "SEM-PERSIST-001", "category": "SEM", "description": "时间/日期/星期变量使用persist", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"},
-  {"ruleId": "SEM-PERSIST-002", "category": "SEM", "description": "VariableCommand使用persist属性", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-variablecommand-0000002471395064"},
-  {"ruleId": "SEM-PERSIST-003", "category": "SEM", "description": "styleGlobalPersist初始值默认为0", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stylecommand-0000002471235086"},
-  {"ruleId": "SEM-SCOPE-001", "category": "SEM", "description": "元素不支持当前应用位置", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-scope-0000002279698481"},
-  {"ruleId": "SEM-SCOPE-002", "category": "SEM", "description": "元素不支持当前设备类型", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-scope-0000002279698481"},
-  {"ruleId": "SEM-REF-001", "category": "SEM", "description": "引用未定义的变量名", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"},
-  {"ruleId": "SEM-REF-002", "category": "SEM", "description": "引用未定义的元素name", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"},
-  {"ruleId": "SEM-REF-003", "category": "SEM", "description": "重复name定义", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"},
-  {"ruleId": "SEM-ATTR-001", "category": "SEM", "description": "alpha值超出0-255范围", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"},
-  {"ruleId": "SEM-ATTR-003", "category": "SEM", "description": "category枚举值不合法", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-text-0000002471394976"},
-  {"ruleId": "SEM-ATTR-004", "category": "SEM", "description": "Group clip=true但无w/h", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-group-0000002504354879"},
-  {"ruleId": "SEM-ATTR-005", "category": "SEM", "description": "Group layered=true但最后一个Image无hybridMode", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-group-0000002504354879"},
-  {"ruleId": "SEM-ATTR-006", "category": "SEM", "description": "Text autoLineFeed=true但无width", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-text-0000002471394976"},
-  {"ruleId": "SEM-ATTR-007", "category": "SEM", "description": "Text marqueeRepeatLimit但无scrollDisplay", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-text-0000002471394976"},
-  {"ruleId": "SEM-ATTR-008", "category": "SEM", "description": "Text clickable但无scrollDisplay", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-text-0000002471394976"},
-  {"ruleId": "SEM-ATTR-009", "category": "SEM", "description": "Text delayTime但无scrollDisplay", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-text-0000002471394976"},
-  {"ruleId": "SEM-VAR-001", "category": "SEM", "description": "变量未用Var标签定义直接使用", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"},
-  {"ruleId": "SEM-VAR-002", "category": "SEM", "description": "Var声明字符串常量缺少双套单引号", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"},
-  {"ruleId": "SEM-VAR-003", "category": "SEM", "description": "Var values与size同时存在", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"},
-  {"ruleId": "SEM-VAR-004", "category": "SEM", "description": "数组变量使用前未声明size", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"},
-  {"ruleId": "SEM-VAR-005", "category": "SEM", "description": "Var type属性缺失时expression不是数值表达式", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"},
-  {"ruleId": "SEM-ARR-001", "category": "SEM", "description": "VarArray内Var的index超出Items数量范围", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-vararray-0000002504354889"},
-  {"ruleId": "SEM-ARR-002", "category": "SEM", "description": "Array frequency值不是正整数", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-array-0000002471395028"},
-  {"ruleId": "SEM-ARR-003", "category": "SEM", "description": "Array indexFlag变量在Array外引用", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-array-0000002471395028"},
-  {"ruleId": "SEM-TRIG-001", "category": "SEM", "description": "Trigger action值不在合法集合中", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-button-0000002471395018"},
-  {"ruleId": "SEM-TRIG-002", "category": "SEM", "description": "Button缺少Trigger子元素", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-button-0000002471395018"},
-  {"ruleId": "SEM-IMG-001", "category": "SEM", "description": "ImageNumber资源不从0开始命名或序列缺失", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-imagenumber-0000002504354859"},
-  {"ruleId": "SEM-IMG-002", "category": "SEM", "description": "Image src与srcExp同时存在", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-image-0000002504274921"},
-  {"ruleId": "SEM-IMG-003", "category": "SEM", "description": "Image isBackground与align同时使用", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-image-0000002504274921"},
-  {"ruleId": "SEM-SRCIMG-001", "category": "SEM", "description": "SourceImage direction=0但loop不等于true或unlockTo未设", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-sourceimage-0000002504274941"},
-  {"ruleId": "SEM-SRCIMG-002", "category": "SEM", "description": "SourceImage unlockTo已设但同级无Button触控区域", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-sourceimage-0000002504274941"},
-  {"ruleId": "SEM-VID-001", "category": "SEM", "description": "视频文件>25MB", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-video-0000002504354849"},
-  {"ruleId": "SEM-VID-002", "category": "SEM", "description": "透明视频非mp4格式", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-video-0000002504354849"},
-  {"ruleId": "SEM-VID-003", "category": "SEM", "description": "视频分辨率>4096x4096", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-video-0000002504354849"},
-  {"ruleId": "SEM-VID-004", "category": "SEM", "description": "全屏Video缺少IsFullScreenNode(折叠屏/平板)", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-video-0000002504354849"},
-  {"ruleId": "SEM-VID-005", "category": "SEM", "description": "Video defaultBitmap图片不存在", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-video-0000002504354849"},
-  {"ruleId": "SEM-GEN-001", "category": "SEM", "description": "变量值为负数时前面未补0", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-precautions-0000002504275099"},
-  {"ruleId": "SEM-GEN-002", "category": "SEM", "description": "变量计算精度误差", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"},
-  {"ruleId": "SEM-3D-001", "category": "SEM", "description": "MultiLayer缺少w/h", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-3d-multilayer-0000002490002442"},
-  {"ruleId": "SEM-3D-002", "category": "SEM", "description": "MultiLayer缺少Layer子元素", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-3d-multilayer-0000002490002442"},
-  {"ruleId": "SEM-3D-003", "category": "SEM", "description": "MultiLayer staticCondition属性错误", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-3d-multilayer-0000002490002442"},
-  {"ruleId": "SEM-3D-004", "category": "SEM", "description": "MultiLayer缺少stereoId", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-3d-multilayer-0000002490002442"},
-  {"ruleId": "SEM-EFFECT-001", "category": "SEM", "description": "MeshImage缺少src或mesh属性", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-2da-meshimagetrans-0000002471235150"},
-  {"ruleId": "SEM-EFFECT-002", "category": "SEM", "description": "MeshImage缺少Translation或SinMotion子元素", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-2da-meshimagetrans-0000002471235150"},
-  {"ruleId": "SEM-EFFECT-003", "category": "SEM", "description": "Translation缺少mesh属性", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-2da-meshimagetrans-0000002471235150"},
-  {"ruleId": "SEM-EFFECT-004", "category": "SEM", "description": "SinMotion缺少center或sensor属性", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-2da-meshimagesinmotion-0000002504355009"},
-  {"ruleId": "SEM-COLLAB-001", "category": "SEM", "description": "CollaborationCommands缺少collaborationId属性", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-collaboration-0000002489842474"},
-  {"ruleId": "SEM-COLLAB-002", "category": "SEM", "description": "CollaborationCommands仅在百变卡片可用", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-collaboration-0000002489842474"},
-  {"ruleId": "SEM-VIBRATE-001", "category": "SEM", "description": "VibrateCommand缺少loop属性", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"},
-  {"ruleId": "SEM-VIBRATE-002", "category": "SEM", "description": "VibrateCommand仅在锁屏可用", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"},
-  {"ruleId": "SEM-VIBRATE-003", "category": "SEM", "description": "Wave缺少amplitudes属性", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"},
-  {"ruleId": "SEM-VIBRATE-004", "category": "SEM", "description": "Slice缺少time/duration/intensity/type属性", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"},
-  {"ruleId": "SEM-VIBRATE-005", "category": "SEM", "description": "Slice intensity超出范围", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"},
-  {"ruleId": "SEM-VIBRATE-006", "category": "SEM", "description": "Slice type属性值不合法", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"},
-  {"ruleId": "SEM-WEATHER-001", "category": "SEM", "description": "Weather子Var变量名格式不合法", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-weather-0000002504275029"},
-  {"ruleId": "SEM-WEATHER-002", "category": "SEM", "description": "Weather yesterday/tomorrow不支持部分字段", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-weather-0000002504275029"},
-  {"ruleId": "SEM-CAL-001", "category": "SEM", "description": "Constellations缺少constellationsId变量声明", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-calendar-0000002531331269"},
-  {"ruleId": "SEM-CAL-002", "category": "SEM", "description": "Almanac子Var变量名格式不合法", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-calendar-0000002531331269"},
-  {"ruleId": "SEM-CAL-003", "category": "SEM", "description": "Constellations子Var变量名格式不合法", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-calendar-0000002531331269"},
-  {"ruleId": "SEM-MEDIA-001", "category": "SEM", "description": "使用MediaCommand/MediaIcon前必须声明MediaController", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-mediacontroller-0000002471235098"},
-  {"ruleId": "SEM-MEDIA-002", "category": "SEM", "description": "mediaLike/mediaDislike仅华为音乐支持", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-mediacontroller-0000002471235098"},
-  {"ruleId": "SEM-HEALTHY-001", "category": "SEM", "description": "Healthy time属性最小值为1", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-healthy-0000002504354957"},
-  {"ruleId": "SEM-HEALTHY-002", "category": "SEM", "description": "Healthy time属性仅在polling=true时有效", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-healthy-0000002504354957"},
-  {"ruleId": "SEM-BT-001", "category": "SEM", "description": "使用蓝牙数据变量前必须声明BluetoothBattery", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-bluetoothbattery-0000002471235108"},
-  {"ruleId": "SEM-SENSOR-001", "category": "SEM", "description": "SensorBinder子Variable缺少name或index", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-sensorbinder-0000002504354969"},
-  {"ruleId": "SEM-SENSOR-002", "category": "SEM", "description": "SensorBinder子Variable index取值必须为0/1/2", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-sensorbinder-0000002504354969"},
-  {"ruleId": "SEM-VFR-001", "category": "SEM", "description": "VariablePoint最多2个", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-variableframerate-0000002504354979"},
-  {"ruleId": "SEM-VPOINT-001", "category": "SEM", "description": "VariablePoint frameRate推荐值30默认60", "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-variableframerate-0000002504354979"}
+  {
+    "ruleId": "SYN-001",
+    "category": "SYN",
+    "description": "根元素标签错误",
+    "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-scope-0000002279698481"
+  }, {
+  "ruleId": "SYN-002",
+  "category": "SYN",
+  "description": "标签嵌套违反父子约束",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-lock-0000002244659534"
+}, {
+  "ruleId": "SYN-003",
+  "category": "SYN",
+  "description": "未知元素标签",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-0000002279818413"
+}, {
+  "ruleId": "SYN-004",
+  "category": "SYN",
+  "description": "未知属性名",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
+}, {
+  "ruleId": "SYN-005",
+  "category": "SYN",
+  "description": "缺失必填属性",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-0000002279818413"
+}, {
+  "ruleId": "SYN-006",
+  "category": "SYN",
+  "description": "属性值类型错误(纯字面量)",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
+}, {
+  "ruleId": "SYN-007",
+  "category": "SYN",
+  "description": "枚举值错误",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
+}, {
+  "ruleId": "SEM-EXPR-001",
+  "category": "SEM",
+  "description": "数值表达式使用-#var语法",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"
+}, {
+  "ruleId": "SEM-EXPR-002",
+  "category": "SEM",
+  "description": "数值表达式值超过7位精度限制",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"
+}, {
+  "ruleId": "SEM-EXPR-003",
+  "category": "SEM",
+  "description": "字符串表达式中数值计算以#开头",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"
+}, {
+  "ruleId": "SEM-EXPR-004",
+  "category": "SEM",
+  "description": "字符串表达式未使用单引号",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"
+}, {
+  "ruleId": "SEM-EXPR-005",
+  "category": "SEM",
+  "description": "字符串表达式嵌入数值表达式缺少花括号",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"
+}, {
+  "ruleId": "SEM-EXPR-006",
+  "category": "SEM",
+  "description": "preciseeval后使用运算符或+连接符",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"
+}, {
+  "ruleId": "SEM-EXPR-ANTLR",
+  "category": "SEM",
+  "description": "ANTLR4词法/语法错误",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"
+}, {
+  "ruleId": "SEM-TYPE-001",
+  "category": "SEM",
+  "description": "表达式类型与属性期望类型不匹配",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
+}, {
+  "ruleId": "SEM-TYPE-002",
+  "category": "SEM",
+  "description": "函数调用参数类型不匹配",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"
+}, {
+  "ruleId": "SEM-CMD-001",
+  "category": "SEM",
+  "description": "VideoCommand中sound和play互斥",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-videocommand-0000002504354923"
+}, {
+  "ruleId": "SEM-CMD-002",
+  "category": "SEM",
+  "description": "SoundCommand音频文件>1MB",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-soundcommand-0000002471395052"
+}, {
+  "ruleId": "SEM-CMD-003",
+  "category": "SEM",
+  "description": "StyleCommand频繁切换",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stylecommand-0000002471235086"
+}, {
+  "ruleId": "SEM-CMD-004",
+  "category": "SEM",
+  "description": "StyleCommand index使用表达式",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stylecommand-0000002471235086"
+}, {
+  "ruleId": "SEM-PERSIST-001",
+  "category": "SEM",
+  "description": "时间/日期/星期变量使用persist",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"
+}, {
+  "ruleId": "SEM-PERSIST-002",
+  "category": "SEM",
+  "description": "VariableCommand使用persist属性",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-variablecommand-0000002471395064"
+}, {
+  "ruleId": "SEM-PERSIST-003",
+  "category": "SEM",
+  "description": "styleGlobalPersist初始值默认为0",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stylecommand-0000002471235086"
+}, {
+  "ruleId": "SEM-SCOPE-001",
+  "category": "SEM",
+  "description": "元素不支持当前应用位置",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-scope-0000002279698481"
+}, {
+  "ruleId": "SEM-SCOPE-002",
+  "category": "SEM",
+  "description": "元素不支持当前设备类型",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-scope-0000002279698481"
+}, {
+  "ruleId": "SEM-REF-001",
+  "category": "SEM",
+  "description": "引用未定义的变量名",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"
+}, {
+  "ruleId": "SEM-REF-002",
+  "category": "SEM",
+  "description": "引用未定义的元素name",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
+}, {
+  "ruleId": "SEM-REF-003",
+  "category": "SEM",
+  "description": "重复name定义",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
+}, {
+  "ruleId": "SEM-ATTR-001",
+  "category": "SEM",
+  "description": "alpha值超出0-255范围",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
+}, {
+  "ruleId": "SEM-ATTR-003",
+  "category": "SEM",
+  "description": "category枚举值不合法",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-text-0000002471394976"
+}, {
+  "ruleId": "SEM-ATTR-004",
+  "category": "SEM",
+  "description": "Group clip=true但无w/h",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-group-0000002504354879"
+}, {
+  "ruleId": "SEM-ATTR-005",
+  "category": "SEM",
+  "description": "Group layered=true但最后一个Image无hybridMode",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-group-0000002504354879"
+}, {
+  "ruleId": "SEM-ATTR-006",
+  "category": "SEM",
+  "description": "Text autoLineFeed=true但无width",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-text-0000002471394976"
+}, {
+  "ruleId": "SEM-ATTR-007",
+  "category": "SEM",
+  "description": "Text marqueeRepeatLimit但无scrollDisplay",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-text-0000002471394976"
+}, {
+  "ruleId": "SEM-ATTR-008",
+  "category": "SEM",
+  "description": "Text clickable但无scrollDisplay",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-text-0000002471394976"
+}, {
+  "ruleId": "SEM-ATTR-009",
+  "category": "SEM",
+  "description": "Text delayTime但无scrollDisplay",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-text-0000002471394976"
+}, {
+  "ruleId": "SEM-VAR-001",
+  "category": "SEM",
+  "description": "变量未用Var标签定义直接使用",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"
+}, {
+  "ruleId": "SEM-VAR-002",
+  "category": "SEM",
+  "description": "Var声明字符串常量缺少双套单引号",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"
+}, {
+  "ruleId": "SEM-VAR-003",
+  "category": "SEM",
+  "description": "Var values与size同时存在",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"
+}, {
+  "ruleId": "SEM-VAR-004",
+  "category": "SEM",
+  "description": "数组变量使用前未声明size",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"
+}, {
+  "ruleId": "SEM-VAR-005",
+  "category": "SEM",
+  "description": "Var type属性缺失时expression不是数值表达式",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-var-0000002504274963"
+}, {
+  "ruleId": "SEM-ARR-001",
+  "category": "SEM",
+  "description": "VarArray内Var的index超出Items数量范围",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-vararray-0000002504354889"
+}, {
+  "ruleId": "SEM-ARR-002",
+  "category": "SEM",
+  "description": "Array frequency值不是正整数",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-array-0000002471395028"
+}, {
+  "ruleId": "SEM-ARR-003",
+  "category": "SEM",
+  "description": "Array indexFlag变量在Array外引用",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-array-0000002471395028"
+}, {
+  "ruleId": "SEM-TRIG-001",
+  "category": "SEM",
+  "description": "Trigger action值不在合法集合中",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-button-0000002471395018"
+}, {
+  "ruleId": "SEM-TRIG-002",
+  "category": "SEM",
+  "description": "Button缺少Trigger子元素",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-button-0000002471395018"
+}, {
+  "ruleId": "SEM-IMG-001",
+  "category": "SEM",
+  "description": "ImageNumber资源不从0开始命名或序列缺失",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-imagenumber-0000002504354859"
+}, {
+  "ruleId": "SEM-IMG-002",
+  "category": "SEM",
+  "description": "Image src与srcExp同时存在",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-image-0000002504274921"
+}, {
+  "ruleId": "SEM-IMG-003",
+  "category": "SEM",
+  "description": "Image isBackground与align同时使用",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-image-0000002504274921"
+}, {
+  "ruleId": "SEM-SRCIMG-001",
+  "category": "SEM",
+  "description": "SourceImage direction=0但loop不等于true或unlockTo未设",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-sourceimage-0000002504274941"
+}, {
+  "ruleId": "SEM-SRCIMG-002",
+  "category": "SEM",
+  "description": "SourceImage unlockTo已设但同级无Button触控区域",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-sourceimage-0000002504274941"
+}, {
+  "ruleId": "SEM-VID-001",
+  "category": "SEM",
+  "description": "视频文件>25MB",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-video-0000002504354849"
+}, {
+  "ruleId": "SEM-VID-002",
+  "category": "SEM",
+  "description": "透明视频非mp4格式",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-video-0000002504354849"
+}, {
+  "ruleId": "SEM-VID-003",
+  "category": "SEM",
+  "description": "视频分辨率>4096x4096",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-video-0000002504354849"
+}, {
+  "ruleId": "SEM-VID-004",
+  "category": "SEM",
+  "description": "全屏Video缺少IsFullScreenNode(折叠屏/平板)",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-video-0000002504354849"
+}, {
+  "ruleId": "SEM-VID-005",
+  "category": "SEM",
+  "description": "Video defaultBitmap图片不存在",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-video-0000002504354849"
+}, {
+  "ruleId": "SEM-GEN-001",
+  "category": "SEM",
+  "description": "变量值为负数时前面未补0",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-precautions-0000002504275099"
+}, {
+  "ruleId": "SEM-GEN-002",
+  "category": "SEM",
+  "description": "变量计算精度误差",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"
+}, {
+  "ruleId": "SEM-3D-001",
+  "category": "SEM",
+  "description": "MultiLayer缺少w/h",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-3d-multilayer-0000002490002442"
+}, {
+  "ruleId": "SEM-3D-002",
+  "category": "SEM",
+  "description": "MultiLayer缺少Layer子元素",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-3d-multilayer-0000002490002442"
+}, {
+  "ruleId": "SEM-3D-003",
+  "category": "SEM",
+  "description": "MultiLayer staticCondition属性错误",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-3d-multilayer-0000002490002442"
+}, {
+  "ruleId": "SEM-3D-004",
+  "category": "SEM",
+  "description": "MultiLayer缺少stereoId",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-3d-multilayer-0000002490002442"
+}, {
+  "ruleId": "SEM-EFFECT-001",
+  "category": "SEM",
+  "description": "MeshImage缺少src或mesh属性",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-2da-meshimagetrans-0000002471235150"
+}, {
+  "ruleId": "SEM-EFFECT-002",
+  "category": "SEM",
+  "description": "MeshImage缺少Translation或SinMotion子元素",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-2da-meshimagetrans-0000002471235150"
+}, {
+  "ruleId": "SEM-EFFECT-003",
+  "category": "SEM",
+  "description": "Translation缺少mesh属性",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-2da-meshimagetrans-0000002471235150"
+}, {
+  "ruleId": "SEM-EFFECT-004",
+  "category": "SEM",
+  "description": "SinMotion缺少center或sensor属性",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-2da-meshimagesinmotion-0000002504355009"
+}, {
+  "ruleId": "SEM-COLLAB-001",
+  "category": "SEM",
+  "description": "CollaborationCommands缺少collaborationId属性",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-collaboration-0000002489842474"
+}, {
+  "ruleId": "SEM-COLLAB-002",
+  "category": "SEM",
+  "description": "CollaborationCommands仅在百变卡片可用",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-collaboration-0000002489842474"
+}, {
+  "ruleId": "SEM-VIBRATE-001",
+  "category": "SEM",
+  "description": "VibrateCommand缺少loop属性",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"
+}, {
+  "ruleId": "SEM-VIBRATE-002",
+  "category": "SEM",
+  "description": "VibrateCommand仅在锁屏可用",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"
+}, {
+  "ruleId": "SEM-VIBRATE-003",
+  "category": "SEM",
+  "description": "Wave缺少amplitudes属性",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"
+}, {
+  "ruleId": "SEM-VIBRATE-004",
+  "category": "SEM",
+  "description": "Slice缺少time/duration/intensity/type属性",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"
+}, {
+  "ruleId": "SEM-VIBRATE-005",
+  "category": "SEM",
+  "description": "Slice intensity超出范围",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"
+}, {
+  "ruleId": "SEM-VIBRATE-006",
+  "category": "SEM",
+  "description": "Slice type属性值不合法",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-vibratecommand-0000002499411342"
+}, {
+  "ruleId": "SEM-WEATHER-001",
+  "category": "SEM",
+  "description": "Weather子Var变量名格式不合法",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-weather-0000002504275029"
+}, {
+  "ruleId": "SEM-WEATHER-002",
+  "category": "SEM",
+  "description": "Weather yesterday/tomorrow不支持部分字段",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-weather-0000002504275029"
+}, {
+  "ruleId": "SEM-CAL-001",
+  "category": "SEM",
+  "description": "Constellations缺少constellationsId变量声明",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-calendar-0000002531331269"
+}, {
+  "ruleId": "SEM-CAL-002",
+  "category": "SEM",
+  "description": "Almanac子Var变量名格式不合法",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-calendar-0000002531331269"
+}, {
+  "ruleId": "SEM-CAL-003",
+  "category": "SEM",
+  "description": "Constellations子Var变量名格式不合法",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-calendar-0000002531331269"
+}, {
+  "ruleId": "SEM-MEDIA-001",
+  "category": "SEM",
+  "description": "使用MediaCommand/MediaIcon前必须声明MediaController",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-mediacontroller-0000002471235098"
+}, {
+  "ruleId": "SEM-MEDIA-002",
+  "category": "SEM",
+  "description": "mediaLike/mediaDislike仅华为音乐支持",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-mediacontroller-0000002471235098"
+}, {
+  "ruleId": "SEM-HEALTHY-001",
+  "category": "SEM",
+  "description": "Healthy time属性最小值为1",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-healthy-0000002504354957"
+}, {
+  "ruleId": "SEM-HEALTHY-002",
+  "category": "SEM",
+  "description": "Healthy time属性仅在polling=true时有效",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-healthy-0000002504354957"
+}, {
+  "ruleId": "SEM-BT-001",
+  "category": "SEM",
+  "description": "使用蓝牙数据变量前必须声明BluetoothBattery",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-bluetoothbattery-0000002471235108"
+}, {
+  "ruleId": "SEM-SENSOR-001",
+  "category": "SEM",
+  "description": "SensorBinder子Variable缺少name或index",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-sensorbinder-0000002504354969"
+}, {
+  "ruleId": "SEM-SENSOR-002",
+  "category": "SEM",
+  "description": "SensorBinder子Variable index取值必须为0/1/2",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-sensorbinder-0000002504354969"
+}, {
+  "ruleId": "SEM-VFR-001",
+  "category": "SEM",
+  "description": "VariablePoint最多2个",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-variableframerate-0000002504354979"
+}, {
+  "ruleId": "SEM-VPOINT-001",
+  "category": "SEM",
+  "description": "VariablePoint frameRate推荐值30默认60",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-variableframerate-0000002504354979"
+}, {
+  "ruleId": "SEM-IMG-SRC",
+  "category": "SEM",
+  "description": "Image src与srcExp至少需要填写一个",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-image-0000002504274921"
+}, {
+  "ruleId": "SEM-VID-004-TRANS",
+  "category": "SEM",
+  "description": "isTransparent与isFullScreenNode不能同时使用",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-video-0000002504354849"
+}, {
+  "ruleId": "SEM-EXTERN-001",
+  "category": "SEM",
+  "description": "ExternCommand延迟解锁最大时间不超过3000ms",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-command-0000002504354913"
+}, {
+  "ruleId": "SEM-3D-STEREO-001",
+  "category": "SEM",
+  "description": "StereoView必须包含3-10个StereoGroup子元素",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-3d-stereoview-0000002471395160"
+}, {
+  "ruleId": "SEM-3D-STEREO-002",
+  "category": "SEM",
+  "description": "StereoView中enableMove/moveRect与滑动冲突",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-3d-stereoview-0000002471395160"
+}, {
+  "ruleId": "SEM-3D-LAYER-001",
+  "category": "SEM",
+  "description": "Layer z值范围应在[-10,7]之间",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-3d-multilayer-0000002490002442"
+}, {
+  "ruleId": "SEM-EFFECT-PV-001",
+  "category": "SEM",
+  "description": "ParticleView必须为根标签的直接子元素",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-2da-particleview-0000002471395152"
+}, {
+  "ruleId": "SEM-EFFECT-PV-002",
+  "category": "SEM",
+  "description": "ParticleView粒子尺寸最大为120px",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-2da-particleview-0000002471395152"
+}, {
+  "ruleId": "SEM-SWIPER-001",
+  "category": "SEM",
+  "description": "Swiper必须是根标签的直接子元素",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-swiper-0000002471235020"
+}, {
+  "ruleId": "SEM-EXTCMD-001",
+  "category": "SEM",
+  "description": "ExternalCommands应包含pause Trigger",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
+}, {
+  "ruleId": "SEM-GROUPIMG-001",
+  "category": "SEM",
+  "description": "GroupImage必须设置layered=true",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-groupimage-0000002504354869"
+}, {
+  "ruleId": "SEM-LT-001",
+  "category": "SEM",
+  "description": "StoryBoard name必须为固定命名",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-longtake-0000002499571316"
+}
 ]

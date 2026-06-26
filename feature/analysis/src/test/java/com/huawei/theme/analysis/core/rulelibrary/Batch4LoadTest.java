@@ -65,9 +65,9 @@ class Batch4LoadTest {
 
         assertTrue(group.getAllowedParents().contains("Lockscreen"));
         assertTrue(group.getAllowedParents().contains("Group"));
-        assertTrue(group.getAllowedChildren().contains("Text"));
-        assertTrue(group.getAllowedChildren().contains("Image"));
-        assertTrue(group.getAllowedChildren().contains("Group"));
+        assertTrue(repo.getAllowedChildren("Group").contains("Text"));
+        assertTrue(repo.getAllowedChildren("Group").contains("Image"));
+        assertTrue(repo.getAllowedChildren("Group").contains("Group"));
     }
 
     @Test
@@ -130,7 +130,7 @@ class Batch4LoadTest {
         assertTrue(button.getOptionalAttrs().contains("height"));
         assertTrue(button.getOptionalAttrs().contains("visibility"));
 
-        assertTrue(button.getAllowedChildren().contains("Trigger"));
+        assertTrue(repo.getAllowedChildren("Button").contains("Trigger"));
         assertTrue(button.getAllowedParents().contains("Lockscreen"));
         assertTrue(button.getAllowedParents().contains("Widget"));
         assertTrue(button.getAllowedParents().contains("Group"));
@@ -203,9 +203,9 @@ class Batch4LoadTest {
         assertTrue(formatSpec.getEnumValues().contains("jpg"));
         assertTrue(formatSpec.getEnumValues().contains("png"));
 
-        assertEquals(0, srcImg.getAllowedChildren().size());
+        assertEquals(0, repo.getAllowedChildren("SourceImage").size());
         assertTrue(srcImg.getAllowedParents().contains("Lockscreen"));
-        assertTrue(srcImg.getAllowedParents().contains("Group"));
+        assertFalse(srcImg.getAllowedParents().contains("Group"));
     }
 
     @Test
@@ -262,7 +262,7 @@ class Batch4LoadTest {
         AttrTypeSpec srcSpec = repo.getAttrTypeSpec("ImageNumber", "src").orElseThrow();
         assertFalse(srcSpec.isSupportsExpression());
 
-        assertEquals(0, imgNum.getAllowedChildren().size());
+        assertTrue(repo.getAllowedChildren("ImageNumber").size() > 0);
         assertTrue(imgNum.getAllowedParents().contains("Lockscreen"));
         assertTrue(imgNum.getAllowedParents().contains("Wallpaper"));
         assertTrue(imgNum.getAllowedParents().contains("Widget"));
@@ -300,7 +300,7 @@ class Batch4LoadTest {
         AttrTypeSpec mapListSpec = repo.getAttrTypeSpec("ImageSeries", "mapList").orElseThrow();
         assertFalse(mapListSpec.isSupportsExpression());
 
-        assertEquals(0, imgSeries.getAllowedChildren().size());
+        assertTrue(repo.getAllowedChildren("ImageSeries").size() > 0);
     }
 
     @Test

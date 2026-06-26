@@ -1,14 +1,36 @@
-{
+﻿{
   "element": "CollaborationSendCommand",
   "category": "command",
-  "requiredAttrs": [],
-  "optionalAttrs": ["name", "dataName"],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+    "name", "dataName"
+  ],
   "attrTypes": {
-    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "dataName": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "name": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "dataName": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Trigger"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Trigger"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -22,5 +44,6 @@
     "foldable": true,
     "tablet": false
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

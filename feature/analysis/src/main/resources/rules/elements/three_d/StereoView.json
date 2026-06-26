@@ -1,21 +1,107 @@
-{
+﻿{
   "element": "StereoView",
   "category": "three_d",
-  "requiredAttrs": ["w", "h", "x", "y"],
-  "optionalAttrs": ["sAngle", "can3D", "resistance", "fixed", "vertical"],
+  "requiredAttrs": [
+    "w", "h", "x", "y"
+  ],
+  "optionalAttrs": [
+    "sAngle", "can3D", "resistance", "fixed", "vertical"
+  ],
   "attrTypes": {
-    "w": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "h": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "sAngle": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "90"},
-    "can3D": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"},
-    "resistance": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1.8"},
-    "fixed": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
-    "vertical": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"}
+    "w": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "h": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "x": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "y": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "sAngle": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "90"
+    },
+    "can3D": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "1"
+    },
+    "resistance": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "1.8"
+    },
+    "fixed": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "0"
+    },
+    "vertical": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "1"
+    }
   },
-  "allowedParents": ["Lockscreen"],
-  "allowedChildren": ["StereoGroup"],
+  "allowedParents": [
+    "Lockscreen"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -29,5 +115,23 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+    {
+      "ruleId": "SEM-3D-STEREO-001",
+      "condition": "element.children.filter(c -\u003e c.tagName == \u0027StereoGroup\u0027).size() \u003c 3 OR element.children.filter(c -\u003e c.tagName == \u0027StereoGroup\u0027).size() \u003e 10",
+      "message": "StereoView必须包含3-10个StereoGroup子元素",
+      "severity": "error",
+      "suggestedFixes": [
+        "添加3-10个StereoGroup子元素"
+      ]
+    }, {
+      "ruleId": "SEM-3D-STEREO-002",
+      "condition": "element.attrs[\u0027enableMove\u0027] != null OR element.attrs[\u0027moveRect\u0027] != null",
+      "message": "StereoView中enableMove/moveRect与滑动冲突，不应使用",
+      "severity": "error",
+      "suggestedFixes": [
+        "移除enableMove和moveRect属性"
+      ]
+    }
+  ]
 }

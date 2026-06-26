@@ -1,0 +1,39 @@
+﻿{
+  "element": "GroupClock",
+  "category": "longtake",
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+    "foldStatusType"
+  ],
+  "attrTypes": {
+    "foldStatusType": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
+  },
+  "allowedParents": [
+    "LongTake"
+  ],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": false,
+    "Wallpaper": false,
+    "LongTake": true,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+  ]
+}

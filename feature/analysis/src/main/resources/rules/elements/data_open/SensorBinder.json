@@ -1,16 +1,58 @@
-{
+﻿{
   "element": "SensorBinder",
   "category": "data_open",
-  "requiredAttrs": ["type"],
-  "optionalAttrs": ["vibrate", "shakeTime", "delay"],
+  "requiredAttrs": [
+    "type"
+  ],
+  "optionalAttrs": [
+    "vibrate", "shakeTime", "delay"
+  ],
   "attrTypes": {
-    "type": {"type": "string", "enumValues": ["accelerometer", "gravity", "linearAccelerometer", "gyroscope"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "vibrate": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "shakeTime": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "delay": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"}
+    "type": {
+      "type": "string",
+      "enumValues": [
+        "accelerometer", "gravity", "linearAccelerometer", "gyroscope"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "vibrate": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "shakeTime": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "delay": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    }
   },
-  "allowedParents": ["VariableBinders"],
-  "allowedChildren": ["Variable"],
+  "allowedParents": [
+    "VariableBinders"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -27,17 +69,20 @@
   "constraints": [
     {
       "ruleId": "SEM-SENSOR-001",
-      "condition": "child Variable missing 'name' or 'index' attribute",
+      "condition": "child Variable missing \u0027name\u0027 or \u0027index\u0027 attribute",
       "message": "SensorBinder的子Variable必须同时设置name和index属性",
       "severity": "error",
-      "suggestedFixes": ["为Variable添加name和index属性"]
-    },
-    {
+      "suggestedFixes": [
+        "为Variable添加name和index属性"
+      ]
+    }, {
       "ruleId": "SEM-SENSOR-002",
-      "condition": "child Variable.attrs['index'] NOT IN [0,1,2]",
+      "condition": "child Variable.attrs[\u0027index\u0027] NOT IN [0,1,2]",
       "message": "Variable的index属性取值必须为0、1或2",
       "severity": "error",
-      "suggestedFixes": ["设置index为0/1/2"]
+      "suggestedFixes": [
+        "设置index为0/1/2"
+      ]
     }
   ]
 }

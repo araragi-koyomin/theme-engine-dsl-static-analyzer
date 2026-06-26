@@ -1,13 +1,27 @@
-{
+﻿{
   "element": "Calendar",
   "category": "data_open",
-  "requiredAttrs": ["card"],
-  "optionalAttrs": [],
+  "requiredAttrs": [
+    "card"
+  ],
+  "optionalAttrs": [
+  ],
   "attrTypes": {
-    "card": {"type": "string", "enumValues": ["Almanac", "Constellations"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "card": {
+      "type": "string",
+      "enumValues": [
+        "Almanac", "Constellations"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
-  "allowedChildren": ["Var"],
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group", "LongTake"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -24,24 +38,28 @@
   "constraints": [
     {
       "ruleId": "SEM-CAL-001",
-      "condition": "element.attrs['card'] == 'Constellations' AND no Var named 'constellationsId' with persist='true' declared",
+      "condition": "element.attrs[\u0027card\u0027] == \u0027Constellations\u0027 AND no Var named \u0027constellationsId\u0027 with persist=\u0027true\u0027 declared",
       "message": "使用Constellations时必须先声明constellationsId变量(persist=true)，默认值为十二星座ID之一",
       "severity": "error",
-      "suggestedFixes": ["在Calendar外声明<Var name='constellationsId' expression='0003001' type='string' persist='true'/>"]
-    },
-    {
+      "suggestedFixes": [
+        "在Calendar外声明\u003cVar name=\u0027constellationsId\u0027 expression=\u00270003001\u0027 type=\u0027string\u0027 persist=\u0027true\u0027/\u003e"
+      ]
+    }, {
       "ruleId": "SEM-CAL-002",
-      "condition": "element.attrs['card'] == 'Almanac' AND childVar.name NOT matching pattern 'Almanac.{fieldName}'",
+      "condition": "element.attrs[\u0027card\u0027] == \u0027Almanac\u0027 AND childVar.name NOT matching pattern \u0027Almanac.{fieldName}\u0027",
       "message": "Almanac的Var变量名必须遵循格式: Almanac.{字段名}",
       "severity": "error",
-      "suggestedFixes": ["修改Var的name属性为Almanac.caishen等标准格式"]
-    },
-    {
+      "suggestedFixes": [
+        "修改Var的name属性为Almanac.caishen等标准格式"
+      ]
+    }, {
       "ruleId": "SEM-CAL-003",
-      "condition": "element.attrs['card'] == 'Constellations' AND childVar.name NOT matching pattern 'Constellations.{fieldName}'",
+      "condition": "element.attrs[\u0027card\u0027] == \u0027Constellations\u0027 AND childVar.name NOT matching pattern \u0027Constellations.{fieldName}\u0027",
       "message": "Constellations的Var变量名必须遵循格式: Constellations.{字段名}",
       "severity": "error",
-      "suggestedFixes": ["修改Var的name属性为Constellations.signName等标准格式"]
+      "suggestedFixes": [
+        "修改Var的name属性为Constellations.signName等标准格式"
+      ]
     }
   ]
 }

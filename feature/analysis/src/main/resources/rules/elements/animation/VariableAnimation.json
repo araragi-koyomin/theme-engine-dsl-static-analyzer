@@ -1,14 +1,36 @@
-{
+﻿{
   "element": "VariableAnimation",
   "category": "animation",
-  "requiredAttrs": [],
-  "optionalAttrs": ["delay", "repeat"],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+    "delay", "repeat"
+  ],
   "attrTypes": {
-    "delay": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "repeat": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "delay": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "repeat": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Var"],
-  "allowedChildren": ["AniFrame"],
+  "allowedParents": [
+    "Var"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -22,5 +44,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

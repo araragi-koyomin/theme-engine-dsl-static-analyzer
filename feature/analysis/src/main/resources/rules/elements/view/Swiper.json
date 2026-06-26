@@ -1,15 +1,47 @@
-{
+﻿{
   "element": "Swiper",
   "category": "view",
-  "requiredAttrs": ["currentIndex", "animationTime"],
-  "optionalAttrs": ["animationType"],
+  "requiredAttrs": [
+    "currentIndex", "animationTime"
+  ],
+  "optionalAttrs": [
+    "animationType"
+  ],
   "attrTypes": {
-    "currentIndex": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "animationTime": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "animationType": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "currentIndex": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "animationTime": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "animationType": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
-  "allowedChildren": ["Group"],
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "LongTake"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -23,5 +55,15 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+    {
+      "ruleId": "SEM-SWIPER-001",
+      "condition": "element.parent.tagName NOT IN [\u0027Lockscreen\u0027, \u0027Wallpaper\u0027, \u0027Widget\u0027, \u0027ChargingSkin\u0027]",
+      "message": "Swiper必须是根标签的直接子元素",
+      "severity": "error",
+      "suggestedFixes": [
+        "将Swiper移至根标签下"
+      ]
+    }
+  ]
 }

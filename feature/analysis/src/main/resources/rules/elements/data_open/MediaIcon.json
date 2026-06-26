@@ -1,17 +1,69 @@
-{
+﻿{
   "element": "MediaIcon",
   "category": "data_open",
-  "requiredAttrs": ["src"],
-  "optionalAttrs": ["x", "y", "w", "h"],
+  "requiredAttrs": [
+    "src"
+  ],
+  "optionalAttrs": [
+    "x", "y", "w", "h"
+  ],
   "attrTypes": {
-    "src": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"},
-    "w": {"type": "number", "enumValues": [], "aliases": ["width"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "h": {"type": "number", "enumValues": [], "aliases": ["height"], "supportsExpression": true, "expressionKind": "number", "defaultValue": null}
+    "src": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "x": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "y": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": "0"
+    },
+    "w": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "width"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "h": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "height"
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "Group"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "Group", "LongTake"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -31,7 +83,9 @@
       "condition": "no MediaController declared in document",
       "message": "使用MediaIcon前必须声明MediaController",
       "severity": "error",
-      "suggestedFixes": ["添加<MediaController/>声明"]
+      "suggestedFixes": [
+        "添加\u003cMediaController/\u003e声明"
+      ]
     }
   ]
 }

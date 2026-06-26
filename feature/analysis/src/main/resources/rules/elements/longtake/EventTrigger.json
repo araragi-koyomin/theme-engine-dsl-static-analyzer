@@ -1,0 +1,39 @@
+﻿{
+  "element": "EventTrigger",
+  "category": "longtake",
+  "requiredAttrs": [
+    "name"
+  ],
+  "optionalAttrs": [
+  ],
+  "attrTypes": {
+    "name": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
+  },
+  "allowedParents": [
+    "LongTake"
+  ],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": false,
+    "Wallpaper": false,
+    "LongTake": true,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+  ]
+}

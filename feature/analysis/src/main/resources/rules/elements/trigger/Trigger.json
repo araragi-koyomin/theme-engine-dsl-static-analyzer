@@ -1,13 +1,28 @@
-{
+﻿{
   "element": "Trigger",
   "category": "trigger",
-  "requiredAttrs": ["action"],
-  "optionalAttrs": [],
+  "requiredAttrs": [
+    "action"
+  ],
+  "optionalAttrs": [
+  ],
   "attrTypes": {
-    "action": {"type": "string", "enumValues": ["down", "up", "double", "click", "long", "resume", "pause", "tapLink", "tapConnected", "tapDisconnected"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "action": {
+      "type": "string",
+      "enumValues": [
+        "down", "up", "double", "click", "long", "resume", "pause", "tapLink", "tapConnected", "tapDisconnected",
+        "move_left_start", "move_left_end", "move_right_start", "move_right_end"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Button", "Unlocker", "Slider", "Var", "ExternalCommands", "CollaborationCommands", "Item"],
-  "allowedChildren": ["Command", "VariableCommand", "VideoCommand", "SoundCommand", "VisibilityCommand", "IntentCommand", "ExternCommand", "GroupCommand", "CycleCommand", "StyleCommand", "RefreshWeatherCommand", "RefreshHealthyCommand", "KeepScreenOnCommand", "CollaborationSendCommand", "CollaborationDisconnectCommand", "EmotionCommand", "VibrateCommand", "VoiceCommand", "ScenarioIntentCommand", "SwingCommand", "CardInteractionCommand"],
+  "allowedParents": [
+    "Button", "Unlocker", "Slider", "Var", "ExternalCommands", "CollaborationCommands", "Item"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -24,10 +39,12 @@
   "constraints": [
     {
       "ruleId": "SEM-TRIG-001",
-      "condition": "element.attrs['action'] NOT IN ['down','up','double','click','long','resume','pause','tapLink','tapConnected','tapDisconnected']",
-      "message": "Trigger action值不在合法集合中，合法值为: down, up, double, click, long, resume, pause, tapLink, tapConnected, tapDisconnected",
+      "condition": "element.attrs[\u0027action\u0027] NOT IN [\u0027down\u0027,\u0027up\u0027,\u0027double\u0027,\u0027click\u0027,\u0027long\u0027,\u0027resume\u0027,\u0027pause\u0027,\u0027tapLink\u0027,\u0027tapConnected\u0027,\u0027tapDisconnected\u0027,\u0027move_left_start\u0027,\u0027move_left_end\u0027,\u0027move_right_start\u0027,\u0027move_right_end\u0027]",
+      "message": "Trigger action值不在合法集合中，合法值为: down, up, double, click, long, resume, pause, tapLink, tapConnected, tapDisconnected, move_left_start, move_left_end, move_right_start, move_right_end",
       "severity": "error",
-      "suggestedFixes": ["修改action值为合法枚举值"]
+      "suggestedFixes": [
+        "修改action值为合法枚举值"
+      ]
     }
   ]
 }

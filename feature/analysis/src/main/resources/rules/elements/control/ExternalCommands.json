@@ -1,0 +1,37 @@
+﻿{
+  "element": "ExternalCommands",
+  "category": "control",
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+  ],
+  "attrTypes": {
+  },
+  "allowedParents": [
+    "Lockscreen", "Wallpaper", "Widget", "LongTake"
+  ],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-EXTCMD-001",
+      "condition": "element.children.filter(c -\u003e c.tagName == \u0027Trigger\u0027 AND c.attrs[\u0027action\u0027] == \u0027pause\u0027).size() == 0",
+      "message": "ExternalCommands应包含action=\u0027pause\u0027的Trigger用于熄屏时暂停动画",
+      "severity": "warning",
+      "suggestedFixes": [
+        "添加\u003cTrigger action=\u0027pause\u0027\u003e子元素并在其中停止所有动画"
+      ]
+    }
+  ]
+}

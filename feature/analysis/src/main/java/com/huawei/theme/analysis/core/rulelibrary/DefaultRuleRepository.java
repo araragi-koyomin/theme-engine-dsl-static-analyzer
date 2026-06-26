@@ -1,5 +1,6 @@
 package com.huawei.theme.analysis.core.rulelibrary;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +34,8 @@ public class DefaultRuleRepository implements RuleRepository {
     private final Map<String, RuleSource> ruleSources;
     /** 别名→规范名映射，key为"elementName.aliasName"，value为规范名 */
     private final Map<String, String> aliasToCanonicalMap;
+    /** allowedChildren反向索引，key为父元素标签名，value为该父元素的合法子元素标签名列表。从所有规则的allowedParents反向推导构建 */
+    private final Map<String, List<String>> childrenMap;
 
     /**
      * 构造DefaultRuleRepository，接收JsonRuleLoader构建的三个Map。
@@ -49,6 +52,7 @@ public class DefaultRuleRepository implements RuleRepository {
         this.globalVars = globalVars;
         this.ruleSources = ruleSources;
         this.aliasToCanonicalMap = buildAliasMap(elementRules);
+        this.childrenMap = buildChildrenMap(elementRules);
     }
 
     private static Map<String, String> buildAliasMap(Map<String, DslElementRule> elementRules) {
@@ -69,6 +73,20 @@ public class DefaultRuleRepository implements RuleRepository {
         return Collections.unmodifiableMap(aliasMap);
     }
 
+    private static Map<String, List<String>> buildChildrenMap(Map<String, DslElementRule> elementRules) {
+        Map<String, List<String>> map = new java.util.HashMap<>();
+        for (DslElementRule rule : elementRules.values()) {
+            for (String parent : rule.getAllowedParents()) {
+                map.computeIfAbsent(parent, k -> new ArrayList<>()).add(rule.getElementName());
+            }
+        }
+        Map<String, List<String>> immutableMap = new java.util.HashMap<>();
+        for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+            immutableMap.put(entry.getKey(), Collections.unmodifiableList(new ArrayList<>(entry.getValue())));
+        }
+        return Collections.unmodifiableMap(immutableMap);
+    }
+
     @Override
     public Optional<DslElementRule> getElementRule(String elementName) {
         return Optional.ofNullable(elementRules.get(elementName));
@@ -87,7 +105,7 @@ public class DefaultRuleRepository implements RuleRepository {
     @Override
     public List<String> getRootElementNames() {
         return elementRules.values().stream()
-                .filter(r -> "root".equals(r.getCategory()))
+                .filter(r -> r.getAllowedParents() == null || r.getAllowedParents().isEmpty())
                 .map(DslElementRule::getElementName)
                 .collect(Collectors.toList());
     }
@@ -137,9 +155,7 @@ public class DefaultRuleRepository implements RuleRepository {
 
     @Override
     public List<String> getAllowedChildren(String elementName) {
-        return getElementRule(elementName)
-                .map(DslElementRule::getAllowedChildren)
-                .orElse(Collections.emptyList());
+        return childrenMap.getOrDefault(elementName, Collections.emptyList());
     }
 
     @Override

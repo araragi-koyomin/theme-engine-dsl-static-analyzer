@@ -1,16 +1,58 @@
-{
+﻿{
   "element": "CircleShape",
   "category": "effect_sub",
-  "requiredAttrs": ["radius", "xPosition", "yPosition"],
-  "optionalAttrs": ["type"],
+  "requiredAttrs": [
+    "radius", "xPosition", "yPosition"
+  ],
+  "optionalAttrs": [
+    "type"
+  ],
   "attrTypes": {
-    "type": {"type": "string", "enumValues": ["water", "solid"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "water"},
-    "radius": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "xPosition": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "yPosition": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "type": {
+      "type": "string",
+      "enumValues": [
+        "water", "solid"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "water"
+    },
+    "radius": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "xPosition": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "yPosition": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["FluidsComponent"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "FluidsComponent"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -24,5 +66,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

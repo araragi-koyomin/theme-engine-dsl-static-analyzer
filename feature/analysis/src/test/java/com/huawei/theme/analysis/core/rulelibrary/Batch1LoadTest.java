@@ -26,7 +26,7 @@ class Batch1LoadTest {
         assertTrue(repo.getElementRule("Widget").isPresent());
         assertTrue(repo.getElementRule("ChargingSkin").isPresent());
 
-        assertEquals(4, repo.getRootElementNames().size());
+        assertEquals(5, repo.getRootElementNames().size());
     }
 
     @Test

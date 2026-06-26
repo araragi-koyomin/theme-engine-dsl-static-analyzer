@@ -45,7 +45,7 @@ class Batch5LoadTest {
         assertEquals(0, anim.getRequiredAttrs().size());
         assertTrue(anim.getOptionalAttrs().contains("delay"));
         assertTrue(anim.getOptionalAttrs().contains("repeat"));
-        assertTrue(anim.getAllowedChildren().contains("Alpha"));
+        assertTrue(repo.getAllowedChildren("AlphaAnimation").contains("Alpha"));
         assertTrue(anim.getAllowedParents().contains("Image"));
         assertTrue(anim.getAllowedParents().contains("Group"));
 
@@ -79,7 +79,7 @@ class Batch5LoadTest {
         DslElementRule srcAnim = repo.getElementRule("SourcesAnimation").orElseThrow();
         assertEquals(1, srcAnim.getAllowedParents().size());
         assertTrue(srcAnim.getAllowedParents().contains("Image"));
-        assertTrue(srcAnim.getAllowedChildren().contains("Source"));
+        assertTrue(repo.getAllowedChildren("SourcesAnimation").contains("Source"));
     }
 
     @Test
@@ -90,7 +90,7 @@ class Batch5LoadTest {
         DslElementRule varAnim = repo.getElementRule("VariableAnimation").orElseThrow();
         assertEquals(1, varAnim.getAllowedParents().size());
         assertTrue(varAnim.getAllowedParents().contains("Var"));
-        assertTrue(varAnim.getAllowedChildren().contains("AniFrame"));
+        assertTrue(repo.getAllowedChildren("VariableAnimation").contains("AniFrame"));
     }
 
     @Test
@@ -199,10 +199,6 @@ class Batch5LoadTest {
         JsonRuleLoader loader = new JsonRuleLoader();
         RuleRepository repo = loader.loadFromDirectory(getRulesDir());
 
-        DslElementRule lockscreen = repo.getElementRule("Lockscreen").orElseThrow();
-        assertTrue(lockscreen.getAllowedChildren().contains("SourcesAnimation"));
-
-        DslElementRule image = repo.getElementRule("Image").orElseThrow();
-        assertTrue(image.getAllowedChildren().contains("SourcesAnimation"));
+        assertTrue(repo.getAllowedChildren("Image").contains("SourcesAnimation"));
     }
 }

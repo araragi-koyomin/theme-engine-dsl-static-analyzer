@@ -1,16 +1,57 @@
-{
+﻿{
   "element": "Slice",
   "category": "command_sub",
-  "requiredAttrs": ["time", "duration", "intensity", "type"],
-  "optionalAttrs": [],
+  "requiredAttrs": [
+    "time", "duration", "intensity", "type"
+  ],
+  "optionalAttrs": [
+  ],
   "attrTypes": {
-    "time": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "duration": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "intensity": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "type": {"type": "number", "enumValues": ["2"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "2"}
+    "time": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "duration": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "intensity": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "type": {
+      "type": "number",
+      "enumValues": [
+        "2"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "2"
+    }
   },
-  "allowedParents": ["Wave"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Wave"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -27,24 +68,28 @@
   "constraints": [
     {
       "ruleId": "SEM-VIBRATE-004",
-      "condition": "element.attrs['time'] != null AND (element.attrs['time'] < 0 OR element.attrs['time'] > 1800000)",
+      "condition": "element.attrs[\u0027time\u0027] != null AND (element.attrs[\u0027time\u0027] \u003c 0 OR element.attrs[\u0027time\u0027] \u003e 1800000)",
       "message": "Slice的time属性取值范围为[0,1800000]",
       "severity": "error",
-      "suggestedFixes": ["将time值调整到合法范围内"]
-    },
-    {
+      "suggestedFixes": [
+        "将time值调整到合法范围内"
+      ]
+    }, {
       "ruleId": "SEM-VIBRATE-005",
-      "condition": "element.attrs['duration'] != null AND (element.attrs['duration'] < 0 OR element.attrs['duration'] > 1800000)",
+      "condition": "element.attrs[\u0027duration\u0027] != null AND (element.attrs[\u0027duration\u0027] \u003c 0 OR element.attrs[\u0027duration\u0027] \u003e 1800000)",
       "message": "Slice的duration属性取值范围为[0,1800000]",
       "severity": "error",
-      "suggestedFixes": ["将duration值调整到合法范围内"]
-    },
-    {
+      "suggestedFixes": [
+        "将duration值调整到合法范围内"
+      ]
+    }, {
       "ruleId": "SEM-VIBRATE-006",
-      "condition": "element.attrs['intensity'] != null AND (element.attrs['intensity'] < 0 OR element.attrs['intensity'] > 1)",
+      "condition": "element.attrs[\u0027intensity\u0027] != null AND (element.attrs[\u0027intensity\u0027] \u003c 0 OR element.attrs[\u0027intensity\u0027] \u003e 1)",
       "message": "Slice的intensity属性取值范围为[0,1]",
       "severity": "error",
-      "suggestedFixes": ["将intensity值调整到0-1范围内"]
+      "suggestedFixes": [
+        "将intensity值调整到0-1范围内"
+      ]
     }
   ]
 }

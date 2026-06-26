@@ -1,13 +1,26 @@
-{
+﻿{
   "element": "VisibilityCommand",
   "category": "command",
-  "requiredAttrs": ["visibility"],
-  "optionalAttrs": [],
+  "requiredAttrs": [
+    "visibility"
+  ],
+  "optionalAttrs": [
+  ],
   "attrTypes": {
-    "visibility": {"type": "expression", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null}
+    "visibility": {
+      "type": "expression",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Trigger"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Trigger"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -21,5 +34,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

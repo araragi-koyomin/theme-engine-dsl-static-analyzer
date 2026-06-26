@@ -50,8 +50,8 @@ public interface RuleRepository {
     /**
      * 获取合法根元素标签名列表。
      *
-     * <p>通过遍历所有规则条目，筛选category="root"的元素得出。
-     * 不硬编码["Lockscreen","Wallpaper","Widget","ChargingSkin"]，
+     * <p>通过遍历所有规则条目，筛选allowedParents为空的元素得出。
+     * 根元素即无父元素的顶级标签（如Lockscreen/Wallpaper/LongTake/Widget/ChargingSkin），
      * 以支持--rule-dir新增自定义根元素时代码自动感知。</p>
      *
      * @return 根元素标签名列表，M1文件识别使用此集合做双重识别的根元素标签匹配
@@ -104,6 +104,10 @@ public interface RuleRepository {
 
     /**
      * 获取指定元素的合法子元素标签名列表。
+     *
+     * <p>此列表从所有规则的allowedParents反向推导计算得出：
+     * 如果元素X的allowedParents包含当前元素名，则X是当前元素的合法子元素。
+     * 不再从JSON规则文件的allowedChildren字段直接读取。</p>
      *
      * @param elementName 元素标签名，不存在时返回空列表
      * @return 允许的子元素标签名列表

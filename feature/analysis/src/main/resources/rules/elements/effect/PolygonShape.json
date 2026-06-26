@@ -1,18 +1,78 @@
-{
+﻿{
   "element": "PolygonShape",
   "category": "effect_sub",
-  "requiredAttrs": ["hx", "hy", "xPosition", "yPosition", "angle"],
-  "optionalAttrs": ["type"],
+  "requiredAttrs": [
+    "hx", "hy", "xPosition", "yPosition", "angle"
+  ],
+  "optionalAttrs": [
+    "type"
+  ],
   "attrTypes": {
-    "type": {"type": "string", "enumValues": ["water", "solid"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "water"},
-    "hx": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "hy": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "xPosition": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "yPosition": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "angle": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "type": {
+      "type": "string",
+      "enumValues": [
+        "water", "solid"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "water"
+    },
+    "hx": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "hy": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "xPosition": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "yPosition": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "angle": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["FluidsComponent"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "FluidsComponent"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -26,5 +86,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

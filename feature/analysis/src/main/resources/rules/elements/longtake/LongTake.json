@@ -1,0 +1,48 @@
+﻿{
+  "element": "LongTake",
+  "category": "longtake",
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+    "frameRate", "screenWidth"
+  ],
+  "attrTypes": {
+    "frameRate": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "60"
+    },
+    "screenWidth": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "720"
+    }
+  },
+  "allowedParents": [
+  ],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": false,
+    "Wallpaper": false,
+    "LongTake": true,
+    "Widget": false,
+    "ChargingSkin": false
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+  ]
+}

@@ -1,26 +1,160 @@
-{
+﻿{
   "element": "Texture2D",
   "category": "effect_sub",
-  "requiredAttrs": ["collbodyid"],
-  "optionalAttrs": ["x", "y", "w", "h", "src", "srcid", "scaleType", "forceX", "forceY", "vx", "vy", "isActive", "type"],
+  "requiredAttrs": [
+    "collbodyid"
+  ],
+  "optionalAttrs": [
+    "x", "y", "w", "h", "src", "srcid", "scaleType", "forceX", "forceY", "vx", "vy", "isActive", "type"
+  ],
   "attrTypes": {
-    "x": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
-    "y": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
-    "w": {"type": "number", "enumValues": [], "aliases": ["width"], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
-    "h": {"type": "number", "enumValues": [], "aliases": ["height"], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
-    "src": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "srcid": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "scaleType": {"type": "string", "enumValues": ["fill", "center_crop", "hold_center_crop"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "center_crop"},
-    "collbodyid": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "forceX": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
-    "forceY": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
-    "vx": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
-    "vy": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "0"},
-    "isActive": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "1"},
-    "type": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "x": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "0"
+    },
+    "y": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "0"
+    },
+    "w": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "width"
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "0"
+    },
+    "h": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+        "height"
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "0"
+    },
+    "src": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "srcid": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "scaleType": {
+      "type": "string",
+      "enumValues": [
+        "fill", "center_crop", "hold_center_crop"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "center_crop"
+    },
+    "collbodyid": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "forceX": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "0"
+    },
+    "forceY": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "0"
+    },
+    "vx": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "0"
+    },
+    "vy": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "0"
+    },
+    "isActive": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "1"
+    },
+    "type": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["CollisionWorld"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "CollisionWorld"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -34,5 +168,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

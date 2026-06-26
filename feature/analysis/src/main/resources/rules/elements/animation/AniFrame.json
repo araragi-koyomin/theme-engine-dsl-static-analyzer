@@ -1,15 +1,52 @@
-{
+﻿{
   "element": "AniFrame",
   "category": "animation_frame",
-  "requiredAttrs": ["value", "time"],
-  "optionalAttrs": ["varSpeedFlag"],
+  "requiredAttrs": [
+    "value", "time"
+  ],
+  "optionalAttrs": [
+    "varSpeedFlag"
+  ],
   "attrTypes": {
-    "value": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null},
-    "time": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "varSpeedFlag": {"type": "string", "enumValues": ["SineFun_In", "SineFun_Out", "SineFun_InOut", "QuadFun_In", "QuadFun_Out", "QuadFun_InOut", "CubicFun_In", "CubicFun_Out", "CubicFun_InOut", "QuartFun_In", "QuartFun_Out", "QuartFun_InOut", "QuintFun_In", "QuintFun_Out", "QuintFun_InOut", "ExpoFun_In", "ExpoFun_Out", "ExpoFun_InOut", "CircFun_In", "CircFun_Out", "CircFun_InOut", "BackFun_In", "BackFun_Out", "BackFun_InOut", "ElasticFun_In", "ElasticFun_Out", "ElasticFun_InOut", "BounceFun_In", "BounceFun_Out", "BounceFun_InOut"], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "value": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    },
+    "time": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "varSpeedFlag": {
+      "type": "string",
+      "enumValues": [
+        "SineFun_In", "SineFun_Out", "SineFun_InOut", "QuadFun_In", "QuadFun_Out", "QuadFun_InOut", "CubicFun_In",
+        "CubicFun_Out", "CubicFun_InOut", "QuartFun_In", "QuartFun_Out", "QuartFun_InOut", "QuintFun_In",
+        "QuintFun_Out", "QuintFun_InOut", "ExpoFun_In", "ExpoFun_Out", "ExpoFun_InOut", "CircFun_In", "CircFun_Out",
+        "CircFun_InOut", "BackFun_In", "BackFun_Out", "BackFun_InOut", "ElasticFun_In", "ElasticFun_Out",
+        "ElasticFun_InOut", "BounceFun_In", "BounceFun_Out", "BounceFun_InOut"
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["VariableAnimation"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "VariableAnimation"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -23,5 +60,6 @@
     "foldable": true,
     "tablet": true
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

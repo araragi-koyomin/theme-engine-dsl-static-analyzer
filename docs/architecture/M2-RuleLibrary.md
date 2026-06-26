@@ -32,13 +32,14 @@ public class DslElementRule {
     List<String> optionalAttrs;
     Map<String, AttrTypeSpec> attrTypes;
     List<String> allowedParents;
-    List<String> allowedChildren;
     String inherits;
     Map<String, Boolean> scope;              // 作用域支持矩阵
     Map<String, Boolean> deviceSupport;      // 设备类型支持矩阵
     List<RuleConstraint> constraints;        // 声明式约束条件列表
 }
 ```
+
+**`allowedChildren` 不存储在规则条目中**：父子关系以 `allowedParents` 为唯一数据源（子→父方向），`allowedChildren`（父→子方向）通过 `DefaultRuleRepository.buildChildrenMap()` 从所有元素的 `allowedParents` 反向推导构建反向索引，由 `RuleRepository.getAllowedChildren(elementName)` 查询返回。这样消除双方向数据冗余，避免 allowedParents 与 allowedChildren 不一致的问题。
 
 ### 3.2 AttrTypeSpec — 属性类型规范
 
@@ -166,7 +167,7 @@ public interface RuleRepository {
     Optional<String> resolveAttrAlias(String elementName, String attrName);
     Set<String> getCanonicalAttrNames(String elementName);
     List<String> getAllowedParents(String elementName);
-    List<String> getAllowedChildren(String elementName);
+    List<String> getAllowedChildren(String elementName);     // 从allowedParents反向索引推导，非存储字段
     List<RuleConstraint> getConstraints(String elementName);
     Optional<DslGlobalVar> getGlobalVar(String varName);
     List<DslGlobalVar> getAllGlobalVars();
@@ -233,7 +234,7 @@ IDEA Settings页面内嵌规则编辑器：
 
 | 下游消费 | 提供接口 | 说明 |
 |---|---|---|
-| M1 文件识别 | `getRootElementNames()` | 获取合法根元素集合用于双重识别 |
+| M1 文件识别 | `getRootElementNames()` | 获取合法根元素集合用于双重识别（allowedParents为空的元素即为根元素） |
 | M3 语法分析 | `getElementRule()` + `getAttrTypeSpec()` | 获取语法验证规则+属性类型规范 |
 | M4 语义分析 | `getElementRule()` + `getAttrTypeSpec()` + `getConstraints()` + `getGlobalVars()` | 语义约束+类型规范+声明式约束+全局变量 |
 | M5 修复逻辑 | `getElementRule()` + `getAttrTypeSpec()` + RuleConstraint.suggestedFixes | 修复建议数据 |

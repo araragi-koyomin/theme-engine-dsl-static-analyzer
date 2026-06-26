@@ -1,16 +1,57 @@
-{
+﻿{
   "element": "StyleCommand",
   "category": "command",
-  "requiredAttrs": ["index"],
-  "optionalAttrs": ["name", "contentTypes", "condition"],
+  "requiredAttrs": [
+    "index"
+  ],
+  "optionalAttrs": [
+    "name", "contentTypes", "condition"
+  ],
   "attrTypes": {
-    "index": {"type": "number", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null},
-    "contentTypes": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": "aod|skin"},
-    "condition": {"type": "expression", "enumValues": [], "aliases": [], "supportsExpression": true, "expressionKind": "number", "defaultValue": null}
+    "index": {
+      "type": "number",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "name": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    },
+    "contentTypes": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": "aod|skin"
+    },
+    "condition": {
+      "type": "expression",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": true,
+      "expressionKind": "number",
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["Trigger"],
-  "allowedChildren": [],
+  "allowedParents": [
+    "Trigger"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -27,17 +68,28 @@
   "constraints": [
     {
       "ruleId": "SEM-CMD-004",
-      "condition": "element.attrs['index'] != null AND containsExpression(element.attrs['index'])",
+      "condition": "element.attrs[\u0027index\u0027] != null AND containsExpression(element.attrs[\u0027index\u0027])",
       "message": "StyleCommand的index属性不支持表达式",
       "severity": "error",
-      "suggestedFixes": ["将index改为纯数字值"]
-    },
-    {
+      "suggestedFixes": [
+        "将index改为纯数字值"
+      ]
+    }, {
       "ruleId": "SEM-CMD-003",
-      "condition": "element.parentTrigger != null AND element.parentTrigger.parentElement.attrs['styleGlobalPersist'] != 'true'",
+      "condition": "element.parentTrigger != null AND element.parentTrigger.parentElement.attrs[\u0027styleGlobalPersist\u0027] != \u0027true\u0027",
       "message": "StyleCommand搭配的变量需要设置styleGlobalPersist为true",
       "severity": "warning",
-      "suggestedFixes": ["为相关变量添加styleGlobalPersist='true'属性"]
+      "suggestedFixes": [
+        "为相关变量添加styleGlobalPersist=\u0027true\u0027属性"
+      ]
+    }, {
+      "ruleId": "SEM-PERSIST-003",
+      "condition": "element.attrs[\u0027styleGlobalPersist\u0027] != \u0027true\u0027",
+      "message": "styleGlobalPersist变量初始值默认为0，expression初始赋值会被忽略",
+      "severity": "warning",
+      "suggestedFixes": [
+        "设置styleGlobalPersist=\u0027true\u0027"
+      ]
     }
   ]
 }

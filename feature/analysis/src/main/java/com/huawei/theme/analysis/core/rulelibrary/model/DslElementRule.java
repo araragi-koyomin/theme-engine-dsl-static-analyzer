@@ -34,8 +34,6 @@ public class DslElementRule {
     @Builder.Default Map<String, AttrTypeSpec> attrTypes = Collections.emptyMap();
     /** 合法父元素标签名列表。M3 SYN-002父子嵌套约束检测使用 */
     @Builder.Default List<String> allowedParents = Collections.emptyList();
-    /** 合法子元素标签名列表。M3 SYN-002父子嵌套约束检测使用 */
-    @Builder.Default List<String> allowedChildren = Collections.emptyList();
     /** 继承声明，如VideoCommand inherits="CommandBase"表示继承通用命令属性。Optional层继承链分析使用，Core层仅存储声明 */
     String inherits;
     /** 应用位置支持矩阵，key为应用位置名(Lockscreen/Wallpaper/LongTake/Widget/ChargingSkin)，

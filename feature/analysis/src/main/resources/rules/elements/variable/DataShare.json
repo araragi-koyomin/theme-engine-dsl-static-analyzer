@@ -1,13 +1,26 @@
-{
+﻿{
   "element": "DataShare",
   "category": "variable",
-  "requiredAttrs": [],
-  "optionalAttrs": ["name"],
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+    "name"
+  ],
   "attrTypes": {
-    "name": {"type": "string", "enumValues": [], "aliases": [], "supportsExpression": false, "expressionKind": null, "defaultValue": null}
+    "name": {
+      "type": "string",
+      "enumValues": [
+      ],
+      "aliases": [
+      ],
+      "supportsExpression": false,
+      "expressionKind": null,
+      "defaultValue": null
+    }
   },
-  "allowedParents": ["CollaborationCommands"],
-  "allowedChildren": ["Var"],
+  "allowedParents": [
+    "CollaborationCommands"
+  ],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -21,5 +34,6 @@
     "foldable": true,
     "tablet": false
   },
-  "constraints": []
+  "constraints": [
+  ]
 }

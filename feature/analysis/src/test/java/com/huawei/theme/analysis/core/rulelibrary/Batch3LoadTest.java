@@ -177,7 +177,8 @@ class Batch3LoadTest {
         assertTrue(actionSpec.getEnumValues().contains("long"));
         assertTrue(actionSpec.getEnumValues().contains("resume"));
         assertTrue(actionSpec.getEnumValues().contains("pause"));
-        assertEquals(10, actionSpec.getEnumValues().size());
+        assertTrue(actionSpec.getEnumValues().contains("tapLink"));
+        assertEquals(14, actionSpec.getEnumValues().size());
     }
 
     @Test
@@ -188,10 +189,10 @@ class Batch3LoadTest {
         DslElementRule trigger = repo.getElementRule("Trigger").orElseThrow();
         assertTrue(trigger.getAllowedParents().contains("Button"));
         assertTrue(trigger.getAllowedParents().contains("Var"));
-        assertTrue(trigger.getAllowedChildren().contains("Command"));
-        assertTrue(trigger.getAllowedChildren().contains("VariableCommand"));
-        assertTrue(trigger.getAllowedChildren().contains("VideoCommand"));
-        assertTrue(trigger.getAllowedChildren().contains("SoundCommand"));
+        assertTrue(repo.getAllowedChildren("Trigger").contains("Command"));
+        assertTrue(repo.getAllowedChildren("Trigger").contains("VariableCommand"));
+        assertTrue(repo.getAllowedChildren("Trigger").contains("VideoCommand"));
+        assertTrue(repo.getAllowedChildren("Trigger").contains("SoundCommand"));
     }
 
     @Test
