@@ -18,7 +18,7 @@
 │         ↓ 无IDEA依赖，可独立运行                  │
 ├─────────────────────────────────────────────────┤
 │                  外部依赖                        │
-│  dom4j(XML解析) │ ANTLR4(表达式+规则DSL) │ GSON   │
+│  JDK SAX(XML解析) │ ANTLR4(表达式+规则DSL) │ GSON   │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -32,7 +32,7 @@
 |---|---|---|
 | 语言 | Java 17 | 全项目开发语言 |
 | 构建工具 | Gradle 8.2 + gradle-intellij-plugin 1.13.3 | 插件构建 + CLI fat jar |
-| XML结构解析 | dom4j 2.1.3 | DSL文件XML结构解析（不使用ANTLR4） |
+| XML结构解析 | JDK SAX (javax.xml.parsers) | DSL文件XML结构解析（不使用ANTLR4） |
 | 表达式解析 | ANTLR4 | DSL表达式 + 规则DSL条件解析（.g4 grammar自动生成） |
 | 规则库数据格式 | GSON 2.9.0 | 规则JSON反序列化 |
 | 数据模型简化 | Lombok 1.18.22 | @Data/@Builder注解 |
@@ -51,13 +51,13 @@
 
 | 解析层级 | 工具 | 职责 | 输出 |
 |---|---|---|---|
-| XML结构解析 | dom4j | XML文件→Element树，捕获XML格式错误 | SAXParseException直接报出，不做额外包装映射 |
-| DSL AST构建 | M3 AstBuilder | dom4j Element树→DslAstNode独立AST | DslFileNode（含DslElementNode、DslAttributeNode） |
+| XML结构解析 | JDK SAX | XML文件→ContentHandler事件流，捕获XML格式错误 | SAXParseException直接报出，不做额外包装映射 |
+| DSL AST构建 | M3 AstBuilder | SAX事件流→DslAstNode独立AST（Locator捕获行列号） | DslFileNode（含DslElementNode、DslAttributeNode） |
 | DSL表达式解析 | ANTLR4 (DslExpression.g4) | 仅expression/reference类型属性值解析 | ExpressionNode子树 |
 | 规则DSL条件解析 | ANTLR4 (DslRuleCondition.g4) | 声明式约束条件字符串解析 | ConditionNode |
 | 纯字面量验证 | 直接比对 | 非expression类型属性值直接验证 | 不走解析器 |
 
-**重要边界**：ANTLR4仅用于表达式和规则DSL条件解析，不用于XML结构解析（dom4j保留）。
+**重要边界**：ANTLR4仅用于表达式和规则DSL条件解析，不用于XML结构解析（JDK SAX保留）。
 
 ## 2. 模块设计（10个模块）
 
@@ -217,7 +217,7 @@ public interface DslAstProvider {
 
 | 错误层级 | 检测机制 | 规则ID | 说明 |
 |---|---|---|---|
-| XML结构语法 | dom4j SAXParseException直接报出 | — | 标签未闭合、属性引号缺失、缺少XML声明等XML格式错误，不做额外包装映射 |
+| XML结构语法 | SAX SAXParseException直接报出 | — | 标签未闭合、属性引号缺失、缺少XML声明等XML格式错误，不做额外包装映射 |
 | DSL结构语法 | M3 AST构建+M2规则库比对 | SYN-002, SYN-004, SYN-005, SYN-006, SYN-010 | 嵌套约束、未知元素/属性、必填缺失、根元素错误 |
 | DSL表达式语法 | ANTLR4 DslExpressionParser | SEM-EXPR-001~006 | `-#var`模式、单引号缺失、花括号嵌套等 |
 
