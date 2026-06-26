@@ -131,11 +131,13 @@ public class DslElementRule {
     List<String> optionalAttrs;
     Map<String, AttrTypeSpec> attrTypes;
     List<String> allowedParents;
-    List<String> allowedChildren;
     String inherits;
     Map<String, Boolean> scope;              // 作用域支持矩阵
     List<RuleConstraint> constraints;        // 声明式约束条件列表
 }
+```
+
+> `allowedChildren` 不存储在 DslElementRule 中，由 `DefaultRuleRepository.buildChildrenMap()` 从所有元素的 `allowedParents` 反向推导构建反向索引，通过 `RuleRepository.getAllowedChildren(elementName)` 查询。
 
 @Data @Builder
 public class AttrTypeSpec {
@@ -330,7 +332,7 @@ public class VarReference {
 | RequiredAttrAnalyzer | 属性存在性检查 | M2 requiredAttrs |
 | UnknownAttrAnalyzer | 属性名比对 | M2 optionalAttrs+requiredAttrs |
 | EnumValueAnalyzer | 枚举值比对 | M2 enumValues |
-| ParentChildAnalyzer | 父子关系比对 | M2 allowedParents/allowedChildren |
+| ParentChildAnalyzer | 父子关系比对 | M2 allowedParents（allowedChildren由反向索引推导） |
 | ScopeAnalyzer | 作用域矩阵比对 | M2 scope |
 | VarRefAnalyzer | 变量引用存在性 | SymbolTable + 全局变量目录 |
 

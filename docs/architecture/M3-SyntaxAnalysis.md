@@ -114,7 +114,7 @@ M3产出的语法诊断分三层：
 | 规则ID | 检测内容 | 检测机制 | 严重级别 |
 |---|---|---|---|
 | SYN-001 | 根元素标签错误 | M1文件识别+M3 AST根节点检测 | error |
-| SYN-002 | 标签嵌套违反父子约束 | M3 AST遍历 + M2 allowedParents/allowedChildren比对 | error |
+| SYN-002 | 标签嵌套违反父子约束 | M3 AST遍历 + M2 allowedParents比对（allowedChildren由反向索引推导） | error |
 | SYN-003 | 未知元素标签 | M3 AST tagName + M2 DslElementRule名称集合比对 | error |
 | SYN-004 | 未知属性名 | M3属性名 + M2 optionalAttrs+requiredAttrs比对 | warning |
 | SYN-005 | 缺失必填属性 | M3属性存在性 + M2 requiredAttrs比对 | error |

@@ -9,7 +9,7 @@
 
 ### 1.2 根元素与应用位置
 
-DSL有4种应用位置，每种对应一个根元素标签：
+DSL有5种应用位置，每种对应一个根元素标签：
 
 | 根元素 | 应用位置 | 关键属性 | 说明 |
 |---|---|---|---|
@@ -17,8 +17,9 @@ DSL有4种应用位置，每种对应一个根元素标签：
 | `<Wallpaper>` | 桌面 | screenWidth(可选,number) | 继承锁屏除解锁交互外的所有功能 |
 | `<Widget>` | 百变卡片 | screenWidth(必填,number), screenHeight(必填,number), frameRate(可选,number) | 卡片尺寸固定 |
 | `<ChargingSkin>` | 充电动效 | screenWidth(可选,number) | 替换系统充电效果 |
+| `<LongTake>` | 一镜到底 | 无特有根属性 | 一镜到底动画场景，作为锁屏的扩展场景使用 |
 
-> 注：规范中还包含一镜到底(LongTake)应用位置，但无独立根元素标签，通常作为锁屏的扩展场景使用。
+> 根元素的判定规则：`allowedParents` 为空（null 或空列表）的元素即为根元素。LongTake 虽 category 为 `"longtake"` 而非 `"root"`，但因 allowedParents 为空列表，同样被识别为根元素。
 
 ---
 
@@ -423,7 +424,7 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 
 | 规则ID | 检测内容 | 检测机制 | 严重级别 |
 |---|---|---|---|
-| SYN-002 | 标签嵌套违反父子约束 | M3 AST遍历 + M2 allowedParents/allowedChildren比对 | error |
+| SYN-002 | 标签嵌套违反父子约束 | M3 AST遍历 + M2 allowedParents比对（allowedChildren由反向索引推导） | error |
 | SYN-003 | 未知元素标签 | M3 AST tagName + M2 DslElementRule名称集合比对 | error |
 | SYN-004 | 未知属性名 | M3属性名 + M2 optionalAttrs+requiredAttrs比对 | warning |
 | SYN-005 | 缺失必填属性 | M3属性存在性 + M2 requiredAttrs比对 | error |
@@ -534,7 +535,6 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
     "const": {"type": "string", "enumValues": ["true", "false"], "supportsExpression": false, "defaultValue": "false"}
   },
   "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
-  "allowedChildren": ["Trigger", "VariableAnimation"],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -628,7 +628,6 @@ optionalAttrs和attrTypes中只包含属性规范名（如`width`、`height`、`
     "seekTime": {"type": "number", "supportsExpression": false}
   },
   "allowedParents": ["Trigger"],
-  "allowedChildren": [],
   "inherits": "CommandBase",
   "scope": {
     "Lockscreen": true,
@@ -687,7 +686,6 @@ optionalAttrs和attrTypes中只包含属性规范名（如`width`、`height`、`
     }
   },
   "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
-  "allowedChildren": ["Vars", "Items"],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
@@ -705,6 +703,8 @@ optionalAttrs和attrTypes中只包含属性规范名（如`width`、`height`、`
 }
 ```
 
+> 注：JSON规则条目中不再包含 `allowedChildren` 字段。父→子方向的关系由 `DefaultRuleRepository.buildChildrenMap()` 从所有元素的 `allowedParents` 反向推导构建索引，通过 `RuleRepository.getAllowedChildren(elementName)` 查询。
+
 ### 6.4 Array规则条目Schema
 
 ```json
@@ -720,7 +720,6 @@ optionalAttrs和attrTypes中只包含属性规范名（如`width`、`height`、`
     "y": {"type": "number", "supportsExpression": true, "expressionKind": "number", "defaultValue": "0"}
   },
   "allowedParents": ["Lockscreen", "Wallpaper", "Widget", "ChargingSkin", "Group"],
-  "allowedChildren": ["Image", "Text", "Group"],
   "inherits": null,
   "scope": {
     "Lockscreen": true,
