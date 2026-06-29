@@ -20,7 +20,7 @@ class FunctionSignatureLibraryTest {
     @Test
     void getSignatureReturnsPresentWhenMatched() {
         FunctionSignatureLibrary library = new StubFunctionSignatureLibrary();
-        Optional<FunctionSignature> sig = library.getSignature("abs", "FUNCTION_CALL");
+        Optional<FunctionSignature> sig = library.getSignature("abs", "number");
         assertTrue(sig.isPresent());
         assertEquals("abs", sig.get().getName());
     }
@@ -28,7 +28,7 @@ class FunctionSignatureLibraryTest {
     @Test
     void getSignatureReturnsEmptyWhenAbsent() {
         FunctionSignatureLibrary library = new StubFunctionSignatureLibrary();
-        Optional<FunctionSignature> sig = library.getSignature("nonexistent", "FUNCTION_CALL");
+        Optional<FunctionSignature> sig = library.getSignature("nonexistent", "number");
         assertFalse(sig.isPresent());
     }
 
@@ -64,7 +64,7 @@ class FunctionSignatureLibraryTest {
                             .isVariadic(false)
                             .build()))
                     .returnType(new DslNumberType())
-                    .expressionKind("FUNCTION_CALL")
+                    .expressionKind("number")
                     .build());
         }
 
