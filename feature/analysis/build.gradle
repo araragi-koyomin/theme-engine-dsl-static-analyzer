@@ -1,7 +1,3 @@
-plugins {
-    id 'antlr'
-}
-
 intellij {
     plugins = []
 }
@@ -23,6 +19,8 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
 }
 
+def generatedRootDir = 'build/generated-src/antlr/main'
+
 task generateDslExpressionGrammar(type: JavaExec) {
     description 'Generate ANTLR4 parser for DslExpression grammar'
     group 'antlr'
@@ -31,7 +29,7 @@ task generateDslExpressionGrammar(type: JavaExec) {
     args = [
             '-package', 'com.huawei.theme.analysis.core.expression.generated',
             '-visitor', '-no-listener',
-            '-o', file('src/main/java/com/huawei/theme/analysis/core/expression/generated').absolutePath,
+            '-o', file("${generatedRootDir}/com/huawei/theme/analysis/core/expression/generated").absolutePath,
             file('src/main/java/com/huawei/theme/analysis/core/expression/grammar/DslExpression.g4').absolutePath
     ]
 }
@@ -44,12 +42,20 @@ task generateDslRuleConditionGrammar(type: JavaExec) {
     args = [
             '-package', 'com.huawei.theme.analysis.core.ruledsl.generated',
             '-visitor', '-no-listener',
-            '-o', file('src/main/java/com/huawei/theme/analysis/core/ruledsl/generated').absolutePath,
+            '-o', file("${generatedRootDir}/com/huawei/theme/analysis/core/ruledsl/generated").absolutePath,
             file('src/main/java/com/huawei/theme/analysis/core/ruledsl/grammar/DslRuleCondition.g4').absolutePath
     ]
 }
 
+sourceSets {
+    main.java.srcDirs generatedRootDir
+}
+
 compileJava.dependsOn generateDslExpressionGrammar, generateDslRuleConditionGrammar
+
+tasks.matching { it.name == 'prepareKotlinBuildScriptModel' || it.name == 'ideaModule' }.configureEach {
+    dependsOn 'generateDslExpressionGrammar', 'generateDslRuleConditionGrammar'
+}
 
 test {
     useJUnitPlatform()
