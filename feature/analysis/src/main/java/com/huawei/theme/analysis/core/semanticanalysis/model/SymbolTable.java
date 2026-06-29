@@ -11,5 +11,5 @@ import lombok.Data;
 @Builder
 public class SymbolTable {
     @Builder.Default Map<String, VarDeclaration> declarations = Collections.emptyMap();
-    @Builder.Default List<VarReference> references = Collections.emptyList();
+//    @Builder.Default List<VarReference> references = Collections.emptyList();
 }

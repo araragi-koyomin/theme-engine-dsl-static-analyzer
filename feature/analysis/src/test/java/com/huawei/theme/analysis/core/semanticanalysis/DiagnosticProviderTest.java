@@ -2,6 +2,7 @@ package com.huawei.theme.analysis.core.semanticanalysis;
 
 import java.util.List;
 
+import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import org.junit.jupiter.api.Test;
 
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
@@ -20,7 +21,7 @@ class DiagnosticProviderTest {
     void analyzeReturnsDiagnosticList() {
         DslFileNode ast = astBuilder.getDslAst("test.xml", "<Var/>");
         DiagnosticProvider provider = new StubDiagnosticProvider();
-        List<Diagnostic> diagnostics = provider.analyze(ast);
+        List<Diagnostic> diagnostics = provider.analyze(ast, null, null); //TODO
         assertFalse(diagnostics.isEmpty());
         assertEquals(DiagnosticSeverity.ERROR, diagnostics.get(0).getSeverity());
         assertEquals("SEM-SCOPE-001", diagnostics.get(0).getRuleId());
@@ -31,14 +32,14 @@ class DiagnosticProviderTest {
     void analyzeReturnsEmptyListForEmptyAst() {
         DslFileNode ast = astBuilder.getDslAst("valid.xml", "");
         DiagnosticProvider provider = new StubDiagnosticProvider();
-        List<Diagnostic> diagnostics = provider.analyze(ast);
+        List<Diagnostic> diagnostics = provider.analyze(ast, null, null); //TODO
         assertEquals(0, diagnostics.size());
     }
 
     private static class StubDiagnosticProvider implements DiagnosticProvider {
 
         @Override
-        public List<Diagnostic> analyze(DslFileNode ast) {
+        public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder symbolTableBuilder) {
             if (ast.getRootElement() == null || ast.getRootElement().isHasError()) {
                 return List.of();
             }
