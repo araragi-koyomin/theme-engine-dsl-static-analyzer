@@ -12,10 +12,17 @@
     <depends>com.intellij.modules.xml</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="com.huawei.theme.analysis.DslAnalysisService"/>
-        <language id="Dsl" implementationClass="com.huawei.theme.analysis.syntax.DslLanguage"/>
-        <parserDefinition language="Dsl" implementationClass="com.huawei.theme.analysis.syntax.DslParserDefinition"/>
-        <languageSubstitutor language="XML" implementationClass="com.huawei.theme.analysis.syntax.DslLanguageSubstitutor"/>
-        <annotator language="Dsl" implementationClass="com.huawei.theme.analysis.syntax.DslSyntaxAnnotator"/>
+        <fileType name="ThemeDSL"
+                  implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslFileType"
+                  fieldName="INSTANCE"
+                  language="ThemeDSL"
+                  fileNames="script.xml"
+                  patterns="script_*.xml"/>
+
+        <lang.parserDefinition language="ThemeDSL"
+                               implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslParserDefinition"/>
+
+        <completion.contributor language="ThemeDSL"
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslCompletionContributor"/>
     </extensions>
 </idea-plugin>
