@@ -4,7 +4,7 @@
 
 将DSL XML文件解析为独立AST，并检测语法错误。产出DslFileNode供后续模块消费，产出语法诊断供M4/M5/M7使用。
 
-**单一职责**：XML结构解析（dom4j） + DSL AST构建 + 表达式嵌入（ANTLR4） + 语法错误检测。
+**单一职责**：XML结构解析（JDK SAX） + DSL AST构建 + 表达式嵌入（ANTLR4） + 语法错误检测。
 
 **完全重构**：自有独立AST替代PSI依赖。Core层无IDEA PSI API依赖。
 
@@ -12,7 +12,7 @@
 
 | 层级 | 功能 | 说明 |
 |---|---|---|
-| **Core** | dom4j解析→DslAstNode + 语法错误检测 + ANTLR4表达式嵌入 | MVP必交 |
+| **Core** | SAX解析→DslAstNode + 语法错误检测 + ANTLR4表达式嵌入 | MVP必交 |
 | **Extension** | 精细化Token类型 + 表达式解析缓存 | 增强语法分析精度与性能 |
 | **Optional** | 自定义格式语法诊断输出 | 后续迭代 |
 
@@ -99,18 +99,20 @@ graph TD
 
 ### 3.2 AstBuilder — AST构建器
 
-使用dom4j解析XML结构，构建DslAstNode树：
+使用JDK SAXParser解析XML结构，构建DslAstNode树：
+
+> **设计决策（dom4j→SAX）**：原设计拟用 dom4j，但 dom4j 的 `Node` 不提供 per-node 行列号 API，而下游诊断（SYN-003 未知元素等）需要节点级定位。JDK 内置 `SAXParser` 通过 `Locator` 可在每个 `startElement` 事件捕获行列号，故改用 SAX 直接在事件回调中构建 AST。
 
 **构建流程**：
 
-1. dom4j SAXReader解析XML → Document
-2. 遍历Document Element树 → 构建DslElementNode/DslAttributeNode/DslAttributeValueNode
+1. JDK SAXParser解析XML → ContentHandler事件流（携带Locator）
+2. startElement/endElement事件中直接构建DslElementNode/DslAttributeNode/DslAttributeValueNode，从Locator取行列号
 3. 对expression/reference类型属性值，调用M0 DslExpressionParser → ExpressionNode子树
 4. 纯字面量属性值直接设置isLiteral=true，不调用解析器
 
 **表达式嵌入判断**：从M2 RuleRepository.getAttrTypeSpec(elementName, attrName)获取supportsExpression字段，true时调用M0表达式解析器。
 
-**调用链**：AstBuilder → dom4j SAXReader.parse(content) → Element树 → 遍历构建DslAstNode → M0 DslExpressionParser（仅expression/reference类型） → DslFileNode
+**调用链**：AstBuilder → SAXParser.parse(content, ContentHandler) → 事件流直接构建DslAstNode → M0 DslExpressionParser（仅expression/reference类型） → DslFileNode
 
 ### 3.3 DslAstProvider（接口）
 
@@ -132,11 +134,11 @@ M3产出的语法诊断分三层：
 
 | 错误层级 | 检测机制 | 规则ID | 说明 |
 |---|---|---|---|
-| XML结构语法 | dom4j SAXParseException直接报出 | — | 标签未闭合、属性引号缺失、缺少XML声明等XML格式错误，不做额外包装映射 |
+| XML结构语法 | SAX SAXParseException直接报出 | — | 标签未闭合、属性引号缺失、缺少XML声明等XML格式错误，不做额外包装映射 |
 | DSL结构语法 | M3 AST构建 + M2规则库比对 | SYN-001, SYN-002, SYN-003, SYN-004, SYN-005, SYN-006, SYN-007 | 嵌套约束、未知元素/属性、必填缺失、根元素错误 |
 | DSL表达式语法 | ANTLR4 DslExpressionParser | SEM-EXPR-001~006, SEM-EXPR-ANTLR | `-#var`模式、单引号缺失、花括号嵌套等 |
 
-**XML格式错误处理**：dom4j解析XML遇格式错误直接抛出SAXParseException，M3捕获后转换为Diagnostic产出（保留dom4j原始行列号和错误消息），不包装映射为自定义SYN-xxx规则ID。原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，编号已重新排列为连续序号SYN-001~007。
+**XML格式错误处理**：SAX解析XML遇格式错误直接抛出SAXParseException，M3捕获后转换为Diagnostic产出（保留SAXParseException的行列号和错误消息），不包装映射为自定义SYN-xxx规则ID。原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，编号已重新排列为连续序号SYN-001~007。
 
 **DSL结构语法检测详情**：
 
@@ -206,7 +208,7 @@ java -jar dsl-analyzer.jar [options] <file-or-directory>
 M3在CLI管线中的位置：
 
 ```
-文件输入 → M1识别 → M3语法分析(dom4j→AST+ANTLR4表达式) → M4语义分析 → 输出
+文件输入 → M1识别 → M3语法分析(SAX→AST+ANTLR4表达式) → M4语义分析 → 输出
 ```
 
 ### 5.2 CLI参数与M3的关系
@@ -221,7 +223,7 @@ M3在CLI管线中的位置：
 
 | CLI输出字段 | 来源路径 | M3贡献 |
 |---|---|---|
-| XML格式错误诊断 | M3 → dom4j SAXParseException | 标签未闭合、属性引号缺失等XML格式错误 |
+| XML格式错误诊断 | M3 → SAX SAXParseException | 标签未闭合、属性引号缺失等XML格式错误 |
 | `ruleId: SYN-001/002/003/004/005/006/007` | M3语法比对 → M2规则库 | DSL结构语法错误 |
 | `ruleId: SEM-EXPR-001~006/ANTLR` | M3表达式解析 → M0 ANTLR4 | DSL表达式语法错误 |
 | `summary.skippedFiles`（非DSL XML） | M1 → M3跳过 | M1识别为非DSL，M3不处理 |
@@ -230,8 +232,8 @@ M3在CLI管线中的位置：
 
 | 异常场景 | 退出码 | 说明 |
 |---|---|---|
-| XML格式严重错误（dom4j无法解析） | 1 | dom4j抛出SAXParseException，M3产出XML格式错误诊断 |
-| 文件编码非UTF-8 | 1 | dom4j解析时编码问题，产出编码相关诊断 |
+| XML格式严重错误（SAX无法解析） | 1 | SAXParser抛出SAXParseException，M3产出XML格式错误诊断 |
+| 文件编码非UTF-8 | 1 | SAX解析时编码问题，产出编码相关诊断 |
 | ANTLR4表达式解析失败 | 1 | 产出SEM-EXPR-ANTLR诊断，AST中对应属性值expression=null |
 
 ### 5.5 CLI输出示例
@@ -263,8 +265,8 @@ theme.xml:20:8: error: 类型不匹配，期望number实际string [SEM-TYPE-001]
 ## 6. 设计要点
 
 - **独立AST替代PSI**：自有DslAstNode体系替代IDEA PSI依赖，Core层无com.intellij import
-- **dom4j解析XML结构**：不使用ANTLR4解析XML；dom4j SAXParseException直接报出XML格式错误，不包装映射为自定义SYN-xxx规则ID
+- **JDK SAX解析XML结构**：不使用ANTLR4解析XML；SAX SAXParseException直接报出XML格式错误，不包装映射为自定义SYN-xxx规则ID
 - **ANTLR4仅用于表达式**：仅expression/reference类型属性值调用M0 DslExpressionParser；纯字面量属性直接验证不走解析器
 - **表达式嵌入判断**：从M2 AttrTypeSpec.supportsExpression字段决定是否调用解析器
 - **DslAstProvider纯字符串接口**：使用(filePath, content)参数，不依赖IDEA类型
-- **语法错误三层分层**：XML结构语法（dom4j） → DSL结构语法（AST+规则库比对） → DSL表达式语法（ANTLR4），各层独立检测
+- **语法错误三层分层**：XML结构语法（JDK SAX） → DSL结构语法（AST+规则库比对） → DSL表达式语法（ANTLR4），各层独立检测

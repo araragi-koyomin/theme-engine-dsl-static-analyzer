@@ -410,15 +410,15 @@ Trigger子元素：各种Command元素
 
 ## 5. 错误检测规则
 
-### 5.1 XML结构语法错误（dom4j解析阶段）
+### 5.1 XML结构语法错误（SAX解析阶段）
 
-dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包装映射为自定义Diagnostic。XML well-formedness错误（标签未闭合、属性引号缺失、缺少XML声明头等）由dom4j原生报错处理。
+SAX解析XML时遇格式错误直接抛出SAXParseException，不做额外包装映射为自定义Diagnostic。XML well-formedness错误（标签未闭合、属性引号缺失、缺少XML声明头等）由SAX原生报错处理。
 
 | 规则ID | 检测内容 | 检测机制 | 严重级别 |
 |---|---|---|---|
 | SYN-001 | 根元素标签错误 | M1文件识别+M3 AST根节点检测 | error |
 
-> 注：原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，XML格式错误由dom4j直接报出。编号已重新排列为连续序号。
+> 注：原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，XML格式错误由SAX直接报出。编号已重新排列为连续序号。
 
 ### 5.2 DSL结构语法错误（M3语法分析+M2规则库比对）
 

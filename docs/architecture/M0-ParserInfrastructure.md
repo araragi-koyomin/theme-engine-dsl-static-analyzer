@@ -281,7 +281,7 @@ M0不直接产出CLI可见输出，但通过下游模块间接贡献：
 
 ## 6. 设计要点
 
-- **ANTLR4仅用于表达式和规则DSL**：XML结构解析使用dom4j，不使用ANTLR4；纯字面量属性直接验证不走解析器
+- **ANTLR4仅用于表达式和规则DSL**：XML结构解析使用JDK SAX，不使用ANTLR4；纯字面量属性直接验证不走解析器
 - **规则DSL不做类型推断**：typeOf()不在语法中，类型推断归M4 TypeInferenceEngine；规则DSL职责边界为属性存在性、值比较、集合包含、逻辑组合
 - **函数签名库独立于M2规则库**：JSON文件存放在`resources/functions/`，与规则库JSON同级但不归M2管理；M2只存储RuleConstraint数据，执行归RuleDslEvaluator
 - **不手写解析器**：所有词法/语法分析由ANTLR4自动生成，开发者只维护.g4 grammar文件
