@@ -2,6 +2,7 @@ package com.huawei.theme.analysis.core.rulelibrary;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -120,15 +121,29 @@ public class JsonRuleLoader {
      */
     private void loadSingleElementRule(Path jsonPath, Map<String, DslElementRule> result) {
         try (FileReader reader = new FileReader(jsonPath.toFile(), StandardCharsets.UTF_8)) {
-            DslElementRule rule = gson.fromJson(reader, DslElementRule.class);
-            if (rule != null && rule.getElementName() != null) {
-                normalizeElementRule(rule);
-                result.put(rule.getElementName(), rule);
-            }
+            loadElementRule(reader, result);
         } catch (IOException e) {
             throw new RuleLoadException("Failed to read file: " + jsonPath, e);
         } catch (JsonSyntaxException e) {
             throw new RuleLoadException("JSON syntax error in file: " + jsonPath, e);
+        }
+    }
+
+    /**
+     * 从Reader加载单个元素规则条目并加入结果Map。
+     *
+     * <p>此方法供非文件系统数据源（如IntelliJ插件VFS、classpath流）复用核心解析+normalize逻辑。
+     * 与loadSingleElementRule不同，本方法不包装文件IO异常，调用方需自行处理
+     * JsonSyntaxException与IOException。elementName为null的规则条目被跳过。</p>
+     *
+     * @param reader JSON内容Reader
+     * @param result 加载结果收集Map，key为elementName
+     */
+    public void loadElementRule(Reader reader, Map<String, DslElementRule> result) {
+        DslElementRule rule = gson.fromJson(reader, DslElementRule.class);
+        if (rule != null && rule.getElementName() != null) {
+            normalizeElementRule(rule);
+            result.put(rule.getElementName(), rule);
         }
     }
 
@@ -209,23 +224,36 @@ public class JsonRuleLoader {
         }
 
         try (FileReader reader = new FileReader(filePath.toFile(), StandardCharsets.UTF_8)) {
-            Type listType = new TypeToken<List<DslGlobalVar>>() {}.getType();
-            List<DslGlobalVar> vars = gson.fromJson(reader, listType);
-            if (vars == null) {
-                return Collections.emptyMap();
-            }
-
-            Map<String, DslGlobalVar> result = new HashMap<>();
-            for (DslGlobalVar var : vars) {
-                normalizeGlobalVar(var);
-                result.put(var.getName(), var);
-            }
-            return result;
+            return loadGlobalVars(reader);
         } catch (IOException e) {
             throw new RuleLoadException("Failed to read global_vars file: " + filePath, e);
         } catch (JsonSyntaxException e) {
             throw new RuleLoadException("JSON syntax error in global_vars file: " + filePath, e);
         }
+    }
+
+    /**
+     * 从Reader加载全局变量条目映射。
+     *
+     * <p>此方法供非文件系统数据源复用核心解析+normalize逻辑。
+     * 文件不存在场景由调用方自行处理（返回空Map），本方法只负责解析Reader内容。</p>
+     *
+     * @param reader global_vars.json内容Reader
+     * @return 以变量名为key的全局变量映射，空内容返回空Map
+     */
+    public Map<String, DslGlobalVar> loadGlobalVars(Reader reader) {
+        Type listType = new TypeToken<List<DslGlobalVar>>() {}.getType();
+        List<DslGlobalVar> vars = gson.fromJson(reader, listType);
+        if (vars == null) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, DslGlobalVar> result = new HashMap<>();
+        for (DslGlobalVar var : vars) {
+            normalizeGlobalVar(var);
+            result.put(var.getName(), var);
+        }
+        return result;
     }
 
     /**
@@ -260,19 +288,32 @@ public class JsonRuleLoader {
         }
 
         try (FileReader reader = new FileReader(filePath.toFile(), StandardCharsets.UTF_8)) {
-            Type listType = new TypeToken<List<RuleSource>>() {}.getType();
-            List<RuleSource> sources = gson.fromJson(reader, listType);
-            if (sources == null) {
-                return Collections.emptyMap();
-            }
-
-            return sources.stream()
-                    .collect(Collectors.toMap(RuleSource::getRuleId, s -> s));
+            return loadRuleSources(reader);
         } catch (IOException e) {
             throw new RuleLoadException("Failed to read rule_sources file: " + filePath, e);
         } catch (JsonSyntaxException e) {
             throw new RuleLoadException("JSON syntax error in rule_sources file: " + filePath, e);
         }
+    }
+
+    /**
+     * 从Reader加载规则来源追溯条目映射。
+     *
+     * <p>此方法供非文件系统数据源复用核心解析逻辑。
+     * 文件不存在场景由调用方自行处理（返回空Map），本方法只负责解析Reader内容。</p>
+     *
+     * @param reader rule_sources.json内容Reader
+     * @return 以ruleId为key的规则来源映射，空内容返回空Map
+     */
+    public Map<String, RuleSource> loadRuleSources(Reader reader) {
+        Type listType = new TypeToken<List<RuleSource>>() {}.getType();
+        List<RuleSource> sources = gson.fromJson(reader, listType);
+        if (sources == null) {
+            return Collections.emptyMap();
+        }
+
+        return sources.stream()
+                .collect(Collectors.toMap(RuleSource::getRuleId, s -> s));
     }
 
     /**

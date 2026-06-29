@@ -12,6 +12,8 @@
     <depends>com.intellij.modules.xml</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.huawei.theme.analysis.plugin.rule.RuleRepositoryService"/>
+
         <fileType name="ThemeDSL"
                   implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslFileType"
                   fieldName="INSTANCE"
@@ -23,6 +25,6 @@
                                implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslParserDefinition"/>
 
         <completion.contributor language="ThemeDSL"
-                                implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslCompletionContributor"/>
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslElementNameCompletionContributor"/>
     </extensions>
 </idea-plugin>
