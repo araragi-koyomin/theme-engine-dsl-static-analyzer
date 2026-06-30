@@ -26,5 +26,8 @@
 
         <completion.contributor language="ThemeDSL"
                                 implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslElementNameCompletionContributor"/>
+
+        <completion.contributor language="ThemeDSL"
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslAttributeCompletionContributor"/>
     </extensions>
 </idea-plugin>
