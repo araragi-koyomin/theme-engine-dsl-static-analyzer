@@ -3,8 +3,6 @@ package com.huawei.theme.analysis.core.expression;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.antlr.v4.runtime.tree.ParseTree;
-
 import com.huawei.theme.analysis.core.expression.generated.DslExpressionBaseVisitor;
 import com.huawei.theme.analysis.core.expression.generated.DslExpressionParser;
 import com.huawei.theme.analysis.core.shared.ast.ExpressionKind;
@@ -17,21 +15,105 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
     }
 
     @Override
+    public ExpressionNode visitStringExpression(DslExpressionParser.StringExpressionContext ctx) {
+        if (ctx.stringConcat() != null) {
+            return visit(ctx.stringConcat());
+        }
+        return visit(ctx.numericExpression());
+    }
+
+    @Override
+    public ExpressionNode visitStringConcat(DslExpressionParser.StringConcatContext ctx) {
+        List<DslExpressionParser.StringTermContext> terms = ctx.stringTerm();
+        if (terms.size() == 1) {
+            return visit(terms.get(0));
+        }
+        ExpressionNode result = visit(terms.get(0));
+        for (int i = 1; i < terms.size(); i++) {
+            ExpressionNode right = visit(terms.get(i));
+            result = ExpressionNode.binaryExpr(
+                    "+", result, right,
+                    ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+        }
+        return result;
+    }
+
+    @Override
+    public ExpressionNode visitStringTerm(DslExpressionParser.StringTermContext ctx) {
+        if (ctx.STRING() != null) {
+            return ExpressionNode.literal(
+                    stripQuotes(ctx.STRING().getText()), ctx.getText(),
+                    ctx.start.getLine(), ctx.start.getCharPositionInLine());
+        }
+        if (ctx.atVarRef() != null) {
+            return visit(ctx.atVarRef());
+        }
+        if (ctx.functionCall() != null) {
+            return visit(ctx.functionCall());
+        }
+        if (ctx.hashVarRef() != null) {
+            return visit(ctx.hashVarRef());
+        }
+        if (ctx.NUMBER() != null) {
+            return ExpressionNode.literal(
+                    ctx.NUMBER().getText(), ctx.getText(),
+                    ctx.start.getLine(), ctx.start.getCharPositionInLine());
+        }
+        if (ctx.numericExpression() != null) {
+            return visit(ctx.numericExpression());
+        }
+        return unknown(ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+    }
+
+    @Override
+    public ExpressionNode visitNumericExpression(DslExpressionParser.NumericExpressionContext ctx) {
+        List<DslExpressionParser.NumericMultiplicativeContext> operands = ctx.numericMultiplicative();
+        if (operands.size() == 1) {
+            return visit(operands.get(0));
+        }
+        return buildBinaryChain(operands, ctx);
+    }
+
+    @Override
+    public ExpressionNode visitNumericMultiplicative(DslExpressionParser.NumericMultiplicativeContext ctx) {
+        List<DslExpressionParser.NumericTermContext> operands = ctx.numericTerm();
+        if (operands.size() == 1) {
+            return visit(operands.get(0));
+        }
+        return buildBinaryChain(operands, ctx);
+    }
+
+    @Override
+    public ExpressionNode visitNumericTerm(DslExpressionParser.NumericTermContext ctx) {
+        if (ctx.NUMBER() != null) {
+            return ExpressionNode.literal(
+                    ctx.NUMBER().getText(), ctx.getText(),
+                    ctx.start.getLine(), ctx.start.getCharPositionInLine());
+        }
+        if (ctx.hashVarRef() != null) {
+            return visit(ctx.hashVarRef());
+        }
+        if (ctx.functionCall() != null) {
+            return visit(ctx.functionCall());
+        }
+        if (ctx.numericTerm() != null) {
+            return ExpressionNode.unaryExpr(
+                    "-", visit(ctx.numericTerm()),
+                    ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+        }
+        if (ctx.numericExpression() != null) {
+            return visit(ctx.numericExpression());
+        }
+        return unknown(ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+    }
+
+    @Override
     public ExpressionNode visitAdditiveExpr(DslExpressionParser.AdditiveExprContext ctx) {
         List<DslExpressionParser.MultiplicativeExprContext> operands = ctx.multiplicativeExpr();
         if (operands.size() == 1) {
             return visit(operands.get(0));
         }
-
-        ExpressionNode result = visit(operands.get(0));
-        for (int i = 1; i < operands.size(); i++) {
-            String op = ctx.getChild(2 * i - 1).getText();
-            ExpressionNode right = visit(operands.get(i));
-            result = ExpressionNode.binaryExpr(
-                    op, result, right,
-                    ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
-        }
-        return result;
+        return buildBinaryChain(operands, ctx);
     }
 
     @Override
@@ -40,24 +122,14 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
         if (operands.size() == 1) {
             return visit(operands.get(0));
         }
-
-        ExpressionNode result = visit(operands.get(0));
-        for (int i = 1; i < operands.size(); i++) {
-            String op = ctx.getChild(2 * i - 1).getText();
-            ExpressionNode right = visit(operands.get(i));
-            result = ExpressionNode.binaryExpr(
-                    op, result, right,
-                    ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
-        }
-        return result;
+        return buildBinaryChain(operands, ctx);
     }
 
     @Override
     public ExpressionNode visitPrimaryExpr(DslExpressionParser.PrimaryExprContext ctx) {
         if (ctx.primaryExpr() != null) {
-            ExpressionNode operand = visit(ctx.primaryExpr());
             return ExpressionNode.unaryExpr(
-                    "-", operand,
+                    "-", visit(ctx.primaryExpr()),
                     ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
         }
         if (ctx.functionCall() != null) {
@@ -72,12 +144,25 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
         if (ctx.expression() != null) {
             return visit(ctx.expression());
         }
-        return ExpressionNode.builder()
-                .kind(com.huawei.theme.analysis.core.shared.ast.ExpressionKind.UNKNOWN)
-                .text(ctx.getText())
-                .line(ctx.start.getLine())
-                .column(ctx.start.getCharPositionInLine())
-                .build();
+        return unknown(ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+    }
+
+    @Override
+    public ExpressionNode visitVariableRef(DslExpressionParser.VariableRefContext ctx) {
+        if (ctx.hashVarRef() != null) {
+            return visit(ctx.hashVarRef());
+        }
+        return visit(ctx.atVarRef());
+    }
+
+    @Override
+    public ExpressionNode visitHashVarRef(DslExpressionParser.HashVarRefContext ctx) {
+        return buildVarRef("#", ctx.varName().getText(), ctx.expression(), ctx);
+    }
+
+    @Override
+    public ExpressionNode visitAtVarRef(DslExpressionParser.AtVarRefContext ctx) {
+        return buildVarRef("@", ctx.varName().getText(), ctx.expression(), ctx);
     }
 
     @Override
@@ -95,53 +180,12 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
     }
 
     @Override
-    public ExpressionNode visitVariableRef(DslExpressionParser.VariableRefContext ctx) {
-        String prefix;
-        ParseTree firstChild = ctx.getChild(0);
-        prefix = firstChild.getText();
-
-        String variableName = ctx.varName().getText();
-
-        if (ctx.expression() != null) {
-            ExpressionNode indexExpr = visit(ctx.expression());
-            return ExpressionNode.arrayAccess(
-                    prefix, variableName, indexExpr,
-                    ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
-        }
-
-        return ExpressionNode.variableRef(
-                prefix, variableName,
-                ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
-    }
-
-    @Override
-    public ExpressionNode visitVarName(DslExpressionParser.VarNameContext ctx) {
-        if (ctx.ID() != null) {
-            return ExpressionNode.literal(
-                    ctx.ID().getText(), ctx.getText(),
-                    ctx.start.getLine(), ctx.start.getCharPositionInLine());
-        }
-        if (ctx.VAR_ID() != null) {
-            return ExpressionNode.literal(
-                    ctx.VAR_ID().getText(), ctx.getText(),
-                    ctx.start.getLine(), ctx.start.getCharPositionInLine());
-        }
-        return ExpressionNode.builder()
-                .kind(com.huawei.theme.analysis.core.shared.ast.ExpressionKind.UNKNOWN)
-                .text(ctx.getText())
-                .line(ctx.start.getLine())
-                .column(ctx.start.getCharPositionInLine())
-                .build();
-    }
-
-    @Override
     public ExpressionNode visitLiteral(DslExpressionParser.LiteralContext ctx) {
         String literalValue;
         if (ctx.NUMBER() != null) {
             literalValue = ctx.NUMBER().getText();
         } else if (ctx.STRING() != null) {
-            String raw = ctx.STRING().getText();
-            literalValue = stripQuotes(raw);
+            literalValue = stripQuotes(ctx.STRING().getText());
         } else {
             literalValue = ctx.getText();
         }
@@ -165,12 +209,45 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
                 .build();
     }
 
+    private ExpressionNode buildVarRef(String prefix, String variableName,
+            DslExpressionParser.ExpressionContext indexCtx, org.antlr.v4.runtime.ParserRuleContext ctx) {
+        int line = ctx.getStart().getLine();
+        int column = ctx.getStart().getCharPositionInLine();
+        if (indexCtx != null) {
+            return ExpressionNode.arrayAccess(
+                    prefix, variableName, visit(indexCtx), ctx.getText(), line, column);
+        }
+        return ExpressionNode.variableRef(prefix, variableName, ctx.getText(), line, column);
+    }
+
+    private <T extends org.antlr.v4.runtime.ParserRuleContext> ExpressionNode buildBinaryChain(
+            List<T> operands, org.antlr.v4.runtime.ParserRuleContext ctx) {
+        ExpressionNode result = visit(operands.get(0));
+        for (int i = 1; i < operands.size(); i++) {
+            String op = ctx.getChild(2 * i - 1).getText();
+            ExpressionNode right = visit(operands.get(i));
+            result = ExpressionNode.binaryExpr(
+                    op, result, right,
+                    ctx.getText(), ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
+        }
+        return result;
+    }
+
     private List<ExpressionNode> collectExpressions(DslExpressionParser.ExprListContext ctx) {
         List<ExpressionNode> expressions = new ArrayList<>();
         for (DslExpressionParser.ExpressionContext exprCtx : ctx.expression()) {
             expressions.add(visit(exprCtx));
         }
         return expressions;
+    }
+
+    private ExpressionNode unknown(String text, int line, int column) {
+        return ExpressionNode.builder()
+                .kind(ExpressionKind.UNKNOWN)
+                .text(text)
+                .line(line)
+                .column(column)
+                .build();
     }
 
     private String stripQuotes(String s) {

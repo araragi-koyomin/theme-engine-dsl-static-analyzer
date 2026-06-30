@@ -11,11 +11,8 @@ import java.util.regex.Pattern;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
@@ -33,6 +30,7 @@ import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.ast.ExpressionAstNode;
+import com.huawei.theme.analysis.core.shared.ast.ExpressionKind;
 
 public class AstBuilder implements DslAstProvider {
 
@@ -111,44 +109,60 @@ public class AstBuilder implements DslAstProvider {
         return matcher.find() ? matcher.group(1) : null;
     }
 
-    static boolean hasExpressionSyntax(String value, String expressionKind) {
+    static boolean hasExpressionSyntax(String value, String attrName) {
         if (value == null || value.isEmpty()) {
             return false;
         }
         if (value.indexOf('@') >= 0
                 || value.indexOf('\'') >= 0
                 || value.indexOf('(') >= 0
+                || value.indexOf('{') >= 0
                 || value.indexOf('+') >= 0
+                || value.indexOf('-') >= 0
                 || value.indexOf('*') >= 0
                 || value.indexOf('/') >= 0
                 || value.indexOf('%') >= 0) {
             return true;
         }
         if (value.indexOf('#') >= 0) {
-            if ("string".equals(expressionKind)) {
-                return !isHexColor(value);
-            }
-            return true;
+            return !(isColorAttribute(attrName) && isHexColor(value));
         }
         return false;
+    }
+
+    private static boolean isColorAttribute(String attrName) {
+        return "color".equals(attrName) || "shadowColor".equals(attrName);
     }
 
     private static boolean isHexColor(String value) {
         return HEX_COLOR.matcher(value).matches();
     }
 
-    static ExpressionNode parseExpression(String value) {
+    static ExpressionNode parseExpression(String value, String expressionKind) {
         try {
             DslExpressionLexer lexer = new DslExpressionLexer(CharStreams.fromString(value));
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             DslExpressionParser parser = new DslExpressionParser(tokens);
-            ErrorCollector collector = new ErrorCollector();
-            lexer.removeErrorListeners();
             parser.removeErrorListeners();
-            lexer.addErrorListener(collector);
-            parser.addErrorListener(collector);
-            ExpressionNode node = new DslExpressionVisitorAdapter().visit(parser.expression());
-            if (collector.hasErrors() || node == null) {
+            parser.setErrorHandler(new org.antlr.v4.runtime.BailErrorStrategy());
+            DslExpressionVisitorAdapter adapter = new DslExpressionVisitorAdapter();
+            ExpressionNode node;
+            if ("string".equals(expressionKind)) {
+                node = adapter.visit(parser.stringExpression());
+            } else if ("number".equals(expressionKind)) {
+                node = adapter.visit(parser.numericExpression());
+                tokens.fill();
+                if (tokens.index() < tokens.size() - 1) {
+                    return null;
+                }
+            } else {
+                node = adapter.visit(parser.expression());
+                tokens.fill();
+                if (tokens.index() < tokens.size() - 1) {
+                    return null;
+                }
+            }
+            if (node == null || containsInvalidUnaryMinusVar(node)) {
                 return null;
             }
             return node;
@@ -157,18 +171,30 @@ public class AstBuilder implements DslAstProvider {
         }
     }
 
-    private static final class ErrorCollector extends BaseErrorListener {
-        private boolean hasErrors;
-
-        @Override
-        public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
-                int line, int charPositionInLine, String msg, RecognitionException e) {
-            hasErrors = true;
+    static boolean containsInvalidUnaryMinusVar(ExpressionNode node) {
+        if (node == null) {
+            return false;
         }
-
-        boolean hasErrors() {
-            return hasErrors;
+        if (node.getKind() == ExpressionKind.UNARY_EXPR && "-".equals(node.getOperator())
+                && node.getChildren() != null && !node.getChildren().isEmpty()) {
+            ExpressionNode child = node.getChildren().get(0);
+            if ((child.getKind() == ExpressionKind.VARIABLE_REF
+                    || child.getKind() == ExpressionKind.ARRAY_ACCESS)
+                    && "#".equals(child.getPrefix())) {
+                return true;
+            }
         }
+        if (node.getChildren() != null) {
+            for (ExpressionNode c : node.getChildren()) {
+                if (containsInvalidUnaryMinusVar(c)) {
+                    return true;
+                }
+            }
+        }
+        if (node.getIndexExpression() != null && containsInvalidUnaryMinusVar(node.getIndexExpression())) {
+            return true;
+        }
+        return false;
     }
 
     private static final class AstContentHandler extends DefaultHandler {
@@ -220,9 +246,9 @@ public class AstBuilder implements DslAstProvider {
                     Optional<AttrTypeSpec> specOpt = ruleRepository.getAttrTypeSpec(qName, attrName);
                     if (specOpt.isPresent() && specOpt.get().isSupportsExpression()) {
                         String expressionKind = specOpt.get().getExpressionKind();
-                        if (hasExpressionSyntax(attrValue, expressionKind)) {
+                        if (hasExpressionSyntax(attrValue, attrName)) {
                             parseAttempted = true;
-                            exprNode = parseExpression(attrValue);
+                            exprNode = parseExpression(attrValue, expressionKind);
                         }
                     }
                 }

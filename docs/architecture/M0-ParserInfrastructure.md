@@ -22,31 +22,46 @@ ANTLR4 grammar定义 + 自动生成的表达式解析器 + 规则DSL条件解析
 
 **Grammar文件位置**：`core/expression/grammar/DslExpression.g4`
 
-**核心规则**：
+**核心规则**（按 expressionKind 区分 string/numeric 入口，AstBuilder 选择）：
 
 ```
 grammar DslExpression;
 
-expression : conditionalExpr | binaryExpr | unaryExpr | functionCall | variableRef | literal ;
-
-conditionalExpr : 'ifelse' '(' exprList ')' ;
-binaryExpr : left=expression op=('+'|'-'|'*'|'/'|'%') right=expression ;
-unaryExpr : 'not' '(' expression ')' ;
-functionCall : ID '(' exprList ')' ;
-variableRef : '#' ID | '@' ID | '#' ID '[' expression ']' ;
-literal : NUMBER | STRING | BOOLEAN ;
-
-exprList : expression (',' expression)* ;
+// 入口：AstBuilder 按 expressionKind 选择
+expression            : additiveExpr ;                         // 通用(auto/null)
+stringExpression      : stringConcat EOF                        // string 上下文
+                      | numericExpression EOF ;                // 纯数值整值强转
+stringConcat          : stringTerm ('+' stringTerm)* ;          // + 恒为拼接
+stringTerm            : STRING | atVarRef | functionCall | hashVarRef | NUMBER
+                      | '{' numericExpression '}' ;            // {数值子式}
+numericExpression     : numericMultiplicative (('+'|'-') numericMultiplicative)* ;
+numericMultiplicative : numericTerm (('*'|'/'|'%') numericTerm)* ;
+numericTerm           : NUMBER | hashVarRef | functionCall | '-' numericTerm | '(' numericExpression ')' ;
+// 通用(auto)
+additiveExpr          : multiplicativeExpr (('+'|'-') multiplicativeExpr)* ;
+multiplicativeExpr    : primaryExpr (('*'|'/'|'%') primaryExpr)* ;
+primaryExpr           : '-' primaryExpr | functionCall | variableRef | literal | '(' expression ')' ;
+functionCall          : ID '(' exprList? ')' ;
+variableRef           : hashVarRef | atVarRef ;
+hashVarRef            : '#' varName ('[' expression ']')? ;     // 数值变量引用
+atVarRef              : '@' varName ('[' expression ']')? ;     // 字符串变量引用
+varName               : ID | VAR_ID ;  literal : NUMBER | STRING ;  exprList : expression (',' expression)* ;
 ```
+
+**关键约束**：
+- string 上下文 `+` 恒为拼接；数值子式含 `+ - * / %` 须 `{}` 包裹
+- `@var` 仅 string 上下文（numeric 上下文出现即语法错误）
+- `#var` 数值变量引用，string 上下文可内嵌（强转）
+- 字符串不能进行 `* / %` 运算
 
 **词法规则要点**：
 
 | Token | 定义 | 说明 |
 |---|---|---|
-| NUMBER | 整数/浮点数 | 支持0、负数、小数 |
-| STRING | 单引号字符串 `'...'` | 字符串字面量 |
-| BOOLEAN | `'true'` / `'false'` | 布尔字面量 |
+| NUMBER | `[0-9]+ ('.' [0-9]+)?` | 整数/小数 |
+| STRING | `'\\'...'` 单引号字符串 | 字符串字面量 |
 | ID | `[a-zA-Z_][a-zA-Z0-9_]*` | 函数名/变量名 |
+| VAR_ID | `[a-zA-Z_][a-zA-Z0-9_.]*` | 带点号的变量名（如 `system.time.hour1`） |
 
 **自动生成代码**：DslExpressionLexer、DslExpressionParser、DslExpressionVisitor、DslExpressionBaseVisitor。生成代码位于`core/expression/generated/`。
 

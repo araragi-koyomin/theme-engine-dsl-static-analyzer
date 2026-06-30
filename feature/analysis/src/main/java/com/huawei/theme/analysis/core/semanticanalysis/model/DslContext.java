@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class DslContext {
-    String filePath;
     RuleRepository ruleRepository;
     SymbolTable symbolTable;
+    String filePath;
 }
