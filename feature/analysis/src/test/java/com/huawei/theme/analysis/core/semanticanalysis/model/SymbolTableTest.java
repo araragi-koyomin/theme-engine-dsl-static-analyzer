@@ -195,7 +195,112 @@ class SymbolTableTest {
         assertSame(varNode, decl.getAstNode());
     }
 
+    @Test
+    void build_arrayWithIndexFlagCreatesLocalNumberVar() {
+        SymbolTable parent = emptyTable();
+        DslElementNode array = indexedElement("Array", "__i");
+
+        SymbolTable child = new SymbolTableBuilderImpl().build(array, parent, emptyRepo());
+
+        VarDeclaration decl = child.getDeclarations().get("__i");
+        assertNotNull(decl);
+        assertEquals("__i", decl.getName());
+        assertEquals("number", decl.getType().getName());
+        assertFalse(decl.isGlobal());
+        assertSame(array, decl.getAstNode());
+        assertSame(parent, child.getParent());
+    }
+
+    @Test
+    void build_cycleCommandWithIndexFlagCreatesLocalNumberVar() {
+        SymbolTable parent = emptyTable();
+        DslElementNode cmd = indexedElement("CycleCommand", "col");
+
+        SymbolTable child = new SymbolTableBuilderImpl().build(cmd, parent, emptyRepo());
+
+        VarDeclaration decl = child.getDeclarations().get("col");
+        assertNotNull(decl);
+        assertEquals("number", decl.getType().getName());
+        assertFalse(decl.isGlobal());
+        assertSame(cmd, decl.getAstNode());
+        assertSame(parent, child.getParent());
+    }
+
+    @Test
+    void build_nonLocalElementReturnsParentUnchanged() {
+        SymbolTable parent = emptyTable();
+        DslElementNode group = elem("Group");
+
+        SymbolTable result = new SymbolTableBuilderImpl().build(group, parent, emptyRepo());
+
+        assertSame(parent, result);
+    }
+
+    @Test
+    void build_arrayWithoutIndexFlagReturnsParent() {
+        SymbolTable parent = emptyTable();
+        DslElementNode arrayNoFlag = elem("Array");
+
+        SymbolTable result = new SymbolTableBuilderImpl().build(arrayNoFlag, parent, emptyRepo());
+
+        assertSame(parent, result);
+    }
+
+    @Test
+    void build_arrayWithEmptyIndexFlagReturnsParent() {
+        SymbolTable parent = emptyTable();
+        DslElementNode arrayEmptyFlag = indexedElement("Array", "");
+
+        SymbolTable result = new SymbolTableBuilderImpl().build(arrayEmptyFlag, parent, emptyRepo());
+
+        assertSame(parent, result);
+    }
+
+    @Test
+    void build_nullElementNodeReturnsParent() {
+        SymbolTable parent = emptyTable();
+
+        SymbolTable result = new SymbolTableBuilderImpl().build(null, parent, emptyRepo());
+
+        assertSame(parent, result);
+    }
+
+    @Test
+    void build_indexFlagShadowsParentVarWithSameName() {
+        VarDeclaration globalI = VarDeclaration.builder()
+                .name("i").type(new DslNumberType()).isGlobal(true).astNode(null).expression(null).isConstAttr(false).build();
+        SymbolTable parent = SymbolTable.builder().parent(null).declarations(new HashMap<>(Map.of("i", globalI))).build();
+        DslElementNode array = indexedElement("Array", "i");
+
+        SymbolTable child = new SymbolTableBuilderImpl().build(array, parent, emptyRepo());
+
+        VarDeclaration localI = child.getDeclarations().get("i");
+        assertNotNull(localI);
+        assertFalse(localI.isGlobal());
+        assertSame(array, localI.getAstNode());
+        VarDeclaration parentI = child.getParent().getDeclarations().get("i");
+        assertTrue(parentI.isGlobal());
+    }
+
     // ---- helpers ----
+
+    private static SymbolTable emptyTable() {
+        return SymbolTable.builder().parent(null).declarations(Map.of()).build();
+    }
+
+    private static DslElementNode indexedElement(String tag, String indexFlag, DslElementNode... children) {
+        return elemWithAttrs(tag, new DslAttributeNode[]{attr("indexFlag", indexFlag)}, children);
+    }
+
+    private static DslElementNode elemWithAttrs(String tag, DslAttributeNode[] attrs, DslElementNode... children) {
+        DslElementNode e = new DslElementNode();
+        e.setTagName(tag);
+        e.setAttributes(new ArrayList<>(Arrays.asList(attrs)));
+        e.setChildElements(new ArrayList<>(Arrays.asList(children)));
+        e.setSelfClosing(false);
+        e.setHasError(false);
+        return e;
+    }
 
     private static RuleRepository emptyRepo() {
         return new DefaultRuleRepository(Map.of(), Map.of(), Map.of());

@@ -25,6 +25,9 @@ public class SymbolTableBuilderImpl implements SymbolTableBuilder {
     private static final String CONST_ATTR = "const";
     private static final String EXPRESSION_ATTR = "expression";
     private static final String DEFAULT_VAR_TYPE = "number";
+    private static final String ARRAY_TAG = "Array";
+    private static final String CYCLE_COMMAND_TAG = "CycleCommand";
+    private static final String INDEX_FLAG_ATTR = "indexFlag";
 
     @Override
     public SymbolTable buildGlobal(DslFileNode fileNode, RuleRepository ruleRepository) {
@@ -126,7 +129,31 @@ public class SymbolTableBuilderImpl implements SymbolTableBuilder {
 
     @Override
     public SymbolTable build(DslElementNode elementNode, SymbolTable parent, RuleRepository ruleRepository) {
-        throw new UnsupportedOperationException("build not implemented yet");
+        if (elementNode == null) {
+            return parent;
+        }
+        String indexFlag = null;
+        String tagName = elementNode.getTagName();
+        if (ARRAY_TAG.equals(tagName) || CYCLE_COMMAND_TAG.equals(tagName)) {
+            indexFlag = getAttrValue(elementNode, INDEX_FLAG_ATTR);
+        }
+        if (indexFlag == null || indexFlag.isEmpty()) {
+            return parent;
+        }
+        VarDeclaration declaration = VarDeclaration.builder()
+                .name(indexFlag)
+                .type(new DslNumberType())
+                .expression(null)
+                .isConstAttr(false)
+                .isGlobal(false)
+                .astNode(elementNode)
+                .build();
+        Map<String, VarDeclaration> declarations = new HashMap<>();
+        declarations.put(indexFlag, declaration);
+        return SymbolTable.builder()
+                .parent(parent)
+                .declarations(declarations)
+                .build();
     }
 
     private static DslType toDslType(String type) {
