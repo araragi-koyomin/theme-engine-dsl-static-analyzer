@@ -203,4 +203,129 @@ class DslExpressionEmbeddingTest {
             assertEquals("battery_level", e.getVariableName());
         }
     }
+
+    @Test
+    void stringConcatWithBracedNumericSubExpression() {
+        DslElementNode text = build("<Text textExp=\"'val: '+{10*#num}\"/>");
+        ExpressionNode e = expr(text, "textExp");
+        assertEquals(ExpressionKind.BINARY_EXPR, e.getKind());
+        assertEquals("+", e.getOperator());
+        assertEquals(ExpressionKind.LITERAL, e.getChildren().get(0).getKind());
+        assertEquals("val: ", e.getChildren().get(0).getLiteralValue());
+        ExpressionNode inner = e.getChildren().get(1);
+        assertEquals(ExpressionKind.BINARY_EXPR, inner.getKind());
+        assertEquals("*", inner.getOperator());
+        assertEquals("10", inner.getChildren().get(0).getLiteralValue());
+        assertEquals("num", inner.getChildren().get(1).getVariableName());
+    }
+
+    @Test
+    void stringConcatWithoutBracesForOperatorFails() {
+        DslElementNode text = build("<Text textExp=\"'val: '+10*#num\"/>");
+        DslAttributeValueNode v = attrValue(text, "textExp");
+        assertFalse(v.isLiteral());
+        assertTrue(v.getExpression().isEmpty(), "10*#num in concat must be braced; parse should fail");
+    }
+
+    @Test
+    void stringConcatHashVarsIsConcatNotAddition() {
+        DslElementNode text = build("<Text textExp=\"'a'+#x\"/>");
+        ExpressionNode e = expr(text, "textExp");
+        assertEquals(ExpressionKind.BINARY_EXPR, e.getKind());
+        assertEquals("+", e.getOperator());
+        assertEquals(ExpressionKind.LITERAL, e.getChildren().get(0).getKind());
+        assertEquals("a", e.getChildren().get(0).getLiteralValue());
+        assertEquals(ExpressionKind.VARIABLE_REF, e.getChildren().get(1).getKind());
+        assertEquals("#", e.getChildren().get(1).getPrefix());
+    }
+
+    @Test
+    void stringAttrPureNumericValueCoerced() {
+        DslElementNode text = build("<Text textExp=\"10*#num\"/>");
+        ExpressionNode e = expr(text, "textExp");
+        assertEquals(ExpressionKind.BINARY_EXPR, e.getKind());
+        assertEquals("*", e.getOperator());
+    }
+
+    @Test
+    void numericContextRejectsAtVarRef() {
+        DslElementNode image = build("<Image x=\"@varName\"/>");
+        DslAttributeValueNode v = attrValue(image, "x");
+        assertFalse(v.isLiteral());
+        assertTrue(v.getExpression().isEmpty(), "@var not allowed in numeric context");
+    }
+
+    @Test
+    void numericContextHashVarRefAndArithmetic() {
+        DslElementNode image = build("<Image x=\"#a+#b\"/>");
+        ExpressionNode e = expr(image, "x");
+        assertEquals(ExpressionKind.BINARY_EXPR, e.getKind());
+        assertEquals("+", e.getOperator());
+        assertEquals("a", e.getChildren().get(0).getVariableName());
+        assertEquals("b", e.getChildren().get(1).getVariableName());
+    }
+
+    @Test
+    void shadowColorHexLiteral() {
+        DslElementNode text = build("<Text shadowColor=\"#FF0000\"/>");
+        assertLiteral(text, "shadowColor");
+    }
+
+    @Test
+    void nonColorStringAttrHashHexTreatedAsVariableRef() {
+        DslElementNode text = build("<Text textExp=\"#FFFFFF\"/>");
+        ExpressionNode e = expr(text, "textExp");
+        assertEquals(ExpressionKind.VARIABLE_REF, e.getKind());
+        assertEquals("#", e.getPrefix());
+        assertEquals("FFFFFF", e.getVariableName());
+    }
+
+    @Test
+    void unaryMinusDirectlyOnHashVarRejected() {
+        DslElementNode image = build("<Image x=\"-#w\"/>");
+        DslAttributeValueNode v = attrValue(image, "x");
+        assertFalse(v.isLiteral());
+        assertTrue(v.getExpression().isEmpty(), "-#w is not supported (SEM-EXPR-001)");
+    }
+
+    @Test
+    void unaryMinusOnHashVarInsideLargerExprRejected() {
+        DslElementNode image = build("<Image x=\"-#w+#b\"/>");
+        DslAttributeValueNode v = attrValue(image, "x");
+        assertFalse(v.isLiteral());
+        assertTrue(v.getExpression().isEmpty(), "-#w anywhere is not supported");
+    }
+
+    @Test
+    void unaryMinusOnNumberTimesHashVarAccepted() {
+        DslElementNode image = build("<Image x=\"-1*#w\"/>");
+        ExpressionNode e = expr(image, "x");
+        assertEquals(ExpressionKind.BINARY_EXPR, e.getKind());
+        assertEquals("*", e.getOperator());
+        assertEquals(ExpressionKind.UNARY_EXPR, e.getChildren().get(0).getKind());
+        assertEquals("-", e.getChildren().get(0).getOperator());
+        assertEquals("1", e.getChildren().get(0).getChildren().get(0).getLiteralValue());
+        assertEquals(ExpressionKind.VARIABLE_REF, e.getChildren().get(1).getKind());
+        assertEquals("w", e.getChildren().get(1).getVariableName());
+    }
+
+    @Test
+    void zeroMinusHashVarAccepted() {
+        DslElementNode image = build("<Image x=\"0-#w\"/>");
+        ExpressionNode e = expr(image, "x");
+        assertEquals(ExpressionKind.BINARY_EXPR, e.getKind());
+        assertEquals("-", e.getOperator());
+        assertEquals("0", e.getChildren().get(0).getLiteralValue());
+        assertEquals(ExpressionKind.VARIABLE_REF, e.getChildren().get(1).getKind());
+        assertEquals("w", e.getChildren().get(1).getVariableName());
+    }
+
+    @Test
+    void unaryMinusOnNumberAccepted() {
+        DslElementNode image = build("<Image x=\"-5\"/>");
+        ExpressionNode e = expr(image, "x");
+        assertEquals(ExpressionKind.UNARY_EXPR, e.getKind());
+        assertEquals("-", e.getOperator());
+        assertEquals("5", e.getChildren().get(0).getLiteralValue());
+    }
 }
