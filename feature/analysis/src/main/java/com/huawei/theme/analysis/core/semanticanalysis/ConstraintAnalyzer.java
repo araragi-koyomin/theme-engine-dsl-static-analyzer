@@ -104,8 +104,7 @@ public class ConstraintAnalyzer implements DslAnalyzer {
                 .ruleId(constraint.getRuleId())
                 .message(constraint.getMessage())
                 .filePath(filePath)
-                .line(elementNode.getLine())
-                .column(elementNode.getColumn())
+                .astNode(elementNode)
                 .suggestedFixes(constraint.getSuggestedFixes())
                 .ruleDocUrl(ruleDocUrl)
                 .build();
