@@ -45,10 +45,13 @@ public class DslElementNode extends DslAstNode {
     boolean selfClosing;
     boolean hasError;
     String errorMessage;
+    DslAstNode parent;
 }
 ```
 
 > 字段名childElements表明子节点均为元素节点, 类型精度优于泛型List<DslAstNode>.
+>
+> **parent 指针**：仅 `DslElementNode` 持有 `parent`（类型 `DslAstNode` 以便 root 元素指向 `DslFileNode`）。嵌套子元素的 parent 指向外层 `DslElementNode`，root 元素的 parent 指向 `DslFileNode`。供 M4 嵌套检查（SYN-002）、作用域分析、M8 导航向上遍历。`parent` 排除在 `@EqualsAndHashCode`/`@ToString` 之外以防 `childElements`↔parent 循环引用导致栈溢出。
 
 ```java
 public class DslAttributeNode extends DslAstNode {
