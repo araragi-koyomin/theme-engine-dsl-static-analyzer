@@ -7,9 +7,11 @@ import lombok.Data;
 public class DslContext {
     RuleRepository ruleRepository;
     SymbolTable symbolTable;
+    String filePath;
 
-    public DslContext(RuleRepository ruleRepository, SymbolTable symbolTable) {
+    public DslContext(RuleRepository ruleRepository, SymbolTable symbolTable, String filePath) {
         this.ruleRepository = ruleRepository;
         this.symbolTable = symbolTable;
+        this.filePath = filePath;
     }
 }
