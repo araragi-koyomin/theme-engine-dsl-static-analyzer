@@ -1,46 +1,53 @@
 grammar DslExpression;
 
-expression
-    : additiveExpr
-    ;
+// Entry rules: AstBuilder selects by attribute expressionKind
+// Note: `expression` is reused by exprList/array index, so it has no EOF.
+// AstBuilder checks for leftover tokens after parsing to reject partial matches.
+expression            : additiveExpr                          // generic (auto/null)
+                      ;
 
-additiveExpr
-    : multiplicativeExpr (('+' | '-') multiplicativeExpr)*
-    ;
+stringExpression      : stringConcat EOF                       // string context
+                      | numericExpression EOF                  // pure numeric value coerced to string
+                      ;
 
-multiplicativeExpr
-    : primaryExpr (('*' | '/' | '%') primaryExpr)*
-    ;
+stringConcat          : stringTerm ('+' stringTerm)* ;          // + is always concatenation in string context
 
-primaryExpr
-    : '-' primaryExpr
-    | functionCall
-    | variableRef
-    | literal
-    | '(' expression ')'
-    ;
+stringTerm            : STRING                                  // quoted string literal
+                      | atVarRef                                // @var string variable
+                      | functionCall
+                      | hashVarRef                              // bare #var / NUMBER embedded numeric
+                      | NUMBER
+                      | '{' numericExpression '}'              // braced numeric sub-expression
+                      ;
 
-functionCall
-    : ID '(' exprList? ')'
-    ;
+numericExpression     : numericMultiplicative (('+'|'-') numericMultiplicative)* ;
 
-variableRef
-    : '#' varName ('[' expression ']')?
-    | '@' varName ('[' expression ']')?
-    ;
+numericMultiplicative : numericTerm (('*'|'/'|'%') numericTerm)* ;
 
-varName
-    : ID | VAR_ID
-    ;
+numericTerm           : NUMBER
+                      | hashVarRef                              // #var numeric variable
+                      | functionCall
+                      | '-' numericTerm
+                      | '(' numericExpression ')'
+                      ;
 
-literal
-    : NUMBER
-    | STRING
-    ;
+// Generic (auto/null) unified grammar
+additiveExpr          : multiplicativeExpr (('+'|'-') multiplicativeExpr)* ;
+multiplicativeExpr    : primaryExpr (('*'|'/'|'%') primaryExpr)* ;
+primaryExpr           : '-' primaryExpr
+                      | functionCall
+                      | variableRef
+                      | literal
+                      | '(' expression ')'
+                      ;
 
-exprList
-    : expression (',' expression)*
-    ;
+functionCall          : ID '(' exprList? ')' ;
+variableRef           : hashVarRef | atVarRef ;
+hashVarRef            : '#' varName ('[' expression ']')? ;
+atVarRef              : '@' varName ('[' expression ']')? ;
+varName               : ID | VAR_ID ;
+literal               : NUMBER | STRING ;
+exprList              : expression (',' expression)* ;
 
 NUMBER  : [0-9]+ ('.' [0-9]+)? ;
 STRING  : '\'' (~'\'' | '\\\'')* '\'' ;
