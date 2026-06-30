@@ -5,6 +5,9 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.huawei.theme.analysis.core.semanticanalysis.analyzers.ParentChildAnalyzer;
+import com.huawei.theme.analysis.core.semanticanalysis.analyzers.ScopeAnalyzer;
+
 public class AnalyzerRegistry {
     private AnalyzerRegistry(){}
 
@@ -23,6 +26,8 @@ public class AnalyzerRegistry {
         }
         initialized = true;
         register(new ConstraintAnalyzer());
+        register(new ParentChildAnalyzer());
+        register(new ScopeAnalyzer());
     }
 
 }
