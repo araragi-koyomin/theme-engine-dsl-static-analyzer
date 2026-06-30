@@ -53,6 +53,7 @@ public class AstBuilder implements DslAstProvider {
     @Override
     public DslFileNode getDslAst(String filePath, String content) {
         DslFileNode fileNode = new DslFileNode();
+        fileNode.setFilePath(filePath);
         fileNode.setText(content);
         fileNode.setLine(1);
         fileNode.setColumn(0);

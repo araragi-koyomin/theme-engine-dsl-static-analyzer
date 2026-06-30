@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class DslFileNode extends DslAstNode {
+    String filePath;
     String xmlDeclaration;
     DslElementNode rootElement;
 }
