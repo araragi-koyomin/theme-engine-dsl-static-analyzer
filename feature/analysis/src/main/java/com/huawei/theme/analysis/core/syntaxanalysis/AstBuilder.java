@@ -68,6 +68,9 @@ public class AstBuilder implements DslAstProvider {
         } catch (Exception e) {
             fileNode.setRootElement(buildErrorNode(e.getMessage(), 0, 0));
         }
+        if (fileNode.getRootElement() != null) {
+            fileNode.getRootElement().setParent(fileNode);
+        }
         return fileNode;
     }
 
@@ -277,7 +280,12 @@ public class AstBuilder implements DslAstProvider {
             if (stack.isEmpty()) {
                 root = node;
             } else {
-                stack.peek().getChildElements().add(node);
+                DslElementNode parent = stack.peek();
+                node.setParent(parent);
+                var children = parent.getChildElements();
+                if (children != null) {
+                    children.add(node);
+                }
             }
         }
 

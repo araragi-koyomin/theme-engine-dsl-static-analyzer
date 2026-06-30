@@ -172,4 +172,37 @@ class DslAstProviderFixtureTest {
             assertNotNull(ast);
         }
     }
+
+    @Test
+    void rootElementParentIsFileNode() throws Exception {
+        DslFileNode ast = provider.getDslAst("valid_lockscreen.xml", loadResource("valid_lockscreen.xml"));
+        DslElementNode root = ast.getRootElement();
+        assertNotNull(root);
+        assertEquals(ast, root.getParent());
+    }
+
+    @Test
+    void nestedElementParentChain() throws Exception {
+        DslFileNode ast = provider.getDslAst("valid_lockscreen.xml", loadResource("valid_lockscreen.xml"));
+        DslElementNode root = ast.getRootElement();
+        assertEquals(ast, root.getParent());
+
+        DslElementNode var = root.getChildElements().get(0);
+        assertEquals(root, var.getParent());
+
+        DslElementNode group = root.getChildElements().get(1);
+        assertEquals(root, group.getParent());
+
+        DslElementNode text = group.getChildElements().get(0);
+        assertEquals(group, text.getParent());
+    }
+
+    @Test
+    void errorNodeParentIsFileNode() throws Exception {
+        DslFileNode ast = provider.getDslAst("error_quotes.xml", loadResource("error_quotes.xml"));
+        DslElementNode root = ast.getRootElement();
+        assertNotNull(root);
+        assertTrue(root.isHasError());
+        assertEquals(ast, root.getParent());
+    }
 }
