@@ -21,14 +21,15 @@ import lombok.Data;
 public class DslGlobalVar {
     /** 变量名，如"battery_level"。VarRefAnalyzer按#name/@name查找时使用 */
     String name;
-    /** 变量类型："number"/"string"。M4 TypeAnalyzer推断#varName→DslNumberType、@varName→DslStringType时使用 */
+    /** 变量类型："number"/"string"/"number[]"/"string[]"。M4 TypeAnalyzer推断#varName→DslNumberType、@varName→DslStringType时使用 */
     String type;
     /** 变量作用域："global"(全局预置)/"local"(局部自定义)/"context"(上下文限定，如name.move_x只在Unlocker内有效) */
     String scope;
     /** 变量描述，IDEA悬浮提示可展示 */
     String description;
-    /** 访问模式，如"#battery_level"(数值访问)/"@ishour12"(字符串访问)。M3识别变量引用时使用 */
-    String accessPattern;
+
+//    /** 访问模式，如"#battery_level"(数值访问)/"@ishour12"(字符串访问)。M3识别变量引用时使用 */
+//    String accessPattern;
     /** 全局变量的约束条件列表，如battery_level范围1-100 */
     @Builder.Default List<RuleConstraint> constraints = Collections.emptyList();
 }

@@ -7,4 +7,9 @@ import lombok.Data;
 public class DslContext {
     RuleRepository ruleRepository;
     SymbolTable symbolTable;
+
+    public DslContext(RuleRepository ruleRepository, SymbolTable symbolTable) {
+        this.ruleRepository = ruleRepository;
+        this.symbolTable = symbolTable;
+    }
 }

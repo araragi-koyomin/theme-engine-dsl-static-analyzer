@@ -13,11 +13,13 @@ import org.jetbrains.annotations.Nullable;
 @Builder
 public class SymbolTable {
     /**
-     * 他的上一层变量scope。
+     * 他的上一层变量scope。如果是全局变量层，则为null
      */
     @Nullable
+    @Builder.Default
     SymbolTable parent = null;
 
-    @Builder.Default Map<String, VarDeclaration> declarations = Collections.emptyMap();
+    @Builder.Default
+    Map<String, VarDeclaration> declarations = Collections.emptyMap();
 //    @Builder.Default List<VarReference> references = Collections.emptyList();
 }

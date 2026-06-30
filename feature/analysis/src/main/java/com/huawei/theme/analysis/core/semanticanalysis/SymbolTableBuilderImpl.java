@@ -1,0 +1,147 @@
+package com.huawei.theme.analysis.core.semanticanalysis;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
+import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
+import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
+import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
+import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
+import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
+import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
+import com.huawei.theme.analysis.core.shared.ast.ExpressionAstNode;
+import com.huawei.theme.analysis.core.shared.type.DslArrayType;
+import com.huawei.theme.analysis.core.shared.type.DslNumberType;
+import com.huawei.theme.analysis.core.shared.type.DslStringType;
+import com.huawei.theme.analysis.core.shared.type.DslType;
+
+public class SymbolTableBuilderImpl implements SymbolTableBuilder {
+
+    private static final String VAR_TAG = "Var";
+    private static final String TYPE_ATTR = "type";
+    private static final String NAME_ATTR = "name";
+    private static final String CONST_ATTR = "const";
+    private static final String EXPRESSION_ATTR = "expression";
+    private static final String DEFAULT_VAR_TYPE = "number";
+
+    @Override
+    public SymbolTable buildGlobal(DslFileNode fileNode, RuleRepository ruleRepository) {
+        Map<String, VarDeclaration> declarations = new HashMap<>();
+        addPresetGlobalVars(ruleRepository, declarations);
+        if (fileNode != null && fileNode.getRootElement() != null) {
+            collectVarDeclarations(fileNode.getRootElement(), declarations);
+        }
+        return SymbolTable.builder()
+                .parent(null)
+                .declarations(declarations)
+                .build();
+    }
+
+    private static void addPresetGlobalVars(RuleRepository ruleRepository,
+                                            Map<String, VarDeclaration> declarations) {
+        List<DslGlobalVar> globalVars = ruleRepository.getAllGlobalVars();
+        for (DslGlobalVar globalVar : globalVars) {
+            VarDeclaration declaration = VarDeclaration.builder()
+                    .name(globalVar.getName())
+                    .type(toDslType(globalVar.getType()))
+                    .expression(null)
+                    .isConstAttr(false)
+                    .isGlobal(true)
+                    .astNode(null)
+                    .build();
+            declarations.put(globalVar.getName(), declaration);
+        }
+    }
+
+    /**
+     * 深度优先遍历整棵元素树，收集所有 &lt;Var&gt; 元素作为全局变量声明。
+     * 无论 Var 出现在树中哪个位置，均作为全局变量处理（见 themes-engine Var 文档）。
+     */
+    private static void collectVarDeclarations(DslElementNode elementNode,
+                                               Map<String, VarDeclaration> declarations) {
+        if (elementNode == null) {
+            return;
+        }
+        if (VAR_TAG.equals(elementNode.getTagName())) {
+            addVarDeclaration(elementNode, declarations);
+        }
+        List<DslElementNode> children = elementNode.getChildElements();
+        if (children != null) {
+            for (DslElementNode child : children) {
+                collectVarDeclarations(child, declarations);
+            }
+        }
+    }
+
+    private static void addVarDeclaration(DslElementNode varNode,
+                                          Map<String, VarDeclaration> declarations) {
+        String name = getAttrValue(varNode, NAME_ATTR);
+        if (name == null || name.isEmpty()) {
+            return;
+        }
+        String type = getAttrValue(varNode, TYPE_ATTR);
+        if (type == null || type.isEmpty()) {
+            type = DEFAULT_VAR_TYPE;
+        }
+        boolean isConstAttr = "true".equals(getAttrValue(varNode, CONST_ATTR));
+        ExpressionAstNode expression = getAttrExpression(varNode, EXPRESSION_ATTR);
+        VarDeclaration declaration = VarDeclaration.builder()
+                .name(name)
+                .type(toDslType(type))
+                .expression(expression)
+                .isConstAttr(isConstAttr)
+                .isGlobal(false)
+                .astNode(varNode)
+                .build();
+        declarations.put(name, declaration);
+    }
+
+    private static String getAttrValue(DslElementNode elementNode, String attrName) {
+        List<DslAttributeNode> attributes = elementNode.getAttributes();
+        if (attributes == null) {
+            return null;
+        }
+        for (DslAttributeNode attribute : attributes) {
+            if (attrName.equals(attribute.getName()) && attribute.getValue() != null) {
+                return attribute.getValue().getRawValue();
+            }
+        }
+        return null;
+    }
+
+    private static ExpressionAstNode getAttrExpression(DslElementNode elementNode, String attrName) {
+        List<DslAttributeNode> attributes = elementNode.getAttributes();
+        if (attributes == null) {
+            return null;
+        }
+        for (DslAttributeNode attribute : attributes) {
+            if (attrName.equals(attribute.getName()) && attribute.getValue() != null) {
+                return attribute.getValue().getExpression().orElse(null);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public SymbolTable build(DslElementNode elementNode, SymbolTable parent, RuleRepository ruleRepository) {
+        throw new UnsupportedOperationException("build not implemented yet");
+    }
+
+    private static DslType toDslType(String type) {
+        if (type == null || type.isEmpty()) {
+            return null;
+        }
+        if (type.endsWith("[]")) {
+            return DslArrayType.builder().baseType(type.substring(0, type.length() - 2)).build();
+        }
+        if ("number".equals(type)) {
+            return new DslNumberType();
+        }
+        if ("string".equals(type)) {
+            return new DslStringType();
+        }
+        return null;
+    }
+}
