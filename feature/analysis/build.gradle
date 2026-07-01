@@ -56,6 +56,78 @@ tasks.matching { it.name == 'prepareKotlinBuildScriptModel' || it.name == 'ideaM
     dependsOn 'generateDslExpressionGrammar', 'generateDslRuleConditionGrammar'
 }
 
+task checkCoreIntellijDependency {
+    description 'Verify core package has no IntelliJ SDK imports (Architecture §4 Core-Plugin isolation)'
+    group 'verification'
+
+    doLast {
+        def violations = []
+        def corePaths = [
+            'src/main/java/com/huawei/theme/analysis/core',
+            'src/test/java/com/huawei/theme/analysis/core'
+        ]
+
+        corePaths.each { corePath ->
+            def coreDir = file(corePath)
+            if (!coreDir.exists()) {
+                return
+            }
+            coreDir.eachFileRecurse { f ->
+                if (f.name.endsWith('.java')) {
+                    f.eachLine { line, lineNum ->
+                        if (line.trim().startsWith('import com.intellij.')) {
+                            violations.add("${f.absolutePath}:${lineNum}: ${line.trim()}")
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!violations.isEmpty()) {
+            logger.error("Core IntelliJ dependency violations found:")
+            violations.each { v -> logger.error("  " + v) }
+            throw new GradleException(
+                "Core package must not import com.intellij.* (${violations.size()} violation(s) found).\n" +
+                "See Architecture.md §4: Core-Plugin isolation rule."
+            )
+        }
+        logger.lifecycle("checkCoreIntellijDependency: PASSED (0 violations)")
+    }
+}
+
+check.dependsOn checkCoreIntellijDependency
+
 test {
     useJUnitPlatform()
+}
+
+task buildFatJar(type: Jar) {
+    group 'build'
+    description 'Build CLI fat jar containing core layer + GSON + ANTLR4 runtime'
+    archiveFileName = 'dsl-analyzer.jar'
+    destinationDirectory = file("$buildDir/cli")
+
+    dependsOn compileJava, processResources, checkCoreIntellijDependency
+
+    manifest {
+        attributes 'Main-Class': 'com.huawei.theme.analysis.core.cli.CliMain'
+    }
+
+    from(sourceSets.main.output.classesDirs) {
+        include 'com/huawei/theme/analysis/core/**'
+    }
+
+    from(sourceSets.main.output.resourcesDir) {
+        include 'rules/**'
+        include 'functions/**'
+        exclude 'META-INF/**'
+    }
+
+    from {
+        configurations.runtimeClasspath.filter { file ->
+            file.name.contains('gson') || file.name.contains('antlr4-runtime')
+        }.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
