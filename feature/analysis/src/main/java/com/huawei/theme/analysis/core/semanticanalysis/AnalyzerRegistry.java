@@ -5,7 +5,10 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.huawei.theme.analysis.core.semanticanalysis.analyzers.EnumValueAnalyzer;
+import com.huawei.theme.analysis.core.semanticanalysis.analyzers.LiteralTypeAnalyzer;
 import com.huawei.theme.analysis.core.semanticanalysis.analyzers.ParentChildAnalyzer;
+import com.huawei.theme.analysis.core.semanticanalysis.analyzers.RequiredAttrAnalyzer;
 import com.huawei.theme.analysis.core.semanticanalysis.analyzers.ScopeAnalyzer;
 
 public class AnalyzerRegistry {
@@ -28,6 +31,9 @@ public class AnalyzerRegistry {
         register(new ConstraintAnalyzer());
         register(new ParentChildAnalyzer());
         register(new ScopeAnalyzer());
+        register(new RequiredAttrAnalyzer());
+        register(new LiteralTypeAnalyzer());
+        register(new EnumValueAnalyzer());
     }
 
 }

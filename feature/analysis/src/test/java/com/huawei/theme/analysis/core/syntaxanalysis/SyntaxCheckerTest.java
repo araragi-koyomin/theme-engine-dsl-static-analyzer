@@ -43,17 +43,6 @@ class SyntaxCheckerTest {
         assertFalse(hasRuleId(check("<Lockscreen/>"), "SYN-001"));
     }
 
-    // SYN-002 nesting violation
-    @Test
-    void syn002_childNotAllowedUnderParent() {
-        assertTrue(hasRuleId(check("<Lockscreen><Var name=\"x\"><Image/></Var></Lockscreen>"), "SYN-002"));
-    }
-
-    @Test
-    void syn002_validNestingNoDiagnostic() {
-        assertFalse(hasRuleId(check("<Lockscreen><Var name=\"x\"/></Lockscreen>"), "SYN-002"));
-    }
-
     // SYN-003 unknown element
     @Test
     void syn003_unknownElementTag() {
@@ -74,39 +63,6 @@ class SyntaxCheckerTest {
     @Test
     void syn004_knownAttributeNoDiagnostic() {
         assertFalse(hasRuleId(check("<Lockscreen><Image name=\"x\" src=\"a.png\"/></Lockscreen>"), "SYN-004"));
-    }
-
-    // SYN-005 missing required attribute
-    @Test
-    void syn005_missingRequiredAttr() {
-        assertTrue(hasRuleId(check("<Lockscreen><Var/></Lockscreen>"), "SYN-005"));
-    }
-
-    @Test
-    void syn005_requiredAttrPresentNoDiagnostic() {
-        assertFalse(hasRuleId(check("<Lockscreen><Var name=\"x\"/></Lockscreen>"), "SYN-005"));
-    }
-
-    // SYN-006 literal type error
-    @Test
-    void syn006_numberAttrNonNumericValue() {
-        assertTrue(hasRuleId(check("<Lockscreen frameRate=\"abc\"/>"), "SYN-006"));
-    }
-
-    @Test
-    void syn006_numberAttrNumericValueNoDiagnostic() {
-        assertFalse(hasRuleId(check("<Lockscreen frameRate=\"60\"/>"), "SYN-006"));
-    }
-
-    // SYN-007 enum value error
-    @Test
-    void syn007_enumAttrInvalidValue() {
-        assertTrue(hasRuleId(check("<Lockscreen><Image scaleType=\"invalid\"/></Lockscreen>"), "SYN-007"));
-    }
-
-    @Test
-    void syn007_enumAttrValidValueNoDiagnostic() {
-        assertFalse(hasRuleId(check("<Lockscreen><Image scaleType=\"fill\"/></Lockscreen>"), "SYN-007"));
     }
 
     // XML format error returns empty

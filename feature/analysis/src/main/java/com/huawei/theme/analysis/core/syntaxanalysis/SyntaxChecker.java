@@ -1,23 +1,25 @@
 package com.huawei.theme.analysis.core.syntaxanalysis;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
-import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
-import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
 import com.huawei.theme.analysis.core.shared.ast.DslAstNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
-import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 
+/**
+ * DSL结构语法检查器，产出SYN-001/003/004诊断。
+ *
+ * <p>仅负责纯语法层检查：根元素合法性(SYN-001)、未知元素标签(SYN-003)、未知属性名(SYN-004)。
+ * 嵌套约束/必填缺失/类型/枚举等语义检查由M4 Analyzers承担：ParentChildAnalyzer(SEM-NEST-001)、
+ * RequiredAttrAnalyzer(SEM-REQ-001)、LiteralTypeAnalyzer(SEM-TYPE-003)、EnumValueAnalyzer(SEM-ENUM-001)。</p>
+ */
 public class SyntaxChecker {
 
     private final RuleRepository ruleRepository;
@@ -48,19 +50,9 @@ public class SyntaxChecker {
         String tagName = element.getTagName();
         boolean known = ruleRepository.getAllElementNames().contains(tagName);
 
-        if (!isRoot) {
-            if (!known) {
-                diagnostics.add(diag("SYN-003", DiagnosticSeverity.ERROR,
-                        "未知元素标签: " + tagName, filePath, element));
-            } else if (element.getParent() instanceof DslElementNode parent) {
-                String parentTag = parent.getTagName();
-                if (ruleRepository.getAllElementNames().contains(parentTag)
-                        && !ruleRepository.getAllowedParents(tagName).contains(parentTag)) {
-                    diagnostics.add(diag("SYN-002", DiagnosticSeverity.ERROR,
-                            "标签嵌套违反父子约束: " + tagName + " 不允许作为 " + parentTag + " 的子元素",
-                            filePath, element));
-                }
-            }
+        if (!isRoot && !known) {
+            diagnostics.add(diag("SYN-003", DiagnosticSeverity.ERROR,
+                    "未知元素标签: " + tagName, filePath, element));
         }
 
         if (known) {
@@ -76,66 +68,14 @@ public class SyntaxChecker {
 
     private void checkAttributes(String filePath, DslElementNode element, List<Diagnostic> diagnostics) {
         String tagName = element.getTagName();
-        Optional<DslElementRule> ruleOpt = ruleRepository.getElementRule(tagName);
-        if (ruleOpt.isEmpty()) {
+        if (element.getAttributes() == null) {
             return;
         }
-        DslElementRule rule = ruleOpt.get();
-
-        Set<String> presentCanonical = new HashSet<>();
-        if (element.getAttributes() != null) {
-            for (DslAttributeNode attr : element.getAttributes()) {
-                String attrName = attr.getName();
-                Optional<String> canonical = ruleRepository.resolveAttrAlias(tagName, attrName);
-                if (canonical.isEmpty()) {
-                    diagnostics.add(diag("SYN-004", DiagnosticSeverity.WARNING,
-                            "未知属性: " + attrName, filePath, attr));
-                } else {
-                    presentCanonical.add(canonical.get());
-                }
-                checkAttrValue(filePath, tagName, attrName, attr, diagnostics);
-            }
-        }
-
-        for (String required : rule.getRequiredAttrs()) {
-            if (!presentCanonical.contains(required)) {
-                diagnostics.add(diag("SYN-005", DiagnosticSeverity.ERROR,
-                        "缺失必填属性: " + required, filePath, element));
-            }
-        }
-    }
-
-    private void checkAttrValue(String filePath, String tagName, String attrName,
-            DslAttributeNode attr, List<Diagnostic> diagnostics) {
-        Optional<AttrTypeSpec> specOpt = ruleRepository.getAttrTypeSpec(tagName, attrName);
-        if (specOpt.isEmpty()) {
-            return;
-        }
-        AttrTypeSpec spec = specOpt.get();
-        DslAttributeValueNode value = attr.getValue();
-        if (value == null || !value.isLiteral()) {
-            return;
-        }
-        String rawValue = value.getRawValue();
-        if (rawValue == null) {
-            return;
-        }
-
-        if ("number".equals(spec.getType())) {
-            try {
-                Double.parseDouble(rawValue);
-            } catch (NumberFormatException e) {
-                diagnostics.add(diag("SYN-006", DiagnosticSeverity.ERROR,
-                        "属性值类型错误: " + attrName + " 期望 number, 实际 " + rawValue,
-                        filePath, attr));
-            }
-        }
-
-        if (spec.getEnumValues() != null && !spec.getEnumValues().isEmpty()) {
-            if (!spec.getEnumValues().contains(rawValue)) {
-                diagnostics.add(diag("SYN-007", DiagnosticSeverity.ERROR,
-                        "枚举值错误: " + attrName + "=" + rawValue + ", 合法值: " + spec.getEnumValues(),
-                        filePath, attr));
+        for (DslAttributeNode attr : element.getAttributes()) {
+            String attrName = attr.getName();
+            if (ruleRepository.resolveAttrAlias(tagName, attrName).isEmpty()) {
+                diagnostics.add(diag("SYN-004", DiagnosticSeverity.WARNING,
+                        "未知属性: " + attrName, filePath, attr));
             }
         }
     }
