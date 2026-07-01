@@ -410,15 +410,15 @@ Trigger子元素：各种Command元素
 
 ## 5. 错误检测规则
 
-### 5.1 XML结构语法错误（dom4j解析阶段）
+### 5.1 XML结构语法错误（SAX解析阶段）
 
-dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包装映射为自定义Diagnostic。XML well-formedness错误（标签未闭合、属性引号缺失、缺少XML声明头等）由dom4j原生报错处理。
+SAX解析XML时遇格式错误直接抛出SAXParseException，不做额外包装映射为自定义Diagnostic。XML well-formedness错误（标签未闭合、属性引号缺失、缺少XML声明头等）由SAX原生报错处理。
 
 | 规则ID | 检测内容 | 检测机制 | 严重级别 |
 |---|---|---|---|
 | SYN-001 | 根元素标签错误 | M1文件识别+M3 AST根节点检测 | error |
 
-> 注：原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，XML格式错误由dom4j直接报出。编号已重新排列为连续序号。
+> 注：原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，XML格式错误由SAX直接报出。编号已重新排列为连续序号。
 
 ### 5.2 DSL结构语法错误（M3语法分析+M2规则库比对）
 
@@ -435,13 +435,13 @@ dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包�
 
 | 规则ID | 检测内容 | 检测机制 | 严重级别 |
 |---|---|---|---|
-| SEM-EXPR-001 | 数值表达式使用`-#var`语法 | ANTLR4解析：负号直接前缀变量引用检测 | error |
-| SEM-EXPR-002 | 数值表达式值超过7位精度限制 | ANTLR4解析：数值常量位数检查 | warning |
-| SEM-EXPR-003 | 字符串表达式中数值计算以#开头 | ANTLR4解析：变量名边界检测 | error |
-| SEM-EXPR-004 | 字符串表达式未使用单引号 | ANTLR4解析：字符串常量引号类型检查 | error |
-| SEM-EXPR-005 | 字符串表达式嵌入数值表达式缺少花括号 | ANTLR4解析：嵌套语法检查 | error |
-| SEM-EXPR-006 | preciseeval后使用运算符或+连接符 | ANTLR4解析：函数后缀约束检查 | error |
-| SEM-EXPR-ANTLR | ANTLR4词法/语法错误 | ANTLR4自动报错：不可识别token、表达式结构不合法 | error |
+| SYN-EXPR-001 | 数值表达式使用`-#var`语法 | ANTLR4解析：负号直接前缀变量引用检测 | error |
+| SYN-EXPR-002 | 数值表达式值超过7位精度限制 | ANTLR4解析：数值常量位数检查 | warning |
+| SYN-EXPR-003 | 字符串表达式中数值计算以#开头 | ANTLR4解析：变量名边界检测 | error |
+| SYN-EXPR-004 | 字符串表达式未使用单引号 | ANTLR4解析：字符串常量引号类型检查 | error |
+| SYN-EXPR-005 | 字符串表达式嵌入数值表达式缺少花括号 | ANTLR4解析：嵌套语法检查 | error |
+| SYN-EXPR-006 | preciseeval后使用运算符或+连接符 | ANTLR4解析：函数后缀约束检查 | error |
+| SYN-EXPR-ANTLR | ANTLR4词法/语法错误 | ANTLR4自动报错：不可识别token、表达式结构不合法 | error |
 
 ### 5.4 语义/规则错误（M4语义分析阶段）
 
@@ -799,7 +799,7 @@ optionalAttrs和attrTypes中只包含属性规范名（如`width`、`height`、`
 | 新增函数 | 在functions JSON中追加条目 | 否 |
 | 复杂约束（如Trigger链结构） | 编写Analyzer并注册到M4引擎 | 是 |
 
-规则ID格式：`[类别]-[子类]-[编号]`，如SYN-001~007(语法), SEM-EXPR-001~006(表达式), SEM-TYPE-001~002(类型), SEM-CMD-001~004(命令), SEM-PERSIST-001~003(持久化), SEM-ARR-001~003(数组), SEM-VAR-001~005(变量), SEM-REF-001~003(引用), SEM-ATTR-001~009(属性), SEM-SCOPE-001~002(作用域), SEM-TRIG-001~002(触发器), SEM-VID-001~005(视频), SEM-IMG-001~003(图片), SEM-GEN-001~002(通用)
+规则ID格式：`[类别]-[子类]-[编号]`，如SYN-001~007(语法), SYN-EXPR-001~006(表达式), SEM-TYPE-001~002(类型), SEM-CMD-001~004(命令), SEM-PERSIST-001~003(持久化), SEM-ARR-001~003(数组), SEM-VAR-001~005(变量), SEM-REF-001~003(引用), SEM-ATTR-001~009(属性), SEM-SCOPE-001~002(作用域), SEM-TRIG-001~002(触发器), SEM-VID-001~005(视频), SEM-IMG-001~003(图片), SEM-GEN-001~002(通用)
 
 CLI可通过`--rule-dir`指定外部规则库目录，实现完全零代码的自定义规则集。
 

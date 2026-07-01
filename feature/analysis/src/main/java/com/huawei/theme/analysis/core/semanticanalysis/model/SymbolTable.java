@@ -3,13 +3,23 @@ package com.huawei.theme.analysis.core.semanticanalysis.model;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import lombok.Builder;
 import lombok.Data;
+import org.jetbrains.annotations.Nullable;
 
 @Data
 @Builder
 public class SymbolTable {
-    @Builder.Default Map<String, VarDeclaration> declarations = Collections.emptyMap();
-    @Builder.Default List<VarReference> references = Collections.emptyList();
+    /**
+     * 他的上一层变量scope。如果是全局变量层，则为null
+     */
+    @Nullable
+    @Builder.Default
+    SymbolTable parent = null;
+
+    @Builder.Default
+    Map<String, VarDeclaration> declarations = Collections.emptyMap();
+//    @Builder.Default List<VarReference> references = Collections.emptyList();
 }

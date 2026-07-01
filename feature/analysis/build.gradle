@@ -2,9 +2,14 @@ intellij {
     plugins = []
 }
 
+configurations {
+    antlr4
+}
+
 dependencies {
     implementation 'com.google.code.gson:gson:2.9.0'
-    implementation 'org.dom4j:dom4j:2.1.3'
+    antlr4 'org.antlr:antlr4:4.13.1'
+    implementation 'org.antlr:antlr4-runtime:4.13.1'
     compileOnly 'org.projectlombok:lombok:1.18.22'
     annotationProcessor 'org.projectlombok:lombok:1.18.22'
 
@@ -13,6 +18,116 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
 }
 
+def generatedRootDir = 'build/generated-src/antlr/main'
+
+task generateDslExpressionGrammar(type: JavaExec) {
+    description 'Generate ANTLR4 parser for DslExpression grammar'
+    group 'antlr'
+    classpath = configurations.antlr4
+    mainClass = 'org.antlr.v4.Tool'
+    args = [
+            '-package', 'com.huawei.theme.analysis.core.expression.generated',
+            '-visitor', '-no-listener',
+            '-o', file("${generatedRootDir}/com/huawei/theme/analysis/core/expression/generated").absolutePath,
+            file('src/main/java/com/huawei/theme/analysis/core/expression/grammar/DslExpression.g4').absolutePath
+    ]
+}
+
+task generateDslRuleConditionGrammar(type: JavaExec) {
+    description 'Generate ANTLR4 parser for DslRuleCondition grammar'
+    group 'antlr'
+    classpath = configurations.antlr4
+    mainClass = 'org.antlr.v4.Tool'
+    args = [
+            '-package', 'com.huawei.theme.analysis.core.ruledsl.generated',
+            '-visitor', '-no-listener',
+            '-o', file("${generatedRootDir}/com/huawei/theme/analysis/core/ruledsl/generated").absolutePath,
+            file('src/main/java/com/huawei/theme/analysis/core/ruledsl/grammar/DslRuleCondition.g4').absolutePath
+    ]
+}
+
+sourceSets {
+    main.java.srcDirs generatedRootDir
+}
+
+compileJava.dependsOn generateDslExpressionGrammar, generateDslRuleConditionGrammar
+
+tasks.matching { it.name == 'prepareKotlinBuildScriptModel' || it.name == 'ideaModule' }.configureEach {
+    dependsOn 'generateDslExpressionGrammar', 'generateDslRuleConditionGrammar'
+}
+
+task checkCoreIntellijDependency {
+    description 'Verify core package has no IntelliJ SDK imports (Architecture §4 Core-Plugin isolation)'
+    group 'verification'
+
+    doLast {
+        def violations = []
+        def corePaths = [
+            'src/main/java/com/huawei/theme/analysis/core',
+            'src/test/java/com/huawei/theme/analysis/core'
+        ]
+
+        corePaths.each { corePath ->
+            def coreDir = file(corePath)
+            if (!coreDir.exists()) {
+                return
+            }
+            coreDir.eachFileRecurse { f ->
+                if (f.name.endsWith('.java')) {
+                    f.eachLine { line, lineNum ->
+                        if (line.trim().startsWith('import com.intellij.')) {
+                            violations.add("${f.absolutePath}:${lineNum}: ${line.trim()}")
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!violations.isEmpty()) {
+            logger.error("Core IntelliJ dependency violations found:")
+            violations.each { v -> logger.error("  " + v) }
+            throw new GradleException(
+                "Core package must not import com.intellij.* (${violations.size()} violation(s) found).\n" +
+                "See Architecture.md §4: Core-Plugin isolation rule."
+            )
+        }
+        logger.lifecycle("checkCoreIntellijDependency: PASSED (0 violations)")
+    }
+}
+
+check.dependsOn checkCoreIntellijDependency
+
 test {
     useJUnitPlatform()
+}
+
+task buildFatJar(type: Jar) {
+    group 'build'
+    description 'Build CLI fat jar containing core layer + GSON + ANTLR4 runtime'
+    archiveFileName = 'dsl-analyzer.jar'
+    destinationDirectory = file("$buildDir/cli")
+
+    dependsOn compileJava, processResources, checkCoreIntellijDependency
+
+    manifest {
+        attributes 'Main-Class': 'com.huawei.theme.analysis.core.cli.CliMain'
+    }
+
+    from(sourceSets.main.output.classesDirs) {
+        include 'com/huawei/theme/analysis/core/**'
+    }
+
+    from(sourceSets.main.output.resourcesDir) {
+        include 'rules/**'
+        include 'functions/**'
+        exclude 'META-INF/**'
+    }
+
+    from {
+        configurations.runtimeClasspath.filter { file ->
+            file.name.contains('gson') || file.name.contains('antlr4-runtime')
+        }.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

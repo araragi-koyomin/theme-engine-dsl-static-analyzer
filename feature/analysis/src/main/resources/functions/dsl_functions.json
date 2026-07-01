@@ -1,0 +1,232 @@
+{
+  "functions": [
+    {
+      "name": "sin",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "cos",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "tan",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "asin",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "acos",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "atan",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "sqrt",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "abs",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "min",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "max",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "digit",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "pos", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "round",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "int",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "rand",
+      "params": [],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "eq",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "ne",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "ge",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "gt",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "le",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "lt",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "isnull",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "not",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "ifelse",
+      "params": [{"name": "cond", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}, {"name": "z", "type": "number", "isVariadic": true}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "pow",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "len",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "preciseeval",
+      "params": [{"name": "x", "type": "string", "isVariadic": false}, {"name": "precision", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "number"
+    },
+    {
+      "name": "substr",
+      "params": [{"name": "str", "type": "string", "isVariadic": false}, {"name": "pos", "type": "number", "isVariadic": false}, {"name": "len", "type": "number", "isVariadic": false}],
+      "returnType": "string",
+      "expressionKind": "string"
+    },
+    {
+      "name": "strIsEmpty",
+      "params": [{"name": "str", "type": "string", "isVariadic": false}],
+      "returnType": "string",
+      "expressionKind": "string"
+    },
+    {
+      "name": "strIndexOf",
+      "params": [{"name": "str1", "type": "string", "isVariadic": false}, {"name": "str2", "type": "string", "isVariadic": false}],
+      "returnType": "string",
+      "expressionKind": "string"
+    },
+    {
+      "name": "strLastIndexOf",
+      "params": [{"name": "str1", "type": "string", "isVariadic": false}, {"name": "str2", "type": "string", "isVariadic": false}],
+      "returnType": "string",
+      "expressionKind": "string"
+    },
+    {
+      "name": "strContains",
+      "params": [{"name": "str1", "type": "string", "isVariadic": false}, {"name": "str2", "type": "string", "isVariadic": false}],
+      "returnType": "string",
+      "expressionKind": "string"
+    },
+    {
+      "name": "strReplaceAll",
+      "params": [{"name": "str1", "type": "string", "isVariadic": false}, {"name": "str2", "type": "string", "isVariadic": false}, {"name": "str3", "type": "string", "isVariadic": false}],
+      "returnType": "string",
+      "expressionKind": "string"
+    },
+    {
+      "name": "formatDate",
+      "params": [{"name": "format", "type": "string", "isVariadic": false}, {"name": "timeVar", "type": "string", "isVariadic": false}],
+      "returnType": "string",
+      "expressionKind": "string"
+    },
+    {
+      "name": "plus",
+      "params": [{"name": "a", "type": "number", "isVariadic": false}, {"name": "b", "type": "number", "isVariadic": false}],
+      "returnType": "string",
+      "expressionKind": "string"
+    },
+    {
+      "name": "strEqual",
+      "params": [{"name": "str1", "type": "string", "isVariadic": false}, {"name": "str2", "type": "string", "isVariadic": false}],
+      "returnType": "string",
+      "expressionKind": "string"
+    },
+    {
+      "name": "argb",
+      "params": [{"name": "a", "type": "number", "isVariadic": false}, {"name": "r", "type": "number", "isVariadic": false}, {"name": "g", "type": "number", "isVariadic": false}, {"name": "b", "type": "number", "isVariadic": false}],
+      "returnType": "string",
+      "expressionKind": "string"
+    },
+    {
+      "name": "ifelse",
+      "params": [{"name": "cond", "type": "number", "isVariadic": false}, {"name": "y", "type": "string", "isVariadic": false}, {"name": "z", "type": "string", "isVariadic": true}],
+      "returnType": "string",
+      "expressionKind": "string"
+    },
+    {
+      "name": "isnull",
+      "params": [{"name": "x", "type": "string", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "string"
+    }
+  ]
+}

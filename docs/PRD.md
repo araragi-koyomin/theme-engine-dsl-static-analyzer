@@ -49,12 +49,12 @@ java -jar dsl-analyzer.jar [options] <file-or-directory>
 
 #### 2.1.3 语法错误检测
 
-**XML结构语法错误（dom4j解析阶段）**：
-- dom4j解析XML时遇格式错误直接抛出SAXParseException，不做额外包装映射
+**XML结构语法错误（SAX解析阶段）**：
+- SAX解析XML时遇格式错误直接抛出SAXParseException，不做额外包装映射
 - 包含：标签未闭合、属性引号缺失、缺少XML声明头等XML well-formedness错误
 - 根元素标签错误（SYN-010）：M1文件识别阶段检测
 
-**DSL结构语法错误（M3语法分析阶段捕获，基于dom4j解析后的AST+规则库）**：
+**DSL结构语法错误（M3语法分析阶段捕获，基于SAX解析后的AST+规则库）**：
 - 标签嵌套违反父子约束（SYN-002）
 - 未知元素标签（SYN-004）
 - 必填属性缺失（SYN-006）
@@ -205,7 +205,7 @@ java -jar dsl-analyzer.jar [options] <file-or-directory>
 ### 3.4 架构需求
 - 分析核心与IDEA UI解耦：core包无IDEA SDK依赖，CLI jar只打包core包
 - Plugin包依赖IDEA SDK + core包，在core基础上叠加交互能力
-- ANTLR4用于表达式和规则DSL的词法/语法分析，XML结构解析使用dom4j
+- ANTLR4用于表达式和规则DSL的词法/语法分析，XML结构解析使用JDK SAX
 - 隔离保障：编译期扫描core包内无com.intellij import
 
 ## 4. 用户场景
@@ -257,7 +257,7 @@ java -jar dsl-analyzer.jar [options] <file-or-directory>
 
 | 形态 | 包名 | 内容 | 使用方式 |
 |---|---|---|---|
-| CLI分析工具 | dsl-analyzer.jar | core包全部代码 + GSON + dom4j + ANTLR4 runtime（fat jar） | `java -jar dsl-analyzer.jar` |
+| CLI分析工具 | dsl-analyzer.jar | core包全部代码 + GSON + ANTLR4 runtime（fat jar，XML解析用JDK内置SAX） | `java -jar dsl-analyzer.jar` |
 | IDEA插件 | plugin.zip | core包 + plugin包 + plugin.xml（intellij plugin build） | IDEA安装插件 |
 
 ## 6. 相关文档

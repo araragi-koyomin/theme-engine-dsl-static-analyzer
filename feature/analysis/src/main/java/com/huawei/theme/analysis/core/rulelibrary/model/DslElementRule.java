@@ -26,13 +26,13 @@ public class DslElementRule {
     String elementName;
     /** 元素分类标签，已知分类：root/view/layout/variable/control/command/animation/effect/three_d/trigger。开放式字符串，不硬编码为枚举 */
     String category;
-    /** 必填属性名列表，如Var的["name"]。M3 SYN-005必填缺失检测使用 */
+    /** 必填属性名列表，如Var的["name"]。M4 SEM-REQ-001必填缺失检测使用 */
     @Builder.Default List<String> requiredAttrs = Collections.emptyList();
     /** 选填属性名列表，如Var的["expression","type","threshold",...]。与requiredAttrs合并为全部合法属性名集合，M3 SYN-004未知属性检测使用 */
     @Builder.Default List<String> optionalAttrs = Collections.emptyList();
     /** 属性类型规范映射，key为属性名，value为AttrTypeSpec。M3表达式嵌入判断和M4类型推断的核心数据来源 */
     @Builder.Default Map<String, AttrTypeSpec> attrTypes = Collections.emptyMap();
-    /** 合法父元素标签名列表。M3 SYN-002父子嵌套约束检测使用 */
+    /** 合法父元素标签名列表。M4 SEM-NEST-001父子嵌套约束检测使用 */
     @Builder.Default List<String> allowedParents = Collections.emptyList();
     /** 继承声明，如VideoCommand inherits="CommandBase"表示继承通用命令属性。Optional层继承链分析使用，Core层仅存储声明 */
     String inherits;
