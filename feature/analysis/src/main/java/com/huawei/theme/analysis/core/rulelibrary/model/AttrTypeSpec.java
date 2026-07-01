@@ -19,7 +19,7 @@ import lombok.Data;
 public class AttrTypeSpec {
     /** 属性类型标识，已知类型：string/number/boolean/enum/expression/action/object/reference */
     String type;
-    /** 枚举类型的合法取值集合，非枚举类型时为空列表。M3 SYN-007枚举检测使用 */
+    /** 枚举类型的合法取值集合，非枚举类型时为空列表。M4 SEM-ENUM-001枚举检测使用 */
     @Builder.Default List<String> enumValues = Collections.emptyList();
     /** 属性别名列表，如width的别名w、rotation的别名angle。M5 QuickFix替换建议使用 */
     @Builder.Default List<String> aliases = Collections.emptyList();

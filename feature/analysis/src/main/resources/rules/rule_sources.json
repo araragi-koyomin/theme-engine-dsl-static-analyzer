@@ -5,8 +5,8 @@
     "description": "根元素标签错误",
     "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-scope-0000002279698481"
   }, {
-  "ruleId": "SYN-002",
-  "category": "SYN",
+  "ruleId": "SEM-NEST-001",
+  "category": "SEM",
   "description": "标签嵌套违反父子约束",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-lock-0000002244659534"
 }, {
@@ -20,18 +20,18 @@
   "description": "未知属性名",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
 }, {
-  "ruleId": "SYN-005",
-  "category": "SYN",
+  "ruleId": "SEM-REQ-001",
+  "category": "SEM",
   "description": "缺失必填属性",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-0000002279818413"
 }, {
-  "ruleId": "SYN-006",
-  "category": "SYN",
+  "ruleId": "SEM-TYPE-003",
+  "category": "SEM",
   "description": "属性值类型错误(纯字面量)",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
 }, {
-  "ruleId": "SYN-007",
-  "category": "SYN",
+  "ruleId": "SEM-ENUM-001",
+  "category": "SEM",
   "description": "枚举值错误",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
 }, {
