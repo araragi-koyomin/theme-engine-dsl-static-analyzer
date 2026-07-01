@@ -12,6 +12,7 @@ public class CliConfig {
     boolean verbose;
     boolean helpRequested;
     String targetPath;
+    String configPath;
 
     public static CliConfig fromArgs(String[] args) {
         CliConfigBuilder builder = CliConfig.builder();
@@ -34,6 +35,12 @@ public class CliConfig {
                 case "--help":
                 case "-h":
                     builder.helpRequested(true);
+                    break;
+                case "--config":
+                    if (i + 1 >= args.length) {
+                        throw new IllegalArgumentException("--config requires a path value");
+                    }
+                    builder.configPath(args[++i]);
                     break;
                 default:
                     if (args[i].startsWith("--")) {

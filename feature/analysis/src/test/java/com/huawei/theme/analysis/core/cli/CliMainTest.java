@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CliMainTest {
 
     private static String tempFilePath;
+    private static Path tempDir;
 
     private PrintStream originalOut;
     private PrintStream originalErr;
@@ -29,6 +30,7 @@ class CliMainTest {
         Path tempFile = Files.createTempFile("dsl-test", ".xml");
         Files.writeString(tempFile, "<Lockscreen/>", StandardCharsets.UTF_8);
         tempFilePath = tempFile.toString();
+        tempDir = Files.createTempDirectory("dsl-test-cli");
     }
 
     @BeforeEach
@@ -113,6 +115,7 @@ class CliMainTest {
         assertTrue(stdout.contains("Usage: java -jar dsl-analyzer.jar"));
         assertTrue(stdout.contains("--no-type-check"));
         assertTrue(stdout.contains("--help"));
+        assertTrue(stdout.contains("--config"));
         assertEquals(0, capturedErr.toString().length());
     }
 
@@ -150,8 +153,8 @@ class CliMainTest {
 
     @Test
     void runWithNonFileNonDirectoryPathReturnsTwo() throws Exception {
-        Path tempDir = Files.createTempDirectory("dsl-test-dir");
-        Path specialFile = tempDir.resolve("special_pipe");
+        Path localTempDir = Files.createTempDirectory("dsl-test-dir");
+        Path specialFile = localTempDir.resolve("special_pipe");
         Files.writeString(specialFile, "test", StandardCharsets.UTF_8);
         File f = specialFile.toFile();
         f.delete();
@@ -159,6 +162,64 @@ class CliMainTest {
         int exitCode = CliMain.run(new String[]{specialFile.toString()});
         assertEquals(0, exitCode);
         Files.deleteIfExists(specialFile);
-        Files.deleteIfExists(tempDir);
+        Files.deleteIfExists(localTempDir);
+    }
+
+    @Test
+    void runWithConfigPathReturnsZeroWhenConfigFileExists() throws Exception {
+        Path configFile = Files.createTempFile(tempDir, "config", ".json");
+        Files.writeString(configFile, "{}", StandardCharsets.UTF_8);
+
+        int exitCode = CliMain.run(new String[]{"--config", configFile.toString(), tempFilePath});
+        assertEquals(0, exitCode);
+        String stdout = capturedOut.toString();
+        assertTrue(stdout.contains("Config: " + configFile.toString()));
+        assertTrue(stdout.contains("Target: " + tempFilePath));
+    }
+
+    @Test
+    void runWithNonexistentConfigPathReturnsTwo() {
+        int exitCode = CliMain.run(new String[]{"--config", "/nonexistent/config.json", tempFilePath});
+        assertEquals(2, exitCode);
+        assertTrue(capturedErr.toString().contains("Config file not found"));
+    }
+
+    @Test
+    void runWithConfigPathNotFileReturnsTwo() throws Exception {
+        Path dirPath = Files.createTempDirectory(tempDir, "not-a-file");
+        int exitCode = CliMain.run(new String[]{"--config", dirPath.toString(), tempFilePath});
+        assertEquals(2, exitCode);
+        assertTrue(capturedErr.toString().contains("Config path is not a file"));
+    }
+
+    @Test
+    void runWithInvalidConfigJsonReturnsTwo() throws Exception {
+        Path configFile = Files.createTempFile(tempDir, "config", ".json");
+        Files.writeString(configFile, "{ invalid json !!!", StandardCharsets.UTF_8);
+
+        int exitCode = CliMain.run(new String[]{"--config", configFile.toString(), tempFilePath});
+        assertEquals(2, exitCode);
+        assertTrue(capturedErr.toString().contains("Config load error"));
+    }
+
+    @Test
+    void runWithConfigAndRuleDirReturnsZero() throws Exception {
+        Path configFile = Files.createTempFile(tempDir, "config", ".json");
+        Files.writeString(configFile, "{}", StandardCharsets.UTF_8);
+
+        int exitCode = CliMain.run(new String[]{
+                "--config", configFile.toString(), "--rule-dir", "/path/to/rules", tempFilePath
+        });
+        assertEquals(0, exitCode);
+        String stdout = capturedOut.toString();
+        assertTrue(stdout.contains("Config: " + configFile.toString()));
+        assertTrue(stdout.contains("Rule directory: /path/to/rules"));
+    }
+
+    @Test
+    void runWithConfigMissingValueReturnsTwo() {
+        int exitCode = CliMain.run(new String[]{"--config"});
+        assertEquals(2, exitCode);
+        assertTrue(capturedErr.toString().contains("--config requires a path value"));
     }
 }
