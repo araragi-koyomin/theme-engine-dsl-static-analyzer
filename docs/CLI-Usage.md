@@ -30,27 +30,31 @@ java -jar dsl-analyzer.jar [options] <file-or-directory>
 |---|---|
 | 0 | 正常执行完成，无error级诊断 |
 | 1 | 有error级诊断（后续版本启用） |
-| 2 | 执行异常：参数错误、文件不存在、规则库加载失败、运行时异常等 |
+| 2 | 执行异常：参数错误、targetPath不存在或不是文件/目录、规则库加载失败、运行时异常等 |
 
 ## 当前状态（骨架阶段）
 
-当前版本为CLI骨架，仅实现参数解析与配置输出，不调用分析管线。运行后输出解析后的配置摘要：
+当前版本为CLI骨架阶段，实现参数解析、targetPath验证与配置输出，尚未调用分析管线（文件识别、AST构建、语义分析等模块已就绪但尚未接入CLI成功路径）。
+
+**与上一版本的区别**：targetPath 现在必须真实存在于文件系统，否则报错退出（见下方错误示例）。--help 模式不受此限制。
+
+运行后输出解析后的配置摘要：
 
 ```bash
-$ java -jar dsl-analyzer.jar --rule-dir /path/to/rules --no-type-check --verbose theme.xml
+$ java -jar dsl-analyzer.jar --rule-dir /path/to/rules --no-type-check --verbose /path/to/theme.xml
 
 Configuration:
-  Target: theme.xml
+  Target: /path/to/theme.xml
   Rule directory: /path/to/rules
   Type check: disabled
   Verbose: enabled
 ```
 
 ```bash
-$ java -jar dsl-analyzer.jar theme.xml
+$ java -jar dsl-analyzer.jar /path/to/theme.xml
 
 Configuration:
-  Target: theme.xml
+  Target: /path/to/theme.xml
   Rule directory: (built-in)
   Type check: enabled
   Verbose: disabled
@@ -77,6 +81,20 @@ Options:
 $ java -jar dsl-analyzer.jar
 
 Error: No target path provided
+Usage: java -jar dsl-analyzer.jar [options] <file-or-directory>
+Options:
+  --rule-dir <path>   Custom rule library directory (default: built-in)
+  --no-type-check     Disable type inference checking (default: enabled)
+  --verbose           Enable verbose output
+  --help, -h          Show this help message
+```
+
+targetPath 不存在：
+
+```bash
+$ java -jar dsl-analyzer.jar /nonexistent/path/theme.xml
+
+Error: Path not found: /nonexistent/path/theme.xml
 Usage: java -jar dsl-analyzer.jar [options] <file-or-directory>
 Options:
   --rule-dir <path>   Custom rule library directory (default: built-in)
