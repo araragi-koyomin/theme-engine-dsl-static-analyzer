@@ -38,5 +38,10 @@
 
         <lang.parserDefinition language="DslExpression"
                                implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionParserDefinition"/>
+
+        <lang.syntaxHighlighterFactory language="DslExpression"
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionSyntaxHighlighterFactory"/>
+
+        <colorSettingsPage implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionColorSettingsPage"/>
     </extensions>
 </idea-plugin>
