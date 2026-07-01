@@ -43,5 +43,8 @@
                                 implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionSyntaxHighlighterFactory"/>
 
         <colorSettingsPage implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionColorSettingsPage"/>
+
+        <annotator language="DslExpression"
+                   implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionSemanticAnnotator"/>
     </extensions>
 </idea-plugin>

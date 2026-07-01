@@ -1,5 +1,6 @@
 package com.huawei.theme.analysis.plugin.editor;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.*;
@@ -15,7 +16,13 @@ import com.intellij.openapi.options.colors.ColorSettingsPage;
 /**
  * Registers a user-configurable color settings page under
  * {@code Editor > Color Scheme > DslExpression} so the highlighting keys
- * declared in {@link DslExpressionSyntaxHighlighter} can be customized.
+ * declared in {@link DslExpressionSyntaxHighlighter} (lexer) and
+ * {@link DslExpressionSemanticAnnotator} (semantic) can be customized.
+ *
+ * <p>The demo text uses {@code <tag>...</tag>} markers (mapped via
+ * {@link #getAdditionalHighlightingTagToDescriptorMap()}) to showcase the
+ * semantic colors, since the color-settings preview only runs the lexer
+ * highlighter, not the annotator.</p>
  */
 public class DslExpressionColorSettingsPage implements ColorSettingsPage {
 
@@ -30,11 +37,14 @@ public class DslExpressionColorSettingsPage implements ColorSettingsPage {
             new AttributesDescriptor("Brackets", DslExpressionSyntaxHighlighter.BRACKETS),
             new AttributesDescriptor("Braces", DslExpressionSyntaxHighlighter.BRACES),
             new AttributesDescriptor("Comma", DslExpressionSyntaxHighlighter.COMMA),
-            new AttributesDescriptor("Bad character", DslExpressionSyntaxHighlighter.BAD_CHARACTER)
+            new AttributesDescriptor("Bad character", DslExpressionSyntaxHighlighter.BAD_CHARACTER),
+            new AttributesDescriptor("Function call", DslExpressionSemanticAnnotator.FUNCTION),
+            new AttributesDescriptor("String variable (@name)", DslExpressionSemanticAnnotator.STRING_VARIABLE),
+            new AttributesDescriptor("Numeric variable (#name)", DslExpressionSemanticAnnotator.NUMERIC_VARIABLE)
     };
 
     private static final String DEMO_TEXT =
-            "max(#w/1080,#h/2400)+'total'-@Scenarios.topId[0]%5";
+            "<func>max</func>(<num>#w</num>,<num>#h</num>)+<str>@label</str>+'x'";
 
     @Nullable
     @Override
@@ -57,7 +67,11 @@ public class DslExpressionColorSettingsPage implements ColorSettingsPage {
     @Nullable
     @Override
     public Map<String, TextAttributesKey> getAdditionalHighlightingTagToDescriptorMap() {
-        return null;
+        Map<String, TextAttributesKey> tags = new HashMap<>();
+        tags.put("func", DslExpressionSemanticAnnotator.FUNCTION);
+        tags.put("str", DslExpressionSemanticAnnotator.STRING_VARIABLE);
+        tags.put("num", DslExpressionSemanticAnnotator.NUMERIC_VARIABLE);
+        return tags;
     }
 
     @NotNull
