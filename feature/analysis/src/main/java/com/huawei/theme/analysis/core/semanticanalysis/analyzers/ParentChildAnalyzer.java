@@ -12,7 +12,7 @@ import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 
 /**
- * 父子嵌套约束分析器，规则SYN-002。
+ * 父子嵌套约束分析器，规则SEM-NEST-001。
  *
  * <p>元素的直接父元素必须位于M2规则库的allowedParents列表中。
  * allowedParents为空表示元素为根元素，跳过检查。
@@ -21,7 +21,7 @@ import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
  */
 public class ParentChildAnalyzer extends BaseXmlAnalyzer {
 
-    private static final String RULE_ID = "SYN-002";
+    private static final String RULE_ID = "SEM-NEST-001";
 
     public ParentChildAnalyzer() {
         super(RULE_ID, DiagnosticSeverity.ERROR);

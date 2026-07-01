@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ParentChildAnalyzerTest {
 
-    private static final String SYN_002_URL =
+    private static final String SEM_NEST_001_URL =
             "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-lock-0000002244659534";
 
     private final ParentChildAnalyzer analyzer = new ParentChildAnalyzer();
@@ -161,7 +161,7 @@ class ParentChildAnalyzerTest {
         DslElementRule buttonRule = rule("Button", List.of("Lockscreen", "Widget"));
         RuleRepository ruleRepo = new StubRuleRepository(
                 Map.of("Button", buttonRule),
-                Map.of("SYN-002", source("SYN-002", SYN_002_URL))
+                Map.of("SEM-NEST-001", source("SEM-NEST-001", SEM_NEST_001_URL))
         );
 
         List<Diagnostic> diagnostics = analyzer.analyze(button, context(ruleRepo, fileNode));
@@ -169,13 +169,13 @@ class ParentChildAnalyzerTest {
         assertEquals(1, diagnostics.size());
         Diagnostic diag = diagnostics.get(0);
         assertEquals(DiagnosticSeverity.ERROR, diag.getSeverity());
-        assertEquals("SYN-002", diag.getRuleId());
+        assertEquals("SEM-NEST-001", diag.getRuleId());
         assertEquals("标签嵌套违反父子约束：'Button'的父元素'Text'不在允许列表[Lockscreen, Widget]中",
                 diag.getMessage());
         assertEquals("test.xml", diag.getFilePath());
         assertEquals(10, diag.getLine());
         assertEquals(5, diag.getColumn());
-        assertEquals(SYN_002_URL, diag.getRuleDocUrl());
+        assertEquals(SEM_NEST_001_URL, diag.getRuleDocUrl());
     }
 
     @Test
@@ -186,7 +186,7 @@ class ParentChildAnalyzerTest {
         DslElementRule buttonRule = rule("Button", List.of("Lockscreen", "Widget"));
         RuleRepository ruleRepo = new StubRuleRepository(
                 Map.of("Button", buttonRule),
-                Map.of("SYN-002", source("SYN-002", SYN_002_URL))
+                Map.of("SEM-NEST-001", source("SEM-NEST-001", SEM_NEST_001_URL))
         );
 
         List<Diagnostic> diagnostics = analyzer.analyze(button, context(ruleRepo, fileNode));
@@ -202,13 +202,13 @@ class ParentChildAnalyzerTest {
         DslElementRule buttonRule = rule("Button", List.of("Lockscreen", "Widget"));
         RuleRepository ruleRepo = new StubRuleRepository(
                 Map.of("Button", buttonRule),
-                Map.of("SYN-002", source("SYN-002", SYN_002_URL))
+                Map.of("SEM-NEST-001", source("SEM-NEST-001", SEM_NEST_001_URL))
         );
 
         List<Diagnostic> diagnostics = analyzer.analyze(button, context(ruleRepo, fileNode));
 
         assertEquals(1, diagnostics.size());
-        assertEquals("SYN-002", diagnostics.get(0).getRuleId());
+        assertEquals("SEM-NEST-001", diagnostics.get(0).getRuleId());
         assertTrue(diagnostics.get(0).getMessage().contains("缺少父元素"));
     }
 
@@ -220,7 +220,7 @@ class ParentChildAnalyzerTest {
         DslElementRule rootRule = rule("Lockscreen", Collections.emptyList());
         RuleRepository ruleRepo = new StubRuleRepository(
                 Map.of("Lockscreen", rootRule),
-                Map.of("SYN-002", source("SYN-002", SYN_002_URL))
+                Map.of("SEM-NEST-001", source("SEM-NEST-001", SEM_NEST_001_URL))
         );
 
         List<Diagnostic> diagnostics = analyzer.analyze(lockscreen, context(ruleRepo, fileNode));
@@ -234,7 +234,7 @@ class ParentChildAnalyzerTest {
         DslFileNode fileNode = file("Lockscreen");
         RuleRepository ruleRepo = new StubRuleRepository(
                 Collections.emptyMap(),
-                Map.of("SYN-002", source("SYN-002", SYN_002_URL))
+                Map.of("SEM-NEST-001", source("SEM-NEST-001", SEM_NEST_001_URL))
         );
 
         List<Diagnostic> diagnostics = analyzer.analyze(node, context(ruleRepo, fileNode));
