@@ -35,37 +35,37 @@
   "description": "枚举值错误",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-general-0000002504354839"
 }, {
-  "ruleId": "SEM-EXPR-001",
+  "ruleId": "SYN-EXPR-001",
   "category": "SEM",
   "description": "数值表达式使用-#var语法",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"
 }, {
-  "ruleId": "SEM-EXPR-002",
+  "ruleId": "SYN-EXPR-002",
   "category": "SEM",
   "description": "数值表达式值超过7位精度限制",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"
 }, {
-  "ruleId": "SEM-EXPR-003",
+  "ruleId": "SYN-EXPR-003",
   "category": "SEM",
   "description": "字符串表达式中数值计算以#开头",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"
 }, {
-  "ruleId": "SEM-EXPR-004",
+  "ruleId": "SYN-EXPR-004",
   "category": "SEM",
   "description": "字符串表达式未使用单引号",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"
 }, {
-  "ruleId": "SEM-EXPR-005",
+  "ruleId": "SYN-EXPR-005",
   "category": "SEM",
   "description": "字符串表达式嵌入数值表达式缺少花括号",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"
 }, {
-  "ruleId": "SEM-EXPR-006",
+  "ruleId": "SYN-EXPR-006",
   "category": "SEM",
   "description": "preciseeval后使用运算符或+连接符",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-stringexp-0000002471235050"
 }, {
-  "ruleId": "SEM-EXPR-ANTLR",
+  "ruleId": "SYN-EXPR-ANTLR",
   "category": "SEM",
   "description": "ANTLR4词法/语法错误",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-exp-0000002504274983"

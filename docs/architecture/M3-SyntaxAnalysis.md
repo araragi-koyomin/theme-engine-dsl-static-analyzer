@@ -142,9 +142,9 @@ graph TD
 
 > **`#` 只引用数值变量、`@` 只引用字符串变量**：grammar 在 numeric 上下文不接受 `@var`（语法错误）；string 上下文 `#var` 为内嵌数值。变量类型的最终校验（`#var` 实际是否数值变量）归 M4 VarRefAnalyzer。
 
-**解析失败处理**：`parseExpression` 用 `BailErrorStrategy`（遇错即抛，不做错误恢复）+ 入口规则 `EOF`（string/numeric）/ 残留 token 检查（auto），确保部分匹配（如 `'val: '+10*#num` 残留 `*#num`）判为失败。失败时 `isLiteral=false, expression=Optional.empty()`，保留"曾尝试解析"信号供 #22 报 SEM-EXPR-ANTLR。
+**解析失败处理**：`parseExpression` 用 `BailErrorStrategy`（遇错即抛，不做错误恢复）+ 入口规则 `EOF`（string/numeric）/ 残留 token 检查（auto），确保部分匹配（如 `'val: '+10*#num` 残留 `*#num`）判为失败。失败时 `isLiteral=false, expression=Optional.empty()`，保留"曾尝试解析"信号供 #22 报 SYN-EXPR-ANTLR。
 
-**`-#var` 语法检测（SEM-EXPR-001）**：解析后用 `containsInvalidUnaryMinusVar` 递归检查 AST——任何 `UNARY_EXPR("-")` 其直接子节点为 `#` 前缀的 `VARIABLE_REF`/`ARRAY_ACCESS`（即 `-#w`、`-#arr[0]`）即判失败。`-#w` 须改写为 `-1*#w` 或 `0-#w`。`-5`（负数值）、`-sin(#x)`（负号函数）合法。命中时同样 `isLiteral=false, expression=empty`，#22 据原始值报 SEM-EXPR-001。
+**`-#var` 语法检测（SYN-EXPR-001）**：解析后用 `containsInvalidUnaryMinusVar` 递归检查 AST——任何 `UNARY_EXPR("-")` 其直接子节点为 `#` 前缀的 `VARIABLE_REF`/`ARRAY_ACCESS`（即 `-#w`、`-#arr[0]`）即判失败。`-#w` 须改写为 `-1*#w` 或 `0-#w`。`-5`（负数值）、`-sin(#x)`（负号函数）合法。命中时同样 `isLiteral=false, expression=empty`，#22 据原始值报 SYN-EXPR-001。
 
 **调用链**：AstBuilder → SAXParser.parse(content, ContentHandler) → 事件流构建DslAstNode →（supportsExpression=true 且含指示符的属性）按 expressionKind 选 M0 DslExpressionParser 入口 → DslFileNode
 
@@ -170,7 +170,7 @@ M3产出的语法诊断分三层：
 |---|---|---|---|
 | XML结构语法 | SAX SAXParseException直接报出 | — | 标签未闭合、属性引号缺失、缺少XML声明等XML格式错误，不做额外包装映射 |
 | DSL结构语法 | M3 AST构建 + M2规则库比对 | SYN-001, SYN-002, SYN-003, SYN-004, SYN-005, SYN-006, SYN-007 | 嵌套约束、未知元素/属性、必填缺失、根元素错误 |
-| DSL表达式语法 | ANTLR4 DslExpressionParser | SEM-EXPR-001~006, SEM-EXPR-ANTLR | `-#var`模式、单引号缺失、花括号嵌套等 |
+| DSL表达式语法 | ANTLR4 DslExpressionParser | SYN-EXPR-001~006, SYN-EXPR-ANTLR | `-#var`模式、单引号缺失、花括号嵌套等 |
 
 **XML格式错误处理**：SAX解析XML遇格式错误直接抛出SAXParseException，AstBuilder捕获后写入 `rootElement.hasError/errorMessage/line/column`（保留SAXParseException的行列号和错误消息），不包装映射为自定义SYN-xxx规则ID。SyntaxChecker 遇 `rootElement==null || hasError` 时返回空诊断列表（XML 格式错误转换留给上层 DiagnosticProvider 包装）。原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，编号已重新排列为连续序号SYN-001~007。
 
@@ -194,13 +194,17 @@ M3产出的语法诊断分三层：
 
 | 规则ID | 检测内容 | 检测机制 | 严重级别 |
 |---|---|---|---|
-| SEM-EXPR-001 | 数值表达式使用`-#var`语法 | ANTLR4解析：负号直接前缀变量引用检测 | error |
-| SEM-EXPR-002 | 数值表达式值超过7位精度限制 | ANTLR4解析：数值常量位数检查 | warning |
-| SEM-EXPR-003 | 字符串表达式中数值计算以#开头 | ANTLR4解析：变量名边界检测 | error |
-| SEM-EXPR-004 | 字符串表达式未使用单引号 | ANTLR4解析：字符串常量引号类型检查 | error |
-| SEM-EXPR-005 | 字符串表达式嵌入数值表达式缺少花括号 | ANTLR4解析：嵌套语法检查 | error |
-| SEM-EXPR-006 | preciseeval后使用运算符或+连接符 | ANTLR4解析：函数后缀约束检查 | error |
-| SEM-EXPR-ANTLR | ANTLR4词法/语法错误 | ANTLR4自动报错：不可识别token、表达式结构不合法 | error |
+| SYN-EXPR-001 | 数值表达式使用`-#var`语法 | ANTLR4解析：负号直接前缀变量引用检测 | error |
+| SYN-EXPR-002 | 数值表达式值超过7位精度限制 | ANTLR4解析：数值常量位数检查 | warning |
+| SYN-EXPR-003 | 字符串表达式中数值计算以#开头 | ANTLR4解析：变量名边界检测 | error |
+| SYN-EXPR-004 | 字符串表达式未使用单引号 | ANTLR4解析：字符串常量引号类型检查 | error |
+| SYN-EXPR-005 | 字符串表达式嵌入数值表达式缺少花括号 | ANTLR4解析：嵌套语法检查 | error |
+| SYN-EXPR-006 | preciseeval后使用运算符或+连接符 | ANTLR4解析：函数后缀约束检查 | error |
+| SYN-EXPR-ANTLR | ANTLR4词法/语法错误 | ANTLR4自动报错：不可识别token、表达式结构不合法 | error |
+
+**ExpressionSyntaxChecker 实现**（`syntaxanalysis/ExpressionSyntaxChecker`）：注入 `RuleRepository`，`check(filePath, DslFileNode) → List<Diagnostic>`。遍历元素/属性，对 `supportsExpression=true && hasExpressionSyntax` 的属性调 `AstBuilder.doParse`（共用解析逻辑，返回 node + antlrError + leftoverTokens）。
+
+检测：001 跑 `containsInvalidUnaryMinusVar(node)`；002 遍历 node 的 NUMBER LITERAL，数字位数(不含`.`)>7；003 string 上下文 rawValue 以 `#` 开头且含 `* / % -`；006 rawValue 匹配 `preciseeval(...)` 后跟 `+ - * / %`；004/005 仅在 string 上下文解析失败时——004 检 `+`拼接项含裸词(`^[a-zA-Z_]\w*$`)、005 检去 `{...}` 后含 `+` 且含 `* / %`；其余解析失败归 SYN-EXPR-ANTLR。004/005 优先于 ANTLR（更具体）。
 
 ### 3.5 自定义Lexer（Extension层）
 
@@ -263,7 +267,7 @@ M3在CLI管线中的位置：
 |---|---|---|
 | XML格式错误诊断 | M3 → SAX SAXParseException | 标签未闭合、属性引号缺失等XML格式错误 |
 | `ruleId: SYN-001/002/003/004/005/006/007` | M3语法比对 → M2规则库 | DSL结构语法错误 |
-| `ruleId: SEM-EXPR-001~006/ANTLR` | M3表达式解析 → M0 ANTLR4 | DSL表达式语法错误 |
+| `ruleId: SYN-EXPR-001~006/ANTLR` | M3表达式解析 → M0 ANTLR4 | DSL表达式语法错误 |
 | `summary.skippedFiles`（非DSL XML） | M1 → M3跳过 | M1识别为非DSL，M3不处理 |
 
 ### 5.4 CLI异常场景
@@ -272,7 +276,7 @@ M3在CLI管线中的位置：
 |---|---|---|
 | XML格式严重错误（SAX无法解析） | 1 | SAXParser抛出SAXParseException，M3产出XML格式错误诊断 |
 | 文件编码非UTF-8 | 1 | SAX解析时编码问题，产出编码相关诊断 |
-| ANTLR4表达式解析失败 | 1 | 产出SEM-EXPR-ANTLR诊断，AST中对应属性值expression=null |
+| ANTLR4表达式解析失败 | 1 | 产出SYN-EXPR-ANTLR诊断，AST中对应属性值expression=null |
 
 ### 5.5 CLI输出示例
 
