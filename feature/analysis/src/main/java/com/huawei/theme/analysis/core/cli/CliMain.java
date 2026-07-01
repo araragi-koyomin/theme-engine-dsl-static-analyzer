@@ -1,5 +1,7 @@
 package com.huawei.theme.analysis.core.cli;
 
+import java.io.File;
+
 public class CliMain {
 
     static final String USAGE_HINT =
@@ -20,6 +22,17 @@ public class CliMain {
             if (config.isHelpRequested()) {
                 System.out.println(USAGE_HINT);
                 return 0;
+            }
+            File targetFile = new File(config.getTargetPath());
+            if (!targetFile.exists()) {
+                System.err.println(CliOutputFormatter.formatError("Path not found: " + config.getTargetPath()));
+                System.err.println(USAGE_HINT);
+                return 2;
+            }
+            if (!targetFile.isFile() && !targetFile.isDirectory()) {
+                System.err.println(CliOutputFormatter.formatError("Path is not a file or directory: " + config.getTargetPath()));
+                System.err.println(USAGE_HINT);
+                return 2;
             }
             System.out.println(CliOutputFormatter.formatConfig(config));
             return 0;
