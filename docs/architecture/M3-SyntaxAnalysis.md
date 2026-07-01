@@ -172,7 +172,7 @@ M3产出的语法诊断分三层：
 | DSL结构语法 | M3 AST构建 + M2规则库比对 | SYN-001, SYN-002, SYN-003, SYN-004, SYN-005, SYN-006, SYN-007 | 嵌套约束、未知元素/属性、必填缺失、根元素错误 |
 | DSL表达式语法 | ANTLR4 DslExpressionParser | SEM-EXPR-001~006, SEM-EXPR-ANTLR | `-#var`模式、单引号缺失、花括号嵌套等 |
 
-**XML格式错误处理**：SAX解析XML遇格式错误直接抛出SAXParseException，AstBuilder捕获后写入 `rootElement.hasError/errorMessage/line/column`（保留SAXParseException的行列号和错误消息），不包装映射为自定义SYN-xxx规则ID。SyntaxChecker 遇 `rootElement==null || hasError` 时返回空诊断列表（XML 格式错误转换留给上层 DiagnosticProvider 包装）。原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，编号已重新排列为连续序号SYN-001~007。
+**XML格式错误处理**：SAX解析XML遇格式错误直接抛出SAXParseException，AstBuilder捕获后写入 `rootElement.hasError/errorMessage/line/column`（保留SAXParseException的行列号和错误消息），不包装映射为自定义SYN-xxx规则ID。后续由 #15（语法检测）读取 hasError 并转换为 Diagnostic 产出。原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，编号已重新排列为连续序号SYN-001~007。
 
 **DSL结构语法检测详情**：
 
@@ -185,10 +185,6 @@ M3产出的语法诊断分三层：
 | SYN-005 | 缺失必填属性 | M3属性存在性 + M2 requiredAttrs比对 | error |
 | SYN-006 | 属性值类型错误（纯字面量） | 直接类型比对 | error |
 | SYN-007 | 枚举值错误 | M2 enumValues比对 | error |
-
-**SyntaxChecker 实现**（`syntaxanalysis/SyntaxChecker`）：注入 `RuleRepository`，`check(filePath, DslFileNode) → List<Diagnostic>`。遇 `rootElement==null || hasError` 返回空（XML 错误另作）。否则 SYN-001 检 root，递归遍历所有元素做 SYN-002~007。
-
-防噪声跳过：SYN-002 在 child/parent 任一未知时跳过（SYN-003 已覆盖未知元素）；SYN-004/005/006/007 在元素未知时跳过；root 不查 SYN-003（SYN-001 已覆盖）；SYN-006 仅查 `type="number"` 的字面量值（`Double.parseDouble` 失败），表达式值（`isLiteral=false`）跳过归 M4 SEM-TYPE；SYN-007 仅查 `enumValues` 非空的字面量值。Diagnostic 的 line/column 取自对应 AST 节点，`ruleDocUrl` 从 `getRuleSource(ruleId)` 查填。
 
 **DSL表达式语法检测详情**：
 
