@@ -29,5 +29,14 @@
 
         <completion.contributor language="ThemeDSL"
                                 implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslAttributeCompletionContributor"/>
+
+        <fileType name="DslExpression"
+                  implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionFileType"
+                  fieldName="INSTANCE"
+                  language="DslExpression"
+                  extensions="de"/>
+
+        <lang.parserDefinition language="DslExpression"
+                               implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionParserDefinition"/>
     </extensions>
 </idea-plugin>
