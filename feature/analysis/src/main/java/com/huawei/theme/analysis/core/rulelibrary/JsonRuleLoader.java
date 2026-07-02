@@ -18,6 +18,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
+import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
@@ -287,7 +288,15 @@ public class JsonRuleLoader {
             Map<String, DslElementRule> elementRules,
             Map<String, DslGlobalVar> globalVars,
             Map<String, RuleSource> ruleSources) {
-        return new DefaultRuleRepository(elementRules, globalVars, ruleSources);
+        return buildRuleRepository(elementRules, globalVars, ruleSources, null);
+    }
+
+    public RuleRepository buildRuleRepository(
+            Map<String, DslElementRule> elementRules,
+            Map<String, DslGlobalVar> globalVars,
+            Map<String, RuleSource> ruleSources,
+            FunctionSignatureLibrary functionLibrary) {
+        return new DefaultRuleRepository(elementRules, globalVars, ruleSources, functionLibrary);
     }
 
     /**
@@ -300,10 +309,14 @@ public class JsonRuleLoader {
      * @return 构建好的RuleRepository实例
      */
     public RuleRepository loadFromDirectory(String rulesDir) {
+        return loadFromDirectory(rulesDir, null);
+    }
+
+    public RuleRepository loadFromDirectory(String rulesDir, FunctionSignatureLibrary functionLibrary) {
         Map<String, DslElementRule> elementRules = loadElementRules(rulesDir);
         Map<String, DslGlobalVar> globalVars = loadGlobalVars(rulesDir);
         Map<String, RuleSource> ruleSources = loadRuleSources(rulesDir);
-        return buildRuleRepository(elementRules, globalVars, ruleSources);
+        return buildRuleRepository(elementRules, globalVars, ruleSources, functionLibrary);
     }
 
     /**

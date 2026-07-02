@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SemanticAnalysisIntegrationTest {
 
     private static RuleRepository ruleRepo;
-    private static FunctionSignatureLibrary functionLibrary;
     private static DslAstProvider astProvider;
     private static SymbolTableBuilder symbolTableBuilder;
     private static DiagnosticProvider provider;
@@ -35,11 +34,11 @@ class SemanticAnalysisIntegrationTest {
     @BeforeAll
     static void setup() {
         String rulesDir = System.getProperty("user.dir") + "/src/main/resources/rules";
-        ruleRepo = new JsonRuleLoader().loadFromDirectory(rulesDir);
-        functionLibrary = new JsonFunctionSignatureLoader().loadFromClasspath();
+        FunctionSignatureLibrary functionLibrary = new JsonFunctionSignatureLoader().loadFromClasspath();
+        ruleRepo = new JsonRuleLoader().loadFromDirectory(rulesDir, functionLibrary);
         astProvider = new AstBuilder(ruleRepo);
         symbolTableBuilder = new SymbolTableBuilderImpl();
-        provider = new DiagnosticProviderImpl(functionLibrary);
+        provider = new DiagnosticProviderImpl();
         AnalyzerRegistry.init();
     }
 

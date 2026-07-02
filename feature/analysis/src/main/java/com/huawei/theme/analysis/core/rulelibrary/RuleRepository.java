@@ -144,4 +144,15 @@ public interface RuleRepository {
      * @return Optional包含RuleSource，不存在时返回Optional.empty()
      */
     Optional<RuleSource> getRuleSource(String ruleId);
+
+    /**
+     * 获取函数签名库。
+     *
+     * <p>M4 TypeAnalyzer 消费：从规则库获取函数签名，用于表达式类型推断与
+     * SEM-TYPE-001/002 检查。将函数签名库纳入 RuleRepository 统一装配，
+     * 避免在 DslContext/DiagnosticProviderImpl 中单独传递。</p>
+     *
+     * @return 函数签名库，未装配时返回null（TypeAnalyzer 跳过类型检查）
+     */
+    com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary getFunctionSignatureLibrary();
 }

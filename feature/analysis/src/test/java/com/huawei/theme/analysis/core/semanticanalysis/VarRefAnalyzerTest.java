@@ -797,5 +797,10 @@ class VarRefAnalyzerTest {
         public Optional<RuleSource> getRuleSource(String ruleId) {
             return Optional.ofNullable(ruleSources.get(ruleId));
         }
+
+        @Override
+        public com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary getFunctionSignatureLibrary() {
+            return null;
+        }
     }
 }

@@ -184,5 +184,10 @@ class AnalyzerTestFixtures {
         public Optional<RuleSource> getRuleSource(String ruleId) {
             return Optional.ofNullable(sources.get(ruleId));
         }
+
+        @Override
+        public com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary getFunctionSignatureLibrary() {
+            return null;
+        }
     }
 }
