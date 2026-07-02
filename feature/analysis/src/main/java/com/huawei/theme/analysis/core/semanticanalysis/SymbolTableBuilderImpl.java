@@ -1,8 +1,10 @@
 package com.huawei.theme.analysis.core.semanticanalysis;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
@@ -16,6 +18,8 @@ import com.huawei.theme.analysis.core.shared.type.DslArrayType;
 import com.huawei.theme.analysis.core.shared.type.DslNumberType;
 import com.huawei.theme.analysis.core.shared.type.DslStringType;
 import com.huawei.theme.analysis.core.shared.type.DslType;
+
+import javax.print.attribute.standard.MediaSize;
 
 public class SymbolTableBuilderImpl implements SymbolTableBuilder {
 
@@ -32,13 +36,16 @@ public class SymbolTableBuilderImpl implements SymbolTableBuilder {
     @Override
     public SymbolTable buildGlobal(DslFileNode fileNode, RuleRepository ruleRepository) {
         Map<String, VarDeclaration> declarations = new HashMap<>();
+        Set<String> elementNames = new HashSet<>();
         addPresetGlobalVars(ruleRepository, declarations);
         if (fileNode != null && fileNode.getRootElement() != null) {
             collectVarDeclarations(fileNode.getRootElement(), declarations);
+            collectElementNames(fileNode.getRootElement(), elementNames);
         }
         return SymbolTable.builder()
                 .parent(null)
                 .declarations(declarations)
+                .elementNames(elementNames)
                 .build();
     }
 
@@ -74,6 +81,28 @@ public class SymbolTableBuilderImpl implements SymbolTableBuilder {
         if (children != null) {
             for (DslElementNode child : children) {
                 collectVarDeclarations(child, declarations);
+            }
+        }
+    }
+
+    /**
+     * 深度优先遍历整棵元素树，收集所有元素的 name 属性值。
+     *
+     * <p>用于 SEM-REF-002 元素 name 引用存在性检测：表达式 #&lt;name&gt;.&lt;prop&gt;
+     * 与 Command target="name.property" 中的 name 部分需在此集合中存在。</p>
+     */
+    private static void collectElementNames(DslElementNode elementNode, Set<String> elementNames) {
+        if (elementNode == null) {
+            return;
+        }
+        String name = getAttrValue(elementNode, NAME_ATTR);
+        if (name != null && !name.isEmpty()) {
+            elementNames.add(name);
+        }
+        List<DslElementNode> children = elementNode.getChildElements();
+        if (children != null) {
+            for (DslElementNode child : children) {
+                collectElementNames(child, elementNames);
             }
         }
     }

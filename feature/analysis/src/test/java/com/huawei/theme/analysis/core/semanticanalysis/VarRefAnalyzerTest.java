@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -293,6 +294,229 @@ class VarRefAnalyzerTest {
         assertTrue(diagnostics.isEmpty());
     }
 
+    // --- SEM-REF-002: 元素 name 引用存在性（表达式场景） ---
+
+    @Test
+    void elementPropertyRefWithExistingElementNoViolation() {
+        ExpressionNode ref = ExpressionNode.variableRef("#", "unlocker.move_x", "#unlocker.move_x", 15, 3);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", ref, "#unlocker.move_x"));
+        VarDeclaration battery = varDecl("battery_level", new DslNumberType(), null);
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithTemplates(), globalTable(elementNames("unlocker"), battery)));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void elementPropertyRefWithUndefinedElementProducesSEM_REF_002() {
+        ExpressionNode ref = ExpressionNode.variableRef("#", "unlocker.move_x", "#unlocker.move_x", 15, 3);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", ref, "#unlocker.move_x"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithTemplates(), globalTable(elementNames())));
+
+        assertEquals(1, diagnostics.size());
+        Diagnostic diag = diagnostics.get(0);
+        assertEquals("SEM-REF-002", diag.getRuleId());
+        assertEquals(DiagnosticSeverity.ERROR, diag.getSeverity());
+        assertEquals("引用未定义元素 unlocker", diag.getMessage());
+        assertEquals("test.xml", diag.getFilePath());
+        assertEquals(15, diag.getLine());
+        assertEquals(3, diag.getColumn());
+        assertEquals(1, diag.getSuggestedFixes().size());
+        assertEquals("声明带 name=\"unlocker\" 的元素", diag.getSuggestedFixes().get(0));
+    }
+
+    @Test
+    void videoNameTemplateRefWithUndefinedElementProducesSEM_REF_002() {
+        ExpressionNode ref = ExpressionNode.variableRef("#", "myVideo.state", "#myVideo.state", 15, 3);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", ref, "#myVideo.state"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithTemplates(), globalTable(elementNames())));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-REF-002", diagnostics.get(0).getRuleId());
+        assertEquals("引用未定义元素 myVideo", diagnostics.get(0).getMessage());
+    }
+
+    @Test
+    void videoCurrentTimeStringRefWithExistingElementNoViolation() {
+        ExpressionNode ref = ExpressionNode.variableRef("@", "myVideo.currentTime", "@myVideo.currentTime", 15, 3);
+        DslElementNode text = element("Text", 10, 5, exprAttr("textExp", ref, "@myVideo.currentTime"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(text,
+                context(repoWithTemplates(), globalTable(elementNames("myVideo"))));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void elementPropertyRefDocUrlFromRuleSource() {
+        ExpressionNode ref = ExpressionNode.variableRef("#", "unlocker.move_x", "#unlocker.move_x", 15, 3);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", ref, "#unlocker.move_x"));
+        RuleSource source = RuleSource.builder()
+                .ruleId("SEM-REF-002").category("SEM").description("引用未定义的元素name")
+                .docUrl("https://doc/sem-ref-002").build();
+        RuleRepository repo = repoWithTemplatesAndSources(Map.of("SEM-REF-002", source));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image, context(repo, globalTable(elementNames())));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("https://doc/sem-ref-002", diagnostics.get(0).getRuleDocUrl());
+    }
+
+    // --- SEM-REF-001 协同：模板匹配引用不走 001 ---
+
+    @Test
+    void templateMatchedRefDoesNotProduceSEM_REF_001() {
+        ExpressionNode ref = ExpressionNode.variableRef("#", "unlocker.move_x", "#unlocker.move_x", 15, 3);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", ref, "#unlocker.move_x"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithTemplates(), globalTable(elementNames("unlocker"))));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void nonTemplateRefFallsBackToSEM_REF_001() {
+        ExpressionNode ref = ExpressionNode.variableRef("#", "undefined", "#undefined", 15, 3);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", ref, "#undefined"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithTemplates(), globalTable(elementNames())));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-REF-001", diagnostics.get(0).getRuleId());
+    }
+
+    @Test
+    void dottedGlobalVarNotMatchingTemplateFallsBackToSEM_REF_001() {
+        ExpressionNode ref = ExpressionNode.variableRef("#", "system.time.hour1", "#system.time.hour1", 15, 3);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", ref, "#system.time.hour1"));
+        VarDeclaration hour = varDecl("system.time.hour1", new DslNumberType(), null);
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithTemplates(), globalTable(elementNames(), hour)));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    // --- SEM-REF-002: Command target 引用 ---
+
+    @Test
+    void commandTargetWithExistingElementAndValidPropertyNoViolation() {
+        DslElementNode cmd = element("Command", 10, 5,
+                literalAttr("target", "img.visibility"), literalAttr("value", "false"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(cmd,
+                context(repoWithTemplates(), globalTable(elementNames("img"))));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void commandTargetWithUndefinedElementProducesSEM_REF_002() {
+        DslElementNode cmd = element("Command", 10, 5,
+                literalAttr("target", "img.visibility"), literalAttr("value", "false"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(cmd,
+                context(repoWithTemplates(), globalTable(elementNames())));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-REF-002", diagnostics.get(0).getRuleId());
+        assertEquals("Command target 引用未定义元素 img", diagnostics.get(0).getMessage());
+        assertEquals(10, diagnostics.get(0).getLine());
+        assertEquals(5, diagnostics.get(0).getColumn());
+        assertEquals(1, diagnostics.get(0).getSuggestedFixes().size());
+        assertEquals("声明元素 name=\"img\"", diagnostics.get(0).getSuggestedFixes().get(0));
+    }
+
+    @Test
+    void commandTargetAnimationPropertyNoViolation() {
+        DslElementNode cmd = element("Command", 10, 5,
+                literalAttr("target", "img.animation"), literalAttr("value", "play"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(cmd,
+                context(repoWithTemplates(), globalTable(elementNames("img"))));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void commandTargetInvalidPropertyProducesSEM_REF_002() {
+        DslElementNode cmd = element("Command", 10, 5,
+                literalAttr("target", "img.unknown"), literalAttr("value", "false"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(cmd,
+                context(repoWithTemplates(), globalTable(elementNames("img"))));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-REF-002", diagnostics.get(0).getRuleId());
+        assertEquals("Command target 属性 'unknown' 不合法，合法值: visibility, animation",
+                diagnostics.get(0).getMessage());
+    }
+
+    @Test
+    void commandTargetUndefinedElementAndInvalidPropertyReportsBoth() {
+        DslElementNode cmd = element("Command", 10, 5,
+                literalAttr("target", "missing.unknown"), literalAttr("value", "false"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(cmd,
+                context(repoWithTemplates(), globalTable(elementNames())));
+
+        assertEquals(2, diagnostics.size());
+    }
+
+    @Test
+    void commandTargetWithoutDotSkipped() {
+        DslElementNode cmd = element("Command", 10, 5,
+                literalAttr("target", "img"), literalAttr("value", "false"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(cmd,
+                context(repoWithTemplates(), globalTable(elementNames())));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void commandTargetWithMultipleDotsSkipped() {
+        DslElementNode cmd = element("Command", 10, 5,
+                literalAttr("target", "a.b.c"), literalAttr("value", "false"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(cmd,
+                context(repoWithTemplates(), globalTable(elementNames())));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void commandTargetDiagnosticHasDocUrlFromRuleSource() {
+        DslElementNode cmd = element("Command", 10, 5,
+                literalAttr("target", "img.visibility"), literalAttr("value", "false"));
+        RuleSource source = RuleSource.builder()
+                .ruleId("SEM-REF-002").category("SEM").description("引用未定义的元素name")
+                .docUrl("https://doc/sem-ref-002").build();
+        RuleRepository repo = repoWithTemplatesAndSources(Map.of("SEM-REF-002", source));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(cmd, context(repo, globalTable(elementNames())));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("https://doc/sem-ref-002", diagnostics.get(0).getRuleDocUrl());
+    }
+
+    @Test
+    void nonCommandElementSkipsTargetCheck() {
+        DslElementNode image = element("Image", 10, 5, literalAttr("target", "img.unknown"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithTemplates(), globalTable(elementNames())));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
     // --- SEM-REF-003: 重复变量定义 ---
 
     @Test
@@ -448,6 +672,44 @@ class VarRefAnalyzerTest {
             map.put(d.getName(), d);
         }
         return SymbolTable.builder().parent(null).declarations(map).build();
+    }
+
+    private static SymbolTable globalTable(Set<String> elementNames, VarDeclaration... decls) {
+        Map<String, VarDeclaration> map = new HashMap<>();
+        for (VarDeclaration d : decls) {
+            map.put(d.getName(), d);
+        }
+        return SymbolTable.builder().parent(null).declarations(map).elementNames(elementNames).build();
+    }
+
+    private static Set<String> elementNames(String... names) {
+        return new HashSet<>(Arrays.asList(names));
+    }
+
+    private static DslGlobalVar elementTemplate(String name) {
+        return DslGlobalVar.builder().name(name).type("number").scope("element").build();
+    }
+
+    private static DslGlobalVar globalVar(String name, String type) {
+        return DslGlobalVar.builder().name(name).type(type).scope("global").build();
+    }
+
+    private static RuleRepository repoWithTemplates() {
+        Map<String, DslGlobalVar> globals = new HashMap<>();
+        globals.put("{elementName}.move_x", elementTemplate("{elementName}.move_x"));
+        globals.put("{elementName}.visibility", elementTemplate("{elementName}.visibility"));
+        globals.put("{videoName}.state", elementTemplate("{videoName}.state"));
+        globals.put("{videoName}.currentTime", elementTemplate("{videoName}.currentTime"));
+        return new StubRuleRepository(Map.of(), globals);
+    }
+
+    private static RuleRepository repoWithTemplatesAndSources(Map<String, RuleSource> sources) {
+        Map<String, DslGlobalVar> globals = new HashMap<>();
+        globals.put("{elementName}.move_x", elementTemplate("{elementName}.move_x"));
+        globals.put("{elementName}.visibility", elementTemplate("{elementName}.visibility"));
+        globals.put("{videoName}.state", elementTemplate("{videoName}.state"));
+        globals.put("{videoName}.currentTime", elementTemplate("{videoName}.currentTime"));
+        return new StubRuleRepository(sources, globals);
     }
 
     private static DslContext context(RuleRepository ruleRepo, SymbolTable symbolTable) {

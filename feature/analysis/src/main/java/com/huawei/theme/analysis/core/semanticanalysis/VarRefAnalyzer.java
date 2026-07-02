@@ -2,11 +2,17 @@ package com.huawei.theme.analysis.core.semanticanalysis;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.huawei.theme.analysis.core.expression.ExpressionNode;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
+import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
 import com.huawei.theme.analysis.core.semanticanalysis.model.DslContext;
 import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
@@ -23,9 +29,14 @@ import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 public class VarRefAnalyzer implements DslAnalyzer {
 
     private static final String VAR_TAG = "Var";
+    private static final String COMMAND_TAG = "Command";
     private static final String NAME_ATTR = "name";
+    private static final String TARGET_ATTR = "target";
     private static final String RULE_REF_001 = "SEM-REF-001";
+    private static final String RULE_REF_002 = "SEM-REF-002";
     private static final String RULE_REF_003 = "SEM-REF-003";
+    private static final String ELEMENT_SCOPE = "element";
+    private static final Set<String> ALLOWED_TARGET_PROPERTIES = Set.of("visibility", "animation");
 
     @Override
     public List<Diagnostic> analyze(DslAstNode element, DslContext context) {
@@ -34,17 +45,21 @@ public class VarRefAnalyzer implements DslAnalyzer {
         }
 
         List<Diagnostic> diagnostics = new ArrayList<>();
-        collectUndefinedReferences(elementNode, context, diagnostics);
+        Map<String, Pattern> elementTemplates = compileElementTemplates(context.getRuleRepository());
+        collectUndefinedReferences(elementNode, context, elementTemplates, diagnostics);
+        detectCommandTargetRef(elementNode, context, diagnostics);
         detectDuplicateVarDeclaration(elementNode, context, diagnostics);
         return diagnostics;
     }
 
     private void collectUndefinedReferences(DslElementNode elementNode, DslContext context,
+                                            Map<String, Pattern> elementTemplates,
                                             List<Diagnostic> diagnostics) {
         SymbolTable symbolTable = context.getSymbolTable();
         if (symbolTable == null) {
             return;
         }
+        Set<String> elementNames = symbolTable.getGlobalTable().getElementNames();
         for (DslAttributeNode attr : elementNode.getAttributes()) {
             DslAttributeValueNode value = attr.getValue();
             if (value == null) {
@@ -61,10 +76,46 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 if (varName == null || varName.isEmpty()) {
                     continue;
                 }
-                if (symbolTable.lookup(varName).isEmpty()) {
+                String elementName = matchTemplate(varName, elementTemplates);
+                if (elementName != null) {
+                    if (!elementNames.contains(elementName)) {
+                        diagnostics.add(buildUndefinedElementRefDiagnostic(ref, elementName, elementNode, context));
+                    }
+                } else if (symbolTable.lookup(varName).isEmpty()) {
                     diagnostics.add(buildUndefinedReferenceDiagnostic(ref, elementNode, context));
                 }
             }
+        }
+    }
+
+    private void detectCommandTargetRef(DslElementNode elementNode, DslContext context,
+                                        List<Diagnostic> diagnostics) {
+        if (!COMMAND_TAG.equals(elementNode.getTagName())) {
+            return;
+        }
+        SymbolTable symbolTable = context.getSymbolTable();
+        if (symbolTable == null) {
+            return;
+        }
+        String target = getAttrValue(elementNode, TARGET_ATTR);
+        if (target == null || target.isEmpty()) {
+            return;
+        }
+        int dot = target.indexOf('.');
+        if (dot <= 0 || dot == target.length() - 1) {
+            return;
+        }
+        if (target.indexOf('.', dot + 1) >= 0) {
+            return;
+        }
+        String elemName = target.substring(0, dot);
+        String property = target.substring(dot + 1);
+        Set<String> elementNames = symbolTable.getGlobalTable().getElementNames();
+        if (!elementNames.contains(elemName)) {
+            diagnostics.add(buildCommandTargetNameDiagnostic(elementNode, elemName, context));
+        }
+        if (!ALLOWED_TARGET_PROPERTIES.contains(property)) {
+            diagnostics.add(buildCommandTargetPropertyDiagnostic(elementNode, property, context));
         }
     }
 
@@ -113,6 +164,60 @@ public class VarRefAnalyzer implements DslAnalyzer {
         }
     }
 
+    private static Map<String, Pattern> compileElementTemplates(RuleRepository ruleRepo) {
+        if (ruleRepo == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, Pattern> compiled = new HashMap<>();
+        for (DslGlobalVar var : ruleRepo.getAllGlobalVars()) {
+            if (var.getName() == null || !ELEMENT_SCOPE.equals(var.getScope())) {
+                continue;
+            }
+            if (var.getName().indexOf('{') < 0) {
+                continue;
+            }
+            compiled.put(var.getName(), Pattern.compile(buildTemplateRegex(var.getName())));
+        }
+        return compiled;
+    }
+
+    private static String buildTemplateRegex(String template) {
+        StringBuilder sb = new StringBuilder("^");
+        int i = 0;
+        int segStart = 0;
+        while (i < template.length()) {
+            char c = template.charAt(i);
+            if (c == '{') {
+                if (i > segStart) {
+                    sb.append(Pattern.quote(template.substring(segStart, i)));
+                }
+                int end = template.indexOf('}', i);
+                if (end > 0) {
+                    sb.append("(.+?)");
+                    i = end + 1;
+                    segStart = i;
+                    continue;
+                }
+            }
+            i++;
+        }
+        if (i > segStart) {
+            sb.append(Pattern.quote(template.substring(segStart, i)));
+        }
+        sb.append("$");
+        return sb.toString();
+    }
+
+    private static String matchTemplate(String varName, Map<String, Pattern> elementTemplates) {
+        for (Pattern pattern : elementTemplates.values()) {
+            Matcher m = pattern.matcher(varName);
+            if (m.matches()) {
+                return m.group(1);
+            }
+        }
+        return null;
+    }
+
     private Diagnostic buildUndefinedReferenceDiagnostic(ExpressionNode ref, DslElementNode hostNode,
                                                          DslContext context) {
         String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_REF_001);
@@ -131,6 +236,57 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .line(line)
                 .column(column)
                 .suggestedFixes(List.of("声明 Var name=\"" + ref.getVariableName() + "\""))
+                .ruleDocUrl(docUrl)
+                .build();
+    }
+
+    private Diagnostic buildUndefinedElementRefDiagnostic(ExpressionNode ref, String elementName,
+                                                          DslElementNode hostNode, DslContext context) {
+        String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_REF_002);
+        int line = ref.getLine();
+        int column = ref.getColumn();
+        if (line == 0 && column == 0) {
+            line = hostNode.getLine();
+            column = hostNode.getColumn();
+        }
+        return Diagnostic.builder()
+                .severity(DiagnosticSeverity.ERROR)
+                .ruleId(RULE_REF_002)
+                .message("引用未定义元素 " + elementName)
+                .filePath(context.getFilePath())
+                .line(line)
+                .column(column)
+                .suggestedFixes(List.of("声明带 name=\"" + elementName + "\" 的元素"))
+                .ruleDocUrl(docUrl)
+                .build();
+    }
+
+    private Diagnostic buildCommandTargetNameDiagnostic(DslElementNode cmdNode, String elemName,
+                                                        DslContext context) {
+        String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_REF_002);
+        return Diagnostic.builder()
+                .severity(DiagnosticSeverity.ERROR)
+                .ruleId(RULE_REF_002)
+                .message("Command target 引用未定义元素 " + elemName)
+                .filePath(context.getFilePath())
+                .line(cmdNode.getLine())
+                .column(cmdNode.getColumn())
+                .suggestedFixes(List.of("声明元素 name=\"" + elemName + "\""))
+                .ruleDocUrl(docUrl)
+                .build();
+    }
+
+    private Diagnostic buildCommandTargetPropertyDiagnostic(DslElementNode cmdNode, String property,
+                                                            DslContext context) {
+        String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_REF_002);
+        return Diagnostic.builder()
+                .severity(DiagnosticSeverity.ERROR)
+                .ruleId(RULE_REF_002)
+                .message("Command target 属性 '" + property + "' 不合法，合法值: visibility, animation")
+                .filePath(context.getFilePath())
+                .line(cmdNode.getLine())
+                .column(cmdNode.getColumn())
+                .suggestedFixes(List.of("修改 target 属性为 name.visibility 或 name.animation"))
                 .ruleDocUrl(docUrl)
                 .build();
     }

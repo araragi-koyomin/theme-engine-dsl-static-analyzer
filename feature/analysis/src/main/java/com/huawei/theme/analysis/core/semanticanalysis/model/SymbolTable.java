@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +23,16 @@ public class SymbolTable {
     @Builder.Default
     Map<String, VarDeclaration> declarations = Collections.emptyMap();
 //    @Builder.Default List<VarReference> references = Collections.emptyList();
+
+    /**
+     * 文件中所有元素的 name 属性值集合（文件级全局）。
+     *
+     * <p>M4 VarRefAnalyzer 消费：SEM-REF-002 元素 name 引用存在性检测时，
+     * 对 #<elementName>.<prop> 表达式引用与 Command target="name.property" 字面量，
+     * 提取 elementName 后在此集合比对，未找到则产出诊断。仅全局表填充。</p>
+     */
+    @Builder.Default
+    Set<String> elementNames = Collections.emptySet();
 
     /**
      * 沿 parent 链查找变量声明，局部作用域优先，全局兜底。
