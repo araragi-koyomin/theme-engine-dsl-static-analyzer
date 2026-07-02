@@ -10,6 +10,7 @@ public class CliMain {
             "  --rule-dir <path>   Custom rule library directory (default: built-in)\n" +
             "  --no-type-check     Disable type inference checking (default: enabled)\n" +
             "  --verbose           Enable verbose output\n" +
+            "  --config <path>     Inspection config file (JSON: ruleId enable/disable, severity override, root element override)\n" +
             "  --help, -h          Show this help message";
 
     public static void main(String[] args) {
@@ -34,7 +35,29 @@ public class CliMain {
                 System.err.println(USAGE_HINT);
                 return 2;
             }
-            System.out.println(CliOutputFormatter.formatConfig(config));
+            InspectionConfig inspectionConfig = null;
+            if (config.getConfigPath() != null) {
+                File configFile = new File(config.getConfigPath());
+                if (!configFile.exists()) {
+                    System.err.println(CliOutputFormatter.formatError("Config file not found: " + config.getConfigPath()));
+                    return 2;
+                }
+                if (!configFile.isFile()) {
+                    System.err.println(CliOutputFormatter.formatError("Config path is not a file: " + config.getConfigPath()));
+                    return 2;
+                }
+                try {
+                    InspectionConfigLoader loader = new InspectionConfigLoader();
+                    inspectionConfig = loader.load(config.getConfigPath());
+                } catch (InspectionConfigLoader.ConfigLoadException e) {
+                    System.err.println(CliOutputFormatter.formatError("Config load error: " + e.getMessage()));
+                    return 2;
+                } catch (InspectionConfigLoader.ConfigValidationException e) {
+                    System.err.println(CliOutputFormatter.formatError("Config validation error: " + e.getMessage()));
+                    return 2;
+                }
+            }
+            System.out.println(CliOutputFormatter.formatConfig(config, inspectionConfig));
             return 0;
         } catch (IllegalArgumentException e) {
             System.err.println(CliOutputFormatter.formatError(e.getMessage()));
