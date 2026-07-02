@@ -234,7 +234,7 @@ class TypeAnalyzerTest {
         ExpressionNode expr = ExpressionNode.literal("hello", "'hello'", 1, 0);
         DslElementNode image = element("Image", 10, 5, exprAttr("x", expr, "'hello'"));
 
-        DslContext ctx = new DslContext(repoWithAttrs(), emptyTable(), "test.xml");
+        DslContext ctx = new DslContext(repoWithAttrs(null), emptyTable(), "test.xml");
 
         List<Diagnostic> diagnostics = analyzer.analyze(image, ctx);
 
@@ -310,16 +310,20 @@ class TypeAnalyzerTest {
     }
 
     private DslContext context(RuleRepository ruleRepo, SymbolTable symbolTable) {
-        return new DslContext(ruleRepo, symbolTable, "test.xml", functionLibrary);
+        return new DslContext(ruleRepo, symbolTable, "test.xml");
     }
 
-    private static RuleRepository repoWithAttrs() {
+    private RuleRepository repoWithAttrs() {
+        return repoWithAttrs(functionLibrary);
+    }
+
+    private RuleRepository repoWithAttrs(FunctionSignatureLibrary lib) {
         Map<String, AttrTypeSpec> specs = new HashMap<>();
         specs.put("Image:x", numberExprAttr());
         specs.put("Text:textExp", stringExprAttr());
         specs.put("Var:expression", autoExprAttr());
         specs.put("Image:src", literalAttr());
-        return new StubRuleRepository(specs, Map.of());
+        return new StubRuleRepository(specs, Map.of(), lib);
     }
 
     private static AttrTypeSpec numberExprAttr() {
@@ -374,10 +378,13 @@ class TypeAnalyzerTest {
     private static final class StubRuleRepository implements RuleRepository {
         private final Map<String, AttrTypeSpec> attrSpecs;
         private final Map<String, RuleSource> ruleSources;
+        private final FunctionSignatureLibrary functionLibrary;
 
-        StubRuleRepository(Map<String, AttrTypeSpec> attrSpecs, Map<String, RuleSource> ruleSources) {
+        StubRuleRepository(Map<String, AttrTypeSpec> attrSpecs, Map<String, RuleSource> ruleSources,
+                           FunctionSignatureLibrary functionLibrary) {
             this.attrSpecs = attrSpecs;
             this.ruleSources = ruleSources;
+            this.functionLibrary = functionLibrary;
         }
 
         @Override
@@ -443,6 +450,11 @@ class TypeAnalyzerTest {
         @Override
         public Optional<RuleSource> getRuleSource(String ruleId) {
             return Optional.ofNullable(ruleSources.get(ruleId));
+        }
+
+        @Override
+        public FunctionSignatureLibrary getFunctionSignatureLibrary() {
+            return functionLibrary;
         }
     }
 }

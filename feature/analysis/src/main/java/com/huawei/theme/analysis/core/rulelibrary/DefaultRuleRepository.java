@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
@@ -32,6 +33,8 @@ public class DefaultRuleRepository implements RuleRepository {
     private final Map<String, DslGlobalVar> globalVars;
     /** 规则来源追溯条目存储，key为ruleId */
     private final Map<String, RuleSource> ruleSources;
+    /** 函数签名库，M4 TypeAnalyzer 消费 */
+    private final FunctionSignatureLibrary functionLibrary;
     /** 别名→规范名映射，key为"elementName.aliasName"，value为规范名 */
     private final Map<String, String> aliasToCanonicalMap;
     /** allowedChildren反向索引，key为父元素标签名，value为该父元素的合法子元素标签名列表。从所有规则的allowedParents反向推导构建 */
@@ -48,9 +51,18 @@ public class DefaultRuleRepository implements RuleRepository {
             Map<String, DslElementRule> elementRules,
             Map<String, DslGlobalVar> globalVars,
             Map<String, RuleSource> ruleSources) {
+        this(elementRules, globalVars, ruleSources, null);
+    }
+
+    public DefaultRuleRepository(
+            Map<String, DslElementRule> elementRules,
+            Map<String, DslGlobalVar> globalVars,
+            Map<String, RuleSource> ruleSources,
+            FunctionSignatureLibrary functionLibrary) {
         this.elementRules = elementRules;
         this.globalVars = globalVars;
         this.ruleSources = ruleSources;
+        this.functionLibrary = functionLibrary;
         this.aliasToCanonicalMap = buildAliasMap(elementRules);
         this.childrenMap = buildChildrenMap(elementRules);
     }
@@ -178,5 +190,10 @@ public class DefaultRuleRepository implements RuleRepository {
     @Override
     public Optional<RuleSource> getRuleSource(String ruleId) {
         return Optional.ofNullable(ruleSources.get(ruleId));
+    }
+
+    @Override
+    public FunctionSignatureLibrary getFunctionSignatureLibrary() {
+        return functionLibrary;
     }
 }

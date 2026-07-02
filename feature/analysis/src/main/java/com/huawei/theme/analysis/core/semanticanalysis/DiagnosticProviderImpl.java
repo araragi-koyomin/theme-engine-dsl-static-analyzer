@@ -1,6 +1,5 @@
 package com.huawei.theme.analysis.core.semanticanalysis;
 
-import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.model.DslContext;
 import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
@@ -13,19 +12,9 @@ import java.util.List;
 
 public class DiagnosticProviderImpl implements DiagnosticProvider{
 
-    private final FunctionSignatureLibrary functionLibrary;
-
-    public DiagnosticProviderImpl() {
-        this(null);
-    }
-
-    public DiagnosticProviderImpl(FunctionSignatureLibrary functionLibrary) {
-        this.functionLibrary = functionLibrary;
-    }
-
     @Override
     public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder symbolTableBuilder) {
-        return new DiagnosticProviderImplInner(ast, ruleRepo, symbolTableBuilder, functionLibrary).getDiagnostics();
+        return new DiagnosticProviderImplInner(ast, ruleRepo, symbolTableBuilder).getDiagnostics();
     }
 
     static class DiagnosticProviderImplInner{
@@ -34,16 +23,13 @@ public class DiagnosticProviderImpl implements DiagnosticProvider{
         RuleRepository ruleRepo;
         SymbolTable globalTable;
         SymbolTableBuilder symbolTableBuilder;
-        FunctionSignatureLibrary functionLibrary;
         List<Diagnostic> diagnostics = new ArrayList<>();
 
         public DiagnosticProviderImplInner(DslFileNode root, RuleRepository ruleRepo,
-                                           SymbolTableBuilder symbolTableBuilder,
-                                           FunctionSignatureLibrary functionLibrary) {
+                                           SymbolTableBuilder symbolTableBuilder) {
             this.root = root;
             this.ruleRepo = ruleRepo;
             this.symbolTableBuilder = symbolTableBuilder;
-            this.functionLibrary = functionLibrary;
 
             globalTable=symbolTableBuilder.buildGlobal(root, ruleRepo);
         }
@@ -57,7 +43,7 @@ public class DiagnosticProviderImpl implements DiagnosticProvider{
         private void analyze(DslElementNode elementNode, SymbolTable symbolTable){
             for(var analyzer: AnalyzerRegistry.getAnalyzers()){
                 var list = analyzer.analyze(elementNode,
-                        new DslContext(ruleRepo, symbolTable, root.getFilePath(), root, functionLibrary));
+                        new DslContext(ruleRepo, symbolTable, root.getFilePath(), root));
                 diagnostics.addAll(list);
             }
 

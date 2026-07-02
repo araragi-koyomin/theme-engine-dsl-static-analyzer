@@ -40,7 +40,11 @@ public class TypeAnalyzer implements DslAnalyzer {
         if (!(element instanceof DslElementNode elementNode)) {
             return Collections.emptyList();
         }
-        FunctionSignatureLibrary functionLibrary = context.getFunctionSignatureLibrary();
+        RuleRepository ruleRepo = context.getRuleRepository();
+        if (ruleRepo == null) {
+            return Collections.emptyList();
+        }
+        FunctionSignatureLibrary functionLibrary = ruleRepo.getFunctionSignatureLibrary();
         if (functionLibrary == null) {
             return Collections.emptyList();
         }
@@ -86,7 +90,7 @@ public class TypeAnalyzer implements DslAnalyzer {
                                     List<Diagnostic> diagnostics) {
         List<ExpressionNode> calls = new ArrayList<>();
         collectFunctionCalls(node, calls);
-        FunctionSignatureLibrary functionLibrary = context.getFunctionSignatureLibrary();
+        FunctionSignatureLibrary functionLibrary = context.getRuleRepository().getFunctionSignatureLibrary();
         String expressionKind = expectedType.getName();
         for (ExpressionNode call : calls) {
             Optional<FunctionSignature> sigOpt = functionLibrary.getSignature(call.getFunctionName(), expressionKind);
