@@ -11,21 +11,13 @@ import java.util.regex.Pattern;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.antlr.v4.runtime.BaseErrorListener;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.huawei.theme.analysis.core.expression.DslExpressionVisitorAdapter;
-import com.huawei.theme.analysis.core.expression.ExpressionNode;
-import com.huawei.theme.analysis.core.expression.generated.DslExpressionLexer;
-import com.huawei.theme.analysis.core.expression.generated.DslExpressionParser;
+import com.huawei.theme.analysis.core.expression.ExpressionParser;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
@@ -38,9 +30,6 @@ public class AstBuilder implements DslAstProvider {
 
     private static final Pattern XML_DECLARATION =
             Pattern.compile("^\\s*(<\\?xml[^>]*\\?>)");
-
-    private static final Pattern HEX_COLOR =
-            Pattern.compile("^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$");
 
     private final RuleRepository ruleRepository;
 
@@ -70,6 +59,9 @@ public class AstBuilder implements DslAstProvider {
             fileNode.setRootElement(buildErrorNode(e.getMessage(), e.getLineNumber(), e.getColumnNumber()));
         } catch (Exception e) {
             fileNode.setRootElement(buildErrorNode(e.getMessage(), 0, 0));
+        }
+        if (fileNode.getRootElement() != null) {
+            fileNode.getRootElement().setParent(fileNode);
         }
         return fileNode;
     }
@@ -109,66 +101,6 @@ public class AstBuilder implements DslAstProvider {
         }
         Matcher matcher = XML_DECLARATION.matcher(content);
         return matcher.find() ? matcher.group(1) : null;
-    }
-
-    static boolean hasExpressionSyntax(String value, String expressionKind) {
-        if (value == null || value.isEmpty()) {
-            return false;
-        }
-        if (value.indexOf('@') >= 0
-                || value.indexOf('\'') >= 0
-                || value.indexOf('(') >= 0
-                || value.indexOf('+') >= 0
-                || value.indexOf('*') >= 0
-                || value.indexOf('/') >= 0
-                || value.indexOf('%') >= 0) {
-            return true;
-        }
-        if (value.indexOf('#') >= 0) {
-            if ("string".equals(expressionKind)) {
-                return !isHexColor(value);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private static boolean isHexColor(String value) {
-        return HEX_COLOR.matcher(value).matches();
-    }
-
-    static ExpressionNode parseExpression(String value) {
-        try {
-            DslExpressionLexer lexer = new DslExpressionLexer(CharStreams.fromString(value));
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            DslExpressionParser parser = new DslExpressionParser(tokens);
-            ErrorCollector collector = new ErrorCollector();
-            lexer.removeErrorListeners();
-            parser.removeErrorListeners();
-            lexer.addErrorListener(collector);
-            parser.addErrorListener(collector);
-            ExpressionNode node = new DslExpressionVisitorAdapter().visit(parser.expression());
-            if (collector.hasErrors() || node == null) {
-                return null;
-            }
-            return node;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private static final class ErrorCollector extends BaseErrorListener {
-        private boolean hasErrors;
-
-        @Override
-        public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
-                int line, int charPositionInLine, String msg, RecognitionException e) {
-            hasErrors = true;
-        }
-
-        boolean hasErrors() {
-            return hasErrors;
-        }
     }
 
     private static final class AstContentHandler extends DefaultHandler {
@@ -220,9 +152,9 @@ public class AstBuilder implements DslAstProvider {
                     Optional<AttrTypeSpec> specOpt = ruleRepository.getAttrTypeSpec(qName, attrName);
                     if (specOpt.isPresent() && specOpt.get().isSupportsExpression()) {
                         String expressionKind = specOpt.get().getExpressionKind();
-                        if (hasExpressionSyntax(attrValue, expressionKind)) {
+                        if (ExpressionParser.hasExpressionSyntax(attrValue, attrName)) {
                             parseAttempted = true;
-                            exprNode = parseExpression(attrValue);
+                            exprNode = ExpressionParser.parseExpression(attrValue, expressionKind);
                         }
                     }
                 }
@@ -252,7 +184,12 @@ public class AstBuilder implements DslAstProvider {
             if (stack.isEmpty()) {
                 root = node;
             } else {
-                stack.peek().getChildElements().add(node);
+                DslElementNode parent = stack.peek();
+                node.setParent(parent);
+                var children = parent.getChildElements();
+                if (children != null) {
+                    children.add(node);
+                }
             }
         }
 

@@ -57,7 +57,7 @@ public class DiagnosticProviderImpl implements DiagnosticProvider{
         private void analyze(DslElementNode elementNode, SymbolTable symbolTable){
             for(var analyzer: AnalyzerRegistry.getAnalyzers()){
                 var list = analyzer.analyze(elementNode,
-                        new DslContext(ruleRepo, symbolTable, root.getFilePath(), functionLibrary));
+                        new DslContext(ruleRepo, symbolTable, root.getFilePath(), root, functionLibrary));
                 diagnostics.addAll(list);
             }
 

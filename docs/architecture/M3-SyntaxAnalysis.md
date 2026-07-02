@@ -45,10 +45,13 @@ public class DslElementNode extends DslAstNode {
     boolean selfClosing;
     boolean hasError;
     String errorMessage;
+    DslAstNode parent;
 }
 ```
 
 > 字段名childElements表明子节点均为元素节点, 类型精度优于泛型List<DslAstNode>.
+>
+> **parent 指针**：仅 `DslElementNode` 持有 `parent`（类型 `DslAstNode` 以便 root 元素指向 `DslFileNode`）。嵌套子元素的 parent 指向外层 `DslElementNode`，root 元素的 parent 指向 `DslFileNode`。供 M4 嵌套检查（SYN-002）、作用域分析、M8 导航向上遍历。`parent` 排除在 `@EqualsAndHashCode`/`@ToString` 之外以防 `childElements`↔parent 循环引用导致栈溢出。
 
 ```java
 public class DslAttributeNode extends DslAstNode {
@@ -99,20 +102,51 @@ graph TD
 
 ### 3.2 AstBuilder — AST构建器
 
-使用JDK SAXParser解析XML结构，构建DslAstNode树：
+使用JDK SAXParser解析XML结构，构建DslAstNode树。
 
 > **设计决策（dom4j→SAX）**：原设计拟用 dom4j，但 dom4j 的 `Node` 不提供 per-node 行列号 API，而下游诊断（SYN-003 未知元素等）需要节点级定位。JDK 内置 `SAXParser` 通过 `Locator` 可在每个 `startElement` 事件捕获行列号，故改用 SAX 直接在事件回调中构建 AST。
+
+**构造器**：
+- `AstBuilder()` — 无 RuleRepository，所有属性值按字面量处理（降级模式，供无规则场景/单元测试）
+- `AstBuilder(RuleRepository)` — 注入规则库，启用表达式嵌入
 
 **构建流程**：
 
 1. JDK SAXParser解析XML → ContentHandler事件流（携带Locator）
 2. startElement/endElement事件中直接构建DslElementNode/DslAttributeNode/DslAttributeValueNode，从Locator取行列号
-3. 对expression/reference类型属性值，调用M0 DslExpressionParser → ExpressionNode子树
-4. 纯字面量属性值直接设置isLiteral=true，不调用解析器
+3. 对每个属性值，按"表达式嵌入判断"决定是否调用M0 DslExpressionParser
+4. XML格式错误（SAXParseException）写入 rootElement.hasError/errorMessage/line/column（转 Diagnostic 由 #15 负责）
 
-**表达式嵌入判断**：从M2 RuleRepository.getAttrTypeSpec(elementName, attrName)获取supportsExpression字段，true时调用M0表达式解析器。
+**表达式嵌入判断**（启发式，非"supportsExpression=true 即解析"）：
 
-**调用链**：AstBuilder → SAXParser.parse(content, ContentHandler) → 事件流直接构建DslAstNode → M0 DslExpressionParser（仅expression/reference类型） → DslFileNode
+从M2 `RuleRepository.getAttrTypeSpec(elementName, attrName)` 取 `supportsExpression` 与 `expressionKind`。当 `supportsExpression=true` **且**值含表达式语法指示符时才解析；否则按字面量处理（`isLiteral=true`）。故 `x="0"`、`color="#FFFFFF"` 即使 supportsExpression=true 也保持字面量。
+
+**表达式语法指示符**（`hasExpressionSyntax(value, attrName)`）：
+
+| 指示符 | 说明 |
+|---|---|
+| `@` `'` `(` `{` `+` `-` `*` `/` `%` | 字符串引用/字面量/函数调用/分组/二元与一元运算符，出现即解析 |
+| `#` | 数值变量引用，总为指示符——**除** `color`/`shadowColor` 属性的纯 hex 颜色（`#[0-9A-Fa-f]{6}` 或 `{8}`）视为颜色字面量 |
+
+> **hex 颜色范围调整**：原设计按 expressionKind=string 区分 hex 颜色，现改为**仅 `color`/`shadowColor` 属性**把 `#FFFFFF` 当颜色；其他属性（含 string 上下文如 `textExp`）的 `#` 一律当数值变量引用。
+
+**按 expressionKind 选择解析入口**（grammar 区分 string/numeric）：
+
+| expressionKind | 解析入口 | `+` 语义 | `* / %` | `@var` | `#var` |
+|---|---|---|---|---|---|
+| `string` | `parser.stringExpression()` | 拼接（concat） | 仅数值子式内（须 `{}` 包裹） | 允许（字符串变量） | 允许（内嵌数值，强转） |
+| `number` | `parser.numericExpression()` | 加法 | 算术 | **语法错误** | 允许（数值变量） |
+| `auto`/null | `parser.expression()`（通用 unified） | 算术 | 算术 | 允许 | 允许 |
+
+**string 上下文内嵌数值表达式**：string 表达式中 `+` 恒为拼接；数值子式若含 `+ - * / %` 须用**大括号 `{}`** 包裹（如 `'val: '+{10*#num}`、`'x'+{#a+#b}`）。裸写 `'val: '+10*#num` 为语法错误。纯数值整值（如 `10*#num`）无需包裹，按数值式解析后强转为字符串。字符串不能进行 `* / %` 运算。
+
+> **`#` 只引用数值变量、`@` 只引用字符串变量**：grammar 在 numeric 上下文不接受 `@var`（语法错误）；string 上下文 `#var` 为内嵌数值。变量类型的最终校验（`#var` 实际是否数值变量）归 M4 VarRefAnalyzer。
+
+**解析失败处理**：`parseExpression` 用 `BailErrorStrategy`（遇错即抛，不做错误恢复）+ 入口规则 `EOF`（string/numeric）/ 残留 token 检查（auto），确保部分匹配（如 `'val: '+10*#num` 残留 `*#num`）判为失败。失败时 `isLiteral=false, expression=Optional.empty()`，保留"曾尝试解析"信号供 #22 报 SYN-EXPR-ANTLR。
+
+**`-#var` 语法检测（SYN-EXPR-001）**：解析后用 `containsInvalidUnaryMinusVar` 递归检查 AST——任何 `UNARY_EXPR("-")` 其直接子节点为 `#` 前缀的 `VARIABLE_REF`/`ARRAY_ACCESS`（即 `-#w`、`-#arr[0]`）即判失败。`-#w` 须改写为 `-1*#w` 或 `0-#w`。`-5`（负数值）、`-sin(#x)`（负号函数）合法。命中时同样 `isLiteral=false, expression=empty`，#22 据原始值报 SYN-EXPR-001。
+
+**调用链**：AstBuilder → SAXParser.parse(content, ContentHandler) → 事件流构建DslAstNode →（supportsExpression=true 且含指示符的属性）按 expressionKind 选 M0 DslExpressionParser 入口 → DslFileNode
 
 ### 3.3 DslAstProvider（接口）
 
@@ -136,9 +170,9 @@ M3产出的语法诊断分三层：
 |---|---|---|---|
 | XML结构语法 | SAX SAXParseException直接报出 | — | 标签未闭合、属性引号缺失、缺少XML声明等XML格式错误，不做额外包装映射 |
 | DSL结构语法 | M3 AST构建 + M2规则库比对 | SYN-001, SYN-002, SYN-003, SYN-004, SYN-005, SYN-006, SYN-007 | 嵌套约束、未知元素/属性、必填缺失、根元素错误 |
-| DSL表达式语法 | ANTLR4 DslExpressionParser | SEM-EXPR-001~006, SEM-EXPR-ANTLR | `-#var`模式、单引号缺失、花括号嵌套等 |
+| DSL表达式语法 | ANTLR4 DslExpressionParser | SYN-EXPR-001~006, SYN-EXPR-ANTLR | `-#var`模式、单引号缺失、花括号嵌套等 |
 
-**XML格式错误处理**：SAX解析XML遇格式错误直接抛出SAXParseException，M3捕获后转换为Diagnostic产出（保留SAXParseException的行列号和错误消息），不包装映射为自定义SYN-xxx规则ID。原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，编号已重新排列为连续序号SYN-001~007。
+**XML格式错误处理**：SAX解析XML遇格式错误直接抛出SAXParseException，AstBuilder捕获后写入 `rootElement.hasError/errorMessage/line/column`（保留SAXParseException的行列号和错误消息），不包装映射为自定义SYN-xxx规则ID。SyntaxChecker 遇 `rootElement==null || hasError` 时返回空诊断列表（XML 格式错误转换留给上层 DiagnosticProvider 包装）。原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，编号已重新排列为连续序号SYN-001~007。
 
 **DSL结构语法检测详情**：
 
@@ -152,17 +186,25 @@ M3产出的语法诊断分三层：
 | SYN-006 | 属性值类型错误（纯字面量） | 直接类型比对 | error |
 | SYN-007 | 枚举值错误 | M2 enumValues比对 | error |
 
+**SyntaxChecker 实现**（`syntaxanalysis/SyntaxChecker`）：注入 `RuleRepository`，`check(filePath, DslFileNode) → List<Diagnostic>`。遇 `rootElement==null || hasError` 返回空（XML 错误另作）。否则 SYN-001 检 root，递归遍历所有元素做 SYN-002~007。
+
+防噪声跳过：SYN-002 在 child/parent 任一未知时跳过（SYN-003 已覆盖未知元素）；SYN-004/005/006/007 在元素未知时跳过；root 不查 SYN-003（SYN-001 已覆盖）；SYN-006 仅查 `type="number"` 的字面量值（`Double.parseDouble` 失败），表达式值（`isLiteral=false`）跳过归 M4 SEM-TYPE；SYN-007 仅查 `enumValues` 非空的字面量值。Diagnostic 的 line/column 取自对应 AST 节点，`ruleDocUrl` 从 `getRuleSource(ruleId)` 查填。
+
 **DSL表达式语法检测详情**：
 
 | 规则ID | 检测内容 | 检测机制 | 严重级别 |
 |---|---|---|---|
-| SEM-EXPR-001 | 数值表达式使用`-#var`语法 | ANTLR4解析：负号直接前缀变量引用检测 | error |
-| SEM-EXPR-002 | 数值表达式值超过7位精度限制 | ANTLR4解析：数值常量位数检查 | warning |
-| SEM-EXPR-003 | 字符串表达式中数值计算以#开头 | ANTLR4解析：变量名边界检测 | error |
-| SEM-EXPR-004 | 字符串表达式未使用单引号 | ANTLR4解析：字符串常量引号类型检查 | error |
-| SEM-EXPR-005 | 字符串表达式嵌入数值表达式缺少花括号 | ANTLR4解析：嵌套语法检查 | error |
-| SEM-EXPR-006 | preciseeval后使用运算符或+连接符 | ANTLR4解析：函数后缀约束检查 | error |
-| SEM-EXPR-ANTLR | ANTLR4词法/语法错误 | ANTLR4自动报错：不可识别token、表达式结构不合法 | error |
+| SYN-EXPR-001 | 数值表达式使用`-#var`语法 | ANTLR4解析：负号直接前缀变量引用检测 | error |
+| SYN-EXPR-002 | 数值表达式值超过7位精度限制 | ANTLR4解析：数值常量位数检查 | warning |
+| SYN-EXPR-003 | 字符串表达式中数值计算以#开头 | ANTLR4解析：变量名边界检测 | error |
+| SYN-EXPR-004 | 字符串表达式未使用单引号 | ANTLR4解析：字符串常量引号类型检查 | error |
+| SYN-EXPR-005 | 字符串表达式嵌入数值表达式缺少花括号 | ANTLR4解析：嵌套语法检查 | error |
+| SYN-EXPR-006 | preciseeval后使用运算符或+连接符 | ANTLR4解析：函数后缀约束检查 | error |
+| SYN-EXPR-ANTLR | ANTLR4词法/语法错误 | ANTLR4自动报错：不可识别token、表达式结构不合法 | error |
+
+**ExpressionSyntaxChecker 实现**（`syntaxanalysis/ExpressionSyntaxChecker`）：注入 `RuleRepository`，`check(filePath, DslFileNode) → List<Diagnostic>`。遍历元素/属性，对 `supportsExpression=true && hasExpressionSyntax` 的属性调 `AstBuilder.doParse`（共用解析逻辑，返回 node + antlrError + leftoverTokens）。
+
+检测：001 跑 `containsInvalidUnaryMinusVar(node)`；002 遍历 node 的 NUMBER LITERAL，数字位数(不含`.`)>7；003 string 上下文 rawValue 以 `#` 开头且含 `* / % -`；006 rawValue 匹配 `preciseeval(...)` 后跟 `+ - * / %`；004/005 仅在 string 上下文解析失败时——004 检 `+`拼接项含裸词(`^[a-zA-Z_]\w*$`)、005 检去 `{...}` 后含 `+` 且含 `* / %`；其余解析失败归 SYN-EXPR-ANTLR。004/005 优先于 ANTLR（更具体）。
 
 ### 3.5 自定义Lexer（Extension层）
 
@@ -225,7 +267,7 @@ M3在CLI管线中的位置：
 |---|---|---|
 | XML格式错误诊断 | M3 → SAX SAXParseException | 标签未闭合、属性引号缺失等XML格式错误 |
 | `ruleId: SYN-001/002/003/004/005/006/007` | M3语法比对 → M2规则库 | DSL结构语法错误 |
-| `ruleId: SEM-EXPR-001~006/ANTLR` | M3表达式解析 → M0 ANTLR4 | DSL表达式语法错误 |
+| `ruleId: SYN-EXPR-001~006/ANTLR` | M3表达式解析 → M0 ANTLR4 | DSL表达式语法错误 |
 | `summary.skippedFiles`（非DSL XML） | M1 → M3跳过 | M1识别为非DSL，M3不处理 |
 
 ### 5.4 CLI异常场景
@@ -234,7 +276,7 @@ M3在CLI管线中的位置：
 |---|---|---|
 | XML格式严重错误（SAX无法解析） | 1 | SAXParser抛出SAXParseException，M3产出XML格式错误诊断 |
 | 文件编码非UTF-8 | 1 | SAX解析时编码问题，产出编码相关诊断 |
-| ANTLR4表达式解析失败 | 1 | 产出SEM-EXPR-ANTLR诊断，AST中对应属性值expression=null |
+| ANTLR4表达式解析失败 | 1 | 产出SYN-EXPR-ANTLR诊断，AST中对应属性值expression=null |
 
 ### 5.5 CLI输出示例
 
