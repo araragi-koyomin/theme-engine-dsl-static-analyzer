@@ -143,9 +143,9 @@ class SemanticAnalysisIntegrationTest {
     }
 
     @Test
-    void stringLiteralInNumericAttrProducesSEM_TYPE_001() {
+    void stringVarInNumericAttrProducesSEM_TYPE_001() {
         List<Diagnostic> refType = refAndTypeDiagnostics(analyze(
-                "<Lockscreen><Image name=\"img\" x=\"'hello'\"/></Lockscreen>"));
+                "<Lockscreen><Var name=\"s\" type=\"string\"/><Image name=\"img\" x=\"#s\"/></Lockscreen>"));
         assertHasRule(refType, "SEM-TYPE-001");
     }
 

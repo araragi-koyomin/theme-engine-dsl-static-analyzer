@@ -14,4 +14,18 @@ public class DslContext {
     String filePath;
     DslFileNode rootNode;
     FunctionSignatureLibrary functionSignatureLibrary;
+
+    public DslContext(RuleRepository ruleRepository, SymbolTable symbolTable, String filePath) {
+        this(ruleRepository, symbolTable, filePath, null, null);
+    }
+
+    public DslContext(RuleRepository ruleRepository, SymbolTable symbolTable, String filePath,
+                      DslFileNode rootNode) {
+        this(ruleRepository, symbolTable, filePath, rootNode, null);
+    }
+
+    public DslContext(RuleRepository ruleRepository, SymbolTable symbolTable, String filePath,
+                      FunctionSignatureLibrary functionSignatureLibrary) {
+        this(ruleRepository, symbolTable, filePath, null, functionSignatureLibrary);
+    }
 }

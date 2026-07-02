@@ -51,7 +51,7 @@ class ConstraintAnalyzerTest {
     }
 
     private static DslContext context(RuleRepository ruleRepo) {
-        return new DslContext(ruleRepo, null, "test.xml", null);
+        return new DslContext(ruleRepo, null, "test.xml");
     }
 
     private static class StubRuleRepository implements RuleRepository {

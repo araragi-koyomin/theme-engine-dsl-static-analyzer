@@ -233,7 +233,7 @@ class TypeAnalyzerTest {
         ExpressionNode expr = ExpressionNode.literal("hello", "'hello'", 1, 0);
         DslElementNode image = element("Image", 10, 5, exprAttr("x", expr, "'hello'"));
 
-        DslContext ctx = new DslContext(repoWithAttrs(), emptyTable(), "test.xml", null);
+        DslContext ctx = new DslContext(repoWithAttrs(), emptyTable(), "test.xml");
 
         List<Diagnostic> diagnostics = analyzer.analyze(image, ctx);
 
