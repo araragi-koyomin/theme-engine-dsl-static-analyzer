@@ -24,6 +24,7 @@ public class AnalyzerRegistry {
         initialized = true;
         register(new ConstraintAnalyzer());
         register(new VarRefAnalyzer());
+        register(new TypeAnalyzer());
     }
 
 }

@@ -19,8 +19,6 @@ import com.huawei.theme.analysis.core.shared.type.DslNumberType;
 import com.huawei.theme.analysis.core.shared.type.DslStringType;
 import com.huawei.theme.analysis.core.shared.type.DslType;
 
-import javax.print.attribute.standard.MediaSize;
-
 public class SymbolTableBuilderImpl implements SymbolTableBuilder {
 
     private static final String VAR_TAG = "Var";
