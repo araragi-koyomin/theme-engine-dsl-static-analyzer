@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -222,6 +223,11 @@ class ConfigAwareRuleRepositoryTest {
         @Override
         public Optional<com.huawei.theme.analysis.core.rulelibrary.model.RuleSource> getRuleSource(String ruleId) {
             return Optional.empty();
+        }
+
+        @Override
+        public FunctionSignatureLibrary getFunctionSignatureLibrary() {
+            return null;
         }
     }
 }

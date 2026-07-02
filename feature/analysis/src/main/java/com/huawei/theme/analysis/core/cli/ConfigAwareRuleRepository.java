@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
@@ -95,6 +96,11 @@ public class ConfigAwareRuleRepository implements RuleRepository {
     @Override
     public Optional<RuleSource> getRuleSource(String ruleId) {
         return delegate.getRuleSource(ruleId);
+    }
+
+    @Override
+    public FunctionSignatureLibrary getFunctionSignatureLibrary() {
+        return delegate.getFunctionSignatureLibrary();
     }
 
     private DslElementRule filterElementRule(DslElementRule original) {
