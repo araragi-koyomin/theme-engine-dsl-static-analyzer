@@ -1,11 +1,16 @@
 package com.huawei.theme.analysis.plugin.editor;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.PrioritizedLookupElement;
+import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.icons.AllIcons;
 import com.intellij.lang.ASTNode;
@@ -30,10 +35,19 @@ import javax.swing.*;
  *
  * <p>标准XmlLexer将标签名与属性名均词法为XML_NAME，故通过parent是否为{@link XmlAttribute}区分属性名位置，
  * 再通过最近{@link XmlTag}祖先取标签名查询规则。仅补全规范属性名（attrTypes的key），不含别名/枚举值。</p>
+ *
+ * <p>补全增强：</p>
+ * <ul>
+ *   <li>必填属性（{@link DslElementRule#getRequiredAttrs()}）加粗并提高优先级，排在选填属性之前；</li>
+ *   <li>标签中已存在的属性（含通过别名写入的）不再推荐，避免重复添加。</li>
+ * </ul>
  */
 public class ThemeDslAttributeCompletionContributor extends CompletionContributor {
 
     private static final Logger LOG = Logger.getInstance(ThemeDslAttributeCompletionContributor.class);
+
+    private static final double REQUIRED_PRIORITY = 1.0;
+    private static final double OPTIONAL_PRIORITY = 0.0;
 
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters, @NotNull CompletionResultSet result) {
@@ -42,7 +56,7 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
         if (node == null || node.getElementType() != XmlTokenType.XML_NAME) {
             return;
         }
-        if (!(position.getParent() instanceof XmlAttribute)) {
+        if (!(position.getParent() instanceof XmlAttribute currentAttr)) {
             return;
         }
         XmlTag tag = PsiTreeUtil.getParentOfType(position, XmlTag.class);
@@ -54,14 +68,61 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
         if (ruleOpt.isEmpty()) {
             return;
         }
+        DslElementRule rule = ruleOpt.get();
+        Set<String> presentAttrNames = collectPresentAttrNames(tag, currentAttr);
+
         LOG.info("ThemeDSL attribute completion for tag <" + tag.getName() + ">");
-        for(var entry : ruleOpt.get().getAttrTypes().entrySet()){
-
-            var type = getTypeHint(entry.getValue());
-
-            LookupElementBuilder element = LookupElementBuilder.create(entry.getKey()).withTypeText(type).withIcon(getIcon(type));
+        for (var entry : rule.getAttrTypes().entrySet()) {
+            String attrName = entry.getKey();
+            AttrTypeSpec spec = entry.getValue();
+            if (isAlreadyPresent(attrName, spec, presentAttrNames)) {
+                continue;
+            }
+            boolean required = rule.getRequiredAttrs() != null && rule.getRequiredAttrs().contains(attrName);
+            String type = getTypeHint(spec);
+            LookupElementBuilder builder = LookupElementBuilder.create(attrName)
+                    .withTypeText(type)
+                    .withIcon(getIcon(type))
+                    .withBoldness(required);
+            LookupElement element = PrioritizedLookupElement.withPriority(
+                    builder, required ? REQUIRED_PRIORITY : OPTIONAL_PRIORITY);
             result.addElement(element);
         }
+    }
+
+    /**
+     * 收集标签中已存在的属性名，排除当前正在补全的占位属性，避免误把正在输入的属性判为已存在。
+     */
+    private static Set<String> collectPresentAttrNames(XmlTag tag, XmlAttribute currentAttr) {
+        Set<String> names = new HashSet<>();
+        for (XmlAttribute attr : tag.getAttributes()) {
+            if (attr == currentAttr) {
+                continue;
+            }
+            String name = attr.getName();
+            if (name != null && !name.isEmpty()) {
+                names.add(name);
+            }
+        }
+        return names;
+    }
+
+    /**
+     * 规范属性名或其任一别名已出现在标签中时，视为已存在。
+     */
+    private static boolean isAlreadyPresent(String canonicalName, AttrTypeSpec spec, Set<String> present) {
+        if (present.contains(canonicalName)) {
+            return true;
+        }
+        List<String> aliases = spec.getAliases();
+        if (aliases != null) {
+            for (String alias : aliases) {
+                if (present.contains(alias)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private Icon getIcon(String type){
