@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.huawei.theme.analysis.core.semanticanalysis.analyzers.VarRefAnalyzer;
 import org.junit.jupiter.api.Test;
 
 import com.huawei.theme.analysis.core.expression.ExpressionNode;
@@ -24,7 +25,6 @@ import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
 import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
-import com.huawei.theme.analysis.core.shared.ast.DslAstNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.ast.ExpressionAstNode;

@@ -1,4 +1,4 @@
-package com.huawei.theme.analysis.core.semanticanalysis;
+package com.huawei.theme.analysis.core.semanticanalysis.analyzers;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,6 +13,7 @@ import com.huawei.theme.analysis.core.expression.model.FunctionSignature;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
+import com.huawei.theme.analysis.core.semanticanalysis.DslAnalyzer;
 import com.huawei.theme.analysis.core.semanticanalysis.model.DslContext;
 import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
 import com.huawei.theme.analysis.core.shared.ast.DslAstNode;
@@ -39,8 +40,6 @@ public class TypeAnalyzer implements DslAnalyzer {
         if (!(element instanceof DslElementNode elementNode)) {
             return Collections.emptyList();
         }
-        RuleRepository ruleRepo = context.getRuleRepository();
-        SymbolTable symbolTable = context.getSymbolTable();
         FunctionSignatureLibrary functionLibrary = context.getFunctionSignatureLibrary();
         if (functionLibrary == null) {
             return Collections.emptyList();
@@ -49,15 +48,15 @@ public class TypeAnalyzer implements DslAnalyzer {
 
         List<Diagnostic> diagnostics = new ArrayList<>();
         for (DslAttributeNode attr : elementNode.getAttributes()) {
-            checkAttribute(elementNode, attr, ruleRepo, symbolTable, engine, context, diagnostics);
+            checkAttribute(elementNode, attr, engine, context, diagnostics);
         }
         return diagnostics;
     }
 
     private void checkAttribute(DslElementNode elementNode, DslAttributeNode attr,
-                                RuleRepository ruleRepo, SymbolTable symbolTable,
                                 TypeInferenceEngine engine, DslContext context,
                                 List<Diagnostic> diagnostics) {
+        RuleRepository ruleRepo = context.getRuleRepository();
         if (ruleRepo == null || attr.getValue() == null) {
             return;
         }
@@ -74,16 +73,17 @@ public class TypeAnalyzer implements DslAnalyzer {
         if (expectedType == null) {
             return;
         }
+        SymbolTable symbolTable = context.getSymbolTable();
         DslType inferred = engine.inferType(exprNode, expectedType, symbolTable);
         if (inferred != null && !TypeInferenceEngine.typeEquals(inferred, expectedType)) {
             diagnostics.add(buildTypeMismatchDiagnostic(elementNode, attr, expectedType, inferred, context));
         }
-        checkFunctionCalls(exprNode, expectedType, symbolTable, engine, context, elementNode, diagnostics);
+        checkFunctionCalls(exprNode, expectedType, engine, context, elementNode, diagnostics);
     }
 
-    private void checkFunctionCalls(ExpressionNode node, DslType expectedType, SymbolTable symbolTable,
-                                    TypeInferenceEngine engine, DslContext context,
-                                    DslElementNode elementNode, List<Diagnostic> diagnostics) {
+    private void checkFunctionCalls(ExpressionNode node, DslType expectedType, TypeInferenceEngine engine,
+                                    DslContext context, DslElementNode elementNode,
+                                    List<Diagnostic> diagnostics) {
         List<ExpressionNode> calls = new ArrayList<>();
         collectFunctionCalls(node, calls);
         FunctionSignatureLibrary functionLibrary = context.getFunctionSignatureLibrary();
@@ -94,18 +94,19 @@ public class TypeAnalyzer implements DslAnalyzer {
                 diagnostics.add(buildFunctionNotApplicableDiagnostic(call, elementNode, expectedType, context));
                 continue;
             }
-            checkFunctionParams(call, sigOpt.get(), symbolTable, engine, context, elementNode, diagnostics);
+            checkFunctionParams(call, sigOpt.get(), engine, context, elementNode, diagnostics);
         }
     }
 
-    private void checkFunctionParams(ExpressionNode call, FunctionSignature sig, SymbolTable symbolTable,
-                                     TypeInferenceEngine engine, DslContext context,
-                                     DslElementNode elementNode, List<Diagnostic> diagnostics) {
+    private void checkFunctionParams(ExpressionNode call, FunctionSignature sig, TypeInferenceEngine engine,
+                                     DslContext context, DslElementNode elementNode,
+                                     List<Diagnostic> diagnostics) {
         List<FunctionParam> params = sig.getParams();
         List<ExpressionNode> args = call.getChildren();
         if (args == null) {
             return;
         }
+        SymbolTable symbolTable = context.getSymbolTable();
         for (int i = 0; i < args.size(); i++) {
             FunctionParam param = resolveParam(params, i);
             if (param == null || param.getType() == null) {
@@ -179,7 +180,6 @@ public class TypeAnalyzer implements DslAnalyzer {
 
     private Diagnostic buildTypeMismatchDiagnostic(DslElementNode elementNode, DslAttributeNode attr,
                                                    DslType expected, DslType inferred, DslContext context) {
-        String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_TYPE_001);
         return Diagnostic.builder()
                 .severity(DiagnosticSeverity.ERROR)
                 .ruleId(RULE_TYPE_001)
@@ -188,13 +188,12 @@ public class TypeAnalyzer implements DslAnalyzer {
                 .filePath(context.getFilePath())
                 .line(elementNode.getLine())
                 .column(elementNode.getColumn())
-                .ruleDocUrl(docUrl)
+                .ruleDocUrl(resolveDocUrl(context, RULE_TYPE_001))
                 .build();
     }
 
     private Diagnostic buildFunctionNotApplicableDiagnostic(ExpressionNode call, DslElementNode elementNode,
                                                             DslType expected, DslContext context) {
-        String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_TYPE_001);
         return Diagnostic.builder()
                 .severity(DiagnosticSeverity.ERROR)
                 .ruleId(RULE_TYPE_001)
@@ -202,14 +201,13 @@ public class TypeAnalyzer implements DslAnalyzer {
                 .filePath(context.getFilePath())
                 .line(elementNode.getLine())
                 .column(elementNode.getColumn())
-                .ruleDocUrl(docUrl)
+                .ruleDocUrl(resolveDocUrl(context, RULE_TYPE_001))
                 .build();
     }
 
     private Diagnostic buildParamMismatchDiagnostic(ExpressionNode call, DslElementNode elementNode,
                                                      int paramIdx, DslType expected, DslType actual,
                                                      DslContext context) {
-        String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_TYPE_002);
         return Diagnostic.builder()
                 .severity(DiagnosticSeverity.ERROR)
                 .ruleId(RULE_TYPE_002)
@@ -218,11 +216,12 @@ public class TypeAnalyzer implements DslAnalyzer {
                 .filePath(context.getFilePath())
                 .line(elementNode.getLine())
                 .column(elementNode.getColumn())
-                .ruleDocUrl(docUrl)
+                .ruleDocUrl(resolveDocUrl(context, RULE_TYPE_002))
                 .build();
     }
 
-    private String resolveDocUrl(RuleRepository ruleRepo, String ruleId) {
+    private static String resolveDocUrl(DslContext context, String ruleId) {
+        RuleRepository ruleRepo = context.getRuleRepository();
         if (ruleRepo == null) {
             return null;
         }

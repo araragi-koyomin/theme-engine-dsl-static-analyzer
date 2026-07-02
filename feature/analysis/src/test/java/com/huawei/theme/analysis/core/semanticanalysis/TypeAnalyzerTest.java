@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.huawei.theme.analysis.core.semanticanalysis.analyzers.TypeAnalyzer;
 import org.junit.jupiter.api.Test;
 
 import com.huawei.theme.analysis.core.expression.ExpressionNode;

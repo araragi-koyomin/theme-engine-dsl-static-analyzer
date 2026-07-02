@@ -1,4 +1,4 @@
-package com.huawei.theme.analysis.core.semanticanalysis;
+package com.huawei.theme.analysis.core.semanticanalysis.analyzers;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,6 +14,7 @@ import com.huawei.theme.analysis.core.expression.ExpressionNode;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
+import com.huawei.theme.analysis.core.semanticanalysis.DslAnalyzer;
 import com.huawei.theme.analysis.core.semanticanalysis.model.DslContext;
 import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
 import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
@@ -220,7 +221,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
 
     private Diagnostic buildUndefinedReferenceDiagnostic(ExpressionNode ref, DslElementNode hostNode,
                                                          DslContext context) {
-        String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_REF_001);
+        String docUrl = resolveDocUrl(context, RULE_REF_001);
         String refText = ref.getPrefix() != null ? ref.getPrefix() + ref.getVariableName() : ref.getVariableName();
         int line = ref.getLine();
         int column = ref.getColumn();
@@ -242,7 +243,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
 
     private Diagnostic buildUndefinedElementRefDiagnostic(ExpressionNode ref, String elementName,
                                                           DslElementNode hostNode, DslContext context) {
-        String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_REF_002);
+        String docUrl = resolveDocUrl(context, RULE_REF_002);
         int line = ref.getLine();
         int column = ref.getColumn();
         if (line == 0 && column == 0) {
@@ -263,7 +264,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
 
     private Diagnostic buildCommandTargetNameDiagnostic(DslElementNode cmdNode, String elemName,
                                                         DslContext context) {
-        String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_REF_002);
+        String docUrl = resolveDocUrl(context, RULE_REF_002);
         return Diagnostic.builder()
                 .severity(DiagnosticSeverity.ERROR)
                 .ruleId(RULE_REF_002)
@@ -278,7 +279,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
 
     private Diagnostic buildCommandTargetPropertyDiagnostic(DslElementNode cmdNode, String property,
                                                             DslContext context) {
-        String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_REF_002);
+        String docUrl = resolveDocUrl(context, RULE_REF_002);
         return Diagnostic.builder()
                 .severity(DiagnosticSeverity.ERROR)
                 .ruleId(RULE_REF_002)
@@ -292,7 +293,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
     }
 
     private Diagnostic buildDuplicateVarDiagnostic(DslElementNode varNode, String varName, DslContext context) {
-        String docUrl = resolveDocUrl(context.getRuleRepository(), RULE_REF_003);
+        String docUrl = resolveDocUrl(context, RULE_REF_003);
         return Diagnostic.builder()
                 .severity(DiagnosticSeverity.ERROR)
                 .ruleId(RULE_REF_003)
@@ -305,7 +306,8 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .build();
     }
 
-    private String resolveDocUrl(RuleRepository ruleRepo, String ruleId) {
+    private static String resolveDocUrl(DslContext context, String ruleId) {
+        RuleRepository ruleRepo = context.getRuleRepository();
         if (ruleRepo == null) {
             return null;
         }
