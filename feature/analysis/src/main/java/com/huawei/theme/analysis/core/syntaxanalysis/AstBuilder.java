@@ -15,6 +15,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import com.huawei.theme.analysis.core.expression.ExpressionNode;
 import com.huawei.theme.analysis.core.expression.ExpressionParser;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
@@ -148,7 +149,7 @@ public class AstBuilder implements DslAstProvider {
 
                 DslAttributeValueNode value = buildValueNode(attrValue,
                         vlc[0], vlc[1], vEnd[0], vEnd[1]);
-                attachExpression(value, attrValue, tagName, attrName);
+                attachExpression(value, attrValue, tagName, attrName, vlc[0], vlc[1]);
                 attr.setValue(value);
             } else {
                 attr.setLine(lc[0]);
@@ -157,7 +158,7 @@ public class AstBuilder implements DslAstProvider {
                 attr.setEndColumn(lc[1]);
 
                 DslAttributeValueNode value = buildValueNode(attrValue, lc[0], lc[1], lc[0], lc[1]);
-                attachExpression(value, attrValue, tagName, attrName);
+                attachExpression(value, attrValue, tagName, attrName, lc[0], lc[1]);
                 attr.setValue(value);
             }
             node.getAttributes().add(attr);
@@ -176,7 +177,8 @@ public class AstBuilder implements DslAstProvider {
         return value;
     }
 
-    private void attachExpression(DslAttributeValueNode value, String attrValue, String tagName, String attrName) {
+    private void attachExpression(DslAttributeValueNode value, String attrValue, String tagName,
+                                  String attrName, int valueDocLine, int valueDocCol) {
         ExpressionAstNode exprNode = null;
         boolean parseAttempted = false;
         if (ruleRepository != null) {
@@ -190,6 +192,7 @@ public class AstBuilder implements DslAstProvider {
             }
         }
         if (exprNode != null) {
+            offsetExprToDocument((ExpressionNode) exprNode, valueDocLine, valueDocCol);
             value.setExpression(Optional.of(exprNode));
             value.setLiteral(false);
         } else if (parseAttempted) {
@@ -198,6 +201,37 @@ public class AstBuilder implements DslAstProvider {
         } else {
             value.setExpression(Optional.empty());
             value.setLiteral(true);
+        }
+    }
+
+    /**
+     * 将表达式节点树的位置从"属性值字符串内相对坐标"平移到"文档绝对坐标"。
+     *
+     * <p>ANTLR解析属性值字符串时，line/col相对于该字符串(line=1,col=0为值首字符)。
+     * AstBuilder已知属性值在文档中的起始(valueDocLine/valueDocCol)，据此平移：
+     * docLine = valueDocLine + (exprLine - 1)；
+     * docCol = (exprLine==1) ? valueDocCol + exprCol : exprCol（值内换行=文档换行，新行col独立）。
+     * 递归处理children和indexExpression。修复此前表达式诊断报line=1的坐标错误。</p>
+     */
+    private static void offsetExprToDocument(ExpressionNode node, int valueDocLine, int valueDocCol) {
+        if (node == null) {
+            return;
+        }
+        int line = node.getLine();
+        int col = node.getColumn();
+        int endLine = node.getEndLine();
+        int endCol = node.getEndColumn();
+        node.setLine(valueDocLine + line - 1);
+        node.setColumn(line == 1 ? valueDocCol + col : col);
+        node.setEndLine(valueDocLine + endLine - 1);
+        node.setEndColumn(endLine == 1 ? valueDocCol + endCol : endCol);
+        if (node.getChildren() != null) {
+            for (ExpressionNode child : node.getChildren()) {
+                offsetExprToDocument(child, valueDocLine, valueDocCol);
+            }
+        }
+        if (node.getIndexExpression() != null) {
+            offsetExprToDocument(node.getIndexExpression(), valueDocLine, valueDocCol);
         }
     }
 

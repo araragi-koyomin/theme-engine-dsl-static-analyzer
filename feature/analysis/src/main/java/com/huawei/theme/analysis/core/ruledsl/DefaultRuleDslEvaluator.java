@@ -26,6 +26,7 @@ public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean
             DslRuleConditionLexer lexer = new DslRuleConditionLexer(CharStreams.fromString(condition));
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             DslRuleConditionParser parser = new DslRuleConditionParser(tokens);
+            lexer.removeErrorListeners();
             parser.removeErrorListeners();
             return visit(parser.condition());
         } catch (Exception e) {

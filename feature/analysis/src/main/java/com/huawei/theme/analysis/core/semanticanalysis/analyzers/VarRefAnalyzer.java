@@ -225,8 +225,8 @@ public class VarRefAnalyzer implements DslAnalyzer {
         String refText = ref.getPrefix() != null ? ref.getPrefix() + ref.getVariableName() : ref.getVariableName();
         int line = ref.getLine();
         int column = ref.getColumn();
-        int endLine = 0;
-        int endColumn = 0;
+        int endLine = ref.getEndLine();
+        int endColumn = ref.getEndColumn();
         if (line == 0 && column == 0) {
             line = hostNode.getLine();
             column = hostNode.getColumn();
@@ -252,8 +252,8 @@ public class VarRefAnalyzer implements DslAnalyzer {
         String docUrl = resolveDocUrl(context, RULE_REF_002);
         int line = ref.getLine();
         int column = ref.getColumn();
-        int endLine = 0;
-        int endColumn = 0;
+        int endLine = ref.getEndLine();
+        int endColumn = ref.getEndColumn();
         if (line == 0 && column == 0) {
             line = hostNode.getLine();
             column = hostNode.getColumn();
