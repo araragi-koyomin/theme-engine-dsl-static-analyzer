@@ -190,8 +190,7 @@ public class TypeAnalyzer implements DslAnalyzer {
                 .message("类型不匹配，期望" + expected.getName() + "实际" + inferred.getName()
                         + "（属性 " + attr.getName() + "）")
                 .filePath(context.getFilePath())
-                .line(elementNode.getLine())
-                .column(elementNode.getColumn())
+                .positionFrom(elementNode)
                 .ruleDocUrl(resolveDocUrl(context, RULE_TYPE_001))
                 .build();
     }
@@ -203,8 +202,7 @@ public class TypeAnalyzer implements DslAnalyzer {
                 .ruleId(RULE_TYPE_001)
                 .message("函数 " + call.getFunctionName() + " 不适用于 " + expected.getName() + " 表达式")
                 .filePath(context.getFilePath())
-                .line(elementNode.getLine())
-                .column(elementNode.getColumn())
+                .positionFrom(elementNode)
                 .ruleDocUrl(resolveDocUrl(context, RULE_TYPE_001))
                 .build();
     }
@@ -218,8 +216,7 @@ public class TypeAnalyzer implements DslAnalyzer {
                 .message("函数 " + call.getFunctionName() + " 参数 " + (paramIdx + 1)
                         + " 类型不匹配，期望" + expected.getName() + "实际" + actual.getName())
                 .filePath(context.getFilePath())
-                .line(elementNode.getLine())
-                .column(elementNode.getColumn())
+                .positionFrom(elementNode)
                 .ruleDocUrl(resolveDocUrl(context, RULE_TYPE_002))
                 .build();
     }

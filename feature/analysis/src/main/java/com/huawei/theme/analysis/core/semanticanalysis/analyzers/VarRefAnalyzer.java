@@ -225,9 +225,13 @@ public class VarRefAnalyzer implements DslAnalyzer {
         String refText = ref.getPrefix() != null ? ref.getPrefix() + ref.getVariableName() : ref.getVariableName();
         int line = ref.getLine();
         int column = ref.getColumn();
+        int endLine = 0;
+        int endColumn = 0;
         if (line == 0 && column == 0) {
             line = hostNode.getLine();
             column = hostNode.getColumn();
+            endLine = hostNode.getEndLine();
+            endColumn = hostNode.getEndColumn();
         }
         return Diagnostic.builder()
                 .severity(DiagnosticSeverity.ERROR)
@@ -236,6 +240,8 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .filePath(context.getFilePath())
                 .line(line)
                 .column(column)
+                .endLine(endLine)
+                .endColumn(endColumn)
                 .suggestedFixes(List.of("声明 Var name=\"" + ref.getVariableName() + "\""))
                 .ruleDocUrl(docUrl)
                 .build();
@@ -246,9 +252,13 @@ public class VarRefAnalyzer implements DslAnalyzer {
         String docUrl = resolveDocUrl(context, RULE_REF_002);
         int line = ref.getLine();
         int column = ref.getColumn();
+        int endLine = 0;
+        int endColumn = 0;
         if (line == 0 && column == 0) {
             line = hostNode.getLine();
             column = hostNode.getColumn();
+            endLine = hostNode.getEndLine();
+            endColumn = hostNode.getEndColumn();
         }
         return Diagnostic.builder()
                 .severity(DiagnosticSeverity.ERROR)
@@ -257,6 +267,8 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .filePath(context.getFilePath())
                 .line(line)
                 .column(column)
+                .endLine(endLine)
+                .endColumn(endColumn)
                 .suggestedFixes(List.of("声明带 name=\"" + elementName + "\" 的元素"))
                 .ruleDocUrl(docUrl)
                 .build();
@@ -270,8 +282,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .ruleId(RULE_REF_002)
                 .message("Command target 引用未定义元素 " + elemName)
                 .filePath(context.getFilePath())
-                .line(cmdNode.getLine())
-                .column(cmdNode.getColumn())
+                .positionFrom(cmdNode)
                 .suggestedFixes(List.of("声明元素 name=\"" + elemName + "\""))
                 .ruleDocUrl(docUrl)
                 .build();
@@ -285,8 +296,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .ruleId(RULE_REF_002)
                 .message("Command target 属性 '" + property + "' 不合法，合法值: visibility, animation")
                 .filePath(context.getFilePath())
-                .line(cmdNode.getLine())
-                .column(cmdNode.getColumn())
+                .positionFrom(cmdNode)
                 .suggestedFixes(List.of("修改 target 属性为 name.visibility 或 name.animation"))
                 .ruleDocUrl(docUrl)
                 .build();
@@ -299,8 +309,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .ruleId(RULE_REF_003)
                 .message("重复定义变量 " + varName)
                 .filePath(context.getFilePath())
-                .line(varNode.getLine())
-                .column(varNode.getColumn())
+                .positionFrom(varNode)
                 .suggestedFixes(List.of("移除重复的 Var 声明"))
                 .ruleDocUrl(docUrl)
                 .build();
