@@ -23,6 +23,19 @@ public class AnalyzerRegistry {
         analyzers.add(analyzer);
     }
 
+    static{
+        register(new ConstraintAnalyzer());
+        register(new ParentChildAnalyzer());
+        register(new ScopeAnalyzer());
+        register(new RequiredAttrAnalyzer());
+        register(new LiteralTypeAnalyzer());
+        register(new EnumValueAnalyzer());
+    }
+
+    /**
+     * init已经在static快中执行了。
+     */
+    @Deprecated()
     public static void init() {
         if (initialized) {
             return;
