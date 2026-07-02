@@ -46,5 +46,7 @@
 
         <annotator language="DslExpression"
                    implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionSemanticAnnotator"/>
+
+        <multiHostInjector implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslExpressionInjector"/>
     </extensions>
 </idea-plugin>
