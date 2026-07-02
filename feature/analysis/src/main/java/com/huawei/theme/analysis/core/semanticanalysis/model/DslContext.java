@@ -1,6 +1,5 @@
 package com.huawei.theme.analysis.core.semanticanalysis.model;
 
-import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import lombok.AllArgsConstructor;
@@ -13,19 +12,8 @@ public class DslContext {
     SymbolTable symbolTable;
     String filePath;
     DslFileNode rootNode;
-    FunctionSignatureLibrary functionSignatureLibrary;
 
     public DslContext(RuleRepository ruleRepository, SymbolTable symbolTable, String filePath) {
-        this(ruleRepository, symbolTable, filePath, null, null);
-    }
-
-    public DslContext(RuleRepository ruleRepository, SymbolTable symbolTable, String filePath,
-                      DslFileNode rootNode) {
-        this(ruleRepository, symbolTable, filePath, rootNode, null);
-    }
-
-    public DslContext(RuleRepository ruleRepository, SymbolTable symbolTable, String filePath,
-                      FunctionSignatureLibrary functionSignatureLibrary) {
-        this(ruleRepository, symbolTable, filePath, null, functionSignatureLibrary);
+        this(ruleRepository, symbolTable, filePath, null);
     }
 }
