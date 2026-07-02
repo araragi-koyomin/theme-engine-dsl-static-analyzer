@@ -58,7 +58,7 @@ class AnalyzerTestFixtures {
     }
 
     static DslContext context(RuleRepository repo, DslFileNode file) {
-        return new DslContext(repo, null, "test.xml", file);
+        return new DslContext(repo, null, file != null ? file.getFilePath() : "test.xml");
     }
 
     static DslElementRule rule(String name, List<String> requiredAttrs,

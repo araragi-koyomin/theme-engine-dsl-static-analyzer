@@ -1,4 +1,4 @@
-package com.huawei.theme.analysis.core.semanticanalysis;
+package com.huawei.theme.analysis.core.semanticanalysis.analyzers;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,13 +14,13 @@ import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleConstraint;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
+import com.huawei.theme.analysis.core.semanticanalysis.DslAnalyzer;
 import com.huawei.theme.analysis.core.semanticanalysis.model.DslContext;
 import com.huawei.theme.analysis.core.shared.ast.DslAstNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
-import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 
 public class ConstraintAnalyzer implements DslAnalyzer {
 
@@ -42,7 +42,6 @@ public class ConstraintAnalyzer implements DslAnalyzer {
 
         String tagName = elementNode.getTagName();
         RuleRepository ruleRepo = context.getRuleRepository();
-        String filePath = context.getFilePath();
 
         List<RuleConstraint> constraints = ruleRepo.getConstraints(tagName);
         if (constraints.isEmpty()) {
@@ -57,7 +56,7 @@ public class ConstraintAnalyzer implements DslAnalyzer {
         for (RuleConstraint constraint : constraints) {
             boolean violated = evaluator.evaluate(constraint.getCondition(), evalContext);
             if (violated) {
-                diagnostics.add(buildDiagnostic(constraint, elementNode, filePath, ruleRepo));
+                diagnostics.add(buildDiagnostic(constraint, elementNode, context));
             }
         }
 
@@ -92,18 +91,21 @@ public class ConstraintAnalyzer implements DslAnalyzer {
                 .build();
     }
 
-    private Diagnostic buildDiagnostic(RuleConstraint constraint, DslElementNode elementNode, String filePath, RuleRepository ruleRepo) {
+    private Diagnostic buildDiagnostic(RuleConstraint constraint, DslElementNode elementNode, DslContext context) {
         String ruleDocUrl = null;
-        Optional<RuleSource> ruleSourceOpt = ruleRepo.getRuleSource(constraint.getRuleId());
-        if (ruleSourceOpt.isPresent()) {
-            ruleDocUrl = ruleSourceOpt.get().getDocUrl();
+        RuleRepository ruleRepo = context.getRuleRepository();
+        if (ruleRepo != null) {
+            Optional<RuleSource> ruleSourceOpt = ruleRepo.getRuleSource(constraint.getRuleId());
+            if (ruleSourceOpt.isPresent()) {
+                ruleDocUrl = ruleSourceOpt.get().getDocUrl();
+            }
         }
 
         return Diagnostic.builder()
                 .severity(constraint.getSeverity())
                 .ruleId(constraint.getRuleId())
                 .message(constraint.getMessage())
-                .filePath(filePath)
+                .filePath(context.getFilePath())
                 .astNode(elementNode)
                 .suggestedFixes(constraint.getSuggestedFixes())
                 .ruleDocUrl(ruleDocUrl)
