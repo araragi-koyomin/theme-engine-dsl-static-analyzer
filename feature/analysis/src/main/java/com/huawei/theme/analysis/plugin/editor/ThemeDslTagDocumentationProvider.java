@@ -1,5 +1,7 @@
 package com.huawei.theme.analysis.plugin.editor;
 
+import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
+import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,6 +12,8 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlTag;
+
+import java.util.stream.Collectors;
 
 /**
  * Quick Documentation / hover provider for ThemeDSL <em>tags</em> ({@link XmlTag}).
@@ -31,7 +35,19 @@ public class ThemeDslTagDocumentationProvider extends AbstractDocumentationProvi
         if (tag == null) {
             return null;
         }
-        return placeholderDoc("ThemeDSL Tag", tag.getName());
+
+        String name = tag.getName();
+        var rules = RuleRepositoryService.getInstance().getRuleRepository().getElementRule(name);
+
+        return rules.map(dslElementRule -> placeholderDoc(dslElementRule.getCategory(), getSignature(dslElementRule)))
+                .orElseGet(() -> placeholderDoc("Unknown Tag", name));
+    }
+
+    private String getSignature(DslElementRule rule) {
+        var nameHtml = "<b>"+rule.getElementName()+"</b>";
+        var required = rule.getRequiredAttrs().stream().map(it -> "<b>"+it+"</b>").collect(Collectors.joining(" "));
+        var optional = rule.getOptionalAttrs().stream().map(it -> "<i>"+it+"</i>").collect(Collectors.joining(" "));
+        return "&lt"+(nameHtml+" "+required+" "+optional).replace("  "," ").trim()+"/&gt";
     }
 
     @Override

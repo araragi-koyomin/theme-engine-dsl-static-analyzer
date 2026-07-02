@@ -31,7 +31,7 @@ public class ThemeDslAttributeDocumentationProvider extends AbstractDocumentatio
         if (attribute == null) {
             return null;
         }
-        return placeholderDoc("ThemeDSL Attribute", attribute.getName());
+        return placeholderDoc("Attr", attribute.getName());
     }
 
     @Override
