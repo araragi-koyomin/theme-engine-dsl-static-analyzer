@@ -50,6 +50,11 @@
         <annotator language="ThemeDSL"
                    implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslDiagnosticAnnotator"/>
 
+        <lang.documentationProvider language="ThemeDSL"
+                                     implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslTagDocumentationProvider"/>
+        <lang.documentationProvider language="ThemeDSL"
+                                     implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslAttributeDocumentationProvider"/>
+
         <multiHostInjector implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslExpressionInjector"/>
     </extensions>
 </idea-plugin>
