@@ -158,4 +158,42 @@ class CliConfigTest {
         );
         assertEquals("Unknown option: --type-check", ex.getMessage());
     }
+
+    @Test
+    void fromArgsWithConfigPath() {
+        CliConfig config = CliConfig.fromArgs(new String[]{"--config", "/path/to/config.json", "theme.xml"});
+        assertEquals("/path/to/config.json", config.getConfigPath());
+        assertEquals("theme.xml", config.getTargetPath());
+    }
+
+    @Test
+    void fromArgsThrowsWhenConfigPathMissingValue() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> CliConfig.fromArgs(new String[]{"--config"})
+        );
+        assertEquals("--config requires a path value", ex.getMessage());
+    }
+
+    @Test
+    void fromArgsWithConfigAndRuleDir() {
+        CliConfig config = CliConfig.fromArgs(new String[]{
+                "--config", "/path/to/config.json", "--rule-dir", "/path/to/rules", "theme.xml"
+        });
+        assertEquals("/path/to/config.json", config.getConfigPath());
+        assertEquals("/path/to/rules", config.getRuleDir());
+        assertEquals("theme.xml", config.getTargetPath());
+    }
+
+    @Test
+    void fromArgsWithAllFlags() {
+        CliConfig config = CliConfig.fromArgs(new String[]{
+                "--rule-dir", "/rules", "--no-type-check", "--verbose", "--config", "/config.json", "theme.xml"
+        });
+        assertEquals("/rules", config.getRuleDir());
+        assertFalse(config.isTypeCheck());
+        assertTrue(config.isVerbose());
+        assertEquals("/config.json", config.getConfigPath());
+        assertEquals("theme.xml", config.getTargetPath());
+    }
 }

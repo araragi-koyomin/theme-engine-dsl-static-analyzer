@@ -22,6 +22,7 @@ java -jar dsl-analyzer.jar [options] <file-or-directory>
 | `--rule-dir <path>` | 自定义规则库目录路径 | 内置规则库 |
 | `--no-type-check` | 禁用类型推断检查 | 类型推断默认启用 |
 | `--verbose` | 启用详细输出模式 | 禁用 |
+| `--config <path>` | 检查配置文件路径（JSON：规则启用/禁用、severity覆盖、根元素覆盖） | 无 |
 | `--help, -h` | 显示帮助信息 | — |
 
 ### 退出码
@@ -30,31 +31,78 @@ java -jar dsl-analyzer.jar [options] <file-or-directory>
 |---|---|
 | 0 | 正常执行完成，无error级诊断 |
 | 1 | 有error级诊断（后续版本启用） |
-| 2 | 执行异常：参数错误、文件不存在、规则库加载失败、运行时异常等 |
+| 2 | 执行异常：参数错误、targetPath不存在或不是文件/目录、规则库加载失败、--config文件不存在/格式错误/数据非法、运行时异常等 |
 
 ## 当前状态（骨架阶段）
 
-当前版本为CLI骨架，仅实现参数解析与配置输出，不调用分析管线。运行后输出解析后的配置摘要：
+当前版本为CLI骨架阶段，实现参数解析、targetPath验证与配置输出，尚未调用分析管线（文件识别、AST构建、语义分析等模块已就绪但尚未接入CLI成功路径）。
+
+**与上一版本的区别**：targetPath 现在必须真实存在于文件系统，否则报错退出（见下方错误示例）。--help 模式不受此限制。
+
+运行后输出解析后的配置摘要：
 
 ```bash
-$ java -jar dsl-analyzer.jar --rule-dir /path/to/rules --no-type-check --verbose theme.xml
+$ java -jar dsl-analyzer.jar --rule-dir /path/to/rules --no-type-check --verbose /path/to/theme.xml
 
 Configuration:
-  Target: theme.xml
+  Target: /path/to/theme.xml
   Rule directory: /path/to/rules
   Type check: disabled
   Verbose: enabled
+  Config: (none)
 ```
 
 ```bash
-$ java -jar dsl-analyzer.jar theme.xml
+$ java -jar dsl-analyzer.jar /path/to/theme.xml
 
 Configuration:
-  Target: theme.xml
+  Target: /path/to/theme.xml
   Rule directory: (built-in)
   Type check: enabled
   Verbose: disabled
+  Config: (none)
 ```
+
+### --config 检查配置文件
+
+`--config <path>` 指定 JSON 格式的检查配置文件，支持三个维度：
+
+1. **规则子集启用/禁用**：通过 `enabledRuleIds` 或 `disabledRuleIds` 控制哪些规则生效
+2. **severity 覆盖**：通过 `severityOverrides` 将特定规则的严重级别从原值覆盖为新值
+3. **根元素列表覆盖**：通过 `rootElementNames` 覆盖内置的根元素集合
+
+#### 配置文件格式（JSON）
+
+所有字段均为可选，缺失字段使用默认行为（不覆盖）。
+
+```json
+{
+  "rootElementNames": ["Lockscreen", "Wallpaper"],
+  "enabledRuleIds": ["SYN-001", "SYN-002", "SEM-REF-001"],
+  "severityOverrides": {
+    "SYN-003": "warning",
+    "SEM-CMD-001": "info"
+  }
+}
+```
+
+或使用禁用模式：
+
+```json
+{
+  "disabledRuleIds": ["SYN-005"],
+  "severityOverrides": {
+    "SYN-003": "warning"
+  }
+}
+```
+
+#### 约束规则
+
+- `enabledRuleIds` 与 `disabledRuleIds` 不可同时指定（同时非空非null时报错）
+- `severityOverrides` 的值必须是 `error`、`warning`、`info` 三者之一，非法值报错
+- `rootElementNames` 若为空数组 `[]`，视为"不覆盖"（使用默认根元素集合）
+- 配置文件不存在、不是文件、JSON格式错误、数据非法 → 退出码 2
 
 ### 帮助信息
 
@@ -66,6 +114,7 @@ Options:
   --rule-dir <path>   Custom rule library directory (default: built-in)
   --no-type-check     Disable type inference checking (default: enabled)
   --verbose           Enable verbose output
+  --config <path>     Inspection config file (JSON: ruleId enable/disable, severity override, root element override)
   --help, -h          Show this help message
 ```
 
@@ -82,6 +131,22 @@ Options:
   --rule-dir <path>   Custom rule library directory (default: built-in)
   --no-type-check     Disable type inference checking (default: enabled)
   --verbose           Enable verbose output
+  --config <path>     Inspection config file (JSON: ruleId enable/disable, severity override, root element override)
+  --help, -h          Show this help message
+```
+
+targetPath 不存在：
+
+```bash
+$ java -jar dsl-analyzer.jar /nonexistent/path/theme.xml
+
+Error: Path not found: /nonexistent/path/theme.xml
+Usage: java -jar dsl-analyzer.jar [options] <file-or-directory>
+Options:
+  --rule-dir <path>   Custom rule library directory (default: built-in)
+  --no-type-check     Disable type inference checking (default: enabled)
+  --verbose           Enable verbose output
+  --config <path>     Inspection config file (JSON: ruleId enable/disable, severity override, root element override)
   --help, -h          Show this help message
 ```
 
@@ -115,6 +180,37 @@ Usage: java -jar dsl-analyzer.jar [options] <file-or-directory>
 ...
 ```
 
+使用 `--config` 指定检查配置文件：
+
+```bash
+$ java -jar dsl-analyzer.jar --config /path/to/inspection-config.json /path/to/theme.xml
+
+Configuration:
+  Target: /path/to/theme.xml
+  Rule directory: (built-in)
+  Type check: enabled
+  Verbose: disabled
+  Config: /path/to/inspection-config.json
+  Root element override: [Lockscreen, Wallpaper]
+  Severity overrides: [SEM-CMD-001->info, SYN-003->warning]
+```
+
+`--config` 文件不存在：
+
+```bash
+$ java -jar dsl-analyzer.jar --config /nonexistent/config.json /path/to/theme.xml
+
+Error: Config file not found: /nonexistent/config.json
+```
+
+`--config` 缺少路径值：
+
+```bash
+$ java -jar dsl-analyzer.jar --config theme.xml
+
+Error: --config requires a path value
+```
+
 ## 打包内容
 
 | 内容 | 说明 |
@@ -146,4 +242,3 @@ Usage: java -jar dsl-analyzer.jar [options] <file-or-directory>
 | 报告输出路径 | `--output <path>` | 报告导出到文件（仅md/json） |
 | 禁止终端彩色 | `--no-color` | Terminal输出不使用ANSI颜色 |
 | 只输出error | `--quiet` | 过滤WARNING/INFO级别诊断 |
-| 检查配置文件 | `--config <path>` | 指定规则子集、severity覆盖、启用/禁用ruleId |

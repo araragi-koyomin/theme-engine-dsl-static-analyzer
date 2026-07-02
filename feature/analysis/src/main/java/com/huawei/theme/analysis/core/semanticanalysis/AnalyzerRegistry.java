@@ -1,15 +1,10 @@
 package com.huawei.theme.analysis.core.semanticanalysis;
 
+import com.huawei.theme.analysis.core.semanticanalysis.analyzers.*;
 import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import com.huawei.theme.analysis.core.semanticanalysis.analyzers.EnumValueAnalyzer;
-import com.huawei.theme.analysis.core.semanticanalysis.analyzers.LiteralTypeAnalyzer;
-import com.huawei.theme.analysis.core.semanticanalysis.analyzers.ParentChildAnalyzer;
-import com.huawei.theme.analysis.core.semanticanalysis.analyzers.RequiredAttrAnalyzer;
-import com.huawei.theme.analysis.core.semanticanalysis.analyzers.ScopeAnalyzer;
 
 public class AnalyzerRegistry {
     private AnalyzerRegistry(){}
@@ -47,6 +42,8 @@ public class AnalyzerRegistry {
         register(new RequiredAttrAnalyzer());
         register(new LiteralTypeAnalyzer());
         register(new EnumValueAnalyzer());
+        register(new VarRefAnalyzer());
+        register(new TypeAnalyzer());
     }
 
 }
