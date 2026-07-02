@@ -4,6 +4,7 @@ import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.icons.AllIcons;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiElement;
@@ -36,7 +37,8 @@ public class ThemeDslElementNameCompletionContributor extends CompletionContribu
         }
         LOG.info("ThemeDSL element-name completion invoked at offset " + parameters.getOffset());
         for (String name : RuleRepositoryService.getInstance().getRuleRepository().getAllElementNames()) {
-            result.addElement(LookupElementBuilder.create(name).withTypeText("ThemeDSL Tag"));
+            LookupElementBuilder themeDSLTag = LookupElementBuilder.create(name).withTypeText("ThemeDSL Tag").withIcon(AllIcons.Nodes.Tag);
+            result.addElement(themeDSLTag);
         }
     }
 }

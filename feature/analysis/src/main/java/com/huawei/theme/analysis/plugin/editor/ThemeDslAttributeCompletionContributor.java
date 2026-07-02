@@ -7,6 +7,7 @@ import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.icons.AllIcons;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiElement;
@@ -20,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
+
+import javax.swing.*;
 
 /**
  * 属性名补全：在ThemeDSL标签的属性名位置（{@link XmlTokenType#XML_NAME}且parent为{@link XmlAttribute}）
@@ -54,10 +57,20 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
         LOG.info("ThemeDSL attribute completion for tag <" + tag.getName() + ">");
         for(var entry : ruleOpt.get().getAttrTypes().entrySet()){
 
-            result.addElement(LookupElementBuilder.create(entry.getKey()).withTypeText(getTypeHint(entry.getValue())));
+            var type = getTypeHint(entry.getValue());
+
+            LookupElementBuilder element = LookupElementBuilder.create(entry.getKey()).withTypeText(type).withIcon(getIcon(type));
+            result.addElement(element);
         }
     }
 
+    private Icon getIcon(String type){
+        if(type.contains("Expression")){
+            return AllIcons.Nodes.ClassInitializer;
+        }else{
+            return AllIcons.Nodes.Parameter;
+        }
+    }
     private String getTypeHint(AttrTypeSpec typeSpec){
         if(typeSpec.isSupportsExpression()){
             return StringUtils.capitalize(typeSpec.getExpressionKind()+" Expression");
