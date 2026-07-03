@@ -48,6 +48,11 @@ public class SymtabUtils {
 		if ( parent instanceof PsiErrorElement ) {
 			return null;
 		}
-		return (ScopeNode)parent.getContext();
+		// The parent may live outside the ANTLR PSI world (e.g. when this PSI is
+		// injected into a host of a different language, such as an XML attribute
+		// value), so parent.getContext() is not necessarily a ScopeNode. Avoid a
+		// ClassCastException by returning null when no enclosing scope exists.
+		PsiElement context = parent == null ? null : parent.getContext();
+		return context instanceof ScopeNode ? (ScopeNode)context : null;
 	}
 }

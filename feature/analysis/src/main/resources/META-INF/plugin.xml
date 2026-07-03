@@ -39,6 +39,9 @@
         <lang.parserDefinition language="DslExpression"
                                implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionParserDefinition"/>
 
+        <completion.contributor language="DslExpression"
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionCompletionContributor"/>
+
         <lang.syntaxHighlighterFactory language="DslExpression"
                                 implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionSyntaxHighlighterFactory"/>
 
