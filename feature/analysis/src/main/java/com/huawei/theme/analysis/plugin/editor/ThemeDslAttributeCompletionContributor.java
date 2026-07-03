@@ -18,6 +18,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.xml.XmlAttribute;
+import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.psi.xml.XmlTokenType;
 import org.apache.commons.lang3.StringUtils;
@@ -47,18 +48,28 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
     private static final Logger LOG = Logger.getInstance(ThemeDslAttributeCompletionContributor.class);
 
     private static final double REQUIRED_PRIORITY = 1.0;
-    private static final double OPTIONAL_PRIORITY = 0.0;
+    private static final double OPTIONAL_PRIORITY = 0.1;
 
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters, @NotNull CompletionResultSet result) {
         PsiElement position = parameters.getPosition();
         ASTNode node = position.getNode();
-        if (node == null || node.getElementType() != XmlTokenType.XML_NAME) {
+
+        // Case 1: Attribute name position → offer attribute names
+        if (node != null && node.getElementType() == XmlTokenType.XML_NAME
+                && position.getParent() instanceof XmlAttribute currentAttr) {
+            fillAttributeNameCompletion(position, currentAttr, result);
             return;
         }
-        if (!(position.getParent() instanceof XmlAttribute currentAttr)) {
-            return;
+
+        // Case 2: Attribute value position → offer enum values
+        if (position.getParent() instanceof XmlAttributeValue valueElement) {
+            fillAttributeValueCompletion(valueElement, result);
         }
+    }
+
+    private void fillAttributeNameCompletion(@NotNull PsiElement position, @NotNull XmlAttribute currentAttr,
+                                             @NotNull CompletionResultSet result) {
         XmlTag tag = PsiTreeUtil.getParentOfType(position, XmlTag.class);
         if (tag == null) {
             return;
@@ -87,6 +98,38 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
             LookupElement element = PrioritizedLookupElement.withPriority(
                     builder, required ? REQUIRED_PRIORITY : OPTIONAL_PRIORITY);
             result.addElement(element);
+        }
+    }
+
+    /**
+     * Offers enum values for attributes whose {@link AttrTypeSpec#getType()} is "enum".
+     * Only fires for non-injected attribute values (bare values like {@code visibility="gone"});
+     * expression values are handled by the DE completion contributor.
+     */
+    private void fillAttributeValueCompletion(@NotNull XmlAttributeValue valueElement,
+                                             @NotNull CompletionResultSet result) {
+        XmlAttribute attr = PsiTreeUtil.getParentOfType(valueElement, XmlAttribute.class);
+        if (attr == null) {
+            return;
+        }
+        XmlTag tag = PsiTreeUtil.getParentOfType(attr, XmlTag.class);
+        if (tag == null) {
+            return;
+        }
+        RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
+        Optional<AttrTypeSpec> specOpt = repo.getAttrTypeSpec(tag.getName(), attr.getName());
+        if (specOpt.isEmpty()) {
+            return;
+        }
+        AttrTypeSpec spec = specOpt.get();
+        List<String> enumValues = spec.getEnumValues();
+        if (enumValues == null || enumValues.isEmpty()) {
+            return;
+        }
+        for (String value : enumValues) {
+            result.addElement(LookupElementBuilder.create(value)
+                    .withIcon(AllIcons.Nodes.Enum)
+                    .withTypeText(attr.getName()));
         }
     }
 
@@ -128,14 +171,20 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
     private Icon getIcon(String type){
         if(type.contains("Expression")){
             return AllIcons.Nodes.ClassInitializer;
+        }else if(type.contains("Enum")) {
+            return AllIcons.Nodes.Enum;
         }else{
             return AllIcons.Nodes.Parameter;
         }
     }
+
     private String getTypeHint(AttrTypeSpec typeSpec){
         if(typeSpec.isSupportsExpression()){
             return StringUtils.capitalize(typeSpec.getExpressionKind()+" Expression");
+        }else if(!typeSpec.getEnumValues().isEmpty()){
+            return "Enum";
         }
+
         return StringUtils.capitalize(typeSpec.getType());
     }
 }
