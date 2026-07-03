@@ -42,6 +42,9 @@
         <completion.contributor language="DslExpression"
                                 implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionCompletionContributor"/>
 
+        <lang.documentationProvider language="DslExpression"
+                                     implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionDocumentationProvider"/>
+
         <lang.syntaxHighlighterFactory language="DslExpression"
                                 implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionSyntaxHighlighterFactory"/>
 
