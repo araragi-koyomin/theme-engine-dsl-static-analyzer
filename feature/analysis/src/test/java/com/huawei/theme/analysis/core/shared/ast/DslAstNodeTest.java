@@ -90,6 +90,10 @@ class DslAstNodeTest {
 
         @Override public int getColumn() { return 8; }
 
+        @Override public int getEndLine() { return 4; }
+
+        @Override public int getEndColumn() { return 8; }
+
         @Override public ExpressionKind getKind() { return ExpressionKind.BINARY_EXPR; }
     }
 }

@@ -249,5 +249,10 @@ class QuickFixIntegrationTest {
         public Optional<RuleSource> getRuleSource(String ruleId) {
             return Optional.empty();
         }
+
+        @Override
+        public com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary getFunctionSignatureLibrary() {
+            return null;
+        }
     }
 }

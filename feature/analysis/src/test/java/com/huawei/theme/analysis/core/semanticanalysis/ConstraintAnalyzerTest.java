@@ -1,12 +1,12 @@
 package com.huawei.theme.analysis.core.semanticanalysis;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.huawei.theme.analysis.core.semanticanalysis.analyzers.ConstraintAnalyzer;
 import org.junit.jupiter.api.Test;
 
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
@@ -17,7 +17,6 @@ import com.huawei.theme.analysis.core.rulelibrary.model.RuleConstraint;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
 import com.huawei.theme.analysis.core.rulelibrary.model.SuggestedFix;
 import com.huawei.theme.analysis.core.semanticanalysis.model.DslContext;
-import com.huawei.theme.analysis.core.shared.ast.DslAstNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
@@ -52,7 +51,7 @@ class ConstraintAnalyzerTest {
     }
 
     private static DslContext context(RuleRepository ruleRepo) {
-        return new DslContext(ruleRepo, null, "test.xml", null);
+        return new DslContext(ruleRepo, null, "test.xml");
     }
 
     private static class StubRuleRepository implements RuleRepository {
@@ -130,6 +129,11 @@ class ConstraintAnalyzerTest {
         @Override
         public Optional<RuleSource> getRuleSource(String ruleId) {
             return Optional.ofNullable(ruleSources.get(ruleId));
+        }
+
+        @Override
+        public com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary getFunctionSignatureLibrary() {
+            return null;
         }
     }
 

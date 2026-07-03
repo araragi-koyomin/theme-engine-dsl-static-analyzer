@@ -1,0 +1,37 @@
+{
+  "element": "Triggers",
+  "category": "trigger",
+  "requiredAttrs": [
+  ],
+  "optionalAttrs": [
+  ],
+  "attrTypes": {
+  },
+  "allowedParents": [
+    "Button", "Unlocker", "Slider", "Var", "ExternalCommands", "CollaborationCommands", "Item"
+  ],
+  "inherits": null,
+  "scope": {
+    "Lockscreen": true,
+    "Wallpaper": true,
+    "LongTake": true,
+    "Widget": true,
+    "ChargingSkin": true
+  },
+  "deviceSupport": {
+    "barPhone": true,
+    "foldable": true,
+    "tablet": true
+  },
+  "constraints": [
+    {
+      "ruleId": "SEM-TRIG-003",
+      "condition": "element.children.filter(c -\u003e c.tagName == \u0027Trigger\u0027).size() == 0",
+      "message": "Triggers必须包含至少一个Trigger子元素",
+      "severity": "error",
+      "suggestedFixes": [
+        {"text": "在Triggers内添加Trigger子元素", "type": "ADD_CHILD", "target": "Trigger"}
+      ]
+    }
+  ]
+}

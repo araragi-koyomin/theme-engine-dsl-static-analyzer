@@ -230,6 +230,11 @@
   "description": "Button缺少Trigger子元素",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-button-0000002471395018"
 }, {
+  "ruleId": "SEM-TRIG-003",
+  "category": "SEM",
+  "description": "Triggers缺少Trigger子元素",
+  "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-base-button-0000002471395018"
+}, {
   "ruleId": "SEM-IMG-001",
   "category": "SEM",
   "description": "ImageNumber资源不从0开始命名或序列缺失",

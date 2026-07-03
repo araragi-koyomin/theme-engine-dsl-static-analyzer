@@ -398,4 +398,39 @@ class DslExpressionEmbeddingTest {
         assertFalse(v.isLiteral());
         assertTrue(v.getExpression().isEmpty(), "number/hour/{int(#system.time.hour1)}_{int(#aniTime)}.png needs ''; parse should fail");
     }
+
+    @Test
+    void expressionRangeIsDocumentRelative() {
+        // 行3: `  <Var name="v" expression="#battery_level + 1"/>`
+        // '#'位于文档(3,28)，'1'末尾(开区间)在(3,46)
+        DslElementNode root = build("<?xml version=\"1.0\"?>\n"
+                + "<Lockscreen>\n"
+                + "  <Var name=\"v\" expression=\"#battery_level + 1\"/>\n"
+                + "</Lockscreen>");
+        DslElementNode var = root.getChildElements().get(0);
+        ExpressionNode e = expr(var, "expression");
+
+        // 根表达式区间应覆盖整个值 "#battery_level + 1"，且为文档绝对坐标
+        assertEquals(ExpressionKind.BINARY_EXPR, e.getKind());
+        assertEquals(3, e.getLine());
+        assertEquals(28, e.getColumn());
+        assertEquals(3, e.getEndLine());
+        assertEquals(46, e.getEndColumn());
+
+        // 左操作数 #battery_level：文档(3,28)->(3,42)
+        ExpressionNode left = e.getChildren().get(0);
+        assertEquals(ExpressionKind.VARIABLE_REF, left.getKind());
+        assertEquals(3, left.getLine());
+        assertEquals(28, left.getColumn());
+        assertEquals(3, left.getEndLine());
+        assertEquals(42, left.getEndColumn());
+
+        // 右操作数字面量 1：文档(3,45)->(3,46)
+        ExpressionNode right = e.getChildren().get(1);
+        assertEquals(ExpressionKind.LITERAL, right.getKind());
+        assertEquals(3, right.getLine());
+        assertEquals(45, right.getColumn());
+        assertEquals(3, right.getEndLine());
+        assertEquals(46, right.getEndColumn());
+    }
 }

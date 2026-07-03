@@ -25,7 +25,8 @@ public class DiagnosticProviderImpl implements DiagnosticProvider{
         SymbolTableBuilder symbolTableBuilder;
         List<Diagnostic> diagnostics = new ArrayList<>();
 
-        public DiagnosticProviderImplInner(DslFileNode root, RuleRepository ruleRepo, SymbolTableBuilder symbolTableBuilder) {
+        public DiagnosticProviderImplInner(DslFileNode root, RuleRepository ruleRepo,
+                                           SymbolTableBuilder symbolTableBuilder) {
             this.root = root;
             this.ruleRepo = ruleRepo;
             this.symbolTableBuilder = symbolTableBuilder;
@@ -41,7 +42,8 @@ public class DiagnosticProviderImpl implements DiagnosticProvider{
 
         private void analyze(DslElementNode elementNode, SymbolTable symbolTable){
             for(var analyzer: AnalyzerRegistry.getAnalyzers()){
-                var list = analyzer.analyze(elementNode, new DslContext(ruleRepo, symbolTable, root.getFilePath(), root));
+                var list = analyzer.analyze(elementNode,
+                        new DslContext(ruleRepo, symbolTable, root.getFilePath(), root));
                 diagnostics.addAll(list);
             }
 

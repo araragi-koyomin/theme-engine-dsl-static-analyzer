@@ -58,7 +58,7 @@ class AnalyzerTestFixtures {
     }
 
     static DslContext context(RuleRepository repo, DslFileNode file) {
-        return new DslContext(repo, null, "test.xml", file);
+        return new DslContext(repo, null, file != null ? file.getFilePath() : "test.xml");
     }
 
     static DslElementRule rule(String name, List<String> requiredAttrs,
@@ -183,6 +183,11 @@ class AnalyzerTestFixtures {
         @Override
         public Optional<RuleSource> getRuleSource(String ruleId) {
             return Optional.ofNullable(sources.get(ruleId));
+        }
+
+        @Override
+        public com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary getFunctionSignatureLibrary() {
+            return null;
         }
     }
 }

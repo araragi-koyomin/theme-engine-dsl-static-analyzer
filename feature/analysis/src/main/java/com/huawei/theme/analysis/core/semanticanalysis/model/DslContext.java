@@ -12,4 +12,8 @@ public class DslContext {
     SymbolTable symbolTable;
     String filePath;
     DslFileNode rootNode;
+
+    public DslContext(RuleRepository ruleRepository, SymbolTable symbolTable, String filePath) {
+        this(ruleRepository, symbolTable, filePath, null);
+    }
 }
