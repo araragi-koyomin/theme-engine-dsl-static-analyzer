@@ -8,6 +8,7 @@ import lombok.Data;
 
 import com.huawei.theme.analysis.core.shared.ast.ExpressionAstNode;
 import com.huawei.theme.analysis.core.shared.ast.ExpressionKind;
+import com.huawei.theme.analysis.core.shared.ast.SourceRange;
 
 @Data
 @Builder
@@ -16,6 +17,8 @@ public class ExpressionNode implements ExpressionAstNode {
     @Builder.Default String text = "";
     @Builder.Default int line = 0;
     @Builder.Default int column = 0;
+    @Builder.Default int endLine = 0;
+    @Builder.Default int endColumn = 0;
 
     @Builder.Default String operator = null;
     @Builder.Default List<ExpressionNode> children = Collections.emptyList();
@@ -35,71 +38,121 @@ public class ExpressionNode implements ExpressionAstNode {
     public int getColumn() { return column; }
 
     @Override
+    public int getEndLine() { return endLine; }
+
+    @Override
+    public int getEndColumn() { return endColumn; }
+
+    @Override
     public ExpressionKind getKind() { return kind; }
 
     public static ExpressionNode literal(String value, String text, int line, int column) {
+        return literal(value, text, SourceRange.point(line, column));
+    }
+
+    public static ExpressionNode literal(String value, String text, SourceRange range) {
         return ExpressionNode.builder()
                 .kind(ExpressionKind.LITERAL)
                 .literalValue(value)
                 .text(text)
-                .line(line)
-                .column(column)
+                .line(range.getStartLine())
+                .column(range.getStartColumn())
+                .endLine(range.getEndLine())
+                .endColumn(range.getEndColumn())
                 .build();
     }
 
     public static ExpressionNode variableRef(String prefix, String varName, String text, int line, int column) {
+        return variableRef(prefix, varName, text, SourceRange.point(line, column));
+    }
+
+    public static ExpressionNode variableRef(String prefix, String varName, String text, SourceRange range) {
         return ExpressionNode.builder()
                 .kind(ExpressionKind.VARIABLE_REF)
                 .prefix(prefix)
                 .variableName(varName)
                 .text(text)
-                .line(line)
-                .column(column)
+                .line(range.getStartLine())
+                .column(range.getStartColumn())
+                .endLine(range.getEndLine())
+                .endColumn(range.getEndColumn())
                 .build();
     }
 
-    public static ExpressionNode arrayAccess(String prefix, String varName, ExpressionNode indexExpr, String text, int line, int column) {
+    public static ExpressionNode arrayAccess(String prefix, String varName, ExpressionNode indexExpr,
+                                             String text, int line, int column) {
+        return arrayAccess(prefix, varName, indexExpr, text, SourceRange.point(line, column));
+    }
+
+    public static ExpressionNode arrayAccess(String prefix, String varName, ExpressionNode indexExpr,
+                                             String text, SourceRange range) {
         return ExpressionNode.builder()
                 .kind(ExpressionKind.ARRAY_ACCESS)
                 .prefix(prefix)
                 .variableName(varName)
                 .indexExpression(indexExpr)
                 .text(text)
-                .line(line)
-                .column(column)
+                .line(range.getStartLine())
+                .column(range.getStartColumn())
+                .endLine(range.getEndLine())
+                .endColumn(range.getEndColumn())
                 .build();
     }
 
-    public static ExpressionNode functionCall(String funcName, List<ExpressionNode> args, String text, int line, int column) {
+    public static ExpressionNode functionCall(String funcName, List<ExpressionNode> args,
+                                              String text, int line, int column) {
+        return functionCall(funcName, args, text, SourceRange.point(line, column));
+    }
+
+    public static ExpressionNode functionCall(String funcName, List<ExpressionNode> args,
+                                              String text, SourceRange range) {
         return ExpressionNode.builder()
                 .kind(ExpressionKind.FUNCTION_CALL)
                 .functionName(funcName)
                 .children(args)
                 .text(text)
-                .line(line)
-                .column(column)
+                .line(range.getStartLine())
+                .column(range.getStartColumn())
+                .endLine(range.getEndLine())
+                .endColumn(range.getEndColumn())
                 .build();
     }
 
-    public static ExpressionNode binaryExpr(String op, ExpressionNode left, ExpressionNode right, String text, int line, int column) {
+    public static ExpressionNode binaryExpr(String op, ExpressionNode left, ExpressionNode right,
+                                            String text, int line, int column) {
+        return binaryExpr(op, left, right, text, SourceRange.point(line, column));
+    }
+
+    public static ExpressionNode binaryExpr(String op, ExpressionNode left, ExpressionNode right,
+                                            String text, SourceRange range) {
         return ExpressionNode.builder()
                 .kind(ExpressionKind.BINARY_EXPR)
                 .operator(op)
                 .children(List.of(left, right))
                 .text(text)
-                .line(line)
-                .column(column)
+                .line(range.getStartLine())
+                .column(range.getStartColumn())
+                .endLine(range.getEndLine())
+                .endColumn(range.getEndColumn())
                 .build();
     }
 
-    public static ExpressionNode unaryExpr(String op, ExpressionNode operand, String text, int line, int column) {
+    public static ExpressionNode unaryExpr(String op, ExpressionNode operand,
+                                           String text, int line, int column) {
+        return unaryExpr(op, operand, text, SourceRange.point(line, column));
+    }
+
+    public static ExpressionNode unaryExpr(String op, ExpressionNode operand,
+                                           String text, SourceRange range) {
         return ExpressionNode.builder()
                 .kind(ExpressionKind.UNARY_EXPR)
                 .operator(op)
                 .children(List.of(operand))
                 .text(text)
-                .line(line)
-                .column(column)
+                .line(range.getStartLine())
+                .column(range.getStartColumn())
+                .endLine(range.getEndLine())
+                .endColumn(range.getEndColumn())
                 .build();
     }
 }

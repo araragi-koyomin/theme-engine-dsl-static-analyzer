@@ -3,9 +3,13 @@ package com.huawei.theme.analysis.core.expression;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
+
 import com.huawei.theme.analysis.core.expression.generated.DslExpressionBaseVisitor;
 import com.huawei.theme.analysis.core.expression.generated.DslExpressionParser;
 import com.huawei.theme.analysis.core.shared.ast.ExpressionKind;
+import com.huawei.theme.analysis.core.shared.ast.SourceRange;
 
 public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<ExpressionNode> {
 
@@ -33,7 +37,7 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
             ExpressionNode right = visit(terms.get(i));
             result = ExpressionNode.binaryExpr(
                     "+", result, right,
-                    ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+                    ctx.getText(), rangeOf(ctx));
         }
         return result;
     }
@@ -42,8 +46,7 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
     public ExpressionNode visitStringTerm(DslExpressionParser.StringTermContext ctx) {
         if (ctx.STRING() != null) {
             return ExpressionNode.literal(
-                    stripQuotes(ctx.STRING().getText()), ctx.getText(),
-                    ctx.start.getLine(), ctx.start.getCharPositionInLine());
+                    stripQuotes(ctx.STRING().getText()), ctx.getText(), rangeOf(ctx));
         }
         if (ctx.atVarRef() != null) {
             return visit(ctx.atVarRef());
@@ -56,13 +59,12 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
         }
         if (ctx.NUMBER() != null) {
             return ExpressionNode.literal(
-                    ctx.NUMBER().getText(), ctx.getText(),
-                    ctx.start.getLine(), ctx.start.getCharPositionInLine());
+                    ctx.NUMBER().getText(), ctx.getText(), rangeOf(ctx));
         }
         if (ctx.numericExpression() != null) {
             return visit(ctx.numericExpression());
         }
-        return unknown(ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+        return unknown(ctx.getText(), rangeOf(ctx));
     }
 
     @Override
@@ -87,8 +89,7 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
     public ExpressionNode visitNumericTerm(DslExpressionParser.NumericTermContext ctx) {
         if (ctx.NUMBER() != null) {
             return ExpressionNode.literal(
-                    ctx.NUMBER().getText(), ctx.getText(),
-                    ctx.start.getLine(), ctx.start.getCharPositionInLine());
+                    ctx.NUMBER().getText(), ctx.getText(), rangeOf(ctx));
         }
         if (ctx.hashVarRef() != null) {
             return visit(ctx.hashVarRef());
@@ -99,12 +100,12 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
         if (ctx.numericTerm() != null) {
             return ExpressionNode.unaryExpr(
                     "-", visit(ctx.numericTerm()),
-                    ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+                    ctx.getText(), rangeOf(ctx));
         }
         if (ctx.numericExpression() != null) {
             return visit(ctx.numericExpression());
         }
-        return unknown(ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+        return unknown(ctx.getText(), rangeOf(ctx));
     }
 
     @Override
@@ -130,7 +131,7 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
         if (ctx.primaryExpr() != null) {
             return ExpressionNode.unaryExpr(
                     "-", visit(ctx.primaryExpr()),
-                    ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+                    ctx.getText(), rangeOf(ctx));
         }
         if (ctx.functionCall() != null) {
             return visit(ctx.functionCall());
@@ -144,7 +145,7 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
         if (ctx.expression() != null) {
             return visit(ctx.expression());
         }
-        return unknown(ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+        return unknown(ctx.getText(), rangeOf(ctx));
     }
 
     @Override
@@ -176,7 +177,7 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
         }
         return ExpressionNode.functionCall(
                 functionName, args,
-                ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
+                ctx.getText(), rangeOf(ctx));
     }
 
     @Override
@@ -190,8 +191,7 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
             literalValue = ctx.getText();
         }
         return ExpressionNode.literal(
-                literalValue, ctx.getText(),
-                ctx.start.getLine(), ctx.start.getCharPositionInLine());
+                literalValue, ctx.getText(), rangeOf(ctx));
     }
 
     @Override
@@ -200,35 +200,38 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
         if (expressions.size() == 1) {
             return expressions.get(0);
         }
+        SourceRange range = rangeOf(ctx);
         return ExpressionNode.builder()
                 .kind(ExpressionKind.UNKNOWN)
                 .children(expressions)
                 .text(ctx.getText())
-                .line(ctx.start.getLine())
-                .column(ctx.start.getCharPositionInLine())
+                .line(range.getStartLine())
+                .column(range.getStartColumn())
+                .endLine(range.getEndLine())
+                .endColumn(range.getEndColumn())
                 .build();
     }
 
     private ExpressionNode buildVarRef(String prefix, String variableName,
-            DslExpressionParser.ExpressionContext indexCtx, org.antlr.v4.runtime.ParserRuleContext ctx) {
-        int line = ctx.getStart().getLine();
-        int column = ctx.getStart().getCharPositionInLine();
+            DslExpressionParser.ExpressionContext indexCtx, ParserRuleContext ctx) {
+        SourceRange range = rangeOf(ctx);
         if (indexCtx != null) {
             return ExpressionNode.arrayAccess(
-                    prefix, variableName, visit(indexCtx), ctx.getText(), line, column);
+                    prefix, variableName, visit(indexCtx), ctx.getText(), range);
         }
-        return ExpressionNode.variableRef(prefix, variableName, ctx.getText(), line, column);
+        return ExpressionNode.variableRef(prefix, variableName, ctx.getText(), range);
     }
 
-    private <T extends org.antlr.v4.runtime.ParserRuleContext> ExpressionNode buildBinaryChain(
-            List<T> operands, org.antlr.v4.runtime.ParserRuleContext ctx) {
+    private <T extends ParserRuleContext> ExpressionNode buildBinaryChain(
+            List<T> operands, ParserRuleContext ctx) {
         ExpressionNode result = visit(operands.get(0));
+        SourceRange range = rangeOf(ctx);
         for (int i = 1; i < operands.size(); i++) {
             String op = ctx.getChild(2 * i - 1).getText();
             ExpressionNode right = visit(operands.get(i));
             result = ExpressionNode.binaryExpr(
                     op, result, right,
-                    ctx.getText(), ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
+                    ctx.getText(), range);
         }
         return result;
     }
@@ -241,13 +244,33 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
         return expressions;
     }
 
-    private ExpressionNode unknown(String text, int line, int column) {
+    private ExpressionNode unknown(String text, SourceRange range) {
         return ExpressionNode.builder()
                 .kind(ExpressionKind.UNKNOWN)
                 .text(text)
-                .line(line)
-                .column(column)
+                .line(range.getStartLine())
+                .column(range.getStartColumn())
+                .endLine(range.getEndLine())
+                .endColumn(range.getEndColumn())
                 .build();
+    }
+
+    /**
+     * 从ANTLR上下文计算源码区间：start为ctx起始token，end为ctx末尾token之后(开区间)。
+     * stop为null时退化为点位置。行1-based(ANTLR getLine)，列0-based(getCharPositionInLine)。
+     */
+    private static SourceRange rangeOf(ParserRuleContext ctx) {
+        Token start = ctx.getStart();
+        int startLine = start.getLine();
+        int startCol = start.getCharPositionInLine();
+        Token stop = ctx.getStop();
+        if (stop == null) {
+            return SourceRange.point(startLine, startCol);
+        }
+        int endLine = stop.getLine();
+        int len = stop.getText() != null ? stop.getText().length() : 0;
+        int endCol = stop.getCharPositionInLine() + len;
+        return SourceRange.of(startLine, startCol, endLine, endCol);
     }
 
     private String stripQuotes(String s) {

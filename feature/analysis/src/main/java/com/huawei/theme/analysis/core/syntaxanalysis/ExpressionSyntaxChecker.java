@@ -168,8 +168,7 @@ public class ExpressionSyntaxChecker {
                 .ruleId(ruleId)
                 .message(message)
                 .filePath(filePath)
-                .line(attr.getLine())
-                .column(attr.getColumn());
+                .positionFrom(attr);
         Optional<RuleSource> src = ruleRepository.getRuleSource(ruleId);
         if (src.isPresent()) {
             b.ruleDocUrl(src.get().getDocUrl());
