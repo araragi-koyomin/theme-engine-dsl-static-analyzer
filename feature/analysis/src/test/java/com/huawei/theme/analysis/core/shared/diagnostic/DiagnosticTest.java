@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.huawei.theme.analysis.core.rulelibrary.model.SuggestedFix;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,7 +35,9 @@ class DiagnosticTest {
                 .filePath("test.xml")
                 .line(15)
                 .column(3)
-                .suggestedFixes(List.of("移除values属性", "移除size属性"))
+                .suggestedFixes(List.of(
+                        SuggestedFix.builder().text("移除values属性").type("REMOVE_ATTR").target("values").build(),
+                        SuggestedFix.builder().text("移除size属性").type("REMOVE_ATTR").target("size").build()))
                 .ruleDocUrl("https://dsl-docs.example.com/rules/SEM-VAR-003")
                 .build();
         assertEquals(2, diag.getSuggestedFixes().size());

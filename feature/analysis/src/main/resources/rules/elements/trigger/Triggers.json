@@ -30,7 +30,7 @@
       "message": "Triggers必须包含至少一个Trigger子元素",
       "severity": "error",
       "suggestedFixes": [
-        "在Triggers内添加Trigger子元素"
+        {"text": "在Triggers内添加Trigger子元素", "type": "ADD_CHILD", "target": "Trigger"}
       ]
     }
   ]

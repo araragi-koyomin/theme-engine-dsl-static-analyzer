@@ -432,7 +432,7 @@
       "message": "autoLineFeed=true时必须设置width才能自动换行",
       "severity": "warning",
       "suggestedFixes": [
-        "添加width属性"
+        {"text": "添加width属性", "type": "ADD_ATTR", "target": "width"}
       ]
     }, {
       "ruleId": "SEM-ATTR-007",
@@ -440,7 +440,7 @@
       "message": "marqueeRepeatLimit仅在scrollDisplay=true时有意义",
       "severity": "warning",
       "suggestedFixes": [
-        "添加scrollDisplay属性"
+        {"text": "添加scrollDisplay属性", "type": "ADD_ATTR", "target": "scrollDisplay"}
       ]
     }, {
       "ruleId": "SEM-ATTR-008",
@@ -448,7 +448,7 @@
       "message": "clickable仅在scrollDisplay=true时有意义",
       "severity": "warning",
       "suggestedFixes": [
-        "添加scrollDisplay属性"
+        {"text": "添加scrollDisplay属性", "type": "ADD_ATTR", "target": "scrollDisplay"}
       ]
     }, {
       "ruleId": "SEM-ATTR-009",
@@ -456,7 +456,7 @@
       "message": "delayTime仅在scrollDisplay=true时有意义",
       "severity": "warning",
       "suggestedFixes": [
-        "添加scrollDisplay属性"
+        {"text": "添加scrollDisplay属性", "type": "ADD_ATTR", "target": "scrollDisplay"}
       ]
     }, {
       "ruleId": "SEM-ATTR-001",
@@ -464,7 +464,7 @@
       "message": "alpha值应在0-255范围内",
       "severity": "error",
       "suggestedFixes": [
-        "设置alpha值在0-255范围内"
+        {"text": "设置alpha值在0-255范围内", "type": "CLAMP_VALUE", "target": "alpha", "range": "0-255"}
       ]
     }, {
       "ruleId": "SEM-ATTR-003",
@@ -472,7 +472,7 @@
       "message": "category枚举值不合法，合法值为: Normal, Charging, BatteryLow, BatteryFull",
       "severity": "error",
       "suggestedFixes": [
-        "修改category为合法枚举值"
+        {"text": "修改category为合法枚举值", "type": "REPLACE_ENUM", "target": "category"}
       ]
     }
   ]

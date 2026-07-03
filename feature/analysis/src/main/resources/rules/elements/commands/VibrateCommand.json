@@ -63,7 +63,7 @@
       "message": "define为false(系统预置模式)时，vibrateType属性为必填",
       "severity": "error",
       "suggestedFixes": [
-        "添加vibrateType属性指定系统预置振动类型"
+        {"text": "添加vibrateType属性指定系统预置振动类型", "type": "ADD_ATTR", "target": "vibrateType"}
       ]
     }, {
       "ruleId": "SEM-VIBRATE-002",
@@ -71,7 +71,9 @@
       "message": "define为true(自定义模式)时，必须包含Vibrate子标签",
       "severity": "error",
       "suggestedFixes": [
-        "添加Vibrate子标签及其Wave/Slice子标签"
+        {"text": "添加Vibrate子标签及其Wave/Slice子标签", "type": "ADD_CHILD", "target": "Vibrate"},
+        {"text": "添加Vibrate子标签及其Wave/Slice子标签", "type": "ADD_CHILD", "target": "Wave"},
+        {"text": "添加Vibrate子标签及其Wave/Slice子标签", "type": "ADD_CHILD", "target": "Slice"}
       ]
     }
   ]

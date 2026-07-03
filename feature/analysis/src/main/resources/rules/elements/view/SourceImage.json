@@ -296,7 +296,9 @@
       "message": "direction=0(帧动画解锁)时loop必须为true且unlockTo必须有值",
       "severity": "error",
       "suggestedFixes": [
-        "设置loop=true", "设置unlockTo属性值", "将direction改为1"
+        {"text": "设置loop=true", "type": "SET_VALUE", "target": "loop", "value": "true"},
+        {"text": "设置unlockTo属性值", "type": "SET_VALUE", "target": "unlockTo"},
+        {"text": "将direction改为1", "type": "REPLACE_VALUE", "target": "direction", "value": "1"}
       ]
     }, {
       "ruleId": "SEM-SRCIMG-002",
@@ -304,7 +306,8 @@
       "message": "unlockTo设置解锁帧数，但同级无Button元素作为触控区域，解锁功能可能无法触达",
       "severity": "warning",
       "suggestedFixes": [
-        "添加Button元素作为触控区域", "移除unlockTo属性"
+        {"text": "添加Button元素作为触控区域", "type": "ADD_CHILD", "target": "Button"},
+        {"text": "移除unlockTo属性", "type": "REMOVE_ATTR", "target": "unlockTo"}
       ]
     }
   ]

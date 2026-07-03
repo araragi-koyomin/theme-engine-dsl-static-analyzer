@@ -123,7 +123,7 @@
       "message": "Translation的duration最小值为1000毫秒",
       "severity": "warning",
       "suggestedFixes": [
-        "将duration设置为1000或更大"
+        {"text": "将duration设置为1000或更大", "type": "SET_VALUE", "target": "duration", "value": "1000"}
       ]
     }, {
       "ruleId": "SEM-EFFECT-004",
@@ -131,7 +131,7 @@
       "message": "Translation的repeat最小值为-1(无限循环)",
       "severity": "warning",
       "suggestedFixes": [
-        "将repeat设置为-1或更大"
+        {"text": "将repeat设置为-1或更大", "type": "SET_VALUE", "target": "repeat", "value": "-1"}
       ]
     }
   ]

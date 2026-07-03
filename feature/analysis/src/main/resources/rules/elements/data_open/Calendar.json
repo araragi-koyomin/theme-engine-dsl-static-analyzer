@@ -42,7 +42,7 @@
       "message": "使用Constellations时必须先声明constellationsId变量(persist=true)，默认值为十二星座ID之一",
       "severity": "error",
       "suggestedFixes": [
-        "在Calendar外声明\u003cVar name=\u0027constellationsId\u0027 expression=\u00270003001\u0027 type=\u0027string\u0027 persist=\u0027true\u0027/\u003e"
+        {"text": "在Calendar外声明\u003cVar name=\u0027constellationsId\u0027 expression=\u00270003001\u0027 type=\u0027string\u0027 persist=\u0027true\u0027/\u003e", "type": "DECLARE_OUTSIDE", "target": "Var"}
       ]
     }, {
       "ruleId": "SEM-CAL-002",
@@ -50,7 +50,7 @@
       "message": "Almanac的Var变量名必须遵循格式: Almanac.{字段名}",
       "severity": "error",
       "suggestedFixes": [
-        "修改Var的name属性为Almanac.caishen等标准格式"
+        {"text": "修改Var的name属性为Almanac.caishen等标准格式", "type": "MODIFY_NAME_FORMAT", "target": "name", "value": "Almanac.caishen"}
       ]
     }, {
       "ruleId": "SEM-CAL-003",
@@ -58,7 +58,7 @@
       "message": "Constellations的Var变量名必须遵循格式: Constellations.{字段名}",
       "severity": "error",
       "suggestedFixes": [
-        "修改Var的name属性为Constellations.signName等标准格式"
+        {"text": "修改Var的name属性为Constellations.signName等标准格式", "type": "MODIFY_NAME_FORMAT", "target": "name", "value": "Constellations.signName"}
       ]
     }
   ]

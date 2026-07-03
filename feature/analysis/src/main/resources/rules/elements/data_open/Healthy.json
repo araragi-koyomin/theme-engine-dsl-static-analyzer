@@ -52,7 +52,7 @@
       "message": "time属性最小值为1(秒)",
       "severity": "error",
       "suggestedFixes": [
-        "设置time属性值\u003e=1"
+        {"text": "设置time属性值\u003e=1", "type": "SET_VALUE", "target": "time", "value": "1"}
       ]
     }, {
       "ruleId": "SEM-HEALTHY-002",
@@ -60,7 +60,7 @@
       "message": "time属性仅在polling=true时有效",
       "severity": "warning",
       "suggestedFixes": [
-        "设置polling=\u0027true\u0027"
+        {"text": "设置polling=\u0027true\u0027", "type": "SET_VALUE", "target": "polling", "value": "true"}
       ]
     }
   ]

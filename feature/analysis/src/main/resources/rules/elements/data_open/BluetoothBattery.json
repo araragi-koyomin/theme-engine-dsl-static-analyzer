@@ -30,7 +30,7 @@
       "message": "使用蓝牙耳机数据变量前必须声明BluetoothBattery节点",
       "severity": "error",
       "suggestedFixes": [
-        "添加\u003cBluetoothBattery/\u003e声明"
+        {"text": "添加\u003cBluetoothBattery/\u003e声明", "type": "ADD_DECLARATION", "target": "BluetoothBattery"}
       ]
     }
   ]

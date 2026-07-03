@@ -14,6 +14,7 @@ import com.huawei.theme.analysis.core.expression.ExpressionNode;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
+import com.huawei.theme.analysis.core.rulelibrary.model.SuggestedFix;
 import com.huawei.theme.analysis.core.semanticanalysis.DslAnalyzer;
 import com.huawei.theme.analysis.core.semanticanalysis.model.DslContext;
 import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
@@ -242,7 +243,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .column(column)
                 .endLine(endLine)
                 .endColumn(endColumn)
-                .suggestedFixes(List.of("声明 Var name=\"" + ref.getVariableName() + "\""))
+                .suggestedFixes(List.of(SuggestedFix.builder().text("声明 Var name=\"" + ref.getVariableName() + "\"").type("ADD_ATTR").target("name").value(ref.getVariableName()).build()))
                 .ruleDocUrl(docUrl)
                 .build();
     }
@@ -269,7 +270,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .column(column)
                 .endLine(endLine)
                 .endColumn(endColumn)
-                .suggestedFixes(List.of("声明带 name=\"" + elementName + "\" 的元素"))
+                .suggestedFixes(List.of(SuggestedFix.builder().text("声明带 name=\"" + elementName + "\" 的元素").type("ADD_CHILD").target(elementName).build()))
                 .ruleDocUrl(docUrl)
                 .build();
     }
@@ -282,8 +283,8 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .ruleId(RULE_REF_002)
                 .message("Command target 引用未定义元素 " + elemName)
                 .filePath(context.getFilePath())
-                .positionFrom(cmdNode)
-                .suggestedFixes(List.of("声明元素 name=\"" + elemName + "\""))
+                .astNode(cmdNode)
+                .suggestedFixes(List.of(SuggestedFix.builder().text("声明元素 name=\"" + elemName + "\"").type("ADD_CHILD").target(elemName).build()))
                 .ruleDocUrl(docUrl)
                 .build();
     }
@@ -296,8 +297,8 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .ruleId(RULE_REF_002)
                 .message("Command target 属性 '" + property + "' 不合法，合法值: visibility, animation")
                 .filePath(context.getFilePath())
-                .positionFrom(cmdNode)
-                .suggestedFixes(List.of("修改 target 属性为 name.visibility 或 name.animation"))
+                .astNode(cmdNode)
+                .suggestedFixes(List.of(SuggestedFix.builder().text("修改 target 属性为 name.visibility 或 name.animation").type("SET_VALUE").target("target").build()))
                 .ruleDocUrl(docUrl)
                 .build();
     }
@@ -309,8 +310,8 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .ruleId(RULE_REF_003)
                 .message("重复定义变量 " + varName)
                 .filePath(context.getFilePath())
-                .positionFrom(varNode)
-                .suggestedFixes(List.of("移除重复的 Var 声明"))
+                .astNode(varNode)
+                .suggestedFixes(List.of(SuggestedFix.builder().text("移除重复的 Var 声明").type("DELETE_NODE").target(varName).build()))
                 .ruleDocUrl(docUrl)
                 .build();
     }

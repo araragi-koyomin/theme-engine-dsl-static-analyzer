@@ -62,7 +62,7 @@
       "message": "Swiper必须是根标签的直接子元素",
       "severity": "error",
       "suggestedFixes": [
-        "将Swiper移至根标签下"
+        {"text": "将Swiper移至根标签下", "type": "MOVE_ELEMENT", "target": "Swiper", "value": "根标签下"}
       ]
     }
   ]

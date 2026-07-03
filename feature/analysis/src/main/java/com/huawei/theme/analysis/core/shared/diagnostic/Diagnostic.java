@@ -3,6 +3,7 @@ package com.huawei.theme.analysis.core.shared.diagnostic;
 import java.util.Collections;
 import java.util.List;
 
+import com.huawei.theme.analysis.core.rulelibrary.model.SuggestedFix;
 import com.huawei.theme.analysis.core.shared.ast.DslAstNode;
 import com.huawei.theme.analysis.core.shared.ast.SourceRange;
 import lombok.Builder;
@@ -25,7 +26,7 @@ public class Diagnostic {
     DslAstNode astNode;
 
     @Builder.Default
-    List<String> suggestedFixes = Collections.emptyList();
+    List<SuggestedFix> suggestedFixes = Collections.emptyList();
     String ruleDocUrl;
 
     /**
