@@ -24,6 +24,7 @@ import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleConstraint;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
+import com.huawei.theme.analysis.core.rulelibrary.model.SuggestedFix;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 import com.huawei.theme.analysis.core.shared.diagnostic.adapter.DiagnosticSeverityAdapter;
 
@@ -191,6 +192,11 @@ public class JsonRuleLoader {
             if (constraint.getSuggestedFixes() == null) {
                 constraint.setSuggestedFixes(Collections.emptyList());
             }
+            for (SuggestedFix fix : constraint.getSuggestedFixes()) {
+                if (fix.getType() == null || fix.getType().isEmpty()) {
+                    fix.setType("UNKNOWN");
+                }
+            }
         }
     }
 
@@ -241,6 +247,11 @@ public class JsonRuleLoader {
         for (RuleConstraint constraint : var.getConstraints()) {
             if (constraint.getSuggestedFixes() == null) {
                 constraint.setSuggestedFixes(Collections.emptyList());
+            }
+            for (SuggestedFix fix : constraint.getSuggestedFixes()) {
+                if (fix.getType() == null || fix.getType().isEmpty()) {
+                    fix.setType("UNKNOWN");
+                }
             }
         }
     }

@@ -51,7 +51,7 @@
       "message": "frameRate推荐值30，默认60",
       "severity": "warning",
       "suggestedFixes": [
-        "设置frameRate为30"
+        {"text": "设置frameRate为30", "type": "SET_VALUE", "target": "frameRate", "value": "30"}
       ]
     }
   ]

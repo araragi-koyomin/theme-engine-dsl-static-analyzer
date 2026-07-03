@@ -64,7 +64,7 @@
       "message": "使用MediaCommand前必须声明MediaController",
       "severity": "error",
       "suggestedFixes": [
-        "添加\u003cMediaController/\u003e声明"
+        {"text": "添加\u003cMediaController/\u003e声明", "type": "ADD_DECLARATION", "target": "MediaController"}
       ]
     }, {
       "ruleId": "SEM-MEDIA-002",
@@ -72,7 +72,7 @@
       "message": "mediaLike和mediaDislike仅华为音乐(com.huawei.hmsapp.music)支持",
       "severity": "warning",
       "suggestedFixes": [
-        "确认MediaController指定华为音乐包名"
+        {"text": "确认MediaController指定华为音乐包名", "type": "CONFIRM", "target": "MediaController"}
       ]
     }
   ]

@@ -73,7 +73,7 @@
       "message": "SensorBinder的子Variable必须同时设置name和index属性",
       "severity": "error",
       "suggestedFixes": [
-        "为Variable添加name和index属性"
+        {"text": "为Variable添加name和index属性", "type": "ADD_ATTR", "target": "name和index"}
       ]
     }, {
       "ruleId": "SEM-SENSOR-002",
@@ -81,7 +81,7 @@
       "message": "Variable的index属性取值必须为0、1或2",
       "severity": "error",
       "suggestedFixes": [
-        "设置index为0/1/2"
+        {"text": "设置index为0/1/2", "type": "SET_VALUE", "target": "index", "value": "0/1/2"}
       ]
     }
   ]

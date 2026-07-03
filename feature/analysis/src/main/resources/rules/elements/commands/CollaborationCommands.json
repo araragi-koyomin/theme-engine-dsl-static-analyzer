@@ -63,7 +63,7 @@
       "message": "collaborationId必须是长度为4的字符串，内容为A-Z、a-z或0-9",
       "severity": "error",
       "suggestedFixes": [
-        "修改collaborationId为4位A-Z/a-z/0-9字符串"
+        {"text": "修改collaborationId为4位A-Z/a-z/0-9字符串", "type": "MODIFY_NAME_FORMAT", "target": "collaborationId", "value": "4位A-Z/a-z/0-9"}
       ]
     }, {
       "ruleId": "SEM-COLLAB-002",
@@ -71,7 +71,7 @@
       "message": "一个脚本中只能有一个CollaborationCommands节点",
       "severity": "error",
       "suggestedFixes": [
-        "删除多余的CollaborationCommands节点"
+        {"text": "删除多余的CollaborationCommands节点", "type": "DELETE_NODE", "target": "CollaborationCommands"}
       ]
     }
   ]

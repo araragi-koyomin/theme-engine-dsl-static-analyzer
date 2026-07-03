@@ -121,7 +121,8 @@
       "message": "touchType=0(重力感应)模式下pitchAngle/sidesAngle/stepX/stepZ无效",
       "severity": "warning",
       "suggestedFixes": [
-        "移除pitchAngle/sidesAngle/stepX/stepZ属性", "更改touchType为2(重力+滑动)或3(调距浏览)"
+        {"text": "移除pitchAngle/sidesAngle/stepX/stepZ属性", "type": "REMOVE_ATTR", "target": "pitchAngle/sidesAngle/stepX/stepZ"},
+        {"text": "更改touchType为2(重力+滑动)或3(调距浏览)", "type": "REPLACE_VALUE", "target": "touchType", "value": "2"}
       ]
     }, {
       "ruleId": "SEM-3D-002",
@@ -129,7 +130,8 @@
       "message": "touchType=1(滑动角度)模式下gravityX/gravityY/stepX/stepZ无效",
       "severity": "warning",
       "suggestedFixes": [
-        "移除gravityX/gravityY/stepX/stepZ属性", "更改touchType为2(重力+滑动)或0(重力感应)"
+        {"text": "移除gravityX/gravityY/stepX/stepZ属性", "type": "REMOVE_ATTR", "target": "gravityX/gravityY/stepX/stepZ"},
+        {"text": "更改touchType为2(重力+滑动)或0(重力感应)", "type": "REPLACE_VALUE", "target": "touchType", "value": "2"}
       ]
     }, {
       "ruleId": "SEM-3D-003",
@@ -137,7 +139,8 @@
       "message": "touchType=2(重力+滑动)模式下stepX/stepZ无效",
       "severity": "warning",
       "suggestedFixes": [
-        "移除stepX/stepZ属性", "更改touchType为3(调距浏览)"
+        {"text": "移除stepX/stepZ属性", "type": "REMOVE_ATTR", "target": "stepX/stepZ"},
+        {"text": "更改touchType为3(调距浏览)", "type": "REPLACE_VALUE", "target": "touchType", "value": "3"}
       ]
     }, {
       "ruleId": "SEM-3D-004",
@@ -145,7 +148,8 @@
       "message": "touchType=3(调距浏览)模式下gravityX/gravityY/pitchAngle/sidesAngle无效",
       "severity": "warning",
       "suggestedFixes": [
-        "移除gravityX/gravityY/pitchAngle/sidesAngle属性", "更改touchType为0(重力感应)、1(滑动角度)或2(重力+滑动)"
+        {"text": "移除gravityX/gravityY/pitchAngle/sidesAngle属性", "type": "REMOVE_ATTR", "target": "gravityX/gravityY/pitchAngle/sidesAngle"},
+        {"text": "更改touchType为0(重力感应)、1(滑动角度)或2(重力+滑动)", "type": "REPLACE_VALUE", "target": "touchType", "value": "0"}
       ]
     }
   ]

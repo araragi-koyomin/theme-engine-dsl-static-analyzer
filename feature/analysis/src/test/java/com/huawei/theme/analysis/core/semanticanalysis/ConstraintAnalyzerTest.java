@@ -15,6 +15,7 @@ import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleConstraint;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
+import com.huawei.theme.analysis.core.rulelibrary.model.SuggestedFix;
 import com.huawei.theme.analysis.core.semanticanalysis.model.DslContext;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
@@ -142,7 +143,9 @@ class ConstraintAnalyzerTest {
                 .condition("element.attrs['play'] != null AND element.attrs['sound'] != null")
                 .message("VideoCommand中play和sound互斥，不能同时存在")
                 .severity(DiagnosticSeverity.ERROR)
-                .suggestedFixes(List.of("移除play属性", "移除sound属性"))
+                .suggestedFixes(List.of(
+                        SuggestedFix.builder().text("移除play属性").type("REMOVE_ATTR").target("play").build(),
+                        SuggestedFix.builder().text("移除sound属性").type("REMOVE_ATTR").target("sound").build()))
                 .build();
     }
 
@@ -152,7 +155,8 @@ class ConstraintAnalyzerTest {
                 .condition("element.attrs['persist'] != null")
                 .message("VariableCommand不支持persist属性")
                 .severity(DiagnosticSeverity.ERROR)
-                .suggestedFixes(List.of("移除persist属性"))
+                .suggestedFixes(List.of(
+                        SuggestedFix.builder().text("移除persist属性").type("REMOVE_ATTR").target("persist").build()))
                 .build();
     }
 
@@ -202,8 +206,8 @@ class ConstraintAnalyzerTest {
         assertEquals(10, diag.getLine());
         assertEquals(5, diag.getColumn());
         assertEquals(2, diag.getSuggestedFixes().size());
-        assertEquals("移除play属性", diag.getSuggestedFixes().get(0));
-        assertEquals("移除sound属性", diag.getSuggestedFixes().get(1));
+        assertEquals("移除play属性", diag.getSuggestedFixes().get(0).getText());
+        assertEquals("移除sound属性", diag.getSuggestedFixes().get(1).getText());
         assertEquals("https://developer.huawei.com/consumer/cn/doc/harmonyos/sem-cmd-001", diag.getRuleDocUrl());
     }
 
@@ -356,7 +360,9 @@ class ConstraintAnalyzerTest {
                 .condition("element.attrs['values'] != null AND element.attrs['size'] != null")
                 .message("Var的values与size属性同时存在，优先取size")
                 .severity(DiagnosticSeverity.WARNING)
-                .suggestedFixes(List.of("移除values属性", "移除size属性"))
+                .suggestedFixes(List.of(
+                        SuggestedFix.builder().text("移除values属性").type("REMOVE_ATTR").target("values").build(),
+                        SuggestedFix.builder().text("移除size属性").type("REMOVE_ATTR").target("size").build()))
                 .build();
     }
 
@@ -409,7 +415,8 @@ class ConstraintAnalyzerTest {
                 .condition("element.attrs['isBackground'] == 'true' AND element.attrs['scaleType'] != 'center_crop'")
                 .message("isBackground=true时必须配合scaleType=center_crop")
                 .severity(DiagnosticSeverity.ERROR)
-                .suggestedFixes(List.of("设置scaleType=center_crop"))
+                .suggestedFixes(List.of(
+                        SuggestedFix.builder().text("设置scaleType=center_crop").type("SET_VALUE").target("scaleType").value("center_crop").build()))
                 .build();
     }
 
@@ -474,7 +481,8 @@ class ConstraintAnalyzerTest {
                 .condition("element.attrs['category'] != null AND element.attrs['category'] NOT IN ['Normal', 'Charging', 'BatteryLow', 'BatteryFull']")
                 .message("category枚举值不合法，合法值为: Normal, Charging, BatteryLow, BatteryFull")
                 .severity(DiagnosticSeverity.ERROR)
-                .suggestedFixes(List.of("修改category为合法枚举值"))
+                .suggestedFixes(List.of(
+                        SuggestedFix.builder().text("修改category为合法枚举值").type("REPLACE_ENUM").target("category").build()))
                 .build();
     }
 
@@ -539,7 +547,10 @@ class ConstraintAnalyzerTest {
                 .condition("element.attrs['clip'] == 'true' AND (element.attrs['width'] == null OR element.attrs['height'] == null)")
                 .message("clip=true时需要设置width和height来定义裁剪边界")
                 .severity(DiagnosticSeverity.WARNING)
-                .suggestedFixes(List.of("添加width属性", "添加height属性", "移除clip属性"))
+                .suggestedFixes(List.of(
+                        SuggestedFix.builder().text("添加width属性").type("ADD_ATTR").target("width").build(),
+                        SuggestedFix.builder().text("添加height属性").type("ADD_ATTR").target("height").build(),
+                        SuggestedFix.builder().text("移除clip属性").type("REMOVE_ATTR").target("clip").build()))
                 .build();
     }
 
@@ -604,7 +615,10 @@ class ConstraintAnalyzerTest {
                 .condition("element.attrs['direction'] == '0' AND (element.attrs['loop'] != 'true' OR element.attrs['unlockTo'] == null)")
                 .message("direction=0(帧动画解锁)时loop必须为true且unlockTo必须有值")
                 .severity(DiagnosticSeverity.ERROR)
-                .suggestedFixes(List.of("设置loop=true", "设置unlockTo属性值", "将direction改为1"))
+                .suggestedFixes(List.of(
+                        SuggestedFix.builder().text("设置loop=true").type("SET_VALUE").target("loop").value("true").build(),
+                        SuggestedFix.builder().text("设置unlockTo属性值").type("SET_VALUE").target("unlockTo").build(),
+                        SuggestedFix.builder().text("将direction改为1").type("REPLACE_VALUE").target("direction").value("1").build()))
                 .build();
     }
 

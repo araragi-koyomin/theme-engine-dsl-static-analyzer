@@ -200,7 +200,8 @@
       "message": "ImageNumber的number值须小于8位数字",
       "severity": "error",
       "suggestedFixes": [
-        "减小number值", "使用ImageSeries替代"
+        {"text": "减小number值", "type": "REDUCE_VALUE", "target": "number"},
+        {"text": "使用ImageSeries替代", "type": "USE_ALTERNATIVE", "target": "ImageSeries"}
       ]
     }
   ]

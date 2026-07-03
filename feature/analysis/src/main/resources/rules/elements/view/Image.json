@@ -343,7 +343,7 @@
       "message": "isBackground=true时必须配合scaleType=center_crop",
       "severity": "error",
       "suggestedFixes": [
-        "设置scaleType=center_crop"
+        {"text": "设置scaleType=center_crop", "type": "SET_VALUE", "target": "scaleType", "value": "center_crop"}
       ]
     }, {
       "ruleId": "SEM-IMG-002",
@@ -351,7 +351,8 @@
       "message": "src与srcExp无法共存，当存在src值时图片使用src作为地址",
       "severity": "error",
       "suggestedFixes": [
-        "移除srcExp属性", "移除src属性"
+        {"text": "移除srcExp属性", "type": "REMOVE_ATTR", "target": "srcExp"},
+        {"text": "移除src属性", "type": "REMOVE_ATTR", "target": "src"}
       ]
     }, {
       "ruleId": "SEM-IMG-003",
@@ -359,7 +360,8 @@
       "message": "isBackground与align同时使用时isBackground不生效",
       "severity": "warning",
       "suggestedFixes": [
-        "移除align属性或移除isBackground属性"
+        {"text": "移除align属性", "type": "REMOVE_ATTR", "target": "align"},
+        {"text": "移除isBackground属性", "type": "REMOVE_ATTR", "target": "isBackground"}
       ]
     }, {
       "ruleId": "SEM-ATTR-001",
@@ -367,7 +369,7 @@
       "message": "alpha值应在0-255范围内",
       "severity": "error",
       "suggestedFixes": [
-        "设置alpha值在0-255范围内"
+        {"text": "设置alpha值在0-255范围内", "type": "CLAMP_VALUE", "target": "alpha", "range": "0-255"}
       ]
     }, {
       "ruleId": "SEM-IMG-SRC",
@@ -375,7 +377,8 @@
       "message": "Image的src与srcExp至少需要填写一个以指定显示图片",
       "severity": "error",
       "suggestedFixes": [
-        "添加src属性指定图片路径", "添加srcExp属性指定图片源表达式"
+        {"text": "添加src属性指定图片路径", "type": "ADD_ATTR", "target": "src"},
+        {"text": "添加srcExp属性指定图片源表达式", "type": "ADD_ATTR", "target": "srcExp"}
       ]
     }
   ]

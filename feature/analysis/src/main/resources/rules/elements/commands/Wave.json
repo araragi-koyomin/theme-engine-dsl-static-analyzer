@@ -30,7 +30,7 @@
       "message": "一个Wave中Slice的数量不能超过64",
       "severity": "error",
       "suggestedFixes": [
-        "减少Slice数量至64个以内"
+        {"text": "减少Slice数量至64个以内", "type": "REDUCE_VALUE", "target": "Slice", "range": 64}
       ]
     }
   ]

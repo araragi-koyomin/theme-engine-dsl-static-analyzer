@@ -6,12 +6,13 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
+import com.huawei.theme.analysis.core.shared.model.FixActionType;
 import com.huawei.theme.analysis.core.shared.diagnostic.TextRange;
 
 @Data
 @Builder
 public class FixAction {
-    String fixType;
+    FixActionType fixType;
     TextRange targetRange;
     String replacementText;
     @Builder.Default

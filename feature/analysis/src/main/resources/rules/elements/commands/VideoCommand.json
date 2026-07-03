@@ -112,7 +112,8 @@
       "message": "VideoCommand中play和sound互斥，不能同时存在",
       "severity": "error",
       "suggestedFixes": [
-        "移除play属性", "移除sound属性"
+        {"text": "移除play属性", "type": "REMOVE_ATTR", "target": "play"},
+        {"text": "移除sound属性", "type": "REMOVE_ATTR", "target": "sound"}
       ]
     }
   ]

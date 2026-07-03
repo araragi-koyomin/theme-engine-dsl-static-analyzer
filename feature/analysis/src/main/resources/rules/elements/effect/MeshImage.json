@@ -115,7 +115,8 @@
       "message": "MeshImage必须包含Translation或SinMotion子标签之一",
       "severity": "error",
       "suggestedFixes": [
-        "添加Translation子标签", "添加SinMotion子标签"
+        {"text": "添加Translation子标签", "type": "ADD_CHILD", "target": "Translation"},
+        {"text": "添加SinMotion子标签", "type": "ADD_CHILD", "target": "SinMotion"}
       ]
     }, {
       "ruleId": "SEM-EFFECT-002",
@@ -123,7 +124,8 @@
       "message": "MeshImage不应同时包含Translation和SinMotion子标签",
       "severity": "warning",
       "suggestedFixes": [
-        "移除SinMotion子标签(若使用位移效果)", "移除Translation子标签(若使用水波纹效果)"
+        {"text": "移除SinMotion子标签(若使用位移效果)", "type": "REMOVE_CHILD", "target": "SinMotion"},
+        {"text": "移除Translation子标签(若使用水波纹效果)", "type": "REMOVE_CHILD", "target": "Translation"}
       ]
     }
   ]

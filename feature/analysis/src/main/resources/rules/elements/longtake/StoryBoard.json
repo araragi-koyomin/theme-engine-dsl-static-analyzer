@@ -43,7 +43,7 @@
       "message": "StoryBoard name必须为固定命名，不可修改",
       "severity": "error",
       "suggestedFixes": [
-        "使用固定StoryBoard名称"
+        {"text": "使用固定StoryBoard名称", "type": "USE_ALTERNATIVE", "target": "StoryBoard"}
       ]
     }
   ]
