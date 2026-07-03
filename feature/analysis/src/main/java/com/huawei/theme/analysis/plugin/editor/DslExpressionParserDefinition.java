@@ -1,6 +1,7 @@
 package com.huawei.theme.analysis.plugin.editor;
 
 import org.antlr.intellij.adaptor.lexer.ANTLRLexerAdaptor;
+import org.antlr.intellij.adaptor.lexer.GapFillingLexerAdaptor;
 import org.antlr.intellij.adaptor.lexer.PSIElementTypeFactory;
 import org.antlr.intellij.adaptor.parser.ANTLRParserAdaptor;
 import org.antlr.intellij.adaptor.psi.ANTLRPsiNode;
@@ -37,7 +38,15 @@ public class DslExpressionParserDefinition implements ParserDefinition {
     @NotNull
     @Override
     public Lexer createLexer(Project project) {
-        return new ANTLRLexerAdaptor(DslExpressionLanguage.INSTANCE, new DslExpressionLexer(null));
+        DslExpressionLexer lexer = new DslExpressionLexer(null);
+        lexer.removeErrorListeners();
+        // Wrap in GapFillingLexerAdaptor so every character is covered by a token
+        // (WHITE_SPACE / BAD_CHARACTER for gaps left by WS->skip and lexer error
+        // recovery). This is required by the injection's LeafPatcher, which asserts
+        // leaf texts add up to the whole injected text. PSITokenSource skips the
+        // synthetic tokens so the ANTLR parser doesn't see them.
+        return new GapFillingLexerAdaptor(
+                new ANTLRLexerAdaptor(DslExpressionLanguage.INSTANCE, lexer));
     }
 
     @Override

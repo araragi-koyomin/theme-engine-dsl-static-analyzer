@@ -4,6 +4,7 @@ import com.intellij.lang.ParserDefinition;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.openapi.progress.ProgressIndicatorProvider;
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.tree.IElementType;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenFactory;
 import org.antlr.v4.runtime.Token;
@@ -47,6 +48,17 @@ public class PSITokenSource implements TokenSource {
 	@Override
 	public Token nextToken() {
 		ProgressIndicatorProvider.checkCanceled();
+
+		// Skip non-ANTLR tokens (e.g. TokenType.WHITE_SPACE / TokenType.BAD_CHARACTER
+		// introduced by GapFillingLexerAdaptor). They remain as PSI leaves for text
+		// coverage, but the ANTLR parser should not see them.
+		while (!builder.eof()) {
+			IElementType rawType = builder.getTokenType();
+			if (rawType instanceof TokenIElementType) {
+				break;
+			}
+			builder.advanceLexer();
+		}
 
 		TokenIElementType ideaTType = (TokenIElementType)builder.getTokenType();
 		int type = ideaTType!=null ? ideaTType.getANTLRTokenType() : Token.EOF;
