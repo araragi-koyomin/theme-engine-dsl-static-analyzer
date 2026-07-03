@@ -84,7 +84,7 @@
       "message": "使用MediaIcon前必须声明MediaController",
       "severity": "error",
       "suggestedFixes": [
-        "添加\u003cMediaController/\u003e声明"
+        {"text": "添加\u003cMediaController/\u003e声明", "type": "ADD_DECLARATION", "target": "MediaController"}
       ]
     }
   ]

@@ -149,7 +149,7 @@
       "message": "禁止对时间/日期/星期变量使用persist/globalPersist/styleGlobalPersist",
       "severity": "error",
       "suggestedFixes": [
-        "移除persist/globalPersist/styleGlobalPersist属性"
+        {"text": "移除persist/globalPersist/styleGlobalPersist属性", "type": "REMOVE_ATTR", "target": "persist/globalPersist/styleGlobalPersist"}
       ]
     }, {
       "ruleId": "SEM-VAR-003",
@@ -157,7 +157,8 @@
       "message": "Var的values与size属性同时存在，优先取size",
       "severity": "warning",
       "suggestedFixes": [
-        "移除values属性", "移除size属性"
+        {"text": "移除values属性", "type": "REMOVE_ATTR", "target": "values"},
+        {"text": "移除size属性", "type": "REMOVE_ATTR", "target": "size"}
       ]
     }
   ]

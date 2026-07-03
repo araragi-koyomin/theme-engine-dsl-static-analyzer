@@ -93,7 +93,7 @@
       "message": "VariableCommand不支持persist属性",
       "severity": "error",
       "suggestedFixes": [
-        "移除persist属性"
+        {"text": "移除persist属性", "type": "REMOVE_ATTR", "target": "persist"}
       ]
     }
   ]

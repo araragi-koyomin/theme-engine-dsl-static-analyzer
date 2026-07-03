@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
+import com.huawei.theme.analysis.core.shared.model.FixActionType;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,14 +24,14 @@ class QuickFixProviderTest {
     void batchOverloadAggregatesInOrder() {
         QuickFixProvider provider = diagnostic -> List.of(
                 FixAction.builder()
-                        .fixType("t-" + diagnostic.getRuleId())
+                        .fixType(FixActionType.UNKNOWN)
                         .description(diagnostic.getMessage())
                         .build()
         );
         List<FixAction> all = provider.getFixActions(List.of(diag("R1", "m1"), diag("R2", "m2")));
         assertEquals(2, all.size());
-        assertEquals("t-R1", all.get(0).getFixType());
-        assertEquals("t-R2", all.get(1).getFixType());
+        assertEquals(FixActionType.UNKNOWN, all.get(0).getFixType());
+        assertEquals(FixActionType.UNKNOWN, all.get(1).getFixType());
         assertEquals("m1", all.get(0).getDescription());
         assertEquals("m2", all.get(1).getDescription());
     }
@@ -53,7 +54,7 @@ class QuickFixProviderTest {
             @Override
             public List<FixAction> generate(Diagnostic diagnostic) {
                 return List.of(FixAction.builder()
-                        .fixType("insert_attr")
+                        .fixType(FixActionType.ADD_ATTR)
                         .description("声明Var name=" + diagnostic.getMessage())
                         .build());
             }
@@ -62,7 +63,7 @@ class QuickFixProviderTest {
         QuickFixProvider provider = new QuickFixProviderImpl();
         List<FixAction> actions = provider.getFixActions(diag("SEM-REF-001", "steps_value"));
         assertEquals(1, actions.size());
-        assertEquals("insert_attr", actions.get(0).getFixType());
+        assertEquals(FixActionType.ADD_ATTR, actions.get(0).getFixType());
         assertEquals("声明Var name=steps_value", actions.get(0).getDescription());
     }
 
@@ -80,8 +81,8 @@ class QuickFixProviderTest {
 
     @Test
     void implBatchSkipsDiagnosticsWithoutGenerator() {
-        FixActionRegistry.register(generator("R1", "fix-R1"));
-        FixActionRegistry.register(generator("R2", "fix-R2"));
+        FixActionRegistry.register(generator("R1", FixActionType.UNKNOWN));
+        FixActionRegistry.register(generator("R2", FixActionType.UNKNOWN));
         QuickFixProvider provider = new QuickFixProviderImpl();
         List<FixAction> all = provider.getFixActions(List.of(
                 diag("R1", "m1"),
@@ -89,11 +90,11 @@ class QuickFixProviderTest {
                 diag("R2", "m3")
         ));
         assertEquals(2, all.size());
-        assertEquals("fix-R1", all.get(0).getFixType());
-        assertEquals("fix-R2", all.get(1).getFixType());
+        assertEquals(FixActionType.UNKNOWN, all.get(0).getFixType());
+        assertEquals(FixActionType.UNKNOWN, all.get(1).getFixType());
     }
 
-    private static FixActionGenerator generator(String ruleId, String fixType) {
+    private static FixActionGenerator generator(String ruleId, FixActionType fixType) {
         return new FixActionGenerator() {
             @Override
             public String getRuleId() {

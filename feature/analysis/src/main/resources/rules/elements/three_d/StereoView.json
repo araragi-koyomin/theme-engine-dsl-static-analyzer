@@ -122,7 +122,7 @@
       "message": "StereoView必须包含3-10个StereoGroup子元素",
       "severity": "error",
       "suggestedFixes": [
-        "添加3-10个StereoGroup子元素"
+        {"text": "添加3-10个StereoGroup子元素", "type": "ADD_CHILD", "target": "StereoGroup"}
       ]
     }, {
       "ruleId": "SEM-3D-STEREO-002",
@@ -130,7 +130,7 @@
       "message": "StereoView中enableMove/moveRect与滑动冲突，不应使用",
       "severity": "error",
       "suggestedFixes": [
-        "移除enableMove和moveRect属性"
+        {"text": "移除enableMove和moveRect属性", "type": "REMOVE_ATTR", "target": "enableMove/moveRect"}
       ]
     }
   ]
