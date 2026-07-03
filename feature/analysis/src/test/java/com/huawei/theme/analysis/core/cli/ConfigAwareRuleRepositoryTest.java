@@ -223,5 +223,10 @@ class ConfigAwareRuleRepositoryTest {
         public Optional<com.huawei.theme.analysis.core.rulelibrary.model.RuleSource> getRuleSource(String ruleId) {
             return Optional.empty();
         }
+
+        @Override
+        public com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary getFunctionSignatureLibrary() {
+            return null;
+        }
     }
 }

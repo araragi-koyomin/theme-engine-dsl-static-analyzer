@@ -39,10 +39,13 @@
         <lang.parserDefinition language="DslExpression"
                                implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionParserDefinition"/>
 
+        <lang.parserDefinition language="VarName"
+                               implementationClass="com.huawei.theme.analysis.plugin.editor.VarNameParserDefinition"/>
+
         <lang.syntaxHighlighterFactory language="DslExpression"
                                 implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionSyntaxHighlighterFactory"/>
 
-        <colorSettingsPage implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionColorSettingsPage"/>
+        <colorSettingsPage implementation="com.huawei.theme.analysis.plugin.editor.DslExpressionColorSettingsPage"/>
 
         <annotator language="DslExpression"
                    implementationClass="com.huawei.theme.analysis.plugin.editor.DslExpressionSemanticAnnotator"/>
@@ -55,6 +58,12 @@
         <lang.documentationProvider language="ThemeDSL"
                                      implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslAttributeDocumentationProvider"/>
 
-        <multiHostInjector implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslExpressionInjector"/>
+        <renamePsiElementProcessor implementation="com.huawei.theme.analysis.plugin.editor.ThemeDslVarRenameProcessor"/>
+
+        <psi.referenceContributor implementation="com.huawei.theme.analysis.plugin.editor.ThemeDslVariableReferenceContributor"
+                                  language="ThemeDSL"/>
+
+        <multiHostInjector implementation="com.huawei.theme.analysis.plugin.editor.ThemeDslExpressionInjector"/>
+        <multiHostInjector implementation="com.huawei.theme.analysis.plugin.editor.ThemeDslVarNameInjector"/>
     </extensions>
 </idea-plugin>
