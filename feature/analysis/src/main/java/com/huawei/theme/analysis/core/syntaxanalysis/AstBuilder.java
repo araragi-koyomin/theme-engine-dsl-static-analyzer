@@ -139,6 +139,7 @@ public class AstBuilder implements DslAstProvider {
                 attr.setText(attrValue);
                 attr.setLine(line);
                 attr.setColumn(column);
+                attr.setParent(node);
 
                 DslAttributeValueNode value = new DslAttributeValueNode();
                 value.setRawValue(attrValue);

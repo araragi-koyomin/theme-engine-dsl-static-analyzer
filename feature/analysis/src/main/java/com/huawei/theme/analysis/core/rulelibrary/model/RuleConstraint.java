@@ -29,5 +29,5 @@ public class RuleConstraint {
     /** 诊断严重级别，JSON中存储为小写字符串("error"/"warning"/"info")，通过DiagnosticSeverityAdapter映射为枚举 */
     DiagnosticSeverity severity;
     /** 修复建议文本列表，M5 FixAction直接消费 */
-    @Builder.Default List<String> suggestedFixes = Collections.emptyList();
+    @Builder.Default List<SuggestedFix> suggestedFixes = Collections.emptyList();
 }

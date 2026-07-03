@@ -48,7 +48,7 @@ public abstract class BaseXmlAnalyzer implements DslAnalyzer {
                 .message(message)
                 .filePath(context.getFilePath())
                 .astNode(astNode)
-                .suggestedFixes(List.of())
+                .suggestedFixes(Collections.emptyList())
                 .ruleDocUrl(docUrl)
                 .build();
     }
