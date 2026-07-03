@@ -1,0 +1,71 @@
+plugins {
+    id 'application'
+}
+
+dependencies {
+    implementation project(':feature:analysis')
+    implementation 'org.eclipse.lsp4j:org.eclipse.lsp4j:0.21.2'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.3'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
+}
+
+application {
+    applicationName = 'dsl-analyzer-lsp'
+    mainClass = 'com.huawei.theme.analysis.lsp.DslLspLauncher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.huawei.theme.analysis.lsp.DslLspLauncher'
+    }
+}
+
+// Standalone fat jar: LSP server classes + core classes + rules/functions
+// resources + gson + antlr4-runtime + lsp4j. Deliberately excludes the
+// IntelliJ SDK so the jar runs on a plain JRE.
+task buildLspFatJar(type: Jar) {
+    group = 'build'
+    description = 'Build the standalone LSP server fat jar'
+    archiveFileName = 'dsl-analyzer-lsp.jar'
+    destinationDirectory = file("$buildDir/lsp")
+
+    from(sourceSets.main.output)
+
+    from(project(':feature:analysis').sourceSets.main.output.classesDirs) {
+        include 'com/huawei/theme/analysis/core/**'
+    }
+    from(project(':feature:analysis').sourceSets.main.output.resourcesDir) {
+        include 'rules/**'
+        include 'functions/**'
+    }
+
+    from {
+        configurations.runtimeClasspath.filter { file ->
+            file.name.contains('gson')
+                    || file.name.contains('antlr4-runtime')
+                    || file.name.contains('lsp4j')
+        }.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    // Strip dependency signature files: re-jarbing signed dependencies
+    // (lsp4j etc.) invalidates their signatures and makes the JVM refuse to
+    // start with "Invalid signature file digest".
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.RSA'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/INDEX.LIST'
+
+    manifest {
+        attributes 'Main-Class': 'com.huawei.theme.analysis.lsp.DslLspLauncher'
+    }
+}
+
+build.dependsOn buildLspFatJar

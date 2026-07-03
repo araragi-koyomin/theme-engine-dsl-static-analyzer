@@ -1,0 +1,107 @@
+package com.huawei.theme.analysis.lsp;
+
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
+
+import com.huawei.theme.analysis.core.shared.ast.DslAstNode;
+import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
+
+/**
+ * Maps core diagnostic coordinates to LSP positions.
+ *
+ * <p>Core emits 1-based line / 0-based column (see {@link
+ * com.huawei.theme.analysis.core.syntaxanalysis.AstBuilder}'s SAX locator
+ * handling). The JDK XML parser works on Java {@code String}, so the column
+ * is already in UTF-16 code units, which matches the LSP "character"
+ * definition. Thus the mapping is effectively {@code line - 1} /
+ * {@code column}, clamped to the document bounds.</p>
+ */
+final class PositionMapper {
+
+    private final String text;
+    private final int[] lineStarts;
+
+    PositionMapper(String text) {
+        this.text = text;
+        this.lineStarts = buildLineStarts(text);
+    }
+
+    private static int[] buildLineStarts(String text) {
+        int count = 1;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == '\n') {
+                count++;
+            }
+        }
+        int[] starts = new int[count];
+        int idx = 1;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == '\n') {
+                starts[idx++] = i + 1;
+            }
+        }
+        return starts;
+    }
+
+    int lineCount() {
+        return lineStarts.length;
+    }
+
+    int lineEnd(int lspLine) {
+        if (lspLine < 0) {
+            return 0;
+        }
+        if (lspLine >= lineStarts.length - 1) {
+            return text.length();
+        }
+        return lineStarts[lspLine + 1] - 1;
+    }
+
+    /** Converts a 1-based line / 0-based column core coordinate to an LSP position. */
+    Position toPosition(int line1Based, int column0Based) {
+        int lspLine = Math.max(line1Based - 1, 0);
+        if (lspLine >= lineStarts.length) {
+            lspLine = lineStarts.length - 1;
+        }
+        int start = lineStarts[lspLine];
+        int maxChar = Math.max(lineEnd(lspLine) - start, 0);
+        int lspChar = Math.max(column0Based, 0);
+        if (lspChar > maxChar) {
+            lspChar = maxChar;
+        }
+        return new Position(lspLine, lspChar);
+    }
+
+    /** Builds an LSP range for a core diagnostic, using the AST node text when available. */
+    Range toRange(Diagnostic diagnostic) {
+        Position start = toPosition(diagnostic.getLine(), diagnostic.getColumn());
+        Position end = computeEnd(start, diagnostic.getAstNode());
+        return new Range(start, end);
+    }
+
+    private Position computeEnd(Position start, DslAstNode node) {
+        String nodeText = node == null ? null : node.getText();
+        if (nodeText == null || nodeText.isEmpty() || nodeText.indexOf('\n') >= 0) {
+            return start;
+        }
+        int startOffset = lineStarts[start.getLine()];
+        int maxChar = Math.max(lineEnd(start.getLine()) - startOffset, 0);
+        int endChar = Math.min(start.getCharacter() + nodeText.length(), maxChar);
+        return new Position(start.getLine(), endChar);
+    }
+
+    /** Converts an LSP position (0-based line / 0-based char) to a text offset. */
+    int toOffset(int lspLine, int lspChar) {
+        int line = Math.max(lspLine, 0);
+        if (line >= lineStarts.length) {
+            return text.length();
+        }
+        int start = lineStarts[line];
+        int maxChar = Math.max(lineEnd(line) - start, 0);
+        int ch = Math.max(lspChar, 0);
+        if (ch > maxChar) {
+            ch = maxChar;
+        }
+        return start + ch;
+    }
+}

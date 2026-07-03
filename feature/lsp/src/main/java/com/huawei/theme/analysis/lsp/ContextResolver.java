@@ -1,0 +1,92 @@
+package com.huawei.theme.analysis.lsp;
+
+/**
+ * Lightweight, PSI-free resolver that determines the cursor's structural
+ * context (element-name position vs attribute-name position) by scanning the
+ * raw document text backwards from the cursor.
+ *
+ * <p>Heuristic implementation for the first LSP version. DSL files have a
+ * simple XML structure with no CDATA, so backward scanning is sufficient.
+ * A later iteration can replace this with AST-based resolution once core
+ * AST nodes carry end positions.</p>
+ */
+final class ContextResolver {
+
+    enum PositionType { ELEMENT_NAME, ATTRIBUTE_NAME, OTHER }
+
+    static final class Context {
+        final PositionType type;
+        final String tagName;
+        final String word;
+
+        Context(PositionType type, String tagName, String word) {
+            this.type = type;
+            this.tagName = tagName;
+            this.word = word;
+        }
+    }
+
+    private final String text;
+
+    ContextResolver(String text) {
+        this.text = text;
+    }
+
+    Context resolve(int offset) {
+        int n = Math.min(Math.max(offset, 0), text.length());
+        int lt = findTagOpen(n);
+        if (lt < 0) {
+            return new Context(PositionType.OTHER, null, wordBefore(n));
+        }
+        int nameStart = lt + 1;
+        if (nameStart < text.length() && text.charAt(nameStart) == '/') {
+            return new Context(PositionType.OTHER, null, wordBefore(n));
+        }
+        int i = nameStart;
+        while (i < n && isNameChar(text.charAt(i))) {
+            i++;
+        }
+        String tagName = text.substring(nameStart, i);
+        if (i >= n) {
+            return new Context(PositionType.ELEMENT_NAME,
+                    tagName.isEmpty() ? null : tagName, text.substring(nameStart, n));
+        }
+        int wordStart = n;
+        while (wordStart > i && isNameChar(text.charAt(wordStart - 1))) {
+            wordStart--;
+        }
+        String w = text.substring(wordStart, n);
+        if (wordStart > i) {
+            char prev = text.charAt(wordStart - 1);
+            if (prev == '"' || prev == '\'') {
+                return new Context(PositionType.OTHER, tagName, w);
+            }
+        }
+        return new Context(PositionType.ATTRIBUTE_NAME, tagName, w);
+    }
+
+    private int findTagOpen(int from) {
+        for (int i = from - 1; i >= 0; i--) {
+            char c = text.charAt(i);
+            if (c == '>') {
+                return -1;
+            }
+            if (c == '<') {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private String wordBefore(int from) {
+        int s = from;
+        while (s > 0 && isNameChar(text.charAt(s - 1))) {
+            s--;
+        }
+        return text.substring(s, from);
+    }
+
+    private static boolean isNameChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '.' || c == ':';
+    }
+}

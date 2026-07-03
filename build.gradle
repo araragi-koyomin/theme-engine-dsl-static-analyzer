@@ -21,7 +21,6 @@ allprojects {
 }
 
 subprojects {
-    apply plugin: 'org.jetbrains.intellij'
     apply plugin: 'idea'
 
     sourceSets {
@@ -51,30 +50,35 @@ subprojects {
         archives jar
     }
 
-    intellij {
-        version = 'IU-2024.1.7'
-        downloadSources = true
-        updateSinceUntilBuild = false
-    }
+    // IntelliJ Platform packaging applies only to IDE-facing modules. The
+    // `lsp` module is a standalone Java application and must not pull the
+    // IntelliJ SDK or trigger an IDE distribution download.
+    if (project.path != ':feature:lsp') {
+        apply plugin: 'org.jetbrains.intellij'
 
-    tasks.named('initializeIntelliJPlugin').configure {
-        onlyIf {false}
-    }
+        intellij {
+            version = 'IU-2024.1.7'
+            downloadSources = true
+            updateSinceUntilBuild = false
+        }
 
-    gradle.projectsEvaluated {
-        tasks.matching {it.name == 'buildSearchableOptions'}.configureEach {
+        tasks.named('initializeIntelliJPlugin').configure {
             onlyIf {false}
         }
-        tasks.matching { it.name == 'testClasses' && it.project.plugins.hasPlugin('org.jetbrains.intellij') }.configureEach {
-            onlyIf {true}
+
+        gradle.projectsEvaluated {
+            tasks.matching {it.name == 'buildSearchableOptions'}.configureEach {
+                onlyIf {false}
+            }
+            tasks.matching { it.name == 'testClasses' && it.project.plugins.hasPlugin('org.jetbrains.intellij') }.configureEach {
+                onlyIf {true}
+            }
         }
-    }
 
-
-
-    patchPluginXml {
-        sinceBuild = '241'
-        untilBuild = '999.*'
+        patchPluginXml {
+            sinceBuild = '241'
+            untilBuild = '999.*'
+        }
     }
 
 }
