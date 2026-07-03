@@ -87,8 +87,7 @@ public class SyntaxChecker {
                 .ruleId(ruleId)
                 .message(message)
                 .filePath(filePath)
-                .line(node.getLine())
-                .column(node.getColumn());
+                .positionFrom(node);
         Optional<RuleSource> src = ruleRepository.getRuleSource(ruleId);
         if (src.isPresent()) {
             b.ruleDocUrl(src.get().getDocUrl());

@@ -21,7 +21,7 @@
     }
   },
   "allowedParents": [
-    "Button", "Unlocker", "Slider", "Var", "ExternalCommands", "CollaborationCommands", "Item"
+    "Button", "Unlocker", "Slider", "Var", "ExternalCommands", "CollaborationCommands", "Item", "Triggers"
   ],
   "inherits": null,
   "scope": {

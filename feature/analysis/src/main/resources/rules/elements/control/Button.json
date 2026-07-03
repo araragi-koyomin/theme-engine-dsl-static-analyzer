@@ -164,7 +164,7 @@
   "constraints": [
     {
       "ruleId": "SEM-TRIG-002",
-      "condition": "element.children.filter(c -\u003e c.tagName == \u0027Trigger\u0027).size() == 0",
+      "condition": "element.children.filter(c -\u003e c.tagName == \u0027Trigger\u0027 OR c.tagName == \u0027Triggers\u0027).size() == 0",
       "message": "Button必须包含至少一个Trigger子元素",
       "severity": "error",
       "suggestedFixes": [
