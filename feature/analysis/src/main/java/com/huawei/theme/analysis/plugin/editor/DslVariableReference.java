@@ -9,6 +9,9 @@ import org.jetbrains.annotations.Nullable;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.icons.AllIcons;
+import com.intellij.lang.injection.InjectedLanguageManager;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiReferenceBase;
@@ -23,20 +26,21 @@ import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
 
 /**
- * A reference from an {@code @name}/{@code #name} usage (inside an attribute value)
- * to the declaring {@code <Var name="name">} element in the same ThemeDSL file.
+ * A host-side reference from an {@code @name}/{@code #name} usage (inside an
+ * attribute value) to the declaring {@code VarNameElement} (the injected
+ * {@link com.intellij.psi.PsiNameIdentifierOwner} inside {@code <Var name="...">}'s
+ * {@code name} attribute value).
  *
- * <p>The reference range (set by the contributor) covers only the identifier, so
- * {@link #handleElementRename(String)} (inherited from {@link PsiReferenceBase})
+ * <p>Resolving to the {@link VarNameElement} (not the {@code <Var>} tag) ensures
+ * that {@code ReferencesSearch} finds ALL references when renaming from the
+ * declaration side — e.g. in {@code #a + #b + #a}, both {@code #a} references
+ * are found and renamed, not just the first.
+ *
+ * <p>{@link #handleElementRename(String)} (inherited from {@link PsiReferenceBase})
  * rewrites just the name via the {@link XmlAttributeValue} element manipulator,
  * preserving the {@code @}/{@code #} sigil. References are soft so that built-in
- * global variables (which have no PSI declaration) and not-yet-declared names do
- * not show unresolved-error squiggles.</p>
- *
- * <p>{@link #resolve()} returns the {@link XmlAttributeValue} of the matching
- * {@code <Var>}'s {@code name} attribute, so Go-to-Declaration lands on the
- * declaration name and Find Usages works from it. Declaration rename is handled by
- * {@link ThemeDslVarRenameProcessor}.</p>
+ * global variables (which have no PSI declaration) do not show unresolved-error
+ * squiggles.</p>
  */
 class DslVariableReference extends PsiReferenceBase<XmlAttributeValue> {
 
@@ -59,7 +63,14 @@ class DslVariableReference extends PsiReferenceBase<XmlAttributeValue> {
             }
             XmlAttribute nameAttr = tag.getAttribute("name");
             if (nameAttr != null && varName.equals(nameAttr.getValue())) {
-                return tag;
+                XmlAttributeValue nameValue = nameAttr.getValueElement();
+                if (nameValue == null) {
+                    return null;
+                }
+                // Resolve to the injected VarNameElement (PsiNameIdentifierOwner) so that
+                // ReferencesSearch finds all references when renaming from the declaration.
+                VarNameElement varNameElement = findVarNameElement(nameValue);
+                return varNameElement != null ? varNameElement : nameValue;
             }
         }
         return null;
@@ -98,5 +109,27 @@ class DslVariableReference extends PsiReferenceBase<XmlAttributeValue> {
             return null;
         }
         return element.getContainingFile() instanceof XmlFile xmlFile ? xmlFile : null;
+    }
+
+    @Nullable
+    private VarNameElement findVarNameElement(XmlAttributeValue nameValue) {
+        Project project = getElement().getProject();
+        if (project == null) {
+            return null;
+        }
+        List<Pair<PsiElement, TextRange>> injected =
+                InjectedLanguageManager.getInstance(project).getInjectedPsiFiles(nameValue);
+        if (injected == null) {
+            return null;
+        }
+        for (Pair<PsiElement, TextRange> entry : injected) {
+            PsiElement e = entry.getFirst();
+            VarNameElement found = e instanceof VarNameElement vne ? vne
+                    : PsiTreeUtil.getChildOfType(e, VarNameElement.class);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
     }
 }

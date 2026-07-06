@@ -50,7 +50,7 @@ public class ThemeDslVariableReferenceContributor extends PsiReferenceContributo
     private static final class ThemeDslVariableReferenceProvider extends PsiReferenceProvider {
         @Override
         public PsiReference @NotNull [] getReferencesByElement(@NotNull PsiElement element,
-                                                              @NotNull ProcessingContext context) {
+                                                               @NotNull ProcessingContext context) {
             if (!(element instanceof XmlAttributeValue value)) {
                 return PsiReference.EMPTY_ARRAY;
             }
@@ -64,7 +64,7 @@ public class ThemeDslVariableReferenceContributor extends PsiReferenceContributo
                 if (tag != null && "Var".equals(tag.getName())) {
                     TextRange range =
                             value.getValueTextRange().shiftLeft(value.getTextRange().getStartOffset());
-                    return new PsiReference[]{new VarNameSelfReference(value, range)};
+                    return new PsiReference[]{};
                 }
             }
             // Expression attribute: @x/#x usage references.

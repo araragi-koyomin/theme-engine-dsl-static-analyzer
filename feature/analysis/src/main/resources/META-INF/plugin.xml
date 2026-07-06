@@ -60,6 +60,8 @@
 
         <renamePsiElementProcessor implementation="com.huawei.theme.analysis.plugin.editor.ThemeDslVarRenameProcessor"/>
 
+        <findUsagesHandlerFactory implementation="com.huawei.theme.analysis.plugin.editor.ThemeDslVarFindUsagesHandlerFactory"/>
+
         <psi.referenceContributor implementation="com.huawei.theme.analysis.plugin.editor.ThemeDslVariableReferenceContributor"
                                   language="ThemeDSL"/>
 

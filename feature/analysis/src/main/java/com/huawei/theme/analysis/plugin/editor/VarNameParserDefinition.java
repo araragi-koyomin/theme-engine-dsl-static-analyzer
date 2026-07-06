@@ -28,11 +28,13 @@ public class VarNameParserDefinition implements ParserDefinition {
     @Override
     public PsiParser createParser(Project project) {
         return (root, builder) -> {
-            PsiBuilder.Marker marker = builder.mark();
+            PsiBuilder.Marker fileMarker = builder.mark();
+            PsiBuilder.Marker varNameMarker = builder.mark();
             while (!builder.eof()) {
                 builder.advanceLexer();
             }
-            marker.done(VarNameElementTypes.VAR_NAME);
+            varNameMarker.done(VarNameElementTypes.VAR_NAME);
+            fileMarker.done(root);
             return builder.getTreeBuilt();
         };
     }
@@ -57,8 +59,10 @@ public class VarNameParserDefinition implements ParserDefinition {
     @NotNull
     @Override
     public PsiElement createElement(ASTNode node) {
+        // VarNameElement is created directly by ASTFactory via ICompositeElementType,
+        // so this is only a fallback for non-standard creation paths.
         if (node.getElementType() == VarNameElementTypes.VAR_NAME) {
-            return new VarNameElement(node);
+            return new VarNameElement(node.getElementType());
         }
         return new ASTWrapperPsiElement(node);
     }
