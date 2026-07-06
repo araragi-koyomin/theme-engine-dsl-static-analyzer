@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 
+import com.intellij.openapi.util.TextRange;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -75,9 +76,12 @@ public class ThemeDslDiagnosticAnnotator implements Annotator {
             return;
         }
         for (Diagnostic diagnostic : diagnostics) {
+            var off1 = lineColToOffset(file.getFileDocument(), diagnostic.getLine(), diagnostic.getColumn());
+            var off2 = lineColToOffset(file.getFileDocument(), diagnostic.getEndLine(), diagnostic.getEndColumn());
+
             String message = diagnostic.getMessage() == null ? "" : diagnostic.getMessage();
             holder.newAnnotation(severityOf(diagnostic.getSeverity()), message)
-                    .range(element)
+                    .range(TextRange.create(off1, off2))
                     .create();
         }
     }
