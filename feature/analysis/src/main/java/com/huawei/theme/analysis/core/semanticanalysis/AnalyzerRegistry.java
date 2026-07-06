@@ -19,12 +19,7 @@ public class AnalyzerRegistry {
     }
 
     static{
-        register(new ConstraintAnalyzer());
-        register(new ParentChildAnalyzer());
-        register(new ScopeAnalyzer());
-        register(new RequiredAttrAnalyzer());
-        register(new LiteralTypeAnalyzer());
-        register(new EnumValueAnalyzer());
+        init();
     }
 
     /**
