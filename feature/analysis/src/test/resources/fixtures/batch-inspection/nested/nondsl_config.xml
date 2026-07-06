@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+    <property name="theme.version" value="2.1"/>
+    <property name="debug.mode" value="false"/>
+</configuration>
