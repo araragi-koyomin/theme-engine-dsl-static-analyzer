@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="dup_var" type="number" const="true" expression="1"/>
+    <Var name="dup_var" type="string" const="true" expression="'reset'"/>
+    <Var name="bad_sin" type="number" expression="sin('hello')"/>
+    <Var name="bad_ifelse" type="number" expression="ifelse(#missing_cond, 1, 'string_result')"/>
+    <Var name="valid_num" type="number" const="true" expression="10"/>
+    <Image name="bg" x="#undefined_var" y="0" width="1080" height="1920"
+           alpha="300" src="bg.png"/>
+    <Image name="icon" x="'not_a_number'" y="100" width="50" height="50"
+           src="icon.png"/>
+    <Text name="clock" x="540" y="500" textExp="sin(#valid_num)"/>
+</Lockscreen>

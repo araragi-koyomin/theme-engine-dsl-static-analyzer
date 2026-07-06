@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wallpaper>
+    <Image name="bg" x="0" y="0" width="1080" height="1920"
+           alpha="500" src="bg.png" srcExp="@dynamic_bg"
+           scaleType="invalid_scale" isBackground="true" align="center"/>
+    <Image name="fg" y="100" width="500" height="500"
+           alpha="-10" src="fg.png"/>
+</Wallpaper>
