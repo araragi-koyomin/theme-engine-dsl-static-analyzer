@@ -50,14 +50,7 @@ final class DslLspDocumentSync implements Disposable {
                 new FileEditorManagerListener() {
                     @Override
                     public void fileOpened(FileEditorManager source, VirtualFile file) {
-                        if (!isDsl(file)) {
-                            return;
-                        }
-                        Document doc = FileDocumentManager.getInstance().getDocument(file);
-                        if (doc == null) {
-                            return;
-                        }
-                        sendDidOpen(file.getUrl(), doc.getText());
+                        onFileOpened(file);
                     }
 
                     @Override
@@ -84,6 +77,25 @@ final class DslLspDocumentSync implements Disposable {
                 sendDidChange(file.getUrl(), doc.getText());
             }
         }, connection);
+
+        // Replay didOpen for files already open before this listener was
+        // registered (e.g. files restored when the project opened) — otherwise
+        // the server has no document text and hover/completion return null
+        // until the user edits the file.
+        for (VirtualFile file : FileEditorManager.getInstance(project).getOpenFiles()) {
+            onFileOpened(file);
+        }
+    }
+
+    private void onFileOpened(VirtualFile file) {
+        if (!isDsl(file)) {
+            return;
+        }
+        Document doc = FileDocumentManager.getInstance().getDocument(file);
+        if (doc == null) {
+            return;
+        }
+        sendDidOpen(file.getUrl(), doc.getText());
     }
 
     private static boolean isDsl(VirtualFile file) {

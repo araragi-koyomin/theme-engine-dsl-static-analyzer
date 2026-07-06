@@ -42,21 +42,26 @@ final class ContextResolver {
         if (nameStart < text.length() && text.charAt(nameStart) == '/') {
             return new Context(PositionType.OTHER, null, wordBefore(n));
         }
-        int i = nameStart;
-        while (i < n && isNameChar(text.charAt(i))) {
-            i++;
+        // Scan the full tag name independently of the cursor, so hover
+        // resolves the complete tag even when the cursor is inside the name
+        // (e.g. Ctrl+Q with the caret in the middle of "Widget").
+        int nameEnd = nameStart;
+        while (nameEnd < text.length() && isNameChar(text.charAt(nameEnd))) {
+            nameEnd++;
         }
-        String tagName = text.substring(nameStart, i);
-        if (i >= n) {
+        String tagName = text.substring(nameStart, nameEnd);
+        if (n <= nameEnd) {
+            // cursor within the tag name (or right after '<')
             return new Context(PositionType.ELEMENT_NAME,
                     tagName.isEmpty() ? null : tagName, text.substring(nameStart, n));
         }
+        // cursor past the tag name → attribute region
         int wordStart = n;
-        while (wordStart > i && isNameChar(text.charAt(wordStart - 1))) {
+        while (wordStart > nameEnd && isNameChar(text.charAt(wordStart - 1))) {
             wordStart--;
         }
         String w = text.substring(wordStart, n);
-        if (wordStart > i) {
+        if (wordStart > nameEnd) {
             char prev = text.charAt(wordStart - 1);
             if (prev == '"' || prev == '\'') {
                 return new Context(PositionType.OTHER, tagName, w);

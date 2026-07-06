@@ -38,30 +38,38 @@ final class HoverProvider {
 
     private String renderTag(DslElementRule rule) {
         StringBuilder sb = new StringBuilder();
-        sb.append("### ").append(rule.getElementName());
+        sb.append("<h3>").append(esc(rule.getElementName())).append("</h3>");
         if (rule.getCategory() != null && !rule.getCategory().isEmpty()) {
-            sb.append("  ·  `").append(rule.getCategory()).append("`");
+            sb.append(" <code>").append(esc(rule.getCategory())).append("</code>");
         }
-        sb.append("\n\n");
-
+        sb.append("<br>");
         if (!rule.getRequiredAttrs().isEmpty()) {
-            sb.append("**Required:** ")
-                    .append(String.join(", ", rule.getRequiredAttrs()))
-                    .append("\n\n");
+            sb.append("<b>Required:</b> ")
+                    .append(esc(String.join(", ", rule.getRequiredAttrs())))
+                    .append("<br>");
         }
         if (!rule.getOptionalAttrs().isEmpty()) {
-            sb.append("**Optional:** ")
-                    .append(String.join(", ", rule.getOptionalAttrs()))
-                    .append("\n\n");
+            sb.append("<b>Optional:</b> ")
+                    .append(esc(String.join(", ", rule.getOptionalAttrs())))
+                    .append("<br>");
         }
         if (!rule.getAllowedParents().isEmpty()) {
-            sb.append("**Allowed parents:** ")
-                    .append(String.join(", ", rule.getAllowedParents()))
-                    .append("\n\n");
+            sb.append("<b>Allowed parents:</b> ")
+                    .append(esc(String.join(", ", rule.getAllowedParents())))
+                    .append("<br>");
         }
         if (rule.getInherits() != null && !rule.getInherits().isEmpty()) {
-            sb.append("**Inherits:** `").append(rule.getInherits()).append("`\n\n");
+            sb.append("<b>Inherits:</b> <code>").append(esc(rule.getInherits())).append("</code><br>");
         }
-        return sb.toString().trim();
+        return sb.toString();
+    }
+
+    private static String esc(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
     }
 }
