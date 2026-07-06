@@ -15,4 +15,13 @@ public class InspectionConfig {
     List<String> enabledRuleIds;
     List<String> disabledRuleIds;
     Map<String, DiagnosticSeverity> severityOverrides;
+    PipelineMode pipelineMode;
+    @Builder.Default
+    boolean typeCheck = true;
+    @Builder.Default
+    boolean noColor = false;
+    @Builder.Default
+    boolean verbose = false;
+    @Builder.Default
+    boolean quiet = false;
 }

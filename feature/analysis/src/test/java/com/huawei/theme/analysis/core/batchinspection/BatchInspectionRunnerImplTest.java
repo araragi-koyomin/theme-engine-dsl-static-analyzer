@@ -31,6 +31,8 @@ import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
+import com.huawei.theme.analysis.core.cli.InspectionConfig;
+import com.huawei.theme.analysis.core.cli.PipelineMode;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 import com.huawei.theme.analysis.core.shared.model.FixActionType;
 import com.huawei.theme.analysis.core.shared.diagnostic.TextRange;
@@ -60,6 +62,7 @@ class BatchInspectionRunnerImplTest {
     private StubQuickFixProvider stubQuickFixProvider;
     private StubSymbolTableBuilder stubSymbolTableBuilder;
     private StubRuleRepository stubRuleRepository;
+    private InspectionConfig defaultConfig;
     private BatchInspectionRunnerImpl runner;
 
     @BeforeEach
@@ -70,9 +73,12 @@ class BatchInspectionRunnerImplTest {
         stubQuickFixProvider = new StubQuickFixProvider();
         stubSymbolTableBuilder = new StubSymbolTableBuilder();
         stubRuleRepository = new StubRuleRepository();
+        defaultConfig = InspectionConfig.builder()
+                .pipelineMode(PipelineMode.FULL).typeCheck(true).build();
         runner = new BatchInspectionRunnerImpl(
                 stubMatcher, stubAstProvider, stubDiagnosticProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
     }
 
     @Test
@@ -80,7 +86,8 @@ class BatchInspectionRunnerImplTest {
         assertThrows(NullPointerException.class, () ->
                 new BatchInspectionRunnerImpl(
                         null, stubAstProvider, stubDiagnosticProvider,
-                        stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository));
+                        stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                        defaultConfig));
     }
 
     @Test
@@ -88,7 +95,8 @@ class BatchInspectionRunnerImplTest {
         assertThrows(NullPointerException.class, () ->
                 new BatchInspectionRunnerImpl(
                         stubMatcher, null, stubDiagnosticProvider,
-                        stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository));
+                        stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                        defaultConfig));
     }
 
     @Test
@@ -96,7 +104,8 @@ class BatchInspectionRunnerImplTest {
         assertThrows(NullPointerException.class, () ->
                 new BatchInspectionRunnerImpl(
                         stubMatcher, stubAstProvider, null,
-                        stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository));
+                        stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                        defaultConfig));
     }
 
     @Test
@@ -104,7 +113,8 @@ class BatchInspectionRunnerImplTest {
         assertThrows(NullPointerException.class, () ->
                 new BatchInspectionRunnerImpl(
                         stubMatcher, stubAstProvider, stubDiagnosticProvider,
-                        null, stubSymbolTableBuilder, stubRuleRepository));
+                        null, stubSymbolTableBuilder, stubRuleRepository,
+                        defaultConfig));
     }
 
     @Test
@@ -112,7 +122,8 @@ class BatchInspectionRunnerImplTest {
         assertThrows(NullPointerException.class, () ->
                 new BatchInspectionRunnerImpl(
                         stubMatcher, stubAstProvider, stubDiagnosticProvider,
-                        stubQuickFixProvider, null, stubRuleRepository));
+                        stubQuickFixProvider, null, stubRuleRepository,
+                        defaultConfig));
     }
 
     @Test
@@ -120,7 +131,8 @@ class BatchInspectionRunnerImplTest {
         assertThrows(NullPointerException.class, () ->
                 new BatchInspectionRunnerImpl(
                         stubMatcher, stubAstProvider, stubDiagnosticProvider,
-                        stubQuickFixProvider, stubSymbolTableBuilder, null));
+                        stubQuickFixProvider, stubSymbolTableBuilder, null,
+                        defaultConfig));
     }
 
     @Test
@@ -128,7 +140,8 @@ class BatchInspectionRunnerImplTest {
         NullPointerException ex = assertThrows(NullPointerException.class, () ->
                 new BatchInspectionRunnerImpl(
                         null, stubAstProvider, stubDiagnosticProvider,
-                        stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository));
+                        stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                        defaultConfig));
         assertTrue(ex.getMessage().contains("fileMatcher"));
     }
 
@@ -148,7 +161,8 @@ class BatchInspectionRunnerImplTest {
         StubDslFileMatcher nonDslMatcher = new StubDslFileMatcher(false);
         BatchInspectionRunnerImpl nonDslRunner = new BatchInspectionRunnerImpl(
                 nonDslMatcher, stubAstProvider, stubDiagnosticProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         BatchInspectionResult result = nonDslRunner.runOnFile(tempFile.toString());
         assertEquals(0, result.getTotalFiles());
         assertEquals(1, result.getSkippedFiles());
@@ -180,7 +194,8 @@ class BatchInspectionRunnerImplTest {
         StubDslFileMatcher falseMatcher = new StubDslFileMatcher(false);
         BatchInspectionRunnerImpl skipRunner = new BatchInspectionRunnerImpl(
                 falseMatcher, trackingAst, trackingDiag,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         skipRunner.runOnFile(tempFile.toString());
         assertEquals(0, astCount.get());
         assertEquals(0, diagCount.get());
@@ -221,7 +236,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl dirRunner = new BatchInspectionRunnerImpl(
                 contentMatcher, stubAstProvider, stubDiagnosticProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         BatchInspectionResult result = dirRunner.runOnDirectory(dir.toString());
         assertEquals(1, result.getTotalFiles());
         assertEquals(1, result.getSkippedFiles());
@@ -254,7 +270,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl mixedRunner = new BatchInspectionRunnerImpl(
                 stubMatcher, stubAstProvider, mixedProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         Path tempFile = createTempXmlFile("<Lockscreen><Var name=\"x\"/></Lockscreen>");
         BatchInspectionResult result = mixedRunner.runOnFile(tempFile.toString());
         assertEquals(1, result.getTotalFiles());
@@ -295,7 +312,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl fixRunner = new BatchInspectionRunnerImpl(
                 stubMatcher, stubAstProvider, stubDiagnosticProvider,
-                fixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                fixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         Path tempFile = createTempXmlFile("<Lockscreen/>");
         BatchInspectionResult result = fixRunner.runOnFile(tempFile.toString());
         assertEquals(2, result.getFileResults().get(0).getFixActions().size());
@@ -315,7 +333,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl emptyRunner = new BatchInspectionRunnerImpl(
                 stubMatcher, stubAstProvider, emptyProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         Path tempFile = createTempXmlFile("<Lockscreen/>");
         BatchInspectionResult result = emptyRunner.runOnFile(tempFile.toString());
         assertEquals(1, result.getTotalFiles());
@@ -344,7 +363,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl dirRunner = new BatchInspectionRunnerImpl(
                 contentMatcher, stubAstProvider, stubDiagnosticProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         BatchInspectionResult result = dirRunner.runOnDirectory(rootDir.toString());
         assertEquals(2, result.getTotalFiles());
         assertEquals(2, result.getSkippedFiles());
@@ -385,7 +405,8 @@ class BatchInspectionRunnerImplTest {
         StubDslFileMatcher falseMatcher = new StubDslFileMatcher(false);
         BatchInspectionRunnerImpl falseRunner = new BatchInspectionRunnerImpl(
                 falseMatcher, stubAstProvider, stubDiagnosticProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         BatchInspectionResult result = falseRunner.runOnDirectory(dir.toString());
         assertEquals(0, result.getTotalFiles());
         assertEquals(2, result.getSkippedFiles());
@@ -420,7 +441,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl mixedRunner = new BatchInspectionRunnerImpl(
                 stubMatcher, stubAstProvider, alternatingProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         BatchInspectionResult result = mixedRunner.runOnDirectory(dir.toString());
         assertEquals(2, result.getTotalFiles());
         assertEquals(1, result.getErrorCount());
@@ -447,7 +469,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl trackingRunner = new BatchInspectionRunnerImpl(
                 stubMatcher, trackingAstProvider, stubDiagnosticProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         trackingRunner.runOnFile(tempFile.toString());
         assertEquals(1, astCallCount.get());
     }
@@ -469,7 +492,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl trackingRunner = new BatchInspectionRunnerImpl(
                 stubMatcher, stubAstProvider, trackingDiagProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         trackingRunner.runOnFile(tempFile.toString());
         assertEquals(1, diagCallCount.get());
     }
@@ -488,7 +512,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl trackingRunner = new BatchInspectionRunnerImpl(
                 stubMatcher, stubAstProvider, stubDiagnosticProvider,
-                trackingFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                trackingFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         trackingRunner.runOnFile(tempFile.toString());
         assertEquals(1, fixCallCount.get());
     }
@@ -558,7 +583,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl dirRunner = new BatchInspectionRunnerImpl(
                 contentMatcher, stubAstProvider, stubDiagnosticProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         BatchInspectionResult result = dirRunner.runOnDirectory(dir.toString());
         assertEquals(1, result.getTotalFiles());
         assertEquals(2, result.getSkippedFiles());
@@ -603,7 +629,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl pipelineRunner = new BatchInspectionRunnerImpl(
                 trackingMatcher, trackingAst, trackingDiag,
-                trackingFix, stubSymbolTableBuilder, stubRuleRepository);
+                trackingFix, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         pipelineRunner.runOnFile(tempFile.toString());
         assertEquals(1, matchCount.get());
         assertEquals(1, astCount.get());
@@ -626,7 +653,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl pipelineRunner = new BatchInspectionRunnerImpl(
                 stubMatcher, stubAstProvider, trackingDiag,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         pipelineRunner.runOnDirectory(dir.toString());
         assertEquals(2, diagCount.get());
     }
@@ -645,7 +673,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl capturingRunner = new BatchInspectionRunnerImpl(
                 capturingMatcher, stubAstProvider, stubDiagnosticProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         capturingRunner.runOnFile(tempFile.toString());
         assertEquals(expectedContent, capturedContent.get());
     }
@@ -664,7 +693,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl capturingRunner = new BatchInspectionRunnerImpl(
                 stubMatcher, capturingAst, stubDiagnosticProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         capturingRunner.runOnFile(tempFile.toString());
         assertEquals(expectedContent, capturedContent.get());
     }
@@ -710,7 +740,8 @@ class BatchInspectionRunnerImplTest {
         };
         BatchInspectionRunnerImpl onlyDslRunner = new BatchInspectionRunnerImpl(
                 stubMatcher, stubAstProvider, multiDiagProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         for (int i = 0; i < 5; i++) {
             Files.writeString(dir.resolve("dsl" + i + ".xml"), "<Lockscreen/>", StandardCharsets.UTF_8);
         }
@@ -728,7 +759,8 @@ class BatchInspectionRunnerImplTest {
         StubDslFileMatcher falseMatcher = new StubDslFileMatcher(false);
         BatchInspectionRunnerImpl skipRunner = new BatchInspectionRunnerImpl(
                 falseMatcher, stubAstProvider, stubDiagnosticProvider,
-                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository);
+                stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
+                defaultConfig);
         BatchInspectionResult result = skipRunner.runOnFile(tempFile.toString());
         assertEquals(0, result.getFileResults().size());
         assertEquals(0, result.getErrorCount());

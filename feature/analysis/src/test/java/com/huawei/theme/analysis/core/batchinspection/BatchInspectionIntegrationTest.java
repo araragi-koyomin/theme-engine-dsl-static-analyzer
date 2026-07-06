@@ -17,6 +17,8 @@ import com.huawei.theme.analysis.core.quickfix.QuickFixProviderImpl;
 import com.huawei.theme.analysis.core.rulelibrary.JsonRuleLoader;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.AnalyzerRegistry;
+import com.huawei.theme.analysis.core.cli.InspectionConfig;
+import com.huawei.theme.analysis.core.cli.PipelineMode;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProvider;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderImpl;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilder;
@@ -55,7 +57,8 @@ class BatchInspectionIntegrationTest {
         QuickFixProvider quickFixProvider = new QuickFixProviderImpl();
         runner = new BatchInspectionRunnerImpl(
                 fileMatcher, astProvider, diagnosticProvider,
-                quickFixProvider, symbolTableBuilder, ruleRepo);
+                quickFixProvider, symbolTableBuilder, ruleRepo,
+                InspectionConfig.builder().pipelineMode(PipelineMode.FULL).typeCheck(true).build());
         formatter = new TerminalFormatter(true);
         colorFormatter = new TerminalFormatter(false);
     }

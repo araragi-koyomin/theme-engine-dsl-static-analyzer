@@ -18,6 +18,11 @@ public class AnalyzerRegistry {
         analyzers.add(analyzer);
     }
 
+    public static void clear() {
+        analyzers.clear();
+        initialized = false;
+    }
+
     public static void init() {
         if (initialized) {
             return;

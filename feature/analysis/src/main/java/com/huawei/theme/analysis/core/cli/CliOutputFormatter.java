@@ -9,6 +9,14 @@ public class CliOutputFormatter {
 
     private CliOutputFormatter() {}
 
+    public static String formatWarning(String message) {
+        return "Warning: " + message;
+    }
+
+    public static String formatVersion() {
+        return "dsl-analyzer " + CliMain.VERSION;
+    }
+
     public static String formatError(String message) {
         return "Error: " + message;
     }
