@@ -37,7 +37,7 @@ import com.huawei.theme.analysis.core.semanticanalysis.AnalyzerRegistry;
  * The config wraps the immutable delegate in a {@link ConfigAwareRuleRepository};
  * the delegate itself is never rebuilt, so rule loading cost is paid once.
  */
-final class DslLanguageServer implements LanguageServer {
+public final class DslLanguageServer implements LanguageServer {
 
     private final RuleRepository delegate;
     private final InspectionConfigParser configParser = new InspectionConfigParser();
@@ -54,6 +54,7 @@ final class DslLanguageServer implements LanguageServer {
         this.delegate = new RuleRepositoryFactory(ruleDir).create();
         this.currentConfig = cliConfig;
         this.currentRepo = wrap(delegate, cliConfig);
+        this.textDocumentService = new DslTextDocumentService(currentRepo);
         this.workspaceService = new DslWorkspaceService(configParser, this::updateConfig);
     }
 
@@ -63,7 +64,7 @@ final class DslLanguageServer implements LanguageServer {
 
     void connect(LanguageClient languageClient) {
         this.client = languageClient;
-        this.textDocumentService = new DslTextDocumentService(languageClient, currentRepo);
+        this.textDocumentService.setClient(languageClient);
     }
 
     @Override
@@ -113,11 +114,13 @@ final class DslLanguageServer implements LanguageServer {
     }
 
     @Override
+    @org.eclipse.lsp4j.jsonrpc.services.JsonDelegate
     public TextDocumentService getTextDocumentService() {
         return textDocumentService;
     }
 
     @Override
+    @org.eclipse.lsp4j.jsonrpc.services.JsonDelegate
     public WorkspaceService getWorkspaceService() {
         return workspaceService;
     }

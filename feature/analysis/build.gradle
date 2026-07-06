@@ -13,9 +13,28 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.22'
     annotationProcessor 'org.projectlombok:lombok:1.18.22'
 
+    // LSP client (on the IDE classpath) + the standalone server fat jar that
+    // is launched as a separate process via ProcessBuilder. The lsp4j
+    // duplicate is the same version, harmless.
+    implementation 'org.eclipse.lsp4j:org.eclipse.lsp4j:0.21.2'
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.3'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.3'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
+}
+
+// The IDE sandbox (runIde / plugin zip) must ship the server fat jar so the
+// client can launch it. It is copied into the plugin lib/ directory here
+// (not via runtimeOnly, which would leak the server jar into the test
+// classpath of modules that depend on this one — e.g. feature:lsp tests).
+prepareSandbox.dependsOn ':feature:lsp:buildLspFatJar'
+prepareSandbox.doLast {
+    def libDir = file("${buildDir}/idea-sandbox/plugins/${project.name}/lib")
+    libDir.mkdirs()
+    copy {
+        from project(':feature:lsp').tasks.named('buildLspFatJar')
+        into libDir
+    }
 }
 
 def generatedRootDir = 'build/generated-src/antlr/main'

@@ -15,7 +15,7 @@ import com.huawei.theme.analysis.core.cli.InspectionConfig;
  * like an {@link InspectionConfig}; it is parsed and, if valid, handed to the
  * server's {@code updateConfig} callback for hot reload.</p>
  */
-final class DslWorkspaceService implements WorkspaceService {
+public final class DslWorkspaceService implements WorkspaceService {
 
     private final InspectionConfigParser parser;
     private final Consumer<InspectionConfig> onUpdate;

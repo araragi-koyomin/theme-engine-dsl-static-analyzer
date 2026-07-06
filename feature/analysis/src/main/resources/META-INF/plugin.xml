@@ -5,7 +5,9 @@
 
     <description><![CDATA[
     DSL static analysis tool for Huawei Theme Engine.<br>
-    Provides syntax and semantic inspection, quick fix, and batch checking capabilities.
+    IntelliJ-side LSP client: launches the standalone DSL analyzer LSP server
+    (feature:lsp) and renders diagnostics / completion / hover from the
+    server, replacing the previous native PSI implementation.
   ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
@@ -23,6 +25,16 @@
                                implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslParserDefinition"/>
 
         <completion.contributor language="ThemeDSL"
-                                implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslCompletionContributor"/>
+                                implementationClass="com.huawei.theme.analysis.plugin.lsp.ThemeDslLspCompletionContributor"/>
+
+        <annotator language="ThemeDSL"
+                   implementationClass="com.huawei.theme.analysis.plugin.lsp.ThemeDslLspAnnotator"/>
+
+        <lang.documentationProvider language="ThemeDSL"
+                                     implementationClass="com.huawei.theme.analysis.plugin.lsp.ThemeDslLspHoverProvider"/>
+
+        <projectService serviceImplementation="com.huawei.theme.analysis.plugin.lsp.DslLspServerService"/>
+
+        <postStartupActivity implementation="com.huawei.theme.analysis.plugin.lsp.DslLspStartupActivity"/>
     </extensions>
 </idea-plugin>

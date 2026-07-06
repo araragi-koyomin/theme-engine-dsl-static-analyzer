@@ -34,11 +34,11 @@ import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
  * document text on every change. Diagnostics are recomputed on a debounced
  * schedule (300 ms) to avoid re-parsing on every keystroke.</p>
  */
-final class DslTextDocumentService implements TextDocumentService {
+public final class DslTextDocumentService implements TextDocumentService {
 
     private static final long DEBOUNCE_MS = 300;
 
-    private final LanguageClient client;
+    private volatile LanguageClient client;
     private final DiagnosticPublisher diagnosticPublisher;
     // These four depend on the rule repository and are rebuilt when the
     // configuration changes (updateRuleRepository). Volatile for visibility.
@@ -55,10 +55,20 @@ final class DslTextDocumentService implements TextDocumentService {
             });
     private final Map<String, ScheduledFuture<?>> pending = new ConcurrentHashMap<>();
 
-    DslTextDocumentService(LanguageClient client, RuleRepository ruleRepository) {
-        this.client = client;
+    DslTextDocumentService(RuleRepository ruleRepository) {
         this.diagnosticPublisher = new DiagnosticPublisher();
         rebuildProviders(ruleRepository);
+    }
+
+    /**
+     * Injects the remote client. {@code LSPLauncher.createServerLauncher}
+     * scans {@code getTextDocumentService()} for RPC methods at launcher
+     * creation time (before the client proxy exists), so the service must be
+     * constructed without a client and wired here, after the launcher is
+     * created but before {@code startListening}.
+     */
+    void setClient(LanguageClient client) {
+        this.client = client;
     }
 
     /**

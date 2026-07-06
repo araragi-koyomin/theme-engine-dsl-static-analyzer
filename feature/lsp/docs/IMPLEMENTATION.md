@@ -313,34 +313,44 @@ java -jar dsl-analyzer-lsp.jar --stdio [--rule-dir <path>]
 
 ---
 
-## 11. 与 IntelliJ 插件的关系
+## 11. 与 IntelliJ 插件的关系（阶段三已实现）
 
-当前 `feature:analysis` 仍含 `plugin.editor`（4 个原生 PSI 类），与 `feature:lsp` 并存。
+`feature:analysis` 的 IntelliJ 插件现为 **LSP4J 客户端**（`plugin.lsp` 包），启动 `feature:lsp` 的 server 进程并桥接结果，不再有原生 PSI 分析层。
 
-- **阶段一（当前）**：LSP server 独立服务通用编辑器；`plugin.editor` 不受影响。
-- **阶段三（规划）**：IntelliJ 插件改为 **LSP4J 客户端**（自写，不依赖 LSP4IJ），`ProcessBuilder` 启动 `dsl-analyzer-lsp.jar`，用原生 `Annotator`/`CompletionContributor`/`DocumentationProvider` 桥接 LSP 结果，**废弃 `plugin.editor`**。届时 `feature:lsp` 的 server 被两端（通用编辑器 + IntelliJ）共用，消除双套适配层。
+- **客户端层**（`com.huawei.theme.analysis.plugin.lsp`）：
+  - `DslLspServerService`（`projectService` `Disposable`）：`ProcessBuilder` 启 `java -jar <plugin>/lib/dsl-analyzer-lsp.jar --stdio`；`LSPLauncher.createClientLauncher` + `getRemoteProxy()` 持 `LanguageServer`；`initialize` 握手；dispose 停进程。
+  - `DslLspLanguageClient`（`implements LanguageClient`）：`publishDiagnostics` 缓存 `uri→List<Diagnostic>` + `DaemonCodeAnalyzer.restart` 触发重跑。
+  - `DslLspDocumentSync`：`FileEditorManagerListener`（didOpen/didClose）+ `EditorFactory.getEventMulticaster`（didChange 全量文本）。
+  - `DslLspStartupActivity`（`postStartupActivity`）：项目打开启动 server + 注册 sync。
+- **桥接层**：
+  - `ThemeDslLspAnnotator`（`Annotator`）：读诊断缓存 → `newAnnotation`（LSP `Range` → `XmlTag`）。
+  - `ThemeDslLspCompletionContributor`（`CompletionContributor`）：PSI cursor offset → LSP `Position` → `textDocument/completion` → `LookupElement`。
+  - `ThemeDslLspHoverProvider`（`DocumentationProvider`）：PSI → `textDocument/hover` → `MarkupContent`。
+- **保留** `ThemeDslLanguage`/`FileType`/`ParserDefinition`（文件识别 + 基础 XML PSI，供 cursor 定位）；**废弃** 旧 `ThemeDslCompletionContributor`（占位）。
+- **server 分发**：`build.gradle` `runtimeOnly` 引用 `:feature:lsp:buildLspFatJar` 产物，`prepareSandbox` dependsOn 它，server jar 进插件 `lib/`。
 
-`feature:analysis` 的 `checkCoreIntellijDependency` 任务保证 `core.*` 不 import `com.intellij.*`，是双轨/单轨切换的基石。
+`feature:lsp` 的 server 现被两端共用（通用编辑器 + IntelliJ），消除双套适配层。`checkCoreIntellijDependency` 保证 `core.*` 不 import `com.intellij.*`，是这层分离的基石。
 
 ---
 
 ## 12. 限制与后续路线
 
 ### 当前限制
-1. **AST 无 end 位置** → `ContextResolver` 用文本启发式，注释/CDATA 内可能误判；诊断 range 用 `astNode.text` 延伸，跨行节点退化为零宽。
+1. **ContextResolver 文本启发式** → server 端无 PSI，注释内可能误判（IntelliJ 客户端用 PSI 精确定位，不受影响）。
 2. **无 QuickFix** → `core.quickfix.QuickFixProvider` 已就绪但未接 `codeAction`。
-3. **无配置化** → `ConfigAwareRuleRepository`（规则启用/禁用/严重度覆盖）未接 `initializationOptions`/`workspace/configuration`。
-4. **无语义高亮** → `textDocument/semanticTokens` 未实现。
-5. **悬停仅标签** → 属性悬停待规则库 per-attribute 描述。
-6. **全量重解析** → 超大文件 + 高频编辑下 debounce 后仍可能偶发卡顿（DSL 场景罕见）。
+3. **无语义高亮** → `textDocument/semanticTokens` 未实现。
+4. **悬停仅标签** → 属性悬停待规则库 per-attribute 描述。
+5. **全量重解析** → 超大文件 + 高频编辑下 debounce 后仍可能偶发卡顿（DSL 场景罕见）。
+6. **IntelliJ 诊断 range tag 级** → `ThemeDslLspAnnotator` 映射到 `XmlTag`，属性级诊断需扩展。
 
-### 阶段二（core 增强，为两端共用铺路）
-1. `DslAstNode` 加 `endLine/endColumn`；`AstBuilder` 的 `endElement` 记 locator → `ContextResolver` 改 AST 精确定位，诊断 range 用真实 end。
-2. `textDocument/codeAction` ← `QuickFixProvider.getFixActions` → `FixAction` → `TextEdit`。
-3. `initializationOptions`/`workspace/configuration` → `InspectionConfig` → `ConfigAwareRuleRepository`。
-4. `textDocument/semanticTokens`（表达式 token 着色）。
+### 已完成
+- ✅ **阶段二·配置化**：`initializationOptions`/`workspace/didChangeConfiguration` → `InspectionConfig` → `ConfigAwareRuleRepository`（热更新）。
+- ✅ **阶段二·AST end 位置**：core `DslAstNode` 已加 `endLine/endColumn`（合并 main）。
+- ✅ **阶段三·IntelliJ LSP 客户端**：`plugin.lsp` 客户端 + 桥接层，server 被两端共用。
 
-### 阶段三（IntelliJ 客户端）
-- `feature:analysis` 新增 `plugin.lsp` 客户端层（替代 `plugin.editor`）。
-- `ProcessBuilder` 起 server + LSP4J `createClientLauncher` + 原生扩展点桥接。
-- 删除 `plugin.editor`，`feature:lsp` server 被通用编辑器与 IntelliJ 共用。
+### 后续
+1. `textDocument/codeAction` ← `QuickFixProvider` → IntelliJ `LocalQuickFix`。
+2. `textDocument/semanticTokens`（表达式 token 着色）。
+3. `ContextResolver` 改 AST 精确定位（用 core end 位置）。
+4. IntelliJ 诊断映射扩展到 `XmlAttribute` 级。
+5. 客户端 debounce（避免逐键发 didChange）。
