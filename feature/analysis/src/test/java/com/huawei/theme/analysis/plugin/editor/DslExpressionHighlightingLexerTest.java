@@ -1,5 +1,6 @@
 package com.huawei.theme.analysis.plugin.editor;
 
+import com.huawei.theme.analysis.plugin.editor.expr.DslExpressionSyntaxHighlighterFactory;
 import com.intellij.lexer.Lexer;
 import com.intellij.psi.TokenType;
 import com.intellij.psi.tree.IElementType;
