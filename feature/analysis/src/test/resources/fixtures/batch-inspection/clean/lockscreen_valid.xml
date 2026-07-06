@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="offset" type="number" const="true" expression="10"/>
+    <Image name="bg" x="0" y="0" width="1080" height="1920" src="bg.png"/>
+    <Text name="time" x="540" y="500" size="48" color="#FFFFFF" textExp="#hour24"/>
+</Lockscreen>

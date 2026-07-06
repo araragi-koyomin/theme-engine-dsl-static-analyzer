@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="counter" type="number" expression="#steps_value + 1"/>
+    <Var name="counter" type="string" expression="'reset'"/>
+    <Var name="my_alpha" type="number" expression="#ghost_elem.actual_alpha"/>
+    <Image name="result" x="#counter" y="100" width="200" height="200" src="result.png"/>
+</Lockscreen>
