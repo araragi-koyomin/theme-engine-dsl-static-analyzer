@@ -252,13 +252,26 @@ public class AstBuilder implements DslAstProvider {
         if (hint < 0) {
             return -1;
         }
+        // StAX's getCharacterOffset may sit before or after the real '<'
+        // (e.g. off-by-one after the XML declaration, or just past '>').
+        // Search both directions near the hint, then fall back to a global
+        // forward/backward scan.
         for (int i = hint; i < source.length() && i < hint + 16; i++) {
             if (source.charAt(i) == '<' && source.startsWith(tagName, i + 1)) {
                 return i;
             }
         }
-        int idx = source.indexOf("<" + tagName, hint);
-        return idx >= 0 ? idx : hint;
+        for (int i = hint; i >= 0 && i > hint - 16; i--) {
+            if (source.charAt(i) == '<' && source.startsWith(tagName, i + 1)) {
+                return i;
+            }
+        }
+        int fwd = source.indexOf("<" + tagName, hint);
+        if (fwd >= 0) {
+            return fwd;
+        }
+        int bwd = source.lastIndexOf("<" + tagName, hint);
+        return bwd >= 0 ? bwd : hint;
     }
 
     /**
