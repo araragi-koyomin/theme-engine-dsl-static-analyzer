@@ -7,19 +7,31 @@ import java.util.concurrent.Future;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.eclipse.lsp4j.services.LanguageClient;
 
+import com.huawei.theme.analysis.core.cli.InspectionConfig;
+import com.huawei.theme.analysis.core.cli.InspectionConfigLoader;
+
 /**
  * Process entry point for the DSL analyzer LSP server.
  *
- * <p>Communicates over stdio (the standard LSP transport) and is launched by
- * the client as {@code java -jar dsl-analyzer-lsp.jar --stdio [--rule-dir
- * <path>]}. The {@code --rule-dir} argument optionally overrides the built-in
- * rule resources.</p>
+ * <p>Communicates over stdio and is launched by the client as
+ * {@code java -jar dsl-analyzer-lsp.jar --stdio [--rule-dir <path>] [--config <path>]}.
+ * <ul>
+ *   <li>{@code --rule-dir <path>} overrides the built-in rule resources;</li>
+ *   <li>{@code --config <path>} loads an {@link InspectionConfig} JSON file
+ *       (rule enable/disable, severity overrides, root element override)
+ *       applied at startup. Runtime configuration via LSP
+ *       {@code initializationOptions} / {@code didChangeConfiguration} is
+ *       handled by the server itself.</li>
+ * </ul></p>
  */
 public final class DslLspLauncher {
 
     public static void main(String[] args) throws Exception {
-        String ruleDir = parseRuleDir(args);
-        DslLanguageServer server = new DslLanguageServer(ruleDir);
+        String ruleDir = parseArg(args, "--rule-dir");
+        String configPath = parseArg(args, "--config");
+        InspectionConfig cliConfig = loadCliConfig(configPath);
+
+        DslLanguageServer server = new DslLanguageServer(ruleDir, cliConfig);
 
         InputStream in = System.in;
         OutputStream out = System.out;
@@ -36,9 +48,21 @@ public final class DslLspLauncher {
         System.exit(0);
     }
 
-    private static String parseRuleDir(String[] args) {
+    private static InspectionConfig loadCliConfig(String configPath) {
+        if (configPath == null || configPath.isEmpty()) {
+            return null;
+        }
+        try {
+            return new InspectionConfigLoader().load(configPath);
+        } catch (RuntimeException e) {
+            System.err.println("Failed to load config " + configPath + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    private static String parseArg(String[] args, String name) {
         for (int i = 0; i < args.length; i++) {
-            if ("--rule-dir".equals(args[i]) && i + 1 < args.length) {
+            if (name.equals(args[i]) && i + 1 < args.length) {
                 return args[i + 1];
             }
         }

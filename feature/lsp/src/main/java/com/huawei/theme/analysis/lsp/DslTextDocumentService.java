@@ -39,11 +39,13 @@ final class DslTextDocumentService implements TextDocumentService {
     private static final long DEBOUNCE_MS = 300;
 
     private final LanguageClient client;
-    private final AnalysisService analysisService;
     private final DiagnosticPublisher diagnosticPublisher;
-    private final CompletionProvider completionProvider;
-    private final HoverProvider hoverProvider;
-    private final DslFileIdentifier fileIdentifier;
+    // These four depend on the rule repository and are rebuilt when the
+    // configuration changes (updateRuleRepository). Volatile for visibility.
+    private volatile AnalysisService analysisService;
+    private volatile CompletionProvider completionProvider;
+    private volatile HoverProvider hoverProvider;
+    private volatile DslFileIdentifier fileIdentifier;
     private final DslTextDocuments documents = new DslTextDocuments();
     private final ScheduledExecutorService scheduler =
             Executors.newSingleThreadScheduledExecutor(r -> {
@@ -55,8 +57,24 @@ final class DslTextDocumentService implements TextDocumentService {
 
     DslTextDocumentService(LanguageClient client, RuleRepository ruleRepository) {
         this.client = client;
-        this.analysisService = new AnalysisService(ruleRepository);
         this.diagnosticPublisher = new DiagnosticPublisher();
+        rebuildProviders(ruleRepository);
+    }
+
+    /**
+     * Rebuilds the rule-dependent providers with a new repository (e.g. after
+     * a configuration change) and re-analyzes every open document so
+     * diagnostics reflect the new rule set / severity overrides immediately.
+     */
+    synchronized void updateRuleRepository(RuleRepository ruleRepository) {
+        rebuildProviders(ruleRepository);
+        for (String uri : documents.openUris()) {
+            analyzeAndPublish(uri);
+        }
+    }
+
+    private void rebuildProviders(RuleRepository ruleRepository) {
+        this.analysisService = new AnalysisService(ruleRepository);
         this.completionProvider = new CompletionProvider(ruleRepository);
         this.hoverProvider = new HoverProvider(ruleRepository);
         this.fileIdentifier = new DslFileIdentifier(ruleRepository);

@@ -1,6 +1,7 @@
 package com.huawei.theme.analysis.lsp;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -25,5 +26,9 @@ final class DslTextDocuments {
 
     String get(String uri) {
         return docs.get(uri);
+    }
+
+    Set<String> openUris() {
+        return docs.keySet();
     }
 }

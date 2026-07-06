@@ -16,10 +16,10 @@ works with any LSP-capable editor.
 ## Build
 
 ```bash
-gradle :lsp:buildLspFatJar
+gradle :feature:lsp:buildLspFatJar
 ```
 
-Produces `lsp/build/lsp/dsl-analyzer-lsp.jar` — a self-contained jar with
+Produces `feature/lsp/build/lsp/dsl-analyzer-lsp.jar` — a self-contained jar with
 the server, the `core` classes, the built-in `rules/` and `functions/`
 resources, gson, antlr4-runtime and lsp4j. No IntelliJ SDK is bundled, so it
 runs on a plain JRE 17+.
@@ -35,6 +35,62 @@ Options:
 - `--stdio` — use stdio as the LSP transport (standard).
 - `--rule-dir <path>` — load rules from an external directory instead of the
   built-in resources. Useful for iterating on rules without rebuilding.
+- `--config <path>` — load an inspection config JSON file (see
+  [Configuration](#configuration)) applied at startup. Runtime configuration
+  via LSP `initializationOptions` / `didChangeConfiguration` is also supported.
+
+## Configuration
+
+The server accepts an inspection config that customizes rule behavior without
+rebuilding: enable/disable rule ids, override diagnostic severities, and
+override the recognized root element names. The same JSON shape is used for
+the `--config` file, LSP `initializationOptions`, and
+`workspace/didChangeConfiguration` settings.
+
+```json
+{
+  "rootElementNames": ["Lockscreen", "Widget"],
+  "enabledRuleIds": ["SEM-TYPE-001"],
+  "disabledRuleIds": ["SYN-003"],
+  "severityOverrides": { "SEM-REQ-001": "error" }
+}
+```
+
+- `enabledRuleIds` / `disabledRuleIds` — mutually exclusive. When `enabled`
+  is non-empty, only those rules fire; when `disabled` is non-empty, those
+  rules are suppressed.
+- `severityOverrides` — maps a rule id to `"error"` / `"warning"` / `"info"`.
+- `rootElementNames` — overrides the set of tags treated as DSL roots
+  (affects file identification).
+
+Runtime updates: a `workspace/didChangeConfiguration` notification carrying
+the same shape triggers a hot reload — the server re-wraps the rule
+repository and re-analyzes every open document, so severity/disabled changes
+take effect immediately without restarting.
+
+### VS Code
+
+```json
+{
+  "dsl-analyzer.config": {
+    "disabledRuleIds": ["SYN-003"],
+    "severityOverrides": { "SEM-REQ-001": "warning" }
+  }
+}
+```
+The client extension forwards `dsl-analyzer.config` as `initializationOptions`
+on `initialize` and as settings on `didChangeConfiguration`.
+
+### Neovim
+
+```lua
+lspconfig.dsl_analyzer.setup({
+  settings = {
+    disabledRuleIds = { "SYN-003" },
+    severityOverrides = { ["SEM-REQ-001"] = "warning" },
+  },
+})
+```
 
 ## Document conventions
 
@@ -118,7 +174,7 @@ LSP client (editor)  ──stdio/JSON-RPC──>  DslLspLauncher
                                               │
                                    DslLanguageServer
                                    ├── TextDocumentService  (didOpen/Change/Close, completion, hover)
-                                   ├── WorkspaceService     (reserved for config)
+                                    ├── WorkspaceService     (applies config, hot reload)
                                    ├── AnalysisService      → core AstBuilder + DiagnosticProvider
                                    ├── CompletionProvider   → core RuleRepository
                                    ├── HoverProvider        → core RuleRepository
@@ -126,13 +182,12 @@ LSP client (editor)  ──stdio/JSON-RPC──>  DslLspLauncher
 ```
 
 The server reuses `com.huawei.theme.analysis.core.*` unchanged: `AstBuilder`
-(JDK SAX) builds the AST and parses embedded expressions, the analyzer
+(StAX) builds the AST and parses embedded expressions, the analyzer
 registry produces `Diagnostic`s (1-based line / 0-based column), and
 `PositionMapper` converts them to LSP positions.
 
 ## Roadmap
 
-- core AST end positions → AST-based context resolution
+- AST-based context resolution (replace text-heuristic `ContextResolver`)
 - `textDocument/codeAction` (QuickFix) from `QuickFixProvider`
-- configuration via `initializationOptions` / `workspace/configuration`
 - `textDocument/semanticTokens` for expression highlighting
