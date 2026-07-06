@@ -1,8 +1,11 @@
 package com.huawei.theme.analysis.plugin.editor;
 
+import java.util.List;
+
 import org.antlr.intellij.adaptor.lexer.ANTLRLexerAdaptor;
 import org.antlr.intellij.adaptor.lexer.GapFillingLexerAdaptor;
 import org.antlr.intellij.adaptor.lexer.PSIElementTypeFactory;
+import org.antlr.intellij.adaptor.lexer.RuleIElementType;
 import org.antlr.intellij.adaptor.parser.ANTLRParserAdaptor;
 import org.antlr.intellij.adaptor.psi.ANTLRPsiNode;
 import org.antlr.v4.runtime.Parser;
@@ -27,12 +30,18 @@ import org.jetbrains.annotations.NotNull;
 
 public class DslExpressionParserDefinition implements ParserDefinition {
 
+    private final RuleIElementType atVarRefType;
+    private final RuleIElementType hashVarRefType;
+
     public DslExpressionParserDefinition() {
         PSIElementTypeFactory.defineLanguageIElementTypes(
                 DslExpressionLanguage.INSTANCE,
                 DslExpressionLexer.VOCABULARY,
                 DslExpressionParser.ruleNames
         );
+        List<RuleIElementType> ruleTypes = PSIElementTypeFactory.getRuleIElementTypes(DslExpressionLanguage.INSTANCE);
+        atVarRefType = ruleTypes.get(DslExpressionParser.RULE_atVarRef);
+        hashVarRefType = ruleTypes.get(DslExpressionParser.RULE_hashVarRef);
     }
 
     @NotNull
@@ -79,6 +88,10 @@ public class DslExpressionParserDefinition implements ParserDefinition {
     @NotNull
     @Override
     public PsiElement createElement(ASTNode node) {
+        IElementType type = node.getElementType();
+        if (type == atVarRefType || type == hashVarRefType) {
+            return new DslVariableRefElement(node);
+        }
         return new ANTLRPsiNode(node);
     }
 
