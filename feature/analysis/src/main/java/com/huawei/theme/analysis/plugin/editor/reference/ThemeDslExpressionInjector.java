@@ -18,16 +18,17 @@ import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlTag;
 
-import com.huawei.theme.analysis.core.expression.ExpressionParser;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
 
+import java.util.regex.Pattern;
+
 /**
  * Injects the DslExpression language into ThemeDSL XML attribute values that
- * support expressions, so the DE syntax highlighter / annotator (and other code
- * insight) run inside the attribute value.
+ * support expressions, so the DE syntax highlighter / annotator / completion
+ * (and other code insight) run inside the attribute value.
  *
  * <p>An attribute is injected when, and only when:</p>
  * <ol>
@@ -35,10 +36,14 @@ import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
  *     <li>the enclosing tag's rule ({@link RuleRepository#getElementRule})
  *         defines the attribute with {@link AttrTypeSpec#isSupportsExpression()};
  *         attribute aliases are also resolved;</li>
- *     <li>the value actually has expression syntax
- *         ({@link ExpressionParser#hasExpressionSyntax}) - so plain literals
- *         and hex colors like {@code "#FF0000"} are left untouched.</li>
+ *     <li>the value is not a hex color on a color attribute (e.g.
+ *         {@code color="#FF0000"} is left as plain text, not injected as DE).</li>
  * </ol>
+ *
+ * <p>Unlike the previous {@code hasExpressionSyntax} gate, DE is injected for ALL
+ * expression-supporting attributes — including empty values and plain numbers — so
+ * that completion pops up immediately when the user starts typing in an expression
+ * attribute.</p>
  *
  * <p>Registered via {@code <multiHostInjector>} in {@code plugin.xml}.</p>
  */
@@ -46,6 +51,9 @@ public class ThemeDslExpressionInjector implements MultiHostInjector {
 
     private static final List<Class<? extends PsiElement>> HOSTS =
             List.of(XmlAttributeValue.class);
+
+    private static final Pattern HEX_COLOR =
+            Pattern.compile("^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$");
 
     @Override
     public @NotNull List<? extends Class<? extends PsiElement>> elementsToInjectIn() {
@@ -86,7 +94,10 @@ public class ThemeDslExpressionInjector implements MultiHostInjector {
         if (typeSpec == null || !typeSpec.isSupportsExpression()) {
             return;
         }
-        if (!ExpressionParser.hasExpressionSyntax(attrValue, attrName)) {
+        // Exclude hex colors on color attributes (e.g. color="#FF0000") — they're
+        // plain color values, not DE expressions. Everything else (including empty
+        // values and plain numbers) is injected so completion works immediately.
+        if (isHexColorValue(attrName, attrValue)) {
             return;
         }
 
@@ -97,6 +108,21 @@ public class ThemeDslExpressionInjector implements MultiHostInjector {
         registrar.startInjecting(DslExpressionLanguage.INSTANCE)
                 .addPlace(null, null, (PsiLanguageInjectionHost) value, rangeInsideHost)
                 .doneInjecting();
+    }
+
+    /**
+     * Returns true if the value is a hex color (e.g. {@code "#FF0000"}) on a
+     * color attribute ({@code color}, {@code shadowColor}). These are plain
+     * color values, not DE expressions, and must not be injected.
+     */
+    private static boolean isHexColorValue(String attrName, String value) {
+        if (value == null || !value.startsWith("#")) {
+            return false;
+        }
+        if (!"color".equals(attrName) && !"shadowColor".equals(attrName)) {
+            return false;
+        }
+        return HEX_COLOR.matcher(value).matches();
     }
 
     private static AttrTypeSpec findAttrSpec(DslElementRule rule, String attrName) {
