@@ -16,10 +16,15 @@ import com.intellij.psi.xml.XmlTag;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Injects the {@link VarNameLanguage} into the {@code name} attribute value of {@code <Var>}
- * tags, turning the variable name into a {@link VarNameElement} (a {@link
- * com.intellij.psi.PsiNameIdentifierOwner}) so rename and find-usages work from the
- * declaration.
+ * Injects the {@link VarNameLanguage} into the {@code name} attribute value of
+ * {@code <Var>} tags (variable declarations only), turning the variable name into
+ * a {@link VarNameElement} (a {@link com.intellij.psi.PsiNameIdentifierOwner}) so
+ * rename and find-usages work from the declaration.
+ *
+ * <p>{@code <VariableCommand name="...">} is NOT a declaration — it's a reference.
+ * It's handled by {@link ThemeDslVariableReferenceContributor} instead, which creates
+ * a {@link DslVariableReference} on its {@code name} value resolving to the
+ * {@link VarNameElement} of the matching {@code <Var>}.</p>
  */
 public class ThemeDslVarNameInjector implements MultiHostInjector {
 

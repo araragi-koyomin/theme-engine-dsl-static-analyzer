@@ -59,13 +59,21 @@ public class ThemeDslVariableReferenceContributor extends PsiReferenceContributo
             if (attr == null) {
                 return PsiReference.EMPTY_ARRAY;
             }
-            // <Var name="...">: self-reference on the declaration name.
+            // <Var name="...">: declaration — no reference needed (VarNameElement is the PsiNameIdentifierOwner).
             if ("name".equals(attr.getName())) {
                 XmlTag tag = PsiTreeUtil.getParentOfType(attr, XmlTag.class);
                 if (tag != null && "Var".equals(tag.getName())) {
+                    return PsiReference.EMPTY_ARRAY;
+                }
+                // <VariableCommand name="...">: reference to the <Var> declaration.
+                if (tag != null && "VariableCommand".equals(tag.getName())) {
+                    String name = value.getValue();
+                    if (name == null || name.isEmpty()) {
+                        return PsiReference.EMPTY_ARRAY;
+                    }
                     TextRange range =
                             value.getValueTextRange().shiftLeft(value.getTextRange().getStartOffset());
-                    return new PsiReference[]{};
+                    return new PsiReference[]{new DslVariableReference(value, range, name)};
                 }
             }
             // Expression attribute: @x/#x usage references.
