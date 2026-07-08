@@ -13,6 +13,7 @@ import com.huawei.theme.analysis.core.rulelibrary.JsonRuleLoader;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderImpl;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilderImpl;
+import com.huawei.theme.analysis.core.semanticanalysis.AnalyzerRegistry;
 import com.huawei.theme.analysis.core.quickfix.QuickFixProviderImpl;
 
 public class CliMain {
@@ -43,6 +44,7 @@ public class CliMain {
 
     static int run(String[] args) {
         try {
+            AnalyzerRegistry.init();
             CliConfig config = CliConfig.fromArgs(args);
 
             if (config.isVersionRequested()) {

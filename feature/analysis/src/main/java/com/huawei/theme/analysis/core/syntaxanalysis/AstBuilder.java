@@ -259,6 +259,11 @@ public class AstBuilder implements DslAstProvider {
                 return i;
             }
         }
+        for (int i = hint - 1; i >= 0 && i > hint - 64; i--) {
+            if (source.charAt(i) == '<' && source.startsWith(tagName, i + 1)) {
+                return i;
+            }
+        }
         int idx = source.indexOf("<" + tagName, hint);
         return idx >= 0 ? idx : hint;
     }
@@ -295,6 +300,10 @@ public class AstBuilder implements DslAstProvider {
                     tagEndOffset = i;
                 }
                 break;
+            }
+            if (!isNameChar(c)) {
+                i++;
+                continue;
             }
             int nameStart = i;
             while (i < source.length() && isNameChar(source.charAt(i))) {
