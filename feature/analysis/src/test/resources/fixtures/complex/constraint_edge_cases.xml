@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wallpaper screenWidth="1080">
+    <Image name="alpha_zero" x="0" y="0" width="1080" height="1920"
+           alpha="0" src="zero_alpha.png"/>
+
+    <Image name="alpha_max" x="0" y="0" width="1080" height="1920"
+           alpha="255" src="max_alpha.png"/>
+
+    <Image name="alpha_over" x="0" y="0" width="1080" height="1920"
+           alpha="256" src="over_alpha.png"/>
+
+    <Image name="alpha_neg" x="0" y="0" width="1080" height="1920"
+           alpha="-1" src="neg_alpha.png"/>
+
+    <Image name="both_sources" x="100" y="100" width="500" height="500"
+           src="static.png" srcExp="@dynamic_src"/>
+
+    <Image name="bg_with_align" x="0" y="0" width="1080" height="1920"
+           isBackground="true" align="center" src="wallpaper_bg.png"/>
+
+    <Image name="src_only_valid" x="50" y="50" width="200" height="200"
+           src="only_src.png"/>
+
+    <Image name="srcExp_only_valid" x="300" y="50" width="200" height="200"
+           srcExp="@only_srcexp"/>
+
+    <Image name="neither_src" x="200" y="400" width="400" height="400"/>
+
+    <Image name="bg_no_center_crop" x="0" y="0" width="1080" height="1920"
+           isBackground="true" scaleType="fill" src="bg_fill.png"/>
+
+    <Image name="valid_full" x="500" y="500" width="300" height="300"
+           alpha="128" src="valid_pic.png" scaleType="center_crop"/>
+</Wallpaper>

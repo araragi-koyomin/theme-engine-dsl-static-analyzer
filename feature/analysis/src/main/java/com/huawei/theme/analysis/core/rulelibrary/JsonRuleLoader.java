@@ -1,8 +1,13 @@
 package com.huawei.theme.analysis.core.rulelibrary;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -328,6 +334,129 @@ public class JsonRuleLoader {
         Map<String, DslGlobalVar> globalVars = loadGlobalVars(rulesDir);
         Map<String, RuleSource> ruleSources = loadRuleSources(rulesDir);
         return buildRuleRepository(elementRules, globalVars, ruleSources, functionLibrary);
+    }
+
+    private String getProjectRulesDir() {
+        String userDir = System.getProperty("user.dir");
+        if (userDir == null) {
+            userDir = ".";
+        }
+        return userDir + "/src/main/resources/rules";
+    }
+
+    /**
+     * 从classpath（jar内）加载规则数据并构建RuleRepository实例。
+     *
+     * <p>通过ProtectionDomain定位jar文件位置，使用JarFile枚举
+     * rules/elements/和rules/commands/下的所有.json文件，
+     * 以及rules/global_vars.json和rules/rule_sources.json。
+     * 当ProtectionDomain不可用时（如测试环境），降级到文件系统路径加载。</p>
+     *
+     * @return 构建好的RuleRepository实例
+     */
+    public RuleRepository loadFromClasspath() {
+        return loadFromClasspath(null);
+    }
+
+    /**
+     * 从classpath（jar内）加载规则数据，携带函数签名库。
+     *
+     * @param functionLibrary 函数签名库，可为null
+     * @return 构建好的RuleRepository实例
+     */
+    public RuleRepository loadFromClasspath(FunctionSignatureLibrary functionLibrary) {
+        try {
+            java.security.ProtectionDomain pd = JsonRuleLoader.class.getProtectionDomain();
+            if (pd == null || pd.getCodeSource() == null || pd.getCodeSource().getLocation() == null) {
+                return loadFromDirectory(getProjectRulesDir(), functionLibrary);
+            }
+            File location = new File(pd.getCodeSource().getLocation().toURI());
+
+            if (location.getName().endsWith(".jar")) {
+                return loadFromJar(location, functionLibrary);
+            } else {
+                return loadFromDirectory(location.getAbsolutePath(), functionLibrary);
+            }
+        } catch (URISyntaxException | IOException e) {
+            throw new RuleLoadException("Failed to load rules from classpath", e);
+        }
+    }
+
+    private RuleRepository loadFromJar(File jarFile, FunctionSignatureLibrary functionLibrary) throws IOException {
+        try (JarFile jar = new JarFile(jarFile)) {
+            Map<String, DslElementRule> elementRules = new HashMap<>();
+
+            jar.stream()
+                    .filter(e -> (e.getName().startsWith("rules/elements/") || e.getName().startsWith("rules/commands/"))
+                            && e.getName().endsWith(".json") && !e.isDirectory())
+                    .forEach(entry -> {
+                        try (InputStreamReader reader = new InputStreamReader(
+                                jar.getInputStream(entry), StandardCharsets.UTF_8)) {
+                            DslElementRule rule = gson.fromJson(reader, DslElementRule.class);
+                            if (rule != null && rule.getElementName() != null) {
+                                normalizeElementRule(rule);
+                                elementRules.put(rule.getElementName(), rule);
+                            }
+                        } catch (IOException e) {
+                            throw new RuleLoadException("Failed to read classpath entry: " + entry.getName(), e);
+                        }
+                    });
+
+            Map<String, DslGlobalVar> globalVars = loadGlobalVarsFromJar(jar);
+            Map<String, RuleSource> ruleSources = loadRuleSourcesFromJar(jar);
+
+            return buildRuleRepository(elementRules, globalVars, ruleSources, functionLibrary);
+        }
+    }
+
+    private Map<String, DslGlobalVar> loadGlobalVarsFromJar(JarFile jar) {
+        java.util.jar.JarEntry entry = jar.getJarEntry("rules/" + GLOBAL_VARS_FILE);
+        if (entry == null) {
+            return Collections.emptyMap();
+        }
+
+        try (InputStreamReader reader = new InputStreamReader(
+                jar.getInputStream(entry), StandardCharsets.UTF_8)) {
+            Type listType = new TypeToken<List<DslGlobalVar>>() {}.getType();
+            List<DslGlobalVar> vars = gson.fromJson(reader, listType);
+            if (vars == null) {
+                return Collections.emptyMap();
+            }
+
+            Map<String, DslGlobalVar> result = new HashMap<>();
+            for (DslGlobalVar var : vars) {
+                normalizeGlobalVar(var);
+                result.put(var.getName(), var);
+            }
+            return result;
+        } catch (IOException e) {
+            throw new RuleLoadException("Failed to read global_vars from classpath", e);
+        } catch (JsonSyntaxException e) {
+            throw new RuleLoadException("JSON syntax error in global_vars from classpath", e);
+        }
+    }
+
+    private Map<String, RuleSource> loadRuleSourcesFromJar(JarFile jar) {
+        java.util.jar.JarEntry entry = jar.getJarEntry("rules/" + RULE_SOURCES_FILE);
+        if (entry == null) {
+            return Collections.emptyMap();
+        }
+
+        try (InputStreamReader reader = new InputStreamReader(
+                jar.getInputStream(entry), StandardCharsets.UTF_8)) {
+            Type listType = new TypeToken<List<RuleSource>>() {}.getType();
+            List<RuleSource> sources = gson.fromJson(reader, listType);
+            if (sources == null) {
+                return Collections.emptyMap();
+            }
+
+            return sources.stream()
+                    .collect(Collectors.toMap(RuleSource::getRuleId, s -> s));
+        } catch (IOException e) {
+            throw new RuleLoadException("Failed to read rule_sources from classpath", e);
+        } catch (JsonSyntaxException e) {
+            throw new RuleLoadException("JSON syntax error in rule_sources from classpath", e);
+        }
     }
 
     /**

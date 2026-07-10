@@ -196,7 +196,7 @@
   "constraints": [
     {
       "ruleId": "SEM-IMG-001",
-      "condition": "element.attrs[\u0027number\u0027] != null AND parseInt(element.attrs[\u0027number\u0027]) \u003e= 100000000",
+      "condition": "element.attrs[\u0027number\u0027] != null AND element.attrs[\u0027number\u0027] \u003e= 100000000",
       "message": "ImageNumber的number值须小于8位数字",
       "severity": "error",
       "suggestedFixes": [

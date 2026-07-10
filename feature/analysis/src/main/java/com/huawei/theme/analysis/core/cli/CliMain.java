@@ -9,6 +9,8 @@ import com.huawei.theme.analysis.core.batchinspection.ReportExporter;
 import com.huawei.theme.analysis.core.batchinspection.ReportExporterImpl;
 import com.huawei.theme.analysis.core.batchinspection.TerminalFormatter;
 import com.huawei.theme.analysis.core.batchinspection.model.BatchInspectionResult;
+import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
+import com.huawei.theme.analysis.core.function.JsonFunctionSignatureLoader;
 import com.huawei.theme.analysis.core.rulelibrary.JsonRuleLoader;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderImpl;
@@ -181,6 +183,7 @@ public class CliMain {
 
     private static RuleRepository loadRuleRepository(CliConfig config) {
         JsonRuleLoader loader = new JsonRuleLoader();
+        FunctionSignatureLibrary functionLibrary = loadFunctionLibrary();
         if (config.getRuleDir() != null) {
             File ruleDirFile = new File(config.getRuleDir());
             if (!ruleDirFile.exists()) {
@@ -188,11 +191,11 @@ public class CliMain {
                 return null;
             }
             try {
-                RuleRepository customRepo = loader.loadFromDirectory(config.getRuleDir());
+                RuleRepository customRepo = loader.loadFromDirectory(config.getRuleDir(), functionLibrary);
                 if (customRepo.getAllElementNames().isEmpty()) {
                     System.err.println(CliOutputFormatter.formatWarning(
                             "Custom rule directory has no rule files, falling back to built-in rules"));
-                    return loadBuiltInRules(loader);
+                    return loadBuiltInRules(loader, functionLibrary);
                 }
                 return customRepo;
             } catch (JsonRuleLoader.RuleLoadException e) {
@@ -200,14 +203,28 @@ public class CliMain {
                 return null;
             }
         }
-        return loadBuiltInRules(loader);
+        return loadBuiltInRules(loader, functionLibrary);
     }
 
-    private static RuleRepository loadBuiltInRules(JsonRuleLoader loader) {
+    private static RuleRepository loadBuiltInRules(JsonRuleLoader loader, FunctionSignatureLibrary functionLibrary) {
         try {
-            return loader.loadFromDirectory(BUILT_IN_RULES_PATH);
+            return loader.loadFromClasspath(functionLibrary);
         } catch (JsonRuleLoader.RuleLoadException e) {
-            System.err.println(CliOutputFormatter.formatError("Built-in rules load error: " + e.getMessage()));
+            try {
+                String moduleDir = System.getProperty("user.dir");
+                return loader.loadFromDirectory(moduleDir + "/src/main/resources/rules", functionLibrary);
+            } catch (JsonRuleLoader.RuleLoadException fallbackException) {
+                System.err.println(CliOutputFormatter.formatError("Built-in rules load error: " + e.getMessage()));
+                return null;
+            }
+        }
+    }
+
+    private static FunctionSignatureLibrary loadFunctionLibrary() {
+        try {
+            return new JsonFunctionSignatureLoader().loadFromClasspath();
+        } catch (JsonFunctionSignatureLoader.FunctionLoadException e) {
+            System.err.println(CliOutputFormatter.formatWarning("Function library load failed: " + e.getMessage()));
             return null;
         }
     }

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="base_val" type="number" const="true" expression="100"/>
+    <Var name="neg_syntax" type="number" expression="-#base_val"/>
+    <Var name="high_precision" type="number" expression="0.12345678910"/>
+    <Var name="unclosed_quote" type="string" expression="'hello world"/>
+    <Var name="invalid_func" type="number" expression="bogusFunc(1, 2)"/>
+    <Var name="too_many_args" type="number" expression="sin(1, 2, 3, 4, 5)"/>
+    <Var name="bad_ifelse_syntax" type="number" expression="ifelse(#base_val, 1,)"/>
+
+    <Image name="neg_x" x="-#base_val" y="0" width="1080" height="1920"
+           src="bg.png"/>
+
+    <Group name="mid" x="#base_val" y="0" width="500" height="500">
+        <Image name="inner_neg" x="-#base_val" y="10" width="200" height="200"
+               src="inner.png"/>
+    </Group>
+
+    <Image name="precise_x" x="0.123456789" y="0" width="1080" height="200"
+           src="precise.png"/>
+
+    <Text name="bad_str_expr" x="540" y="500" size="20" color="#FFFFFF"
+          textExp="'Result: '+ #base_val"/>
+
+    <Text name="bad_str_quote" x="540" y="600" size="20" color="#FFFFFF"
+          textExp="'Nested 'inner' quote'"/>
+
+    <Text name="complex_valid" x="540" y="700" size="16" color="#FFFFFF"
+          textExp="'Color: ' + ifelse(#base_val > 50, '#FF0000', '#00FF00')"
+          category="Normal"/>
+
+    <Image name="hex_color_img" x="540" y="800" width="100" height="100"
+           src="dot.png"/>
+
+    <Text name="argb_text" x="540" y="900" size="14" text="ARGB Test"
+          color="#FF800000" category="Normal"/>
+
+    <Var name="chained_valid" type="number" const="true"
+         expression="ifelse(#base_val > 50, sin(0.5) + 1, cos(0.3) * 2)"/>
+
+    <Image name="valid_img" x="0" y="0" width="1080" height="1920"
+           alpha="255" src="valid_bg.png"/>
+</Lockscreen>

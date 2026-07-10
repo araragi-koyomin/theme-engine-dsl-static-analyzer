@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ChargingSkin screenWidth="1080">
+    <Image name="fill_valid" x="0" y="0" width="200" height="200"
+           scaleType="fill" src="fill.png"/>
+
+    <Image name="center_crop_valid" x="200" y="0" width="200" height="200"
+           scaleType="center_crop" src="center.png"/>
+
+    <Image name="hold_center_crop_valid" x="400" y="0" width="200" height="200"
+           scaleType="hold_center_crop" src="hold.png"/>
+
+    <Image name="invalid_scale" x="600" y="0" width="200" height="200"
+           scaleType="INVALID" src="bad_scale.png"/>
+
+    <DateTime name="dt_valid" x="100" y="300" format="HH:mm" size="48"
+              color="#FFFFFF"/>
+    <DateTime name="dt_date" x="100" y="400" format="yyyy-MM-dd" size="32"
+              color="#AAAAAA"/>
+
+    <Text name="txt_normal" x="200" y="500" size="20" color="#FFFFFF"
+          text="Normal Text" category="Normal"/>
+
+    <Text name="txt_invalid_cat" x="200" y="550" size="20" color="#FF0000"
+          text="Bad Category" category="INVALID_CAT"/>
+
+    <Text name="txt_charging" x="200" y="600" size="20" color="#00FF00"
+          text="Charging" category="Charging"/>
+
+    <Group name="container" x="50" y="700" width="980" height="300">
+        <Image name="group_img" x="0" y="0" width="200" height="200"
+               scaleType="center_crop" src="group_img.png" enableMove="true"/>
+
+        <Image name="bad_bool_img" x="250" y="0" width="200" height="200"
+               enableMove="INVALID_BOOL" src="bad_bool.png"/>
+
+        <Text name="group_txt" x="500" y="50" size="24" color="#CCCCCC"
+              text="Grouped" category="BatteryFull"/>
+    </Group>
+
+    <Button name="btn_valid" x="100" y="1050" width="200" height="80"
+            enableMove="true">
+        <Trigger action="click"/>
+    </Button>
+
+    <Button name="btn_invalid_bool" x="350" y="1050" width="200" height="80"
+            enableMove="NOT_A_BOOL">
+        <Trigger action="long"/>
+    </Button>
+
+    <Button name="btn_no_category" x="600" y="1050" width="200" height="80"
+            category="NONEXISTENT_CAT">
+        <Trigger action="double"/>
+    </Button>
+
+    <Image name="valid_power" x="800" y="0" width="200" height="200"
+           src="power.png" alpha="255" category="Charging"/>
+
+    <Var name="charge_var" type="number" expression="#battery_level"/>
+</ChargingSkin>

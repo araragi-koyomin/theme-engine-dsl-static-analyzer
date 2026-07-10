@@ -28,6 +28,7 @@ public class AnalyzerRegistry {
             return;
         }
         initialized = true;
+        register(new SyntaxErrorAnalyzer());
         register(new ConstraintAnalyzer());
         register(new ParentChildAnalyzer());
         register(new ScopeAnalyzer());
