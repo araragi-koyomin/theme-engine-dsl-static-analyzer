@@ -129,9 +129,7 @@ public class AstBuilder implements DslAstProvider {
         int attrCount = reader.getAttributeCount();
         for (int i = 0; i < attrCount; i++) {
             String attrValue = reader.getAttributeValue(i);
-            String attrName = (i < scan.attrs.size())
-                    ? scan.attrs.get(i).name
-                    : safeAttrName(reader, i);
+            String attrName = reader.getAttributeLocalName(i);
 
             DslAttributeNode attr = new DslAttributeNode();
             attr.setName(attrName);

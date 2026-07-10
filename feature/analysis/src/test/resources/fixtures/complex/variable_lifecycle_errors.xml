@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="hour" type="number" persist="true" expression="12"/>
+    <Var name="minute" type="number" globalPersist="true"/>
+    <Var name="ishour12" type="string" styleGlobalPersist="true"/>
+    <Var name="system.time.hour1" type="number" persist="true"/>
+
+    <Var name="dup_name" type="number" const="true" expression="10"/>
+    <Var name="dup_name" type="string" const="true" expression="'duplicate'"/>
+
+    <Var name="runtime_const" type="number" const="true" expression="#dup_name"/>
+
+    <Var name="type_mismatch" type="string" expression="100 + 50"/>
+
+    <Var name="arr_no_size" type="number[]" expression="[1, 2, 3]"/>
+
+    <Var name="arr_with_values" type="number[]" values="1,2,3" size="3"/>
+
+    <Image name="early_ref" x="#later_declared" y="0"
+           width="1080" height="1920" src="early.png"/>
+
+    <Var name="later_declared" type="number" const="true" expression="540"/>
+
+    <Var name="system.time.ampm" type="string" expression="'AM'"/>
+
+    <Group name="container" x="#arr_no_size[0]" y="0" width="500" height="500">
+        <Var name="dup_name" type="number" expression="999"/>
+        <Image name="inner" x="0" y="0" width="200" height="200" src="inner.png"/>
+    </Group>
+
+    <Image name="valid_ref" x="#later_declared" y="100"
+           width="200" height="200" alpha="255" src="valid.png"/>
+</Lockscreen>

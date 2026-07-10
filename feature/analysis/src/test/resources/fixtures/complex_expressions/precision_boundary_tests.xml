@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wallpaper screenWidth="1080">
+    <Var name="valid_7digit" type="number" expression="1234567"/>
+    <Var name="edge_7digit" type="number" expression="9999999"/>
+    <Var name="bad_8digit" type="number" expression="12345678"/>
+    <Var name="bad_8digit_expr" type="number" expression="99999999 + 1"/>
+    <Var name="valid_7digit_expr" type="number" expression="9999999 - 1"/>
+    <Var name="bad_result_8digit" type="number" expression="5000000 + 5000000"/>
+    <Var name="border_8digit" type="number" expression="10000000"/>
+    <Var name="decimal_7digit" type="number" expression="1.1234567"/>
+    <Var name="decimal_8digit" type="number" expression="1.12345678"/>
+
+    <Image name="test" x="0" y="0" width="1080" height="1920" src="bg.png"/>
+</Wallpaper>

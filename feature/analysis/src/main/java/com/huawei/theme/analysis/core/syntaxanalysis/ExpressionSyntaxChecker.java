@@ -119,18 +119,12 @@ public class ExpressionSyntaxChecker {
             String lv = node.getLiteralValue();
             try {
                 Double.parseDouble(lv);
-                int digits = 0;
-                for (int i = 0; i < lv.length(); i++) {
-                    if (Character.isDigit(lv.charAt(i))) {
-                        digits++;
-                    }
-                }
+                int digits = countSignificantDigits(lv);
                 if (digits > 7) {
                     diagnostics.add(diag("SYN-EXPR-002", DiagnosticSeverity.WARNING,
                             "数值表达式值超过7位精度限制: " + lv, filePath, attr));
                 }
             } catch (NumberFormatException ignored) {
-                // not a numeric literal
             }
         }
         if (node.getChildren() != null) {
@@ -141,6 +135,22 @@ public class ExpressionSyntaxChecker {
         if (node.getIndexExpression() != null) {
             checkPrecision(node.getIndexExpression(), filePath, attr, rawValue, diagnostics);
         }
+    }
+
+    private static int countSignificantDigits(String numStr) {
+        if (numStr == null || numStr.isEmpty()) return 0;
+        String s = numStr.trim();
+        if (s.startsWith("+") || s.startsWith("-")) s = s.substring(1);
+        s = s.replaceFirst("^0+(?!$)", "");
+        if (s.contains(".")) {
+            s = s.replaceAll("0+$", "");
+            s = s.replaceAll("\\.$", "");
+        }
+        int count = 0;
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.isDigit(s.charAt(i))) count++;
+        }
+        return count;
     }
 
     private static boolean hasBareWordInConcat(String rawValue) {
