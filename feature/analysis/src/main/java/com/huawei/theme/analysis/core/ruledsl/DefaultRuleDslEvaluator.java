@@ -137,6 +137,12 @@ public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean
             if (value == null) return false;
             return set.contains(value);
         }
+        if (ctx.MATCHES() != null) {
+            String left = resolveValue(ctx.valueExpr(0));
+            String right = resolveLiteral(ctx.literal());
+            if (left == null || right == null) return false;
+            return java.util.regex.Pattern.compile(right).matcher(left).matches();
+        }
         String left = resolveValue(ctx.valueExpr(0));
         String right = resolveValue(ctx.valueExpr(1));
         if (ctx.EQ() != null) {
