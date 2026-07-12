@@ -35,11 +35,12 @@ numericTerm           : NUMBER
 additiveExpr          : multiplicativeExpr (('+'|'-') multiplicativeExpr)* ;
 multiplicativeExpr    : primaryExpr (('*'|'/'|'%') primaryExpr)* ;
 primaryExpr           : '-' primaryExpr
-                      | functionCall
-                      | variableRef
-                      | literal
-                      | '(' expression ')'
-                      ;
+                       | functionCall
+                       | variableRef
+                       | literal
+                       | '(' expression ')'
+                       | '{' expression '}'
+                       ;
 
 functionCall          : ID '(' exprList? ')' ;
 variableRef           : hashVarRef | atVarRef ;
