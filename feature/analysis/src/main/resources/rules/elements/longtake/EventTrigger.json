@@ -1,6 +1,7 @@
 ﻿{
   "element": "EventTrigger",
   "category": "longtake",
+  "description": "EventTrigger为一镜到底的事件触发器，包含多个Action子标签定义不同场景转场动作，内容为固定模板不可修改。",
   "requiredAttrs": [
     "name"
   ],
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "元素变量名，在支持表达式的情况中使用@name的格式来取当前变量的值。"
     }
   },
   "allowedParents": [

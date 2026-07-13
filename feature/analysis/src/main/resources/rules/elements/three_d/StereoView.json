@@ -1,6 +1,7 @@
 ﻿{
   "element": "StereoView",
   "category": "three_d",
+  "description": "可以展示多个页面，通过滑动页面可以实现3D的页面翻转效果。支持水平方向和垂直方向旋转，每个页面可以容纳多种标签元素，支持图片、文字、按钮。",
   "requiredAttrs": [
     "w", "h", "x", "y"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "粒子宽度，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     },
     "h": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "粒子高度，宽高比例建议1:1，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     },
     "x": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "相对于屏幕左上角的x坐标，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），默认为0，支持表达式。"
     },
     "y": {
       "type": "number",
@@ -46,7 +50,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "相对于屏幕左上角的y坐标，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），默认为0，支持表达式。"
     },
     "sAngle": {
       "type": "number",
@@ -56,7 +61,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "90"
+      "defaultValue": "90",
+      "description": "旋转时两个页面的夹角，范围为0至180度，默认值为90"
     },
     "can3D": {
       "type": "number",
@@ -66,7 +72,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "是否支持3D旋转模式，1：3D旋转模式，0：非3D旋转模式，其余值代表非3D旋转模式，默认值为1"
     },
     "resistance": {
       "type": "number",
@@ -76,7 +83,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "1.8"
+      "defaultValue": "1.8",
+      "description": "旋转时的阻力效果，默认1.8，范围为0.1至10"
     },
     "fixed": {
       "type": "number",
@@ -86,7 +94,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "是否固定图片大小，默认固定，0表示固定，1表示不固定。不固定时，可在一个旋转的扇面上自由设置图片大小及位置"
     },
     "vertical": {
       "type": "number",
@@ -96,7 +105,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "旋转方向，1：垂直方向（即上下滑动旋转）0：水平方向（即左右滑动旋转），2垂直+水平方向（即上下可以选择，左右也可以选择）,不填写默认为1"
     }
   },
   "allowedParents": [

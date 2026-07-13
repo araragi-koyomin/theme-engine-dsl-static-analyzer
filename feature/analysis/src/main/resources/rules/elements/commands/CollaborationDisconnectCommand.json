@@ -1,6 +1,7 @@
 ﻿{
   "element": "CollaborationDisconnectCommand",
   "category": "command",
+  "description": "用于碰一碰长连接场景下主动断开设备连接。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [

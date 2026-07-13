@@ -1,6 +1,7 @@
 ﻿{
   "element": "LongTake",
   "category": "longtake",
+  "description": "LongTake是一镜到底动效的根标签，通过指定锁屏、熄屏显示、桌面等场景间的6段转场视频，实现如电影般的一镜到底效果。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "60"
+      "defaultValue": "60",
+      "description": "全局帧率设置，单位为(帧/秒)，控制动画等动效刷新速率，默认值为60。LongTake节点本身属性仅需要设置帧率，若需要实现一镜到底效果，需将StoryBoard节点和EventTrigger节点挂载至LongTake节点下。"
     },
     "screenWidth": {
       "type": "number",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "720"
+      "defaultValue": "720",
+      "description": "描述文件的虚拟的屏幕宽度，根据该宽度和手机屏幕的宽高比能够计算出相应的虚拟的屏幕的高度。描述文件中的数值基于该虚拟的屏幕的宽高，例如分辨率为1560*720的手机在设置screenWidth为1080的描述文件中，其#screen_width为1080,#screen_height为1920，能够保持在同一个屏幕宽高比例的手机中组件的相对位置保持不变。设定屏幕宽度标准。如果指定为720，锁屏中所有元素的位置都按720p的布局编写。1080p、480p等分辨率的手机会自动进行缩放。"
     }
   },
   "allowedParents": [

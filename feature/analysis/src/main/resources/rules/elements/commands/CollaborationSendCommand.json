@@ -1,6 +1,7 @@
 ﻿{
   "element": "CollaborationSendCommand",
   "category": "command",
+  "description": "用于碰一碰长连接场景下主动发送消息命令。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "元素变量名，在支持表达式的情况中使用@name的格式来取当前变量的值。"
     },
     "dataName": {
       "type": "string",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "发送的数据名称，用于碰一碰功能中标识要发送的数据。"
     }
   },
   "allowedParents": [

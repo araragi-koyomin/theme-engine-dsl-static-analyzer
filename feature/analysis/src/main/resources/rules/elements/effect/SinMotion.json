@@ -1,6 +1,7 @@
 ﻿{
   "element": "SinMotion",
   "category": "effect_sub",
+  "description": "水波纹动效子标签，设置水波幅度、相位和不运动距离等参数。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "20"
+      "defaultValue": "20",
+      "description": "水波幅度(振幅)，取实数，单位为像素，默认为20，支持表达式。"
     },
     "factor_k": {
       "type": "number",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0.2"
+      "defaultValue": "0.2",
+      "description": "相位，k值可以产生水波移动，值越大运动越快，值越小运动越缓，默认0.2，支持表达式"
     },
     "no_move_distance_x": {
       "type": "number",
@@ -35,7 +38,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "x轴方向不动的点，离中心点大于no_move_distance_x距离的点无水波荡漾。设置的值需大于0，如果为0值则被认为是图片宽度，默认为图片宽度，单位为像素，支持表达式。"
     },
     "no_move_distance_y": {
       "type": "number",
@@ -45,7 +49,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "y轴方向不动的点，离中心点大于no_move_distance_y距离的点无水波荡漾。设置的值需大于0，如果为0值则被认为是图片高度，默认为图片高度，单位为像素，支持表达式。"
     }
   },
   "allowedParents": [

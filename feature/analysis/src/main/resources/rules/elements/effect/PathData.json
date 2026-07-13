@@ -1,6 +1,7 @@
 ﻿{
   "element": "PathData",
   "category": "effect_sub",
+  "description": "设置跟手粒子响应的矩形区域，支持在PathData中设置多个区域。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [

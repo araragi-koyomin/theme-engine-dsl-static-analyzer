@@ -1,6 +1,7 @@
 ﻿{
   "element": "Size",
   "category": "animation_frame",
+  "description": "缩放动画的关键帧，定义某一时刻的尺寸大小。",
   "requiredAttrs": [
     "w", "h", "time"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "粒子宽度，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     },
     "h": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "粒子高度，宽高比例建议1:1，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     },
     "time": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "表示振动波形的时间间隔，取值范围[0，1800000]，单位为ms，不支持表达式。 考虑到用户友好性，建议取值在1000以内。当前slice的time要大于等于上个slice的time+duration的值且time的值必须唯一。"
     },
     "varSpeedFlag": {
       "type": "string",
@@ -51,7 +55,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "变速函数属性，设置后作用于该帧及下一帧，支持30种函数类型，控制动画按照非线性变化。"
     }
   },
   "allowedParents": [

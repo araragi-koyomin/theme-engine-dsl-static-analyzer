@@ -1,6 +1,7 @@
 ﻿{
   "element": "MeshImage",
   "category": "effect",
+  "description": "可实现局部水波荡漾、迎风飘舞等效果。",
   "requiredAttrs": [
     "mesh"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "相对于屏幕左上角的x坐标，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），默认为0，支持表达式。"
     },
     "y": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "相对于屏幕左上角的y坐标，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），默认为0，支持表达式。"
     },
     "w": {
       "type": "number",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "粒子宽度，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     },
     "h": {
       "type": "number",
@@ -48,7 +52,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "粒子高度，宽高比例建议1:1，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     },
     "mesh": {
       "type": "string",
@@ -58,7 +63,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "用英文逗号分开的两个正整数，表示图片x,y轴上划分的网格数，如：\"20,20\"表示图片x,y轴上分别划分20个网格。x,y轴网格数取值范围为[2,屏幕宽度/高度的二分之一]的整数，且x,y轴网格数至少有一个大于等于2。"
     },
     "center_point": {
       "type": "number",
@@ -68,7 +74,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "网格中心点编号，可指定具体数字。不设置时程序默认计算公式为：(int) (((meshX+ 1)  (meshY+ 1)) / 2 + 0.5）。如：mesh=\"6,6\"，共划分为36个网格，共49个顶点，则第25个顶点为中心点。"
     },
     "sensor": {
       "type": "string",
@@ -79,7 +86,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "是否支持通过加速度传感器来控制网格化的位移动效。true/false，默认为false。为true时，晃动手机触发动效开始。"
     },
     "src": {
       "type": "string",
@@ -89,7 +97,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "string",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "图片资源名称，支持变量，如@abc。"
     }
   },
   "allowedParents": [

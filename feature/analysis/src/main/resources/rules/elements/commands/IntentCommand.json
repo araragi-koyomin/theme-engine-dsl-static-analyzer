@@ -1,6 +1,7 @@
 ﻿{
   "element": "IntentCommand",
   "category": "command",
+  "description": "通过IntentCommand命令，可以跳转打开其他应用程序App，一次只能跳转一个应用，不能实现连续跳转多个应用。",
   "requiredAttrs": [
     "package", "class"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "intent需要设置的的包名（参考应用示例）"
     },
     "class": {
       "type": "string",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "intent需要设置的类名（参考应用示例）"
     },
     "action": {
       "type": "string",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "intent的action（使用package和class时忽略该参数。参考应用示例）"
     },
     "category": {
       "type": "string",
@@ -46,7 +50,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "intent需要设置的category（参考应用示例）"
     },
     "condition": {
       "type": "string",
@@ -56,7 +61,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "条件判断，支持表达式。当condition里的条件判断为非0或者为true时，该命令执行，为false或者0则不执行。"
     },
     "delay": {
       "type": "number",
@@ -66,7 +72,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "延迟，以毫秒记。延迟delay毫秒后执行该命令。"
     },
     "delayCondition": {
       "type": "string",
@@ -76,7 +83,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "延迟判断，为真则delay命令生效，否则失效。默认为true或者1时，表示可以延迟启动命令，如果false或者非1则不延迟执行。"
     },
     "uri": {
       "type": "string",
@@ -86,7 +94,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "目标跳转的页面。 起始规范版本为HarmonyOS 6.0"
     },
     "type": {
       "type": "string",
@@ -96,7 +105,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "表示MIME type类型描述，打开文件的类型，主要用于文管打开文件。比如：'text/xml' 、 'image/'等。 起始规范版本为HarmonyOS 6.0"
     }
   },
   "allowedParents": [

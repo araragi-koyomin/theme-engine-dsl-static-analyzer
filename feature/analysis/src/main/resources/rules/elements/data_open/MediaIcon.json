@@ -1,6 +1,7 @@
 ﻿{
   "element": "MediaIcon",
   "category": "data_open",
+  "description": "专辑封面，获取到音乐App中的专辑封面图片时展示获取到的封面，未获取到时展示通过MediaIcon设置的默认封面，使用前需先声明MediaController。",
   "requiredAttrs": [
     "src"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "图片文件名，如：image.gif，也可在前加文件夹，如wenjianjia/image.gif。当图片名称中包含.gif，循环播放Gif图片;图片的大小、位置等参数与Image设置相同，只需要在src参数中填入gif图片名称即可。小于5.0MB动态显示，大于或等于5.0MB静态显示，设计师应提供大小合适图片资源。"
     },
     "x": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的x坐标，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），默认为0，支持表达式。"
     },
     "y": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的y坐标，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），默认为0，支持表达式。"
     },
     "w": {
       "type": "number",
@@ -47,7 +51,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "粒子宽度，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     },
     "h": {
       "type": "number",
@@ -58,7 +63,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "粒子高度，宽高比例建议1:1，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     }
   },
   "allowedParents": [

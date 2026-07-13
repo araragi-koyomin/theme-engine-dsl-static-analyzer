@@ -1,6 +1,7 @@
 ﻿{
   "element": "Calendar",
   "category": "data_open",
+  "description": "开放日历App中订阅管理模块的黄历、星座相关数据。配置Calendar标签后需设置card属性，取值为黄历（Almanac）或星座（Constellations），在标签内声明Var变量并使用指定变量名即可声明对应的日历数据变量。变量支持设置默认值，获取到接口返回数据会更新该值。",
   "requiredAttrs": [
     "card"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "日历卡片标识。"
     }
   },
   "allowedParents": [

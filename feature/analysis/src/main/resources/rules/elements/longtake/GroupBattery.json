@@ -1,6 +1,7 @@
 ﻿{
   "element": "GroupBattery",
   "category": "longtake_sub",
+  "description": "GroupBattery为AodClock子标签，定义熄屏显示上的电量，仅用于全屏AOD一镜到底场景。内容仅显示电量信息，通过全局变量battery_level获取具体电量数值。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [

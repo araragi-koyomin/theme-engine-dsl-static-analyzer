@@ -1,6 +1,7 @@
 ﻿{
   "element": "AniFrame",
   "category": "animation_frame",
+  "description": "变量动画的关键帧，定义某一时刻的变量值。",
   "requiredAttrs": [
     "value", "time"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "控制可见性visibility时，value为”true”, “false”或“toggle”，分别代表可见、不可见以及反转可见性；控制动画animation时，value为”play”或”stop”，控制动画的播放和暂停"
     },
     "time": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "表示振动波形的时间间隔，取值范围[0，1800000]，单位为ms，不支持表达式。 考虑到用户友好性，建议取值在1000以内。当前slice的time要大于等于上个slice的time+duration的值且time的值必须唯一。"
     },
     "varSpeedFlag": {
       "type": "string",
@@ -41,7 +44,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "变速函数属性，设置后作用于该帧及下一帧，支持30种函数类型，控制动画按照非线性变化。"
     }
   },
   "allowedParents": [

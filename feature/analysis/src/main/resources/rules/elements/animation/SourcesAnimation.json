@@ -1,6 +1,7 @@
 ﻿{
   "element": "SourcesAnimation",
   "category": "animation",
+  "description": "基础命令，只有图片支持帧动画，图片帧动画稍有不同，无插值。可以设置图片播放之间的间隔时间。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "动画延迟执行的毫秒数，即触发动画后需要delay毫秒才开始执行动画，取值正整数，默认为0，支持表达式。"
     },
     "repeat": {
       "type": "number",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "动画重复次数，-1表示无限循环，0表示不重复，n表示重复n+1次，默认为0，支持表达式。最小值为-1。"
     }
   },
   "allowedParents": [

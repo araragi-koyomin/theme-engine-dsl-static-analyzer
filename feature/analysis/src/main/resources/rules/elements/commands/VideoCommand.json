@@ -1,6 +1,7 @@
 ﻿{
   "element": "VideoCommand",
   "category": "command",
+  "description": "VideoCommand：控制视频的播放停止、替换视频源、控制视频播放声音等一系列功能。",
   "requiredAttrs": [
     "name"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "所控制的视频的标识"
     },
     "src": {
       "type": "string",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "需要替换的视频的资源地址"
     },
     "play": {
       "type": "expression",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "控制视频的播放或者停止"
     },
     "sound": {
       "type": "expression",
@@ -46,7 +50,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "控制视频播放的声音，支持0~1的一个浮点数；数值越大，音量越大。也支持有音量为true，无音量为false"
     },
     "seekTime": {
       "type": "number",
@@ -56,7 +61,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "支持数字表达式， 指定时间播放视频"
     },
     "condition": {
       "type": "string",
@@ -66,7 +72,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "条件判断，支持表达式。当condition里的条件判断为非0或者为true时，该命令执行，为false或者0则不执行。支持输入表达式"
     },
     "delay": {
       "type": "number",
@@ -76,7 +83,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "动画延迟执行的毫秒数，即触发动画后需要delay毫秒才开始执行动画，取值正整数，默认为0，支持表达式。"
     },
     "delayCondition": {
       "type": "string",
@@ -86,7 +94,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "延迟判断，为真则delay命令生效，否则失效。默认为true或者1时，表示可以延迟启动命令，如果false或者非1则不延迟执行。支持输入表达式"
     }
   },
   "allowedParents": [

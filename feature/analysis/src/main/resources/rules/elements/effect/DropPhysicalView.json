@@ -1,6 +1,7 @@
 ﻿{
   "element": "DropPhysicalView",
   "category": "effect",
+  "description": "下落动效提供了一系列物体移动、旋转、透明度设置、移动区域设置的组合动效。对单张图片进行复用，减小相关内存的消耗。其中下落的动效符合物理规律，提供重力以及空气密度的设置项，能够随着物体大小和重力传感器的数值改变物体的运动轨迹。可以通过参数设置实现2D的下雨下雪、流星等动效。可以与传感器结合使用实现动效随手机移动的效果。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "x方向的重力数值，可以用数值表达式，默认值为0。该值大于0物体向右移动，小于0物体向左移动，为0时无x轴位移效果。"
     },
     "gravityY": {
       "type": "number",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "y方向的重力数值，可以用数值表达式，默认值为0。该值大于0物体向下移动，小于0物体向上移动，为0时无y轴位移效果。"
     },
     "airDensity": {
       "type": "number",
@@ -35,7 +38,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "12.93"
+      "defaultValue": "12.93",
+      "description": "空气密度，影响空气阻力的大小，值越大导致空气阻力越大，范围为正实数，默认值为12.93。面积较大的物体下落时所受的空气阻力较大，所以实际动效中w，h较小的物体比w，h大的物体移动速度略快一些。"
     }
   },
   "allowedParents": [

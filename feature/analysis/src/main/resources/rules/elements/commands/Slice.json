@@ -1,6 +1,7 @@
 ﻿{
   "element": "Slice",
   "category": "command_sub",
+  "description": "自定义振动波形标签，为Wave的子标签，表示每个振动波形。一个Wave中可以有多个Slice，Slice的最大数目为64。",
   "requiredAttrs": [
     "time", "duration", "intensity", "type"
   ],
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "表示振动波形的时间间隔，取值范围[0，1800000]，单位为ms，不支持表达式。 考虑到用户友好性，建议取值在1000以内。当前slice的time要大于等于上个slice的time+duration的值且time的值必须唯一。"
     },
     "duration": {
       "type": "number",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "表示振动波形的时长，单位为ms，取值范围[0，1800000]，不支持表达式。 考虑到马达振动的持续时间以及自身器件特性，建议取值为5秒。"
     },
     "intensity": {
       "type": "number",
@@ -35,7 +38,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "表示振动波形强度，属性值为浮点类型，取值范围[0，1]，不支持表达式。0代表振动强度为零，即不振动，数值越大则振动强度越大。"
     },
     "type": {
       "type": "number",
@@ -46,7 +50,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "2"
+      "defaultValue": "2",
+      "description": "表示MIME type类型描述，打开文件的类型，主要用于文管打开文件。比如：'text/xml' 、 'image/*'等。 起始规范版本为HarmonyOS 6.0"
     }
   },
   "allowedParents": [

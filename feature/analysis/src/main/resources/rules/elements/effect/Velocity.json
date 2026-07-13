@@ -1,6 +1,7 @@
 ﻿{
   "element": "Velocity",
   "category": "effect_sub",
+  "description": "Velocity影响粒子的初始速度，能够设置随机，随机默认低点为0，如果不随机需设置isRandom为false。",
   "requiredAttrs": [
     "isRandom"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "是否随机缩放粒子，true/false，默认false。"
     },
     "velocityX": {
       "type": "number",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "x方向初始速度，默认为0，支持表达式。不随机则x轴初始速度为该值，随机则x轴初始速度为lowestVelocityX+[(0,velocityX)间随机值]。"
     },
     "velocityY": {
       "type": "number",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "y方向初始速度，默认为0，支持表达式.不随机则y轴初始速度为该值，随机则x轴初始速度为lowestVelocityY+[(0,velocityY)间随机值]。"
     },
     "lowestVelocityX": {
       "type": "number",
@@ -47,7 +51,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "isRandom等于true时生效，为x轴随机初始速度最低值，默认为0，支持表达式。"
     },
     "lowestVelocityY": {
       "type": "number",
@@ -57,7 +62,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "isRandom等于true时生效，为y轴随机初始速度最低值，默认为0，支持表达式。"
     }
   },
   "allowedParents": [

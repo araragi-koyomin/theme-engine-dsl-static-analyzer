@@ -1,6 +1,7 @@
 ﻿{
   "element": "Mask",
   "category": "view",
+  "description": "该功能需要与Image共同使用，对Image标签中的图片（tgt.png）和mask标签中的图片（ori.png）进行混合，支持12种混合模式。例如，通过混合可起到遮罩效果，即按照ori图片对tgt图片进行裁剪，使tgt图片显示与ori图片重叠区域的内容。通过设置align参数，可以达到tgt图片移动但ori图片不移动的效果。",
   "requiredAttrs": [
     "src"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的x坐标，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），默认为0，支持表达式。"
     },
     "y": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的y坐标，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），默认为0，支持表达式。"
     },
     "src": {
       "type": "string",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "src为遮罩图片的源地址"
     },
     "align": {
       "type": "string",
@@ -47,7 +51,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "relative"
+      "defaultValue": "relative",
+      "description": "取值为absolute或relative。其中，absolute表示绝对位置，即ori图片不随着tgt图片移动而移动，遮罩(Mask)x,y坐标为相对于屏幕左上角的坐标；如果为相对位置relative，则ori会随着tgt而移动，遮罩(Mask)x,y坐标为相对于图片左上角的坐标。 默认情况下为relative。"
     },
     "hybridMode": {
       "type": "string",
@@ -59,7 +64,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "6"
+      "defaultValue": "6",
+      "description": "设置两张图片之间的混合模式，共有12种混合模式供选择： clear(0)ori(1)tgt(2)oriOver(3)tgtOver(4)oriIn(5)tgtIn(6)oriOut(7)tgtOut(8)oriATop(9)tgtATop(10)xor(11) 可以通过输入字符串或者对应的数字编号来选择混合模式，默认为6"
     }
   },
   "allowedParents": [

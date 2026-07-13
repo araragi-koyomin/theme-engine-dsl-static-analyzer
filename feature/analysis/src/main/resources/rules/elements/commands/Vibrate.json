@@ -1,6 +1,7 @@
 ﻿{
   "element": "Vibrate",
   "category": "command_sub",
+  "description": "自定义振动标签，为VibrateCommand的子标签，表示使用自定义振动模式。",
   "requiredAttrs": [
     "loop"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "动画是否需要循环，true/false，默认为true。true时循环播放，可与direction和unlockTo配合设置触发解锁。false时只播放一次，direction无效，即不能触发解锁，unlockTo参数依旧有效，在小于unlockTo时点击屏幕加速递减回到首帧并停止，若长按至unlockTo则停止在unlockTo；若大于等于unlockTo时点击屏幕则停止在当前帧；若不点击则在to帧时停止。"
     }
   },
   "allowedParents": [

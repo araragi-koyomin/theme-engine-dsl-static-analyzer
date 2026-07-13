@@ -1,6 +1,7 @@
 ﻿{
   "element": "Command",
   "category": "command",
+  "description": "基础命令，通过对象名和对应的属性来控制界面中的元素。常见是控制元素的可见性（visibility）和动画播放（animation）。",
   "requiredAttrs": [
     "target", "value"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "对象name的名字（如控制对象），“.”后面跟的是属性（目前支持visibility和animation）"
     },
     "value": {
       "type": "string",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "控制可见性visibility时，value为”true”, “false”或“toggle”，分别代表可见、不可见以及反转可见性；控制动画animation时，value为”play”或”stop”，控制动画的播放和暂停"
     },
     "condition": {
       "type": "string",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "条件判断，支持表达式。当condition里的条件判断为非0或者为true时，该命令执行，为false或者0则不执行"
     },
     "delay": {
       "type": "number",
@@ -47,7 +51,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "延迟，以ms毫秒记。延迟delay毫秒后执行该命令"
     },
     "delayCondition": {
       "type": "string",
@@ -57,7 +62,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "延迟判断，为真则delay命令生效，否则失效。默认为true或者1时，表示可以延迟启动命令，如果false或者非1则不延迟执行"
     }
   },
   "allowedParents": [

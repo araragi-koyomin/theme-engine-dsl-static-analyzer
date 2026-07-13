@@ -1,6 +1,7 @@
 ﻿{
   "element": "GlobalVariable",
   "category": "variable",
+  "description": "全局变量是指在引擎中已经预置好的固定名字的变量，可供直接使用，放置在项目GlobalManager中，在整个项目的任意位置都能调用获取最新的值，使用#取数值，使用@取字符串。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
