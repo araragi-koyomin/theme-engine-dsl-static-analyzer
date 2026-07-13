@@ -104,4 +104,15 @@ final class PositionMapper {
         }
         return start + ch;
     }
+
+    /**
+     * Converts a core coordinate (1-based line / 0-based column, as emitted by
+     * {@link com.huawei.theme.analysis.core.syntaxanalysis.AstBuilder}) to a
+     * flat text offset. Used by AST-based context resolution to compare cursor
+     * offsets against AST node ranges. Clamps out-of-range coordinates to the
+     * document bounds (e.g. error nodes with line 0).
+     */
+    int coreOffset(int line1Based, int column0Based) {
+        return toOffset(Math.max(line1Based - 1, 0), column0Based);
+    }
 }

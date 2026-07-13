@@ -55,4 +55,20 @@ final class AnalysisService {
             return List.of();
         }
     }
+
+    /**
+     * Builds the AST for the document text without running semantic analysis.
+     *
+     * <p>Used by context resolution (completion/hover) to locate the cursor's
+     * structural position precisely via AST node ranges. Returns {@code null}
+     * on parse failure so callers can fall back to the text-scanning
+     * {@link ContextResolver}.</p>
+     */
+    DslFileNode parse(String filePath, String content) {
+        try {
+            return new AstBuilder(ruleRepository).getDslAst(filePath, content);
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
 }

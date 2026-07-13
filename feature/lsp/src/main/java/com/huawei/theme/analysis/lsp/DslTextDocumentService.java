@@ -27,6 +27,7 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 
 import com.huawei.theme.analysis.core.fileidentification.DslFileIdentifier;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
+import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 
 /**
  * Handles text document notifications (open/change/close) and language
@@ -141,7 +142,7 @@ public final class DslTextDocumentService implements TextDocumentService {
         int offset = new PositionMapper(text).toOffset(
                 params.getPosition().getLine(),
                 params.getPosition().getCharacter());
-        ContextResolver.Context ctx = new ContextResolver(text).resolve(offset);
+        ContextResolver.Context ctx = resolveContext(uri, text, offset);
         List<CompletionItem> items = completionProvider.complete(ctx);
         return CompletableFuture.completedFuture(Either.forLeft(items));
     }
@@ -156,8 +157,23 @@ public final class DslTextDocumentService implements TextDocumentService {
         int offset = new PositionMapper(text).toOffset(
                 params.getPosition().getLine(),
                 params.getPosition().getCharacter());
-        ContextResolver.Context ctx = new ContextResolver(text).resolve(offset);
+        ContextResolver.Context ctx = resolveContext(uri, text, offset);
         return CompletableFuture.completedFuture(hoverProvider.hover(ctx));
+    }
+
+    /**
+     * Resolves the cursor context preferring AST-based precision and falling
+     * back to the text-scan heuristic when the AST is unavailable or the
+     * cursor is outside any start tag (XML declaration, closing tags, text
+     * content, malformed XML).
+     */
+    private ContextResolver.Context resolveContext(String uri, String text, int offset) {
+        DslFileNode ast = analysisService.parse(uri, text);
+        ContextResolver.Context ctx = new AstContextResolver(text).resolve(offset, ast);
+        if (ctx != null) {
+            return ctx;
+        }
+        return new ContextResolver(text).resolve(offset);
     }
 
     @Override

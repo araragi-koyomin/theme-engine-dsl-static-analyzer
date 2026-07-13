@@ -18,11 +18,17 @@ final class ContextResolver {
         final PositionType type;
         final String tagName;
         final String word;
+        final String attrName;
 
         Context(PositionType type, String tagName, String word) {
+            this(type, tagName, word, null);
+        }
+
+        Context(PositionType type, String tagName, String word, String attrName) {
             this.type = type;
             this.tagName = tagName;
             this.word = word;
+            this.attrName = attrName;
         }
     }
 
