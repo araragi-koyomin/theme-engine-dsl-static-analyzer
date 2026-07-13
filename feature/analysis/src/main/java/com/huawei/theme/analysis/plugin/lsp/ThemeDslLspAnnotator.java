@@ -82,10 +82,8 @@ public final class ThemeDslLspAnnotator implements Annotator {
             return;
         }
         TextRange tagRange = element.getTextRange();
-        LOG.info("renderSemanticTokens: uri=" + uri + " tokens=" + tokens.size() + " tag=" + tagRange);
         int line = 0;
         int col = 0;
-        int rendered = 0;
         for (int i = 0; i + 4 < tokens.size(); i += 5) {
             int deltaLine = tokens.get(i);
             int deltaStart = tokens.get(i + 1);
@@ -109,12 +107,6 @@ public final class ThemeDslLspAnnotator implements Annotator {
             if (attrs == null || attrs.getForegroundColor() == null) {
                 attrs = defaultAttrsForType(type);
             }
-            if (rendered == 0) {
-                LOG.info("renderSemanticTokens: first token type=" + type + " line=" + line + " col=" + col
-                        + " start=" + start + " end=" + end + " tag=" + tagRange
-                        + " attrsNull=" + (attrs == null)
-                        + " fg=" + (attrs == null ? "null" : attrs.getForegroundColor()));
-            }
             if (attrs == null) {
                 continue;
             }
@@ -122,9 +114,7 @@ public final class ThemeDslLspAnnotator implements Annotator {
                     .range(new TextRange(start, end))
                     .enforcedTextAttributes(attrs)
                     .create();
-            rendered++;
         }
-        LOG.info("renderSemanticTokens: rendered=" + rendered + " for tag=" + tagRange);
     }
 
     private static TextAttributesKey keyForType(int type) {

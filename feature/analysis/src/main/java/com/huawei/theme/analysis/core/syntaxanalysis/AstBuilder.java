@@ -252,26 +252,18 @@ public class AstBuilder implements DslAstProvider {
         if (hint < 0) {
             return -1;
         }
-        // StAX's getCharacterOffset may sit before or after the real '<'
-        // (e.g. off-by-one after the XML declaration, or just past '>').
-        // Search both directions near the hint, then fall back to a global
-        // forward/backward scan.
-        for (int i = hint; i < source.length() && i < hint + 16; i++) {
-            if (source.charAt(i) == '<' && source.startsWith(tagName, i + 1)) {
-                return i;
-            }
-        }
-        for (int i = hint; i >= 0 && i > hint - 16; i--) {
-            if (source.charAt(i) == '<' && source.startsWith(tagName, i + 1)) {
-                return i;
-            }
+        // StAX's getCharacterOffset typically reports the offset at or after
+        // the tag's closing '>' (or '/>'), which can be far from the opening
+        // '<' for tags with long attribute lists. Use a global backward search
+        // (lastIndexOf) to find the nearest '<tagName' at or before the hint —
+        // this is the tag being processed. Fall back to forward search only
+        // if nothing is found behind (e.g. XML declaration offset edge case).
+        int bwd = source.lastIndexOf("<" + tagName, hint);
+        if (bwd >= 0) {
+            return bwd;
         }
         int fwd = source.indexOf("<" + tagName, hint);
-        if (fwd >= 0) {
-            return fwd;
-        }
-        int bwd = source.lastIndexOf("<" + tagName, hint);
-        return bwd >= 0 ? bwd : hint;
+        return fwd >= 0 ? fwd : hint;
     }
 
     /**

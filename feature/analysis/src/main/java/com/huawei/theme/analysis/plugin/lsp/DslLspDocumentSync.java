@@ -188,19 +188,15 @@ final class DslLspDocumentSync implements Disposable {
     private void requestSemanticTokens(String uri) {
         LanguageServer s = serverService.getServerProxy();
         if (s == null) {
-            LOG.info("requestSemanticTokens: no server proxy, uri=" + uri);
             return;
         }
-        LOG.info("requestSemanticTokens: requesting uri=" + uri);
         SemanticTokensParams params = new SemanticTokensParams();
         params.setTextDocument(new TextDocumentIdentifier(uri));
         s.getTextDocumentService().semanticTokensFull(params).thenAccept(tokens -> {
             DslLspLanguageClient client = serverService.getClient();
             if (client == null || tokens == null || tokens.getData() == null) {
-                LOG.info("requestSemanticTokens: null response, uri=" + uri);
                 return;
             }
-            LOG.info("requestSemanticTokens: received uri=" + uri + " tokens=" + tokens.getData().size());
             client.setSemanticTokens(uri, tokens.getData());
             ApplicationManager.getApplication().invokeLater(() -> {
                 if (project.isDisposed()) {
@@ -209,7 +205,7 @@ final class DslLspDocumentSync implements Disposable {
                 applySemanticTokensToEditor(uri, tokens.getData());
             });
         }).exceptionally(e -> {
-            LOG.warning("requestSemanticTokens: failed uri=" + uri + " " + e.getMessage());
+            LOG.warning("requestSemanticTokens failed: " + e.getMessage());
             return null;
         });
     }

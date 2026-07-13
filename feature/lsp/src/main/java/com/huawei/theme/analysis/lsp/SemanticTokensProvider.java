@@ -20,14 +20,16 @@ import com.huawei.theme.analysis.core.syntaxanalysis.AstBuilder;
  * <p>Walks the AST produced by {@link AstBuilder}: for every attribute whose
  * value was parsed as an expression ({@link DslAttributeValueNode#getExpression()}),
  * the expression node tree is traversed and each variable reference / function
- * call / literal is emitted as a token. Token positions use the document
- * absolute coordinates that {@code AstBuilder} already offset onto the
- * expression nodes (1-based line / 0-based column, open-ended end). Binary /
- * unary operator nodes are skipped because the operator position is not
- * recorded separately on the AST.</p>
- *
- * <p>Output is the LSP relative-encoding integer list
+ * call / literal is collected. Tokens are then sorted by document position
+ * (line, column) and delta-encoded into the LSP relative format
  * {@code [deltaLine, deltaStart, length, tokenType, tokenModifier]}.</p>
+ *
+ * <p>Sorting is required because AST traversal order (depth-first, parent
+ * before children) does not guarantee document-position order — e.g. a
+ * FUNCTION_CALL node starts at the function name but its child VARIABLE_REF
+ * starts at an earlier column (the {@code #} prefix). Without sorting, the
+ * delta encoding would produce negative offsets, corrupting token ranges on
+ * the client.</p>
  */
 final class SemanticTokensProvider {
 
@@ -52,16 +54,37 @@ final class SemanticTokensProvider {
     }
 
     List<Integer> collect(DslFileNode ast) {
-        List<Integer> data = new ArrayList<>();
         if (ast == null || ast.getRootElement() == null) {
-            return data;
+            return List.of();
         }
-        int[] prev = {0, 0}; // prevLine(0-based), prevChar(0-based)
-        walk(ast.getRootElement(), data, prev);
+        // 1. Collect all tokens as {line(0-based), col(0-based), length, type}.
+        List<int[]> tokens = new ArrayList<>();
+        walk(ast.getRootElement(), tokens);
+        if (tokens.isEmpty()) {
+            return List.of();
+        }
+        // 2. Sort by document position (line asc, then col asc) so delta
+        //    encoding produces non-negative offsets.
+        tokens.sort((a, b) -> a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);
+        // 3. Delta-encode into the LSP flat list.
+        List<Integer> data = new ArrayList<>(tokens.size() * 5);
+        int prevLine = 0;
+        int prevCol = 0;
+        for (int[] t : tokens) {
+            int deltaLine = t[0] - prevLine;
+            int deltaStart = (deltaLine == 0) ? t[1] - prevCol : t[1];
+            data.add(deltaLine);
+            data.add(deltaStart);
+            data.add(t[2]); // length
+            data.add(t[3]); // type
+            data.add(0);    // no modifiers
+            prevLine = t[0];
+            prevCol = t[1];
+        }
         return data;
     }
 
-    private void walk(DslElementNode element, List<Integer> data, int[] prev) {
+    private void walk(DslElementNode element, List<int[]> tokens) {
         if (element == null) {
             return;
         }
@@ -72,7 +95,7 @@ final class SemanticTokensProvider {
                 if (value != null && value.getExpression().isPresent()) {
                     ExpressionAstNode expr = value.getExpression().get();
                     if (expr instanceof ExpressionNode) {
-                        emit((ExpressionNode) expr, data, prev);
+                        emit((ExpressionNode) expr, tokens);
                     }
                 }
             }
@@ -80,36 +103,28 @@ final class SemanticTokensProvider {
         List<DslElementNode> children = element.getChildElements();
         if (children != null) {
             for (DslElementNode child : children) {
-                walk(child, data, prev);
+                walk(child, tokens);
             }
         }
     }
 
-    private void emit(ExpressionNode node, List<Integer> data, int[] prev) {
+    private void emit(ExpressionNode node, List<int[]> tokens) {
         int type = tokenTypeOf(node);
         if (type >= 0) {
             int line = node.getLine() - 1; // 1-based -> 0-based
             int col = node.getColumn();
             int length = lengthOf(node);
             if (line >= 0 && length > 0) {
-                int deltaLine = line - prev[0];
-                int deltaStart = (deltaLine == 0) ? col - prev[1] : col;
-                data.add(deltaLine);
-                data.add(deltaStart);
-                data.add(length);
-                data.add(type);
-                data.add(0); // no modifiers
-                prev[0] = line;
-                prev[1] = col;
+                tokens.add(new int[]{line, col, length, type});
             }
         }
         if (node.getChildren() != null) {
             for (ExpressionNode c : node.getChildren()) {
-                emit(c, data, prev);
+                emit(c, tokens);
             }
         }
         if (node.getIndexExpression() != null) {
-            emit(node.getIndexExpression(), data, prev);
+            emit(node.getIndexExpression(), tokens);
         }
     }
 
