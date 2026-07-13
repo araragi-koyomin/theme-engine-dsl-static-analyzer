@@ -1,943 +1,461 @@
 # Bug Fix Summary
 
-Comprehensive catalog of all bugs discovered and fixed during this session, organized by category.
+Comprehensive catalog of all bugs discovered and tested, organized by category.
+Updated 2026-07-13 based on `java -jar dsl-analyzer.jar --format markdown` E2E test on 14 fixtures + 2 directory scans.
 
 ---
 
-## 1. 环境与构建类
+## Part I: 已修复 Bug 归档
 
-### Bug 1: JAR包运行时规则加载失败
+Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要。
 
-- **症状**: jar 在非项目根目录运行时返回 0 errors，规则库未加载
-- **根因**: `CliMain.BUILT_IN_RULES_PATH` 使用相对文件系统路径 `feature/analysis/src/main/resources/rules`，离开项目目录后路径无效
-- **DSL**: `widget_multi_violation.xml` — 应产出多个诊断，但在错误目录运行时返回 0 errors
+### Bug 1: JAR包运行时规则加载失败 ✅ 已修复
 
-  ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Widget>
-      <Button name="btn1"/>
-      <Button name="btn2" x="100" y="200" width="300" height="100">
-          <Trigger action="invalid_action"/>
-      </Button>
-      <Layer name="bg_layer" w="300" h="100" src="layer.png"/>
-      <Image name="icon" x="50" y="50" width="100" height="100"
-             alpha="999" src="icon.png"/>
-  </Widget>
-  ```
+- **修复内容**: `JsonRuleLoader.java` 新增 `loadFromClasspath()` 方法支持 jar 协议；`CliMain.java` 改用 classpath 加载
+- **验证**: 任意目录运行 jar → 正确检测 5 errors (SEM-TRIG-002, SEM-TRIG-001, SEM-NEST-001, SEM-IMG-SRC, SEM-ATTR-001)
 
-- **修复前**:
-  ```bash
-  # 在 /tmp/ 目录运行 → 规则库路径不存在 → 0 errors
-  java -jar dsl-analyzer.jar -f widget_multi_violation.xml
-  # 输出: 0 errors, 0 warnings
-  ```
-- **修复后**:
-  ```bash
-  # 任意目录运行 → classpath 加载规则库 → 正确检测
-  java -jar dsl-analyzer.jar -f widget_multi_violation.xml
-  # 输出: 5 errors (SEM-TRIG-002, SEM-TRIG-001, SEM-NEST-001,
-  #        SEM-IMG-SRC, SEM-ATTR-001)
-  ```
-- **修复**:
-  - `JsonRuleLoader.java` 新增 `loadFromClasspath()` 方法，支持 jar 协议（JarFile 扫描）和 file 协议
-  - `CliMain.java` 改用 `loadFromClasspath("rules")` 加载内置规则
-- **影响文件**:
-  | 文件 | 操作 |
-  |------|------|
-  | `JsonRuleLoader.java` | 修改 |
-  | `CliMain.java` | 修改 |
+### Bug 2: XML语法错误不报告诊断 ✅ 已修复
 
----
+- **修复内容**: 新增 `SyntaxErrorAnalyzer`，检测 `hasError` 节点产出 SYN-SAX-001；注册到 `AnalyzerRegistry`
+- **验证**: 格式错误 XML → 正确报告 SYN-SAX-001
 
-### Bug 2: XML语法错误不报告诊断
+### Bug 3: TypeAnalyzer 不产出诊断（FunctionSignatureLibrary 缺失）✅ 已修复
 
-- **症状**: 格式错误的 XML（未闭合标签、引号缺失）返回 0 errors
-- **根因**: `AstBuilder` 捕获 SAX 异常生成 `hasError=true` 节点，但没有 Analyzer 将错误节点转换为 `Diagnostic`
-- **DSL 1**: `error_unclosed.xml` — `<Var>` 元素未闭合
+- **修复内容**: `JsonFunctionSignatureLoader.java` 新增 jar 协议 classpath 加载；`CliMain.java` 同步加载函数签名库
+- **验证**: SEM-TYPE-001/002 正确产出（E2E 实测 type_inference_edge_cases 12E+1W）
 
-  ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Lockscreen frameRate="60" screenWidth="1080">
-      <Var name="testVar" expression="1" type="number">
-      <Group name="testGroup" x="0" y="0" w="1080" h="1920"/>
-  ```
+### Bug 4: 属性名/值对齐错误 ✅ 已修复
 
-- **DSL 2**: `error_quotes.xml` — `frameRate=60` 缺少引号
+- **修复内容**: `AstBuilder.java` 改用 `reader.getAttributeLocalName(i)` 作为属性名，构建 name→AttrPos 映射
+- **验证**: 诊断消息正确显示属性值（E2E 实测无误报属性值错乱）
 
-  ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Lockscreen frameRate=60 screenWidth="1080">
-      <Var name="testVar" expression="1" type="number"/>
-  </Lockscreen>
-  ```
+### Bug 5: SEM-ATTR-001 (alpha范围 0-255) 不触发 ✅ 已修复
 
-- **修复前输出**:
-  ```
-  error_unclosed.xml: 0 errors, 0 warnings
-  error_quotes.xml:   0 errors, 0 warnings
-  ```
-- **修复后输出**:
-  ```
-  error_unclosed.xml: SYN-SAX-001 (line 3) — XML parse error:
-      The element type "Var" must be terminated by the matching end-tag "</Var>"
-  error_quotes.xml: SYN-SAX-001 (line 2) — XML parse error:
-      Attribute name "frameRate" associated with an element type
-      "Lockscreen" must be followed by the ' = ' character
-  ```
-- **修复**: 新增 `SyntaxErrorAnalyzer`，检测 `hasError` 节点并产出 `SYN-SAX-001` 诊断；注册到 `AnalyzerRegistry`
-- **影响文件**:
-  | 文件 | 操作 |
-  |------|------|
-  | `SyntaxErrorAnalyzer.java` | 新建 |
-  | `AnalyzerRegistry.java` | 修改 |
-  | `DiagnosticProviderImpl.java` | 修改 |
+- **修复内容**: `Image.json` 约束简化为 `element.attrs['alpha'] < 0 OR element.attrs['alpha'] > 255`
+- **验证**: constraint_edge_cases 正确报告 alpha=256 和 alpha=-1 (5E+1W 全匹配)
+
+### Bug 6: SEM-PERSIST-001 不触发 ✅ 已修复
+
+- **修复内容**: `DslRuleCondition.g4` 新增 MATCHES token；`DefaultRuleDslEvaluator.java` 实现 MATCHES 处理
+- **验证**: variable_lifecycle_errors 正确报告 4 条 SEM-PERSIST-001 (hour/minute/ishour12/system.time.hour1)
+
+### Bug 7: SEM-TRIG-002 / element.children 约束不触发 ✅ 部分修复
+
+- **修复内容**: `EvaluationContext.java` 新增 childElements；`DefaultRuleDslEvaluator.java` 新增 preprocessChildrenExpressions；`ConstraintAnalyzer.java` 新增 buildChildElementInfos
+- **验证**: SEM-TRIG-002 在 widget_missing_required.xml 中可触发，但在 trigger_command_combos.xml 中仍不触发（见 Bug 12）
+
+### Bug 8: SEM-TYPE-003 (字面量类型错误) 不触发 ✅ 已修复
+
+- **修复内容**: `LiteralTypeAnalyzer.java` 将 isLiteral() 门控替换为表达式解析成功判断
+- **验证**: SEM-TYPE-003 在部分场景工作，但仍有归类偏差（见 Bug 18、Bug 20）
+
+### Bug 9: ifelse(...) 被 ANTLR 解析器误报 ✅ 已修复
+
+- **修复内容**: `DslExpression.g4` primaryExpr 规则新增 `'{' expression '}'` 替代项
+- **验证**: chained_function_hell 正确报告 4 条 SEM-TYPE-001/002/003，无 ANTLR 误报
+
+### Bug 10: SYN-EXPR-002/003/004 缺失或不全 ✅ 部分修复
+
+- **修复内容**: ExpressionSyntaxChecker 新增 countSignificantDigits/checkPrecision 递归、ANTLR 前引号检查
+- **验证**: SYN-EXPR-002 字面量精度检出正常；SYN-EXPR-004 部分退化（裸词不检出，见 Bug 17）；SYN-EXPR-002 计算结果不检出（见 Bug 21）
 
 ---
 
-### Bug 3: TypeAnalyzer 不产出诊断（FunctionSignatureLibrary 缺失）
-
-- **症状**: 所有 SEM-TYPE-001/002 诊断缺失
-- **根因**: CLI 调用 `loadFromClasspath("rules")` 时传入 `null` 作为 FunctionSignatureLibrary，TypeAnalyzer 因 `functionLibrary == null` 直接返回空
-- **DSL**: `lockscreen_type_and_ref.xml` lines 5–6 — `sin('hello')` 和 `ifelse(#missing_cond, 1, 'string_result')`
-
-  ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Lockscreen frameRate="60" screenWidth="1080">
-      <Var name="dup_var" type="number" const="true" expression="1"/>
-      <Var name="dup_var" type="string" const="true" expression="'reset'"/>
-      <Var name="bad_sin" type="number" expression="sin('hello')"/>
-      <Var name="bad_ifelse" type="number"
-            expression="ifelse(#missing_cond, 1, 'string_result')"/>
-      ...
-  </Lockscreen>
-  ```
-
-- **修复前输出**:
-  ```
-  lockscreen_type_and_ref.xml: 2 errors (SEM-REF-001 for #undefined_var,
-                                            SEM-ATTR-001 for alpha=300)
-  # 缺少: SEM-TYPE-002 for sin('hello')
-  # 缺少: SEM-TYPE-001 for ifelse 分支类型不匹配
-  ```
-- **修复后输出**:
-  ```
-  lockscreen_type_and_ref.xml: 5 errors
-  # 新增: SEM-TYPE-002 — sin() expects number, but param 1 is string
-  # 新增: SEM-TYPE-001 — ifelse branches return mixed types
-  ```
-- **修复**:
-  - `JsonFunctionSignatureLoader.java` 新增 jar 协议 classpath 加载
-  - `CliMain.java` 在加载规则时同步加载函数签名库并传入 RuleRepository
-- **影响文件**:
-  | 文件 | 操作 |
-  |------|------|
-  | `JsonFunctionSignatureLoader.java` | 修改 |
-  | `CliMain.java` | 修改 |
+## Part II: 未修复 Bug（2026-07-13 E2E Markdown 导出实测发现）
 
 ---
 
-## 2. AST/解析类
+## 1. 规则引擎类
 
-### Bug 4: 属性名/值对齐错误（scanStartTag 与 StAX 顺序不一致）
+### Bug 12: SEM-TRIG-002 在 trigger_command_combos.xml 中不触发
 
-- **症状**: 诊断消息出现错误属性值（`scaleType=1080` 而非 `scaleType=invalid_type`）、SEM-IMG-SRC 误报
-- **根因**: `buildElementNode` 中使用 `scan.attrs.get(i).name`（手动扫描）作为属性名，但 StAX 的 `getAttributeValue(i)` 可能返回不同顺序的值
-- **DSL**: `lockscreen_multi_error.xml` line 7 — `<Image name="conflict" src="icon.png" srcExp="@weather_icon" scaleType="invalid_type"/>`
-
+- **症状**: `<Button>` 元素没有 `<Trigger>` 子元素时，SEM-TRIG-002 不产出诊断
+- **DSL**: `trigger_command_combos.xml` line 3:
   ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Lockscreen frameRate="60" screenWidth="1080">
-      <Var name="dup_var" type="number" const="true" expression="1"/>
-      <Var name="dup_var" type="number" const="true" expression="2"/>
-      <Var name="hour" type="number" persist="true"/>
-      <Image name="bg" x="#undefined_var" y="0" width="1080" height="1920"
-             alpha="300" src="bg.png"/>
-      <Image name="conflict" src="icon.png" srcExp="@weather_icon"
-             scaleType="invalid_type"/>
-      ...
-  </Lockscreen>
+  <Button name="no_trigger_btn" x="100" y="100" width="200" height="80"/>
   ```
-
-- **修复前输出**:
+- **Expected**: SEM-TRIG-002（Trigger缺失规则：Button 元素必须包含至少一个 Trigger 子元素来响应用户交互，否则按钮无法被点击触发任何行为）
   ```
-  SEM-IMG-002 at line 7: Image "conflict" has both src and srcExp
-      → 诊断消息显示 "scaleType=1080" （width 的值被错误关联到 scaleType 属性名）
+  SEM-TRIG-002 (line 3): Button 'no_trigger_btn' is missing a Trigger child element
   ```
-- **修复后输出**:
-  ```
-  SEM-ENUM-001 at line 7: scaleType='invalid_type' is invalid
-      → 诊断消息正确显示 "scaleType=invalid_type"
-  ```
-- **修复**: 改为始终使用 `reader.getAttributeLocalName(i)` 作为属性名（StAX 权威来源），`scan.attrs` 仅用于位置信息。构建 `name→AttrPos` 映射按名查找位置
-- **影响文件**:
-  | 文件 | 操作 |
-  |------|------|
-  | `AstBuilder.java` | 修改 |
+- **Actual**: 无诊断（jar 输出中完全没有 SEM-TRIG-002）
+- **Root cause**: Bug 7 修复了 children.filter 预处理机制，使 widget_missing_required.xml 中的 SEM-TRIG-002 可触发。但 trigger_command_combos.xml 中 Button 无任何子元素（children 为空），约束 `element.children.filter(tagName, Trigger).count == 0` 在 children 为空时可能不正确评估——当 Button 完全无子元素时，childElements 列表可能未被正确填充，导致约束条件始终为 false
+- **影响文件**: `ConstraintAnalyzer.java`, `DefaultRuleDslEvaluator.java`
 
 ---
 
-## 3. 规则引擎类
+### Bug 13: SEM-TRIG-003 空Triggers容器不触发
 
-### Bug 5: SEM-ATTR-001 (alpha范围 0-255) 不触发
-
-- **症状**: `alpha="300"/"500"/"-10"` 均不触发诊断
-- **根因**: 约束条件使用了 `parseInt()` 函数，该语法不在 RuleDsl grammar 中，ANTLR 解析失败 → evaluator 返回 false
-- **DSL**: `constraint_edge_cases.xml` lines 9–10, 12–13 — Image alpha=256 和 alpha=-1
-
+- **症状**: `<Triggers></Triggers>` 空容器没有 `<Trigger>` 子元素时，SEM-TRIG-003 不产出诊断
+- **DSL**: `trigger_command_combos.xml` lines 28-30:
   ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Wallpaper screenWidth="1080">
-      <Image name="alpha_zero" x="0" y="0" width="1080" height="1920"
-             alpha="0" src="zero_alpha.png"/>
-      <Image name="alpha_max" x="0" y="0" width="1080" height="1920"
-             alpha="255" src="max_alpha.png"/>
-      <Image name="alpha_over" x="0" y="0" width="1080" height="1920"
-             alpha="256" src="over_alpha.png"/>
-      <Image name="alpha_neg" x="0" y="0" width="1080" height="1920"
-             alpha="-1" src="neg_alpha.png"/>
-      ...
-  </Wallpaper>
+  <Button name="empty_triggers_btn" x="100" y="550" width="200" height="80">
+      <Triggers>
+      </Triggers>
+  </Button>
   ```
-
-- **修复前输出**:
+- **Expected**: SEM-TRIG-003（Triggers空容器规则：Triggers 容器元素必须包含至少一个 Trigger 子元素。空的 Triggers 元素不仅无意义，还会误导开发者认为按钮已有交互定义，但实际上没有任何触发响应）
   ```
-  constraint_edge_cases.xml: 4 errors (SEM-IMG-002, SEM-IMG-003,
-                                       SEM-IMG-SRC, SEM-ATTR-005)
-  # 缺少: SEM-ATTR-001 for alpha=256 (line 9)
-  # 缺少: SEM-ATTR-001 for alpha=-1  (line 12)
+  SEM-TRIG-003 (line 29): Triggers container has no Trigger child elements
   ```
-- **修复后输出**:
-  ```
-  constraint_edge_cases.xml: 6 errors
-  # 新增: SEM-ATTR-001 — alpha value 256 exceeds max 255 (line 9)
-  # 新增: SEM-ATTR-001 — alpha value -1 is below min 0 (line 12)
-  ```
-- **修复**: 简化条件为 `element.attrs['alpha'] < 0 OR element.attrs['alpha'] > 255`，利用 `compareNumeric` 的字符串→数字转换
-- **影响文件**:
-  | 文件 | 操作 |
-  |------|------|
-  | `Image.json` (规则数据) | 修改 |
+- **Actual**: 无诊断
+- **Root cause**: 同 Bug 12——Triggers 有子元素但子元素列表为空（无 Trigger），children.filter 约束条件在空子元素列表时评估不正确。Triggers.json 中约束 `element.children.filter(tagName, Trigger).count == 0` 的预处理可能将空列表视为"无子元素"而非"有子元素但无Trigger"
+- **影响文件**: `ConstraintAnalyzer.java`, `DefaultRuleDslEvaluator.java`
 
 ---
 
-### Bug 6: SEM-PERSIST-001 不触发
+### Bug 14: SEM-PERSIST-001 不检测 expression 引用的时间变量
 
-- **症状**: Var 使用 `persist="true"` + 时间变量名不触发诊断
-- **根因**: 约束条件使用 `MATCHES` 运算符进行正则匹配，该运算符不在 RuleDsl grammar 中
-- **DSL**: `variable_lifecycle_errors.xml` lines 3–6 — Var 对 hour/minute/ishour12 设置 persist
-
-  ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Lockscreen frameRate="60" screenWidth="1080">
-      <Var name="hour" type="number" persist="true" expression="12"/>
-      <Var name="minute" type="number" globalPersist="true"/>
-      <Var name="ishour12" type="string" styleGlobalPersist="true"/>
-      <Var name="system.time.hour1" type="number" persist="true"/>
-      ...
-  </Lockscreen>
-  ```
-
-- **修复前输出**:
-  ```
-  variable_lifecycle_errors.xml: 6 errors
-  # 缺少: SEM-PERSIST-001 for hour (line 3)
-  # 缺少: SEM-PERSIST-001 for minute (line 4)
-  # 缺少: SEM-PERSIST-001 for ishour12 (line 5)
-  # 缺少: SEM-PERSIST-001 for system.time.hour1 (line 6)
-  ```
-- **修复后输出**:
-  ```
-  variable_lifecycle_errors.xml: 10 errors
-  # 新增: SEM-PERSIST-001 — persist on time variable hour is forbidden (line 3)
-  # 新增: SEM-PERSIST-001 — globalPersist on time variable minute is forbidden (line 4)
-  # 新增: SEM-PERSIST-001 — styleGlobalPersist on time var ishour12 is forbidden (line 5)
-  # 新增: SEM-PERSIST-001 — persist on time var system.time.hour1 is forbidden (line 6)
-  ```
-- **修复**: 在 `DslRuleCondition.g4` 中新增 `MATCHES` token 和 `valueExpr MATCHES literal` 语法规则；在 `DefaultRuleDslEvaluator.java` 中实现 `visitCompareExpr` 的 MATCHES 处理
-- **影响文件**:
-  | 文件 | 操作 |
-  |------|------|
-  | `DslRuleCondition.g4` | 修改 |
-  | `DefaultRuleDslEvaluator.java` | 修改 |
-
----
-
-### Bug 7: SEM-TRIG-002 / element.children 约束全部不触发
-
-- **症状**: 所有基于子元素的约束（Button 需 Trigger、Triggers 需 Trigger 等）均不触发
-- **根因**: RuleDsl grammar 不支持 `element.children.filter(...)` 语法，ANTLR 解析失败
-- **DSL**: `widget_missing_required.xml` line 3 — `<Button name="widget_btn"/>` 缺少 Trigger 子元素
-
-  ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Widget>
-      <Button name="widget_btn"/>
-  </Widget>
-  ```
-
-- **修复前输出**:
-  ```
-  widget_missing_required.xml: 2 errors (SEM-IMG-001, SEM-IMG-SRC for missing
-                                        src attribute on Button — wrong rule)
-  # 缺少: SEM-TRIG-002 — Button is missing a Trigger child element
-  ```
-- **修复后输出**:
-  ```
-  widget_missing_required.xml: 3 errors
-  # 新增: SEM-TRIG-002 — Button 'widget_btn' is missing a Trigger child element
-  ```
-- **修复**:
-  - `EvaluationContext.java` 新增 `childElements` 字段和 `ChildElementInfo` 内部类
-  - `DefaultRuleDslEvaluator.java` 新增 `preprocessChildrenExpressions()` 方法，在 ANTLR 解析前用正则预处理子元素过滤表达式
-  - `ConstraintAnalyzer.java` 新增 `buildChildElementInfos()` 方法填充子元素信息
-- **影响文件**:
-  | 文件 | 操作 |
-  |------|------|
-  | `EvaluationContext.java` | 修改 |
-  | `DefaultRuleDslEvaluator.java` | 修改 |
-  | `ConstraintAnalyzer.java` | 修改 |
-
----
-
-## 4. 类型检查类
-
-### Bug 8: SEM-TYPE-003 (字面量类型错误) 不触发
-
-- **症状**: 非数字值写入数字属性（如 `x="'hello'"`）不触发诊断
-- **根因**: `LiteralTypeAnalyzer` 中 `isLiteral()` 门控：当值含表达式语法但 ANTLR 解析失败时，`isLiteral=false`，跳过字面量检查，同时 TypeAnalyzer 也因 `expression.isEmpty()` 跳过
-- **DSL 1**: `type_inference_edge_cases.xml` line 24 — `Group x="-#valid_num"`（非纯数值在 numeric attr 中）
-
-  ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Lockscreen frameRate="60" screenWidth="1080">
-      ...
-      <Group name="container" x="-#valid_num" y="0" width="500" height="500">
-          <Text name="info" x="250" y="250" size="20" color="#FFFFFF"
-                textExp="#bad_substr" category="Normal"/>
-      </Group>
-      ...
-  </Lockscreen>
-  ```
-
-- **DSL 2**: `lockscreen_multi_error.xml` lines 11–12 — `<Image x="'hello'"/>` 字符串字面量在 numeric attr 中
-
-  ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Lockscreen frameRate="60" screenWidth="1080">
-      ...
-      <Group name="container" x="0" y="0" width="1080" height="500">
-          <Image name="inner" x="'hello'" y="100" width="200" height="200"
-                 src="inner.png"/>
-      </Group>
-      ...
-  </Lockscreen>
-  ```
-
-- **修复前输出**:
-  ```
-  type_inference_edge_cases.xml: 7 errors
-      # 缺少: SEM-TYPE-003 for Group x="-#valid_num" (line 24)
-  lockscreen_multi_error.xml: 6 errors
-      # 缺少: SEM-TYPE-003 for Image x="'hello'" (line 12)
-  ```
-- **修复后输出**:
-  ```
-  type_inference_edge_cases.xml: 8 errors
-      # 新增: SEM-TYPE-003 — literal value '-#valid_num' cannot be
-      #         used in numeric attribute x (line 24)
-  lockscreen_multi_error.xml: 7 errors
-      # 新增: SEM-TYPE-003 — literal value ''hello'' cannot be used
-      #         in numeric attribute x (line 12)
-  ```
-- **修复**: 将 `isLiteral()` 门控替换为表达式是否成功解析的判断：解析成功→TypeAnalyzer处理；解析失败或纯字面量→检查原始值类型
-- **影响文件**:
-  | 文件 | 操作 |
-  |------|------|
-  | `LiteralTypeAnalyzer.java` | 修改 |
-
----
-
-## 5. 表达式解析类
-
-### Bug 9: ifelse(...) 被 ANTLR 解析器误报为语法错误
-
-- **症状**: 所有含 `ifelse()` 的表达式被报为 SYN-EXPR-ANTLR，阻塞后续类型检查
-- **根因**: `DslExpression.g4` 的 `primaryExpr` 规则不支持 `{ numericExpression }` 语法。该语法仅在 `stringTerm`（顶层字符串拼接）中可用，导致函数参数中出现 `{...}` 时解析失败
-- **DSL**: `chained_function_hell.xml` line 5 — 嵌套 ifelse 含花括号表达式
-
-  ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Lockscreen frameRate="60" screenWidth="1080">
-      <Var name="deep_ifelse" type="number"
-           expression="ifelse(#screen_width > 500,
-             ifelse(#battery_level > 50, 100, 50),
-             ifelse(#darkMode == 1, 75, 25))"/>
-      <Var name="type_mix_deep" type="string"
-           expression="ifelse(#touch_x > 100,
-             ifelse(#darkMode == 2, 'dark_mode', 123), 'light_mode')"/>
-      <Var name="chained_bad_type" type="number"
-           expression="sin(substr('hello', 0, 3))"/>
-      ...
-  </Lockscreen>
-  ```
-
-- **修复前输出**:
-  ```
-  chained_function_hell.xml: 6 errors
-      # SYN-EXPR-ANTLR — ifelse(#touch_x > 100, ifelse(#darkMode == 2,
-      #   'dark_mode', 123), 'light_mode'): ANTLR parse failed (line 5)
-      # SYN-EXPR-ANTLR — sin(substr('hello', 0, 3)): ANTLR parse failed (line 7)
-  # 问题: 类型检查被 SYN-EXPR-ANTLR 阻塞，SEEK-TYPE-001/002 全部缺失
-  ```
-- **修复后输出**:
-  ```
-  chained_function_hell.xml: 4 errors
-      # SYN-EXPR-ANTLR 误报消失
-      # SEM-TYPE-001 — ifelse branches return mixed string|number (line 5)
-      # SEM-TYPE-002 — sin() expects number but gets string from substr() (line 7)
-      # SEM-TYPE-003 — #screen_width + 'hello' string in numeric context (line 13)
-      # SEM-TYPE-001 — Image x has string then-branch in ifelse (line 19)
-  ```
-- **修复**: 在 `primaryExpr` 规则中新增 `'{' expression '}'` 替代项
-- **影响文件**:
-  | 文件 | 操作 |
-  |------|------|
-  | `DslExpression.g4` | 修改 |
-
----
-
-### Bug 10: SYN-EXPR-002/003/004 缺失或不全
-
-- **症状**:
-  - SYN-EXPR-002（精度>7位）仅对单一整数字面量生效，小数、表达式结果不检测
-  - SYN-EXPR-003/004 从未触发
-- **根因**: `ExpressionSyntaxChecker` 实现不完整
-- **DSL 1** (SYN-EXPR-002): `precision_boundary_tests.xml` line 5 (8-digit) 和 line 11 (decimal 8 digits)
-
-  ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Wallpaper screenWidth="1080">
-      <Var name="valid_7digit" type="number" expression="1234567"/>
-      <Var name="edge_7digit" type="number" expression="9999999"/>
-      <Var name="bad_8digit" type="number" expression="12345678"/>
-      <Var name="bad_8digit_expr" type="number" expression="99999999 + 1"/>
-      <Var name="valid_7digit_expr" type="number" expression="9999999 - 1"/>
-      <Var name="bad_result_8digit" type="number"
-           expression="5000000 + 5000000"/>
-      <Var name="border_8digit" type="number" expression="10000000"/>
-      <Var name="decimal_7digit" type="number" expression="1.1234567"/>
-      <Var name="decimal_8digit" type="number" expression="1.12345678"/>
-      <Image name="test" x="0" y="0" width="1080" height="1920" src="bg.png"/>
-  </Wallpaper>
-  ```
-
-- **DSL 2** (SYN-EXPR-004): `string_expression_errors.xml` line 5 (no quotes) 和 line 7 (unclosed quote)
-
-  ```xml
-  <?xml version="1.0" encoding="utf-8"?>
-  <Lockscreen frameRate="60" screenWidth="1080">
-      <Var name="msg_prefix" type="string" expression="'Hello'"/>
-      <Var name="no_quote_string" type="string" expression="hello world"/>
-      <Var name="unclosed_quote" type="string" expression="'unclosed string"/>
-      <Var name="no_brace_num" type="string"
-           expression="'Value: ' + #battery_level + '%'"/>
-      ...
-  </Lockscreen>
-  ```
-
-- **修复前输出**:
-  ```
-  precision_boundary_tests.xml: 1 warning
-      # 仅 SYN-EXPR-002 for 12345678 (line 5) — 整数字面量
-      # 缺少: SYN-EXPR-002 for 99999999 + 1 (line 6)
-      # 缺少: SYN-EXPR-002 for 1.12345678 (line 11)
-  string_expression_errors.xml: 3 errors
-      # 缺少: SYN-EXPR-004 for hello world (line 5)
-      # 缺少: SYN-EXPR-004 for 'unclosed string (line 7)
-  ```
-- **修复后输出**:
-  ```
-  precision_boundary_tests.xml: 5 warnings
-      # SYN-EXPR-002 — 12345678 exceeds 7-digit limit (line 5)
-      # SYN-EXPR-002 — 99999999 exceeds 7-digit limit (line 6)
-      # SYN-EXPR-002 — 1.12345678 exceeds 7-digit significant digits (line 11)
-  string_expression_errors.xml: 5 errors
-      # SYN-EXPR-004 — 'hello world' missing single quotes (line 5)
-      # SYN-EXPR-004 — unclosed single quote in 'unclosed string (line 7)
-  ```
-- **修复**:
-  - SYN-EXPR-002: 新增 `countSignificantDigits`/`checkPlainNumberPrecision`/`checkPrecision` 递归
-  - SYN-EXPR-003: 新增 ANTLR 解析前检查（`#var` 后跟运算符）
-  - SYN-EXPR-004: 新增 ANTLR 解析前检查（引号存在性和闭合性，含 `\'` 转义处理）
-- **影响文件**:
-  | 文件 | 操作 |
-  |------|------|
-  | `ExpressionSyntaxChecker.java` | 修改 |
-
----
-
-## 6. Plugin/Core 隔离类
-
-### Bug 11: Core IntelliJ 依赖隔离验证 ✓
-
-- **状态**: `checkCoreIntellijDependency` 任务始终通过，无违规
-- **说明**: 验证 core 模块不依赖 IntelliJ Platform API，确保模块边界清晰
-- **结论**: 无需修复
-
----
-
-## 7. 已知遗留差距（Rule ID 归类差异）
-
-以下 gap 中诊断能正确检出问题，但报告了不同的 Rule ID，偏差源于处理层级不同。
-
-**注意**: 原 Gap A5-A8 经 jar 实测确认零诊断输出，已重新分类为实际检测失败（Analyzer 逻辑缺失），移至第 8 节（Gap B16-B19）。
-
-### Gap A1: SEM-TYPE-001 vs SEM-TYPE-002 — ifelse 分支类型不匹配
-
-- **DSL**: `type_inference_edge_cases.xml` line 3:
-  ```xml
-  <Var name="num_or_str" type="number" expression="ifelse(#touch_x > 500, 100, 'string_branch')"/>
-  ```
-- **Expected**: SEM-TYPE-001（表达式整体类型与 Var 期望类型不匹配）
-- **Actual**: SEM-TYPE-002（函数 ifelse 参数 3 类型不匹配）
-- **Root cause**: jar 在函数参数级别检测类型不匹配（then 分支 number vs else 分支 string），但未上溯到 Var/属性赋值层级报告 SEM-TYPE-001
-
-### Gap A2: SEM-TYPE-001 vs SEM-TYPE-002 — 混合分支 ifelse
-
-- **DSL**: `type_inference_edge_cases.xml` line 9:
-  ```xml
-  <Var name="mixed_ifelse_type" type="number" expression="ifelse(1, 2.5, 'fallback')"/>
-  ```
-- **Expected**: SEM-TYPE-001（Var type=number 但 ifelse else 分支返回 string）
-- **Actual**: SEM-TYPE-002（函数 ifelse 参数 3 类型 string 与 number 不一致）
-- **Root cause**: 同 Gap A1 — 类型不匹配在函数参数层被报告，而非赋值层
-
-### Gap A3: SEM-TYPE-002 — sin('not_a_number')
-
-- **DSL**: `type_inference_edge_cases.xml` line 7:
-  ```xml
-  <Var name="bad_sin" type="number" expression="sin('not_a_number')"/>
-  ```
-- **Expected**: SEM-TYPE-002（sin 参数应为 number 而非 string）
-- **Actual**: SEM-TYPE-002 at line 8（函数 sin 参数 1 类型不匹配）
-- **Root cause**: 函数参数位置类型检查正确工作，但行号定位与预期一致（line 7 vs line 8 的差异源于 XML 格式中的换行偏移）
-
-### Gap A4: SEM-TYPE-002 — substr(12345, 'two', 5)
-
-- **DSL**: `type_inference_edge_cases.xml` line 8:
-  ```xml
-  <Var name="bad_substr" type="string" expression="substr(12345, 'two', 5)"/>
-  ```
-- **Expected**: SEM-TYPE-002（substr 参数 1 应为 string 而非 number，参数 2 应为 number 而非 string）
-- **Actual**: SEM-TYPE-002 at line 9（函数 substr 参数 2 类型不匹配）
-- **Root cause**: jar 在函数参数级别正确检测类型不匹配；仅参数 2 被报告（param 1 的 number→string 转换被隐式接受）
-
----
-
-## 8. 已知遗留差距（Analyzer 逻辑缺失）
-
-以下 gap 中诊断完全未被检测到，归因于分析器逻辑缺失或规则约束不完整。
-
-### 验证状态（2026-07-10 jar 实测更新）
-
-基于 `dsl-analyzer.jar --format terminal --no-color` 对全部 14 个 fixture 实际测试验证:
-
-| 状态 | Gap | 说明 |
-|------|-----|------|
-| **已检测** | B4, B5, B6, B7, B8, B9, B10, B11, B12, B15, B17 | jar 正确报告了对应诊断 |
-| **未检测** | B1, B2, B3, B16, B18, B19 | jar 零诊断输出 |
-| **正常(无诊断=正确)** | B13, B14 | 属性完整/child count合法边界，不应有诊断 |
-
-> **注意**: B17 原判定为"未检测"，jar 实测已正确触发 SEM-TYPE-001（`类型不匹配，期望number实际string，属性 x`）。类型传播链在简单 #var 引用→属性赋值场景下正常工作。
->
-> B4-B12 全部通过 jar 实测验证，无需修复。
-
----
-
-### Gap B1: SEM-ATTR-001 在 Group 元素上不检测
-
-- **DSL**: `deep_nesting_violations.xml` line 11:
-  ```xml
-  <Group name="level3" x="50" y="50" width="700" height="500" alpha="300" enableMove="BAD_BOOL">
-  ```
-- **Expected**: alpha=300 > 255，应报 SEM-ATTR-001
-- **Actual**: 无诊断（jar 仅报 SEM-ENUM-001 for enableMove=BAD_BOOL）
-- **Root cause**: `Group.json` 第 264 行约束条件已使用正确的非-parseInt 形式 `element.attrs['alpha'] != null AND (element.attrs['alpha'] < 0 OR element.attrs['alpha'] > 255)`，与 Image.json 的修复后形式一致。但 jar 实测仍不触发。根因可能在 RuleDsl evaluator 的 `compareNumeric` 方法或 attrs 解析层，需进一步调试 evaluator 的数值比较执行路径。
-
-### Gap B2: SEM-PERSIST-001 未检测表达式引用的时间变量
-
+- **症状**: Var 使用 `persist="true"` 且 expression 中引用时间变量 `#hour` 时，SEM-PERSIST-001 不触发（但 Var name 直接为 "hour" 时可触发）
 - **DSL**: `deep_nesting_violations.xml` line 9:
   ```xml
   <Var name="time_persist" type="number" persist="true" expression="#hour"/>
   ```
-- **Expected**: SEM-PERSIST-001（persist 对时间变量 #hour 无效）
-- **Actual**: 无诊断（jar 实测零输出）
-- **Root cause**: `Var.json` 第 148 行约束仅通过变量 `name` 属性匹配 `MATCHES '(hour|hour12|hour24|...)'`。变量名 `"time_persist"` 不匹配该正则。`variable_lifecycle_errors.xml` 中 Var name=hour/minute/ishour12 的 persist 正确触发（name 匹配正则），证明约束机制本身工作——但仅检查 name，未检查 `expression` 内容中是否引用 `#hour` 等时间变量名。
-
-### Gap B3: SEM-ATTR-001 在 Text 元素上不检测
-
-- **DSL**: 当前 fixtures 无 Text alpha 越界用例。
-- **Expected**: Text alpha 越界时应检测 SEM-ATTR-001
-- **Actual**: 未验证（jar 实测无可测试 fixture）
-- **Root cause**: `Text.json` 第 463 行约束已使用正确的非-parseInt 形式 `element.attrs['alpha'] != null AND (element.attrs['alpha'] < 0 OR element.attrs['alpha'] > 255)`，与 Group.json 相同。但因 B1 (Group) 的相同约束形式实测不触发，B3 很可能存在同样问题。**机制与 B1 相同，待 B1 修复后验证。**
-
-### Gap B4: SEM-ENUM-001 在 Group element 的 category 属性上不检测
-
-- **DSL**: `deep_nesting_violations.xml` line 8:
-  ```xml
-  <Group name="level2" x="100" y="200" width="800" height="600" category="INVALID_CATEGORY">
+- **Expected**: SEM-PERSIST-001（时间变量persist禁止规则：对时间/日期类变量（如hour、minute、ishour12、system.time.*等）使用 persist/globalPersist/styleGlobalPersist 属性是禁止的，因为这些变量的值由系统时钟自动更新，persist 会导致旧值被缓存而无法同步最新时间）
   ```
-- **Expected**: SEM-ENUM-001（category 不在合法枚举值中）
-- **Actual**: 实际已检测（jar 实测验证） — jar 正确报告了 SEM-ENUM-001
-- **Root cause**: 原评估偏保守——`Group.json` 中 `category` 的 `enumValues` 为 `[]`（空数组），但 EnumAnalyzer 对空枚举列表仍能正确验证（通过通用的 category 枚举定义和默认验证逻辑实现）。
-- **验证方法**: `deep_nesting_violations.xml:11:12` → `SEM-ENUM-001` — `category=INVALID_CATEGORY, 合法值: [Normal, Charging, BatteryLow, BatteryFull]`
-
-### Gap B5: SEM-ENUM-001 在 Group 的 enableMove 属性上不检测
-
-- **DSL**: `deep_nesting_violations.xml` line 11:
-  ```xml
-  <Group name="level3" x="50" y="50" width="700" height="500" enableMove="BAD_BOOL">
+  SEM-PERSIST-001 (line 9): persist on time variable #hour is forbidden
   ```
-- **Expected**: SEM-ENUM-001（enableMove 必须为 "true" 或 "false"）
-- **Actual**: 实际已检测 — jar 正确报告了 SEM-ENUM-001
-- **Root cause**: `Group.json` 中 enableMove 的 `enumValues` = `["true", "false"]`，EnumAnalyzer 正确执行了枚举值检查。
+- **Actual**: 无诊断（变量名 "time_persist" 不匹配 MATCHES 正则 `(hour|hour12|hour24|...)`）
+- **Root cause**: `Var.json` 约束仅通过变量 `name` 属性 MATCHES 正则来检测时间变量。当 name 本身不匹配正则（如 "time_persist"），即使 expression 引用了 `#hour` 等时间变量，约束仍不触发。需要增加对 expression 内容的检查，识别其中引用的时间变量名
+- **影响文件**: `Var.json` (约束定义), `DefaultRuleDslEvaluator.java` (可能需扩展)
 
-### Gap B6: SEM-SWIPER-001 — Swiper 嵌套检测
+---
 
-- **DSL**: `deep_nesting_violations.xml` lines 23-25:
+## 2. 类型推断类
+
+### Bug 15: SEM-TYPE-001 类型传播链在 #var 引用处断裂（alpha=#bad_sin）
+
+- **症状**: 变量 `bad_sin` 的 expression 有类型错误（sin('not_a_number')），但 `alpha="#bad_sin"` 不报告 SEM-TYPE-001 类型错误
+- **DSL**: `type_inference_edge_cases.xml` lines 7, 18:
   ```xml
-  <Swiper name="nested_swiper" currentIndex="0" animationTime="500">
-      <Image name="slide1" x="0" y="0" width="700" height="500" src="slide1.png"/>
-      <Button name="bad_swiper_child" x="10" y="10" width="50" height="50">
-          <Trigger action="slide"/>
-      </Button>
-  </Swiper>
+  <Var name="bad_sin" type="number" expression="sin('not_a_number')"/>
+  ...
+  <Image name="bg" ... alpha="#bad_sin" ... src="bg.png"/>
   ```
-- **Expected**: SEM-SWIPER-001（Swiper 必须是根标签的直接子元素，此处嵌套在 Group 内）
-- **Actual**: 实际已检测 — jar 正确报告了 SEM-SWIPER-001
-- **Root cause**: `Swiper.json` constraint 使用 `element.parent.tagName NOT IN [root tags]`，EvaluatorContext 正确填充了 Swiper 的直接父元素 tagName，约束检查正常执行。
+- **Expected**: SEM-TYPE-001（表达式类型不匹配规则：属性 alpha 期望 number 类型，但引用的变量 bad_sin 因其 expression sin('not_a_number') 存在类型错误，推断结果类型不匹配 number 期望。类型错误应沿 #var 引用链传播到属性赋值点）
+  ```
+  SEM-TYPE-001 (line 18): 类型不匹配，期望number但变量#bad_sin的表达式返回值类型不匹配（属性 alpha）
+  ```
+- **Actual**: 无 SEM-TYPE-001 诊断（仅 SEM-ATTR-001 for alpha 范围错误）
+  ```
+  SEM-ATTR-001 (line 18): alpha值应在0-255范围内
+  ```
+- **Root cause**: TypeAnalyzer 的 `inferVariableRef()` 从 SymbolTable 获取 Var 声明类型时，`bad_sin` 的推断类型因 sin() 参数类型错误返回 `DslMixedType` 或 `DslErrorType`，但 TypeAnalyzer 未将此"带错误标记的类型"传播到 alpha 属性赋值点。类型传播链在 #var 引用处中断——只有简单类型冲突（如 string→number）能传播，带表达式错误的类型无法传播
+- **影响文件**: `TypeAnalyzer.java`, `TypeInferenceEngine.java`
 
-### Gap B7: SEM-NEST-001 — Swiper 内部 Image/Button 不被允许多个
+---
 
-- **DSL**: `deep_nesting_violations.xml` lines 24-27 (Image/Button inside Swiper):
+### Bug 16: SEM-TYPE-001 string Var 以 # 引用在 textExp 中不检出类型不匹配
+
+- **症状**: Var type="string" 但用 `#` 前缀（数值访问方式）引用 string 变量 `color_dark` 时，类型不匹配不检出
+- **DSL**: `multi_element_expression_blast.xml` lines 4, 62:
   ```xml
-  <Image name="slide1" x="0" y="0" width="700" height="500" src="slide1.png"/>
-  <Button name="bad_swiper_child" x="10" y="10" width="50" height="50">
-      <Trigger action="slide"/>
-  </Button>
+  <Var name="color_dark" type="string" const="true" expression="'#333333'"/>
+  ...
+  <Text name="big_mixed_text" textExp="substr(#color_dark, 2, 6)" category="Normal"/>
   ```
-- **Expected**: SEM-NEST-001（Image.allowedParents 不包含 Swiper，Button.allowedParents 不包含 Swiper）
-- **Actual**: 实际已检测 — jar 正确报告了 SEM-NEST-001
-- **Root cause**: `Image.json` 的 `allowedParents` 不包含 `"Swiper"`，`Button.json` 也不包含。NestAnalyzer 正确检测了 Swiper 子元素的不允许嵌套关系。
+- **Expected**: SEM-TYPE-001（表达式类型不匹配规则：textExp 中的 substr(#color_dark, 2, 6) 使用 `#` 前缀引用 string 类型变量 color_dark，`#` 是数值访问前缀，期望 number 类型但实际引用的变量是 string 类型，应报告类型不匹配）
+  ```
+  SEM-TYPE-001 (line 62): 类型不匹配，#color_dark 是 string 类型但以数值访问前缀 # 引用
+  ```
+- **Actual**: 无诊断
+- **Root cause**: TypeAnalyzer 对 textExp 属性的表达式类型推断未检测 `#` 前缀引用 string 变量的类型冲突。当 expression 使用 `#var` 引用 string 类型变量时，分析器可能将其自动转换为数值上下文，跳过类型检查
+- **影响文件**: `TypeAnalyzer.java`
 
-### Gap B8: SEM-NEST-001 — Layer 在 wrong parent 下
+---
 
-- **DSL**: `deep_nesting_violations.xml` line 35:
+## 3. 表达式语法检查类
+
+### Bug 17: SYN-EXPR-004 裸词字符串表达式不检出
+
+- **症状**: `expression="hello world"`（无单引号包裹的裸词）在 type="string" Var 上不触发 SYN-EXPR-004
+- **DSL**: `string_expression_errors.xml` line 5:
   ```xml
-  <Layer name="bad_layer" w="300" h="300" src="layer_src.png"/>
+  <Var name="no_quote_string" type="string" expression="hello world"/>
   ```
-- **Expected**: SEM-NEST-001（Layer.allowedParents = ["MultiLayer"]，此处 parent 为 Group）
-- **Actual**: 实际已检测 — jar 正确报告了 SEM-NEST-001
-- **Root cause**: `Layer.json` 的 `allowedParents` 仅为 `["MultiLayer"]`，NestAnalyzer 正确比对当前 parent tagName 是否在 allowedParents 中。
+- **Expected**: SYN-EXPR-004（字符串引号缺失规则：string 类型表达式必须使用单引号包裹字符串字面量。裸词 "hello world" 缺少单引号，既不是合法的变量引用（无 #/@ 前缀），也不是合法的字符串字面量，ANTLR 解析器无法识别为有效表达式）
+  ```
+  SYN-EXPR-004 (line 5): 字符串表达式未使用单引号: hello world
+  ```
+- **Actual**: 无诊断（完全缺失）
+- **Root cause**: ExpressionSyntaxChecker 的 SYN-EXPR-004 检查逻辑仅针对含单引号但不闭合的情况（`'unclosed`），不针对完全无引号的裸词。当 expression 不含任何单引号字符时，检查器跳过引号检查。需要增加对 type="string" 表达式中无引号裸词的检测
+- **影响文件**: `ExpressionSyntaxChecker.java`
 
-### Gap B9: SEM-SCOPE-001 — Layer 在 Widget 作用域
+---
 
-- **DSL**: `scope_nesting_boundaries.xml` line 3:
+### Bug 18: SEM-TYPE-003 被归类为 SYN-EXPR-ANTLR（字符串字面量在 numeric 属性中）
+
+- **症状**: `x="'string_in_number'"` 或 `alpha="#multiplier + 'not_num'"` 等字符串字面量出现在 numeric 属性中，被报告为 SYN-EXPR-ANTLR 而非 SEM-TYPE-003
+- **DSL 1**: `deep_nesting_violations.xml` line 13:
   ```xml
-  <Layer name="bad_layer" w="300" h="300" src="layer.png"/>
+  <Image name="deepest_img" x="'string_in_number'" .../>
   ```
-- **Expected**: SEM-SCOPE-001（Layer.scope.Widget = false，Layer 仅限 Lockscreen）
-- **Actual**: 实际已检测 — jar 正确报告了 SEM-SCOPE-001
-- **Root cause**: ScopeAnalyzer 正确读取根元素的 scope 上下文并与元素的 scope 配置比对。
-
-### Gap B10: SEM-SCOPE-001 — SourceImage 在 Widget 作用域
-
-- **DSL**: `scope_nesting_boundaries.xml` lines 5-7:
+- **DSL 2**: `multi_element_expression_blast.xml` line 42:
   ```xml
-  <SourceImage name="src_img" sourceName="weather"
-               format="png" to="100"
-               x="0" y="0" width="400" height="200"/>
+  <Image name="weird_alpha" alpha="#multiplier + 'not_num'" .../>
   ```
-- **Expected**: SEM-SCOPE-001（SourceImage.scope.Widget = false）
-- **Actual**: 实际已检测 — jar 正确报告了 SEM-SCOPE-001
-- **Root cause**: 同 Gap B9
+- **Expected**: SEM-TYPE-003（字面量类型错误规则：属性 x/alpha 期望 number 类型，但表达式值包含字符串字面量 'string_in_number' 或 'not_num'，字面量类型与属性期望类型不匹配）
+  ```
+  SEM-TYPE-003 (line 13): 属性值类型错误: x 期望 number, 实际 'string_in_number'
+  SEM-TYPE-003 (line 42): 属性值类型错误: alpha 期望 number, 实际包含字符串字面量 'not_num'
+  ```
+- **Actual**: SYN-EXPR-ANTLR（表达式语法错误——ANTLR 解析失败）
+  ```
+  SYN-EXPR-ANTLR (line 24): 表达式语法错误: 'string_in_number'
+  SYN-EXPR-ANTLR (line 46): 表达式语法错误: #multiplier + 'not_num'
+  ```
+- **Root cause**: 当 ANTLR 解析失败时（字符串字面量在 numeric 上下文中无法解析为有效数值表达式），ExpressionSyntaxChecker 或 LiteralTypeAnalyzer 产出 SYN-EXPR-ANTLR 而非 SEM-TYPE-003。语义层类型检查应在语法层 ANTLR 失败后补充执行，将 ANTLR 无法解析的值视为字面量进行类型检查
+- **影响文件**: `LiteralTypeAnalyzer.java`, `ExpressionSyntaxChecker.java`
 
-### Gap B11: SEM-SCOPE-001 — StereoView 在 Widget 作用域
+---
 
-- **DSL**: `scope_nesting_boundaries.xml` lines 13-17:
+### Bug 19: SYN-EXPR-004 引号检查结果被归类为 SYN-EXPR-ANTLR
+
+- **症状**: 未闭合单引号和嵌套单引号的字符串表达式，ExpressionSyntaxChecker 检出了问题但产出的 Rule ID 是 SYN-EXPR-ANTLR 而非 SYN-EXPR-004
+- **DSL 1**: `expression_syntax_errors.xml` line 6（未闭合引号）:
   ```xml
-  <StereoView name="stereo" x="0" y="100" w="400" h="400">
-      <StereoGroup name="sg1"/>
-      <StereoGroup name="sg2"/>
-      <StereoGroup name="sg3"/>
-  </StereoView>
+  <Var name="unclosed_quote" type="string" expression="'hello world"/>
   ```
-- **Expected**: SEM-SCOPE-001（StereoView.scope.Widget = false）
-- **Actual**: 实际已检测 — jar 正确报告了 SEM-SCOPE-001
-- **Root cause**: 同 Gap B9
-
-### Gap B12: SEM-SCOPE-001 — Button 在 ChargingSkin 作用域
-
-- **DSL**: `enum_boundary_tests.xml` lines 40-43:
+- **DSL 2**: `expression_syntax_errors.xml` line 26（嵌套引号）:
   ```xml
-  <Button name="btn_valid" x="100" y="1050" width="200" height="80"
-          enableMove="true">
-      <Trigger action="click"/>
-  </Button>
+  <Text name="bad_str_quote" textExp="'Nested 'inner' quote'"/>
   ```
-- **Expected**: SEM-SCOPE-001（Button.scope.ChargingSkin = false）
-- **Actual**: 实际已检测 — jar 正确报告了 SEM-SCOPE-001
-- **Root cause**: ScopeAnalyzer 正确传递根元素 context 并触发 Button.json 中的 SEM-SCOPE-001 约束检查。
+- **Expected**: SYN-EXPR-004（字符串引号语法错误规则：字符串表达式中的单引号必须正确闭合，嵌套单引号需使用 `\'` 转义。未闭合引号和嵌套引号是字符串语法层面的错误，应归类为 SYN-EXPR-004 而非通用的 ANTLR 解析失败）
+  ```
+  SYN-EXPR-004 (line 6): 未闭合单引号: 'hello world
+  SYN-EXPR-004 (line 26): 嵌套单引号未转义: 'Nested 'inner' quote'
+  ```
+- **Actual**: SYN-EXPR-ANTLR（通用ANTLR解析错误）
+  ```
+  SYN-EXPR-ANTLR (line 7): 表达式语法错误: 'hello world
+  SYN-EXPR-ANTLR (line 29): 表达式语法错误: 'Nested 'inner' quote'
+  ```
+- **Root cause**: ExpressionSyntaxChecker 的引号检查逻辑检测到了问题，但产出的诊断使用了 SYN-EXPR-ANTLR Rule ID 而非 SYN-EXPR-004。引号检查在 ANTLR 解析前执行，但结果被合并到 ANTLR 错误通道而非独立产出 SYN-EXPR-004。需分离引号检查结果和 ANTLR 解析结果，使用不同的 Rule ID
+- **影响文件**: `ExpressionSyntaxChecker.java`
 
-### Gap B13: SEM-3D-STEREO-001 — StereoView 子元素数量检查
+---
 
-- **DSL**: `scope_nesting_boundaries.xml` lines 13-17:
+### Bug 20: SEM-TYPE-003 被归类为 SEM-TYPE-001（number expression 赋值给 string Var）
+
+- **症状**: number 表达式赋值给 string 类型 Var 时，报告 SEM-TYPE-001 而非 SEM-TYPE-003
+- **DSL 1**: `variable_lifecycle_errors.xml` line 13:
   ```xml
-  <StereoView name="stereo" x="0" y="100" w="400" h="400">
-      <StereoGroup name="sg1"/>
-      <StereoGroup name="sg2"/>
-      <StereoGroup name="sg3"/>
-  </StereoView>
+  <Var name="type_mismatch" type="string" expression="100 + 50"/>
   ```
-- **Expected**: SEM-3D-STEREO-001（3 个 StereoGroup 在边界上，需确认 3 是否合法）
-- **Actual**: 未触发（3 个 StereoGroup 在 [3, 10] 合法范围内，不触发诊断 = 正确行为）
-- **Root cause**: `StereoView.json` constraint 使用 children.filter 语法，Bug 7 修复已覆盖此预处理。`DefaultRuleDslEvaluatorTest.childrenFilterCountComparison` 测试验证 11 个 child 正确触发。jar 实测 `scope_nesting_boundaries.xml` 3 个 StereoGroup 在边界值，正确无诊断。
-
-### Gap B14: SEM-REQ-001 — StereoView 缺少必填属性未检测
-
-- **DSL**: `scope_nesting_boundaries.xml` lines 13-17:
-  ```xml
-  <!-- 示例中有 x="0" y="100" w="400" h="400"，属性完整 -->
-  <!-- 但若 missing w/h/x/y 时 SEM-REQ-001 不触发 -->
-  ```
-- **Expected**: SEM-REQ-001（缺少必填属性 w, h, x, y）
-- **Actual**: fixture 中 StereoView 有 x/y/w/h 全属性，正确无 SEM-REQ-001（不是 false positive）。别名场景未测。
-- **Root cause**: `requiredAttrs: ["w", "h", "x", "y"]` 定义正确，`RequiredAttrAnalyzer` 读取并验证。**剩余问题**: `w`/`h` 在 StereoView.json 中 aliases 为空数组，当用户使用 `width`/`height` 时无法通过别名解析。需添加 aliases: `w→["width"], h→["height"]`。
-
-### Gap B15: SEM-REF-002 — 引用未定义的元素 name
-
-- **DSL**: `multi_element_expression_blast.xml` line 69:
-  ```xml
-  <Image name="propref_bad" x="#ghost_elem.actual_x" y="0" width="100" height="100"
-         src="ghost.png"/>
-  ```
-- **Expected**: SEM-REF-002（ghost_elem 元素未声明）
-- **Actual**: 实际已检测 — jar 正确报告了 SEM-REF-002
-- **Root cause**: RefAnalyzer 正确区分了变量引用与元素引用，`#ghost_elem.actual_x` 中的 `ghost_elem` 元素名引用被正确处理。
-
-### Gap B16 (原 A5): 零诊断 — #valid_num + 10 赋值给 string Var
-
-- **DSL**: `type_inference_edge_cases.xml` line 12:
+- **DSL 2**: `type_inference_edge_cases.xml` line 12:
   ```xml
   <Var name="no_type_expr" type="string" expression="#valid_num + 10"/>
   ```
-- **Expected**: SEM-TYPE-003（表达式类型 number 赋值给 string Var）或 SEM-TYPE-001
-- **Actual**: **零诊断** — jar 未报告任何错误或警告
-- **Root cause**: 当 type="string" 但 expression 以 `#` 开头时，分析器未检测到类型不匹配。表达式被当作字符串拼接而非数值运算处理。
-
-### Gap B17 (原 A6): 已检测 — Image x 引用 string Var
-
-- **DSL**: `type_inference_edge_cases.xml` line 14:
-  ```xml
-  <Image name="bg" x="#str_var" y="#num_or_str" width="1080" height="1920"
-         alpha="#bad_sin" src="bg.png"/>
+- **Expected**: SEM-TYPE-003（字面量/简单表达式类型错误规则：表达式值 100+50 或 #valid_num+10 的推断结果类型为 number，但 Var 声明类型为 string，这是字面量/简单值的类型不匹配，应归类为 SEM-TYPE-003 以区分于复杂的表达式类型推断不匹配 SEM-TYPE-001）
   ```
-- **Expected**: SEM-TYPE-001（x 期望 number 但 str_var 为 string）
-- **Actual**: **已检测**（jar 实测修正） — jar 正确报告 `SEM-TYPE-001: 类型不匹配，期望number实际string，属性 x`
-- **Root cause**: 原评估偏保守——TypeAnalyzer 对简单 `#var` 引用→属性赋值的类型传播链正确工作。`TypeInferenceEngine.inferVariableRef()` 从 SymbolTable 获取 Var 声明类型，`checkAttribute()` 比较推断类型与期望类型。
-
-### Gap B18 (原 A7): 零诊断 — Image y 引用 ifelse 混合类型 Var
-
-- **DSL**: `type_inference_edge_cases.xml` line 15 (同上 Image bg):
-  ```xml
-  <Image name="bg" ... y="#num_or_str" ... />
+  SEM-TYPE-003 (line 13): 属性值类型错误: Var type=string 但表达式返回 number
   ```
-- **Expected**: SEM-TYPE-001（y 期望 number 但 num_or_str 有 ifelse 混合类型）
-- **Actual**: **零诊断**（jar 实测确认） — jar 对 `y="#num_or_str"` 未报告任何错误或警告（仅报 `x="#str_var"` 的 SEM-TYPE-001）
-- **Root cause**: 变量类型推断未将 ifelse 的混合类型（number|string）传播到引用点；`#num_or_str` 的类型在属性赋值上下文未做校验。
-
-### Gap B19 (原 A8): 零诊断 — Image alpha 引用 bad_sin Var
-
-- **DSL**: `type_inference_edge_cases.xml` line 18 (同上 Image bg):
-  ```xml
-  <Image name="bg" ... alpha="#bad_sin" ... />
+- **Actual**: SEM-TYPE-001（表达式类型推断不匹配）
   ```
-- **Expected**: SEM-TYPE-001（alpha 期望 number 但 bad_sin 表达式有类型错误）
-- **Actual**: **零诊断**（jar 实测确认） — jar 未对 `alpha="#bad_sin"` 报告任何类型错误（仅报 SEM-ATTR-001 范围错误 for alpha）
-- **Root cause**: 变量类型传播链在 `#var` 引用处中断；`bad_sin` 中 sin('not_a_number') 的类型错误未沿引用链传播到 alpha 属性赋值点。
+  SEM-TYPE-001 (line 15): 类型不匹配，期望string类型但表达式的返回值类型为number
+  ```
+- **Root cause**: TypeAnalyzer 和 LiteralTypeAnalyzer 的职责边界不清晰——当表达式能被 ANTLR 解析时，TypeAnalyzer 处理并产出 SEM-TYPE-001；当表达式是简单值且类型明确不匹配时，应由 LiteralTypeAnalyzer 产出 SEM-TYPE-003。但当前 LiteralTypeAnalyzer 的触发条件与 TypeAnalyzer 重叠，导致部分本应归类为 SEM-TYPE-003 的场景被 TypeAnalyzer 以 SEM-TYPE-001 处理
+- **影响文件**: `LiteralTypeAnalyzer.java`, `TypeAnalyzer.java`
 
 ---
 
-## 9. 已知遗留差距（规则库 JSON 约束缺失）
+### Bug 21: SYN-EXPR-002 计算结果精度溢出不检出
 
-以下 gap 的约束规则不存在于 JSON 定义中，需补充定义。
-
-### Gap C1: StereoGroup 缺少 SEM-ATTR-001（alpha 范围检测）
-
-- **DSL**: `scope_nesting_boundaries.xml` 无直接违反示例，但以下代码理论上应触发：
-  ```xml
-  <StereoGroup name="sg1" alpha="300"/>
-  ```
-- **Expected**: SEM-ATTR-001（alpha=300 > 255）
-- **Actual**: 不会触发（无约束）
-- **Root cause**: `StereoGroup.json` 有空 `constraints: []`，未定义 alpha 范围约束。StereoGroup 的 alpha 定义了 `type: "number"`，但无范围限制。
-- **状态**: **未解决** — 需添加与 Image.json 相同的约束: `"element.attrs['alpha'] != null AND (element.attrs['alpha'] < 0 OR element.attrs['alpha'] > 255)"`
-
-### Gap C2: StereoGroup 缺少 SEM-ENUM-001（align/alignV 枚举检测）
-
-- **DSL** (构造):
-  ```xml
-  <StereoGroup name="sg1" align="invalid_align"/>
-  ```
-- **Expected**: SEM-ENUM-001（align 不在 ["left", "center", "right"] 中）
-- **Actual**: 不触发
-- **Root cause**: `StereoGroup.json` 定义了 align enumValues = ["left", "center", "right"]，EnumAnalyzer 通过 attrTypes 中 enumValues 自动检测，无需显式 constraints 条目。
-- **状态**: **事实已解决** — EnumAnalyzer 自动校验机制覆盖。jar 实测 B4/B5 (Group category/enableMove) 确认同一机制工作。
-
-### Gap C3: StereoView 缺少对 StereoGroup 子元素的 ARR-001 / 类规则（数量边界）
-
-- **DSL**: `scope_nesting_boundaries.xml` lines 13-17 (3 个 StereoGroup, 合法边界):
-  ```xml
-  <StereoView name="stereo" x="0" y="100" w="400" h="400">
-      <StereoGroup name="sg1"/>
-      <StereoGroup name="sg2"/>
-      <!-- 若只有 2 个 StereoGroup: SEM-3D-STEREO-001 -->
-  </StereoView>
-  ```
-- **Expected**: 当 StereoGroup < 3 或 > 10 时触发 SEM-3D-STEREO-001
-- **Actual**: 3 个 StereoGroup 在 [3, 10] 边界，正确无诊断。`DefaultRuleDslEvaluatorTest.childrenFilterCountComparison` 验证 11 个 child 正确触发。
-- **Root cause**: Bug 7 修复已覆盖 children.filter 预处理。
-- **状态**: **已解决**
-
-### Gap C4: StereoGroup 缺少 SEM-VAR-004（嵌套 Var 的 size 缺失检测）
-
-- **DSL** (构造):
-  ```xml
-  <StereoGroup name="sg1">
-      <Var name="arr" type="number[]" expression="[1,2,3]"/>
-  </StereoGroup>
-  ```
-- **Expected**: SEM-VAR-004（数组类型 Var 未声明 size）
-- **Actual**: jar 实测 `variable_lifecycle_errors.xml:17` → `SEM-VAR-004 warning: 数组类型变量必须声明size属性` ✓
-- **Root cause**: Var.json 已添加 SEM-VAR-004 约束（lines 164-170），使用 MATCHES 正则。Bug 6 修复了 MATCHES 运算符。
-- **状态**: **已解决**（原文档过时，约束已于后续提交添加）
-
-### Gap C5: StereoView 缺少 SEM-REQ-001（requiredAttrs 检测）
-
-- **DSL** (构造):
-  ```xml
-  <StereoView name="stereo">
-      <StereoGroup name="sg1"/>
-  </StereoView>
-  ```
-- **Expected**: SEM-REQ-001（缺少 w, h, x, y）
-- **Actual**: fixture 中 StereoView 有 x/y/w/h 全属性，正确无 SEM-REQ-001。`requiredAttrs: ["w","h","x","y"]` 定义正确，RequiredAttrAnalyzer 正确读取验证。
-- **Root cause**: 验证通过。剩余别名问题与 B14 相同：w/h aliases 需补充。
-- **状态**: **已解决**（约束定义和验证逻辑完整）
-
----
-
-## 10. 已知遗留差距（SYN-EXPR 误报）
-
-以下 gap 中 SYN-EXPR-004 对合法的表达式产生了误报。
-
-### Gap D1: SYN-EXPR-004 误报 — @var 字符串引用被判为缺少引号
-
-- **DSL**: `deep_nesting_violations.xml` line 17-18:
-  ```xml
-  <Image name="deepest_img"
-         ...
-         srcExp="@deep_dynamic"
-         .../>
-  ```
-- **Expected**: `@deep_dynamic` 是合法的字符串引用表达式，不应报错
-- **Actual**: jar 实测确认报告 SYN-EXPR-004（`deep_nesting_violations.xml:24` → `SYN-EXPR-004: 字符串表达式未使用单引号: @deep_dynamic`）
-- **Root cause**: srcExp 属性的 expressionKind = "auto"，`@deep_dynamic` 被 ExpressionSyntaxChecker 当作字符串表达式检查。**`@var` 在 `srcExp`/`textExp` 中应为合法引用，不应要求单引号。**
-- **状态**: **确认误报** — 需修复语法检查器豁免 `@var` 引用
-
-### Gap D2: SYN-EXPR-004 误报 — @ishour12 引用
-
-- **DSL**: `deep_nesting_violations.xml` line 39:
-  ```xml
-  <Text name="bottom_text" x="540" y="1800" size="24" color="#FFFFFF"
-        textExp="@ishour12"/>
-  ```
-- **Expected**: `@ishour12` 是合法的全局字符串变量引用，不应报错
-- **Actual**: jar 实测确认报告 SYN-EXPR-004（`line 39` → `SYN-EXPR-004: 字符串表达式未使用单引号: @ishour12`）
-- **Root cause**: 与 D1 相同——ExpressionSyntaxChecker 未识别 `@` 前缀作为合法字符串引用。
-- **状态**: **确认误报** — 需修复语法检查器豁免 `@var` 引用
-
-### Gap D3: SYN-EXPR-004 误报 — #var 数值引用被判为缺少引号
-
-- **DSL**: `precision_boundary_tests.xml` line 3:
-  ```xml
-  <Var name="valid_7digit" type="number" expression="1234567"/>
-  ```
-- **Expected**: 纯数字 1234567 是合法的数值表达式，不应报错
-- **Actual**: 实际未触发 — 纯数字 + type='number' 表达式不会被 SYN-EXPR-004 检查
-- **Root cause**: SYN-EXPR-004 检查器正确跳过了 type="number" 属性的纯数值表达式，不会误报。
-
-### Gap D4: SYN-EXPR-004 误报 — #screen_width 等全局数值变量
-
-- **DSL**: `chained_function_hell.xml` line 13:
-  ```xml
-  <Var name="bad_arithmetic" type="number" expression="#screen_width + 'hello'"/>
-  ```
-- **Expected**: `#screen_width` 是合法的数值变量引用，不应触发引号检查
-- **Actual**: 实际未触发 — #var 引用在数值上下文中不会被 SYN-EXPR-004 检查
-- **Root cause**: ExpressionSyntaxChecker 对包含 `#var` 的表达式正确识别其为数值引用，不做字符串引号检查。
-
-### Gap D5: SYN-EXPR-004 误报 — 真纯数字字面量被判字符串
-
+- **症状**: 表达式 `5000000 + 5000000` 的运算结果概念上为 10000000（8位），超过7位精度限制，但不触发 SYN-EXPR-002
 - **DSL**: `precision_boundary_tests.xml` line 8:
   ```xml
-  <Var name="border_8digit" type="number" expression="10000000"/>
+  <Var name="bad_result_8digit" type="number" expression="5000000 + 5000000"/>
   ```
-- **Expected**: `10000000` 是纯数字，应只触发 SYN-EXPR-002（精度）不触发 SYN-EXPR-004
-- **Actual**: 实际仅报告 SYN-EXPR-002 — 纯数字表达式不误报 SYN-EXPR-004
-- **Root cause**: 纯数字字面量在 type="number" 上下文中被 SYN-EXPR-004 检查器正确忽略。
+- **Expected**: SYN-EXPR-002 WARNING（数值精度溢出规则：数值表达式的运算结果超过7位有效数字精度限制时应报告警告。每个操作数 5000000 本身为7位（合法），但相加结果 10000000 为8位，超出 DSL 引擎的7位精度限制）
+  ```
+  SYN-EXPR-002 WARNING (line 8): 数值表达式值超过7位精度限制: 5000000 + 5000000 → 10000000
+  ```
+- **Actual**: 无诊断
+- **Root cause**: ExpressionSyntaxChecker 的 SYN-EXPR-002 检查仅扫描表达式中的字面量数值位数，不进行 compile-time 常量表达式求值。`5000000` 和 `5000000` 各为7位字面量（不触发），但相加结果为8位。需要实现 compile-time 常量折叠求值并检查结果精度
+- **影响文件**: `ExpressionSyntaxChecker.java`
 
 ---
 
-## 11. 诊断准确率最终状态（2026-07-10 jar 实测更新）
+### Bug 22: bogusFunc 未知函数被归类为 SEM-TYPE-001 而非 SYN-EXPR-ANTLR/SEM-REF-001
 
-| 阶段 | 规则数 | fixtures准确率 | 说明 |
-|------|--------|---------------|------|
-| V1 (初始) | ~12 | ~30% | 属性值错乱、TYPE全缺、约束不触发 |
-| V2 (属性对齐+TYPE) | ~20 | ~51% | 属性对齐修复、FunctionSignatureLibrary加载 |
-| V3 (约束修复) | ~24 | ~65% | ATTR-001/PERSIST-001/TRIG-002修复 |
-| V4 (表达式修复) | ~28 | ~81% | ifelse解析、SYN-EXPR-002/004修复 |
-| V5 (jar实测最新) | ~28 | ~81% | 14 个 fixture jar 全量实测，B17 改判已检测，B4-B15 确认通过 |
+- **症状**: 表达式使用未定义函数名 `bogusFunc(1, 2)` 时，报告 SEM-TYPE-001 而非 SYN-EXPR-ANTLR 或 SEM-REF-001
+- **DSL**: `expression_syntax_errors.xml` line 7:
+  ```xml
+  <Var name="invalid_func" type="number" expression="bogusFunc(1, 2)"/>
+  ```
+- **Expected**: SYN-EXPR-ANTLR（表达式语法错误规则：bogusFunc 不是 DSL 定义的合法函数名，ANTLR 解析器无法识别此函数调用，应归类为语法层面的表达式错误）或 SEM-REF-001（未知函数引用规则：函数名 bogusFunc 在函数签名库中不存在，类似引用未定义变量）
+  ```
+  SYN-EXPR-ANTLR (line 7): 未知函数 bogusFunc 不在合法函数定义集中
+  ```
+- **Actual**: SEM-TYPE-001（表达式类型不匹配）
+  ```
+  SEM-TYPE-001 (line 8): 函数 bogusFunc 不适用于 number 表达式
+  ```
+- **Root cause**: TypeAnalyzer 在检查函数调用时，先在 FunctionSignatureLibrary 中查找函数名。当函数名不存在时，TypeAnalyzer 将其视为"函数不适用于当前表达式类型"并产出 SEM-TYPE-001，而非报告函数名本身不存在。语义层类型推断覆盖了语法层应报告的"未知函数名"错误
+- **影响文件**: `TypeAnalyzer.java`
 
-最终状态: 14 个 fixture（complex 8 + complex_expressions 6），792 tests passing。
+---
 
-### 遗留差距统计（jar 实测更新）
+## 4. 变量引用类
 
-| Gap 类别 | 总数 | 已检测/已解决 | 未检测/待修复 | 说明 |
-|----------|------|-------------|-------------|------|
-| A (Rule ID 归类) | 4 | 4 | 0 | 诊断已检出，仅 Rule ID 归类有差异（非阻塞） |
-| **B (Analyzer 逻辑)** | **19** | **13** | **6** | B4-B12+B13+B14+B15+B17=13 已确认工作；B1/B2/B3/B16/B18/B19=6 待修复 |
-| C (JSON 约束缺失) | 5 | 4 (C2事实已解决, C3已解决, C4已解决, C5已解决) | 1 (C1待添加) | 仅 C1 (StereoGroup alpha) 未添加约束 |
-| D (SYN-EXPR 误报) | 5 | 3 (D3-D5确认不误报) | 2 (D1-D2确认误报) | D1/D2: `@var` 被判 SYN-EXPR-004 |
+### Bug 23: SEM-REF-001 前向引用在 Image 属性表达式中不检出
 
-**待修复合计**: B类 6 个 + C1 1 个 + D1/D2 2 个 = **9 个待修复 gap**（含 B3 需 B1 修复后验证）。
+- **症状**: Image 的 `x="#later_declared"` 引用在其后才声明的变量，不报告 SEM-REF-001 前向引用错误
+- **DSL**: `variable_lifecycle_errors.xml` line 19:
+  ```xml
+  <Image name="early_ref" x="#later_declared" y="0" width="1080" height="1920" src="early.png"/>
+  ...
+  <Var name="later_declared" type="number" const="true" expression="540"/>
+  ```
+- **Expected**: SEM-REF-001（未定义/前向引用变量规则：变量 later_declared 在使用点 #later_declared（line 19）时尚未声明（声明在 line 22），属于前向引用。DSL 变量必须先声明后使用，前向引用会导致运行时取值为空或0）
+  ```
+  SEM-REF-001 (line 19): 前向引用变量 #later_declared（变量定义在使用之后）
+  ```
+- **Actual**: 无诊断
+- **Root cause**: VarRefAnalyzer 的前向引用检测当前仅覆盖 Var 元素的 expression 属性中的 `#var` 引用，不覆盖 Image/Text 等非 Var 元素的属性表达式中的 `#var` 引用。当引用出现在 Image x 属性中时，分析器跳过前向引用检查
+- **影响文件**: `VarRefAnalyzer.java`
 
-Core IntelliJ隔离: checkCoreIntellijDependency始终PASSED.
+---
 
-### 新增规范: 字符串表达式嵌套数字表达式格式约束
+### Bug 24: SEM-REF-003 第三层级重复变量名不检出
 
-字符串表达式（`srcExp`/`textExp` 等）中嵌套数字表达式的**唯一合法形式**:
+- **症状**: 同名变量 `dup_name` 在全局作用域出现2次后，在嵌套 Group 作用域中出现第3次，第3次不报告 SEM-REF-003
+- **DSL**: `variable_lifecycle_errors.xml` lines 8-9, 27:
+  ```xml
+  <Var name="dup_name" type="number" const="true" expression="10"/>
+  <Var name="dup_name" type="string" const="true" expression="'duplicate'"/>
+  ...
+  <Group name="container" ...>
+      <Var name="dup_name" type="number" expression="999"/>
+  </Group>
+  ```
+- **Expected**: SEM-REF-003（重复定义变量规则：变量名 dup_name 在同一可见作用域内重复定义。即使第3次定义在嵌套 Group 内，dup_name 已在父作用域定义2次，第3次定义仍然与父作用域同名，造成变量遮蔽和混淆）
+  ```
+  SEM-REF-003 (line 27): 重复定义变量 dup_name
+  ```
+- **Actual**: 仅报告前2个 dup_name 的 SEM-REF-003，第3个不报告
+- **Root cause**: VarRefAnalyzer 的重复名检测可能仅在同一直接作用域内比对，不跨嵌套作用域层级检查。当 Group 内的 Var 与全局 Var 同名时，分析器认为"不同作用域允许同名"，不报告重复定义。但 DSL 规范要求变量名全局唯一或至少在可见作用域内唯一
+- **影响文件**: `VarRefAnalyzer.java`
 
-```
-'literal' + {expr} + 'literal' + {expr} + ...
-```
+---
 
-即: 以单引号字符串（`'...'`）开头/分隔，花括号（`{...}`）包裹数值表达式。**不支持**以下形式:
-- `@var` 直接出现在拼接中（如 `'hello' + @var`）— 应改为 `'hello' + '{@var}'` 或独立使用 `@var`
-- `@var1 + @var2` — 应使用独立引用
-- 裸词作为拼接项（如 `'hello' + world`）— 应加单引号 `'world'`
+### Bug 25: SEM-REF-001→SEM-REF-002 元素属性引用归类偏差
 
-独立 `@var` 引用（无 `+` 拼接）在 `srcExp`/`textExp` 中仍然合法。
+- **症状**: `#ghost_img.actual_x` 和 `#ghost_elem.actual_x` 等元素属性引用被归类为 SEM-REF-002（元素引用）而非 SEM-REF-001（变量引用）
+- **DSL 1**: `array_index_edge_cases.xml` line 15:
+  ```xml
+  <Var name="bad_elem_prop" expression="#ghost_img.actual_w * 2"/>
+  ```
+- **DSL 2**: `multi_element_expression_blast.xml` line 69:
+  ```xml
+  <Image name="propref_bad" x="#ghost_elem.actual_x" .../>
+  ```
+- **Expected**: SEM-REF-001（未定义变量引用规则：#ghost_img.actual_w 中的 ghost_img 是未声明的元素名，其属性 .actual_w 也无法解析。应归类为变量/引用层面的未定义错误 SEM-REF-001，因为 `#elem.prop` 是变量引用语法的一种形式）
+  ```
+  SEM-REF-001 (line 15): 引用未定义元素属性 #ghost_img.actual_w
+  ```
+- **Actual**: SEM-REF-002（未定义元素引用）
+  ```
+  SEM-REF-002 (line 17): 引用未定义元素 ghost_img
+  ```
+- **Root cause**: VarRefAnalyzer 正确区分了变量引用(#var)和元素属性引用(#elem.prop)，对 #elem.prop 形式的引用使用 SEM-REF-002 Rule ID。语义上此归类是合理的（引用的是元素而非变量），但 ANSWER_KEY 预期归类为 SEM-REF-001。需统一 Rule ID 归类约定：元素属性引用应使用 SEM-REF-002 还是 SEM-REF-001
+- **影响文件**: `VarRefAnalyzer.java`
+
+---
+
+## 5. Command 规则类
+
+### Bug 26: SEM-CMD-004 被归类为 SEM-TYPE-003（StyleCommand index 使用表达式）
+
+- **症状**: `<StyleCommand index="#runtime_var"/>` 使用表达式作为 index 属性值时，报告 SEM-TYPE-003 而非 SEM-CMD-004
+- **DSL**: `trigger_command_combos.xml` line 23:
+  ```xml
+  <StyleCommand name="style" index="#runtime_var"/>
+  ```
+- **Expected**: SEM-CMD-004（StyleCommand index表达式规则：StyleCommand 的 index 属性必须使用纯数字字面量（如 index="0"），不能使用表达式（如 index="#runtime_var"）。StyleCommand 在运行时需要立即确定目标样式的索引位置，表达式引用会导致无法在应用样式时确定目标）
+  ```
+  SEM-CMD-004 (line 23): StyleCommand index 属性必须为纯数字字面量，不能使用表达式 #runtime_var
+  ```
+- **Actual**: SEM-TYPE-003（属性值类型错误）
+  ```
+  SEM-TYPE-003 (line 23): 属性值类型错误: index 期望 number, 实际 #runtime_var
+  ```
+- **Root cause**: StyleCommand.json 中 index 属性的约束可能未定义 SEM-CMD-004 专用 Rule ID，或 ConstraintAnalyzer 未产出 CMD-004。当前 LiteralTypeAnalyzer 将 #runtime_var 在 index 上下文中检测为"非纯数字字面量"，产出通用的 SEM-TYPE-003 而非 Command 专用的 SEM-CMD-004
+- **影响文件**: `StyleCommand.json`, `ConstraintAnalyzer.java`, `LiteralTypeAnalyzer.java`
+
+---
+
+### Bug 27: SEM-TYPE-002→SEM-TYPE-001 链式函数参数类型归类偏差
+
+- **症状**: `sin(substr('hello', 0, 3))` 中 substr 返回 string 传给 sin(期望 number)，报告 SEM-TYPE-001 而非 SEM-TYPE-002
+- **DSL**: `chained_function_hell.xml` line 7:
+  ```xml
+  <Var name="chained_bad_type" type="number" expression="sin(substr('hello', 0, 3))"/>
+  ```
+- **Expected**: SEM-TYPE-002（函数参数类型不匹配规则：sin() 函数期望 number 类型参数，但实际传入的是 substr() 的返回值，类型为 string。函数参数层面的类型不匹配应归类为 SEM-TYPE-002）
+  ```
+  SEM-TYPE-002 (line 7): 函数 sin 参数 1 类型不匹配，期望number实际string（substr返回值）
+  ```
+- **Actual**: SEM-TYPE-001（表达式整体类型不匹配）
+  ```
+  SEM-TYPE-001 (line 9): 函数 substr 不适用于 number 表达式
+  ```
+- **Root cause**: TypeAnalyzer 在检查链式函数调用时，先检查外层函数 sin() 的参数类型，发现 substr() 返回 string→产出类型不匹配。但 Rule ID 归类为 SEM-TYPE-001（表达式整体类型）而非 SEM-TYPE-002（函数参数类型）。原因可能是 TypeAnalyzer 将嵌套函数的返回类型检查统一归类为表达式类型不匹配
+- **影响文件**: `TypeAnalyzer.java`
+
+---
+
+## 6. 误报类
+
+### Bug 28: SEM-ATTR-003 对合法枚举值 "Charging" 误报
+
+- **症状**: Text 元素的 `category="Charging"` 是合法枚举值，但被报告为 SEM-ATTR-003 不合法
+- **DSL**: `enum_boundary_tests.xml` line 26-27:
+  ```xml
+  <Text name="txt_charging" x="200" y="600" size="20" color="#00FF00"
+        text="Charging" category="Charging"/>
+  ```
+- **Expected**: 无诊断（category="Charging" 在合法枚举值 [Normal, Charging, BatteryLow, BatteryFull] 中）
+- **Actual**: SEM-ATTR-003（category 枚举值不合法）
+  ```
+  SEM-ATTR-003 (line 26): category枚举值不合法，合法值为: Normal, Charging, BatteryLow, BatteryFull
+  ```
+- **Root cause**: SEM-ATTR-003 和 SEM-ENUM-001 可能存在重叠触发。Text.json 中 category 属性同时有 ConstraintAnalyzer 的 SEM-ATTR-003 约束和 EnumAnalyzer 的 SEM-ENUM-001 检查。当合法值 "Charging" 被 EnumAnalyzer 正确放行时，ConstraintAnalyzer 的 SEM-ATTR-003 约束条件可能误判（约束条件评估逻辑错误或与 EnumAnalyzer 的判断逻辑不一致）
+- **影响文件**: `Text.json` (约束定义), `ConstraintAnalyzer.java`
+
+---
+
+### Bug 29: SEM-REQ-001 对 VariableCommand expression 属性误报必填
+
+- **症状**: `<VariableCommand name="v1" type="set" value="1"/>` 缺少 expression 属性时，被报告为 SEM-REQ-001 缺失必填属性，但 expression 对 VariableCommand 并非必填
+- **DSL**: `trigger_command_combos.xml` line 14:
+  ```xml
+  <VariableCommand name="v1" type="set" value="1"/>
+  ```
+- **Expected**: 无诊断（VariableCommand 使用 type="set" + value="1" 是合法写法，expression 属性非必填）
+- **Actual**: SEM-REQ-001（缺失必填属性 expression）
+  ```
+  SEM-REQ-001 (line 14): 缺失必填属性: expression
+  ```
+- **Root cause**: `VariableCommand.json` 的 `requiredAttrs` 列表中可能包含了 `expression`，但 VariableCommand 的合法使用方式包括：`type="set" value="literal"`（直接赋值，无需 expression）和 `type="set" expression="#var"`（表达式赋值）。expression 应为可选属性而非必填
+- **影响文件**: `VariableCommand.json`
+
+---
+
+### Bug 30: SEM-ENUM-001 对 VariableCommand type="set" 误报枚举值不合法
+
+- **症状**: VariableCommand 的 `type="set"` 是合法枚举值，但被报告为 SEM-ENUM-001 不合法
+- **DSL**: `trigger_command_combos.xml` line 14:
+  ```xml
+  <VariableCommand name="v1" type="set" value="1"/>
+  ```
+- **Expected**: 无诊断（VariableCommand type 属性合法值为 ["set", "add"]，"set" 是合法值）
+- **Actual**: SEM-ENUM-001（枚举值错误: type=set, 合法值: [number, string]）
+  ```
+  SEM-ENUM-001 (line 14): 枚举值错误: type=set, 合法值: [number, string]
+  ```
+- **Root cause**: `VariableCommand.json` 中 type 属性的 `enumValues` 定义为 `["number", "string"]`（这是 Var 元素的 type 枚举值，而非 VariableCommand 的 type 枚举值）。VariableCommand 的 type 应为 `["set", "add"]`（操作类型），但规则 JSON 错误地继承了 Var 的 type 枚举定义
+- **影响文件**: `VariableCommand.json`
 
 ---
 
@@ -945,14 +463,17 @@ Core IntelliJ隔离: checkCoreIntellijDependency始终PASSED.
 
 | 指标 | 数值 |
 |------|------|
-| 修复 Bug 总数 | 10 |
-| 新增文件 | 2 (`SyntaxErrorAnalyzer.java`, `ANSWER_KEY.md`) |
-| 修改文件 | 14 |
-| 修改 JSON 规则文件 | 1 (`Image.json`) |
-| 修改 ANTLR Grammar | 2 (`DslExpression.g4`, `DslRuleCondition.g4`) |
-| 测试状态 | 792 tests pass, 0 failures |
-| 新增 fixtures | 14 (complex/ 8个 + complex_expressions/ 6个) |
-| 诊断规则覆盖率 | 初始 ~12 → 最终 ~28 |
+| 已修复 Bug | 10 (Bug 1–10) |
+| 未修复 Bug | 19 (Bug 12–30) |
+| 14 fixture ANSWER_KEY 总预期诊断 | ~107 |
+| 14 fixture Jar 实测总诊断 | 102 (96E+6W) |
+| 内容实质性匹配率 | ~76% (81/107) |
+| 含 Rule ID 偏差匹配率 | ~87% (93/107) |
+| 完全匹配 fixture | 3/14 |
+| 零诊断 fixture | 0/14 |
+| 误报率 | 3/102 ≈ 3% |
+| 测试方法 | `java -jar dsl-analyzer.jar --format markdown --output <path> <fixture>` |
+| 测试环境 | 分支 `feat/cli-pipeline-integration`, HEAD=`1786677` |
 
 ---
 
@@ -961,12 +482,15 @@ Core IntelliJ隔离: checkCoreIntellijDependency始终PASSED.
 1. **ANTLR grammar 设计**: 函数调用的参数应支持完整的表达式语法，包括花括号内的嵌套表达式
 2. **双来源数据对齐**: SAX 和手动扫描器的属性顺序必须一致，应按名称匹配而非索引匹配
 3. **RuleDsl 语法扩展性**: 新增运算符（如 MATCHES）需要同步更新 grammar、evaluator 和 parser
-4. **Classpath vs Filesystem**: JAR 部署时必须使用 classpath 资源加载，`Path.of()` 仅适用于开发环境
-5. **Analyzer 注册**: 所有 Analyzer（包括 M3 的 ExpressionSyntaxChecker）必须显式注册到 AnalyzerRegistry
-6. **Constraint 条件简化**: 复杂函数调用（如 parseInt）应在 evaluator 中实现，而非 grammar 中，保持条件纯声明式
+4. **Classpath vs Filesystem**: JAR 部署时必须使用 classpath 资源加载
+5. **Analyzer 注册**: 所有 Analyzer 必须显式注册到 AnalyzerRegistry
+6. **Constraint 条件简化**: 复杂函数调用应在 evaluator 中实现，保持条件纯声明式
 7. **TypeAnalyzer 依赖链**: TypeAnalyzer → FunctionSignatureLibrary → RuleRepository，断链会导致全链失效
-8. **parseInt() 批量修复**: Bug 5 修复了 Image.json 的 parseInt()，但 **Group.json、Text.json** 中仍存在相同问题——批量修复应通过搜索所有 JSON 约束文件实现
+8. **parseInt() 批量修复**: Bug 5 修复了 Image.json，但 Group.json/Text.json 可能存在相同问题
 9. **PERSIST 检测范围**: SEM-PERSIST-001 应检查 expression 内容中引用的变量名，而非仅检查 Var 的 name 属性
-10. **ScopeAnalyzer 优先级**: Scope 检查（SEM-SCOPE-001）目前低于约束检查，导致 Button in ChargingSkin 等错误先行被其他规则掩盖
-
-(End of file)
+10. **ScopeAnalyzer 优先级**: Scope 检查目前低于约束检查，导致 Button in ChargingSkin 等错误先行被其他规则掩盖
+11. **Rule ID 归类一致性**: 同一问题在不同分析路径下可能产出不同 Rule ID，需统一归类策略
+12. **行号定位精度**: SAX/StAX 行号与 XML 源文件行号存在系统性偏差，需在 AST 构建层对齐
+13. **children.filter 空列表处理**: 约束预处理需正确处理子元素列表为空的情况（Button 无子元素、Triggers 无 Trigger）
+14. **类型传播链完整性**: #var 引用的类型错误需沿引用链传播到属性赋值点，不能在引用处中断
+15. **规则 JSON 枚举值准确性**: 元素的枚举值定义必须反映该元素的语义（VariableCommand.type=["set","add"] 而非 ["number","string"]）
