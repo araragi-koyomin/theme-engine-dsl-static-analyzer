@@ -1,6 +1,7 @@
 ﻿{
   "element": "Text",
   "category": "view",
+  "description": "按照特定格式来显示文本，支持对文字大小、颜色、行间距、是否自动换行（当文字实际宽度超过设置的宽度时）等进行设置；此外，还提供文字阴影等高级的文字效果，支持通用属性。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -18,7 +19,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "元素变量名，在支持表达式的情况中使用@name的格式来取当前变量的值。"
     },
     "x": {
       "type": "number",
@@ -28,7 +30,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的x坐标，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），默认为0，支持表达式。"
     },
     "y": {
       "type": "number",
@@ -38,7 +41,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的y坐标，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），默认为0，支持表达式。"
     },
     "width": {
       "type": "number",
@@ -49,7 +53,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "文字宽度，当文字超过该宽度时会被切掉。如果设置了自动换行，则会折行显示文字。"
     },
     "height": {
       "type": "number",
@@ -60,7 +65,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "显示在屏幕上的高，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），支持表达式，h和height写法都可以。"
     },
     "pivotX": {
       "type": "number",
@@ -71,7 +77,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转的点的X坐标，相对于View的左上角位置，单位为像素，支持表达式，pivotX和centerX写法都可以。"
     },
     "pivotY": {
       "type": "number",
@@ -82,7 +89,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转的点的Y坐标，相对于View的左上角位置，单位为像素，支持表达式，pivotY和centerY写法都可以。"
     },
     "rotation": {
       "type": "number",
@@ -93,7 +101,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转角度，一周360度，围绕(pivotX,pivotY)点旋转（若无pivotX和pivotY，则默认(0,0)点旋转），支持表达式。正数表示顺时针，负数表示逆时针，rotation和angle写法都可以。"
     },
     "rotationX": {
       "type": "number",
@@ -104,7 +113,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "以X轴为旋转中心旋转，一周360度，支持表达式。正数表示顺时针，负数表示逆时针，rotationX和angleX写法都可以。"
     },
     "rotationY": {
       "type": "number",
@@ -115,7 +125,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "以Y轴为旋转中心旋转，一周360度，支持表达式。正数表示顺时针，负数表示逆时针，rotationY和angleY写法都可以。"
     },
     "alpha": {
       "type": "number",
@@ -125,7 +136,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "255"
+      "defaultValue": "255",
+      "description": "透明度，0-255，默认为255，当值小于0时则该值取0，当值大于255时，该值取255，支持表达式。"
     },
     "visibility": {
       "type": "number",
@@ -135,7 +147,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "元素可见性，<=0 不可见 >0可见，true为可见，false为不可见，默认为1，支持表达式。"
     },
     "category": {
       "type": "string",
@@ -146,7 +159,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "取值\"Normal\", \"Charging\", \"BatteryLow\", \"BatteryFull\"，表示当手机处于指定充电状态时显示该元素。"
     },
     "align": {
       "type": "string",
@@ -157,7 +171,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "坐标点水平对齐方式left, center, right，对齐的效果为view的左上角x坐标分别表示该view的左、中、右位置。"
     },
     "alignV": {
       "type": "string",
@@ -168,7 +183,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "坐标点垂直对齐方式top, center, bottom，对齐的效果为view的左上角y坐标分别表示该view的上、中、下位置。"
     },
     "enableMove": {
       "type": "string",
@@ -179,7 +195,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "元素是否支持移动，当值为false或者0时表示不可移动，当值为true或者非0值表示可移动，默认为0。"
     },
     "moveRect": {
       "type": "string",
@@ -189,7 +206,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "移动区域，当enableMove为可移动时有效。格式为moveRect=\"minH,minV,maxH,maxV\"，分别表示：最小水平移动，最小垂直移动，最大水平移动，最大垂直移动。四个参数类型为数值，单位为像素，不支持表达式。例如：移动目标的原坐标为(x,y)，则该目标水平方向的移动范围是：(x+minH)~(x+maxH)，垂直方向的移动范围是：(y+minV)~(y+maxV)。"
     },
     "active": {
       "type": "number",
@@ -199,7 +217,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "激活状态，0代表不激活，视图不显示，所有的动画和可见性均失效，默认值1。"
     },
     "color": {
       "type": "string",
@@ -209,7 +228,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "string",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "文字颜色，支持6位或8位16进制颜色表示，如：#FFFFFF . #FFFFFFFF，8位中前两位表示透明度，后六位依次表示红. 绿. 蓝；支持函数argb(255,255,255,255) (argb(透明度，红，绿，蓝)，每个数值在[0-255]范围内）；支持字符串变量，如：@abc，字符串变量需为无#的6或8位16进制表示：\"ffffff\". “ffffffff\"，或argb函数。 注意： 设置color后通用属性alpha设置无效。"
     },
     "size": {
       "type": "number",
@@ -219,7 +239,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "40"
+      "defaultValue": "40",
+      "description": "文字大小，取值正数，默认40，单位为像素。"
     },
     "format": {
       "type": "string",
@@ -229,7 +250,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "支持在文字中引用数值或字符串变量，用%d，%s 指定变量位置，并在paras参数中指定对应变量表达式；支持引用多个变量；%d表示数值表达式，%s表示字符串表达式。"
     },
     "paras": {
       "type": "string",
@@ -239,7 +261,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "auto",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "如果使用format参数, 则需要在paras参数中指定%d，%s对应的变量表达式；多个变量表达式用\",\" 隔开；%d表示数值表达式，%s表示字符串表达式。"
     },
     "text": {
       "type": "string",
@@ -249,7 +272,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "当手机电量状态与category中设置的值匹配时，则显示该text内容。 注意： 除了text属性，还支持Text标签中其他属性，例如：format、paras等。此处，省略其他属性描述，请参考Text标签。"
     },
     "textExp": {
       "type": "string",
@@ -259,7 +283,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "string",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "文字表达式，可直接引用单变量，不支持由多个变量构建的表达式。text与textExp效果相同。"
     },
     "autoLineFeed": {
       "type": "string",
@@ -270,7 +295,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "true/false，控制是否支持自动换行。true为支持自动换行，默认false。为true时须设置width，否则不会自动换行。"
     },
     "textalign": {
       "type": "string",
@@ -281,7 +307,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "文字的对齐方式，可选输入为left, right, center，分别为左对齐，右对齐和居中对齐。 说明： 对齐功能生效需满足：不换行，不滚动，不裁剪，且设置宽度大于文本实际宽度。"
     },
     "bold": {
       "type": "string",
@@ -292,7 +319,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "true/false，字体是否加粗，true表示加粗，默认false。"
     },
     "isSupportClipping": {
       "type": "string",
@@ -303,7 +331,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "true/false，设置属性超出width后是否裁剪，true表示裁剪，默认false。"
     },
     "spaceTimes": {
       "type": "number",
@@ -313,7 +342,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "行间距倍数，类似于word行间距，默认1。"
     },
     "spaceExtraAdd": {
       "type": "number",
@@ -323,7 +353,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "行间距的额外增加值，即在基础行距上增加多少行间距。单位像素，默认0。"
     },
     "shadowDx": {
       "type": "number",
@@ -333,7 +364,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "文字阴影横向偏移距离，单位为像素。"
     },
     "shadowDy": {
       "type": "number",
@@ -343,7 +375,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "文字阴影纵向偏移距离，单位为像素。"
     },
     "Radius": {
       "type": "number",
@@ -353,7 +386,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "模糊半径，建议范围[1-24],值越小文字阴影越清晰。（模糊半径相同时，size大的文本阴影相对size小的文本模糊程度略小一些） 注意： 小于等于0无阴影效果。"
     },
     "shadowColor": {
       "type": "string",
@@ -363,7 +397,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "string",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "阴影颜色，颜色取值见color参数解释；不设置该参数则无文字阴影效果。"
     },
     "scrollDisplay": {
       "type": "string",
@@ -374,7 +409,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "true：文本支持滚动显示；false: 文本不支持滚动显示。默认为false，不支持滚动显示。"
     },
     "marqueeRepeatLimit": {
       "type": "number",
@@ -384,7 +420,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "滚动显示时循环滚动次数，和scrollDisplay配合使用。"
     },
     "clickable": {
       "type": "string",
@@ -395,7 +432,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "true：滚动显示文本可以响应单击和双击，单击和双击文本回到初始状态；false：滚动显示文本可以不响应单击和双击。默认为false，不响应单击和双击，和scrollDisplay配合使用。"
     },
     "delayTime": {
       "type": "number",
@@ -405,7 +443,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "延迟滚动的时间，和scrollDisplay配合使用。"
     }
   },
   "allowedParents": [

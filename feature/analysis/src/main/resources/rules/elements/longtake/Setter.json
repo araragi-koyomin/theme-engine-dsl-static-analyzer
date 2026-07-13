@@ -1,6 +1,7 @@
 ﻿{
   "element": "Setter",
   "category": "longtake_sub",
+  "description": "Setter为StoryBoard子标签，通过targetName、targetProperty和value设置目标元素的属性值，实现转场过程中的属性变化。",
   "requiredAttrs": [
     "targetName", "targetProperty", "value"
   ],
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "目标元素名称。"
     },
     "targetProperty": {
       "type": "string",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "目标元素属性名称。"
     },
     "value": {
       "type": "string",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "控制可见性visibility时，value为”true”, “false”或“toggle”，分别代表可见、不可见以及反转可见性；控制动画animation时，value为”play”或”stop”，控制动画的播放和暂停"
     }
   },
   "allowedParents": [

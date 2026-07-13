@@ -1,6 +1,7 @@
 ﻿{
   "element": "CycleCommand",
   "category": "command",
+  "description": "CycleCommand主要和控件数组Array配合使用，旨在通过一行代码周期性地执行多条VariableCommand命令，实现对数组变量的赋值，可以降低代码量。",
   "requiredAttrs": [
     "indexFlag"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "索引变量标识，用来表示循环次数的变量名，在VariableCommand的expression中会被引用。"
     },
     "frequency": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "控制周期命令执行次数，indexFlag索引变量取值范围是[0,frequency-1]；若设置frequency，则begin，end参数无效。"
     },
     "begin": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "indexFlag索引变量从begin开始循环；通过begin,end参数确定循环范围为[begin,end]，实现对索引变量的赋值。"
     },
     "end": {
       "type": "number",
@@ -46,7 +50,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "indexFlag指定的变量到达end时终止计算"
     },
     "cycleCondition": {
       "type": "number",
@@ -56,7 +61,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "周期命令执行条件，当cycleCondition不为0时执行VariableCommand命令，支持数值表达式。"
     }
   },
   "allowedParents": [

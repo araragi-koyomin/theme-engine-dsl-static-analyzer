@@ -1,6 +1,7 @@
 ﻿{
   "element": "MultiLayer",
   "category": "three_d",
+  "description": "可以实现多个图层叠加的效果。根据设置的不同z值，展示图层的不同空间位置。与传感器标签<variablebinders>结合使用，左右上下晃动手机时呈现相机角度变换的效果；或者通过左右上下滑动屏幕来改变相机的角度。交互方式可以通过自定义的方式来设计长按或者点击，来实现左右浏览或者调节图层远近。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "x方向的重力数值。使用表达式，与传感器标签结合使用。应用于模式0和2"
     },
     "gravityY": {
       "type": "number",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "y方向的重力数值。使用表达式，与传感器标签标签结合使用。应用于模式0和2"
     },
     "touchType": {
       "type": "number",
@@ -35,7 +38,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "图层交互模式，数值为0-3，支持表达式，默认值为0。目前共有4种模式：0，重力感应模式；1，上下左右滑动改变相机角度模式；2，重力感应和滑动改变角度模式；3，调节相机远近和左右浏览模式。"
     },
     "pitchAngle": {
       "type": "string",
@@ -45,7 +49,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "俯视和仰视角度的最大值，通过上下滑动切换角度。取值为“top,-up”，top为正数，up为正数，中间以英文逗号隔开。例如：\"8,-8\"。应用于模式1和2"
     },
     "sidesAngle": {
       "type": "string",
@@ -55,7 +60,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "左侧和右侧角度的最大值，通过左右滑动切换角度。取值为“left,-right”，left为正数，right为正数，中间以英文逗号隔开。例如：\"8,-8\"。应用于模式1和2"
     },
     "stepX": {
       "type": "number",
@@ -65,7 +71,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "图层左右浏览的步长，使用表达式计算累加/减，例如：#stepX+0.1。应用于模式3。"
     },
     "stepZ": {
       "type": "number",
@@ -75,7 +82,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "图层靠近远离的步长，使用表达式计算累加/减，例如：#stepZ+0.1。应用于模式3。"
     },
     "blur": {
       "type": "number",
@@ -85,7 +93,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "点击图层靠近时，渐变模糊程度，范围是[0,10]，默认为0清晰。"
     },
     "visibility": {
       "type": "number",
@@ -95,7 +104,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "控制可见性，0 不可见 1可见，默认为1。"
     }
   },
   "allowedParents": [

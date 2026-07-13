@@ -1,6 +1,7 @@
 ﻿{
   "element": "weight",
   "category": "effect_sub",
+  "description": "weight为物体的大小设置，根据设置的值能够对生成的图大小进行缩放。如果不设置为不随机，则大小在0~1之间随机。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "是否随机缩放粒子，true/false，默认false。"
     },
     "value": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "控制可见性visibility时，value为”true”, “false”或“toggle”，分别代表可见、不可见以及反转可见性；控制动画animation时，value为”play”或”stop”，控制动画的播放和暂停"
     },
     "lowestWeight": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0.1"
+      "defaultValue": "0.1",
+      "description": "仅当isRandom等于true的时候才生效，为随机尺寸的最小值，默认为0.1。"
     }
   },
   "allowedParents": [

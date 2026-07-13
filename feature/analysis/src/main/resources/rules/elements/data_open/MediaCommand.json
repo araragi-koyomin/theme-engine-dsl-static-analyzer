@@ -1,6 +1,7 @@
 ﻿{
   "element": "MediaCommand",
   "category": "data_open",
+  "description": "音乐控制命令，用于执行播放、暂停、收藏、切歌、音量调节及播放模式切换等操作，使用前需先声明MediaController。",
   "requiredAttrs": [
     "command"
   ],
@@ -18,7 +19,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "command可以设置的值如下：mediaPlay：音乐播放命令mediaPause：音乐暂停命令mediaLike：音乐收藏命令（仅华为音乐支持）mediaDislike：音乐取消收藏命令（仅华为音乐支持）skipToPrevious：上一首skipToNext：下一首addVoice：增加音量subVoice：减少音量mediaRepeatMode：修改播放模式说明mediaLike和mediaDislike仅华为音乐支持。"
     },
     "voiceStep100": {
       "type": "number",
@@ -28,7 +30,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "10"
+      "defaultValue": "10",
+      "description": "音量变化的步进值，默认为10，支持表达式。"
     },
     "condition": {
       "type": "number",
@@ -38,7 +41,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "条件判断，支持表达式。当condition里的条件判断为非0或者为true时，该命令执行，为false或者0则不执行。支持输入表达式"
     }
   },
   "allowedParents": [

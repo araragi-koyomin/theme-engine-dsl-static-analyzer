@@ -1,6 +1,7 @@
 ﻿{
   "element": "FluidsComponent",
   "category": "effect",
+  "description": "模拟流体流动效果，可以设置流体的颜色，数量以及区域等，可以应用在锁屏和桌面上。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "设置流体的重力系数，取值范围为（0-1），默认为1"
     },
     "viscosity": {
       "type": "number",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "设置流体的粘滞系数，取值范围为（0-1）；有值且正确时，粒子为粘性粒子，否则为水粒子；默认为水粒子。"
     },
     "color": {
       "type": "string",
@@ -35,7 +38,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "string",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "设置流体的颜色"
     },
     "waterAlpha": {
       "type": "number",
@@ -45,7 +49,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "设置流体的透明度，取值范围为（0-1），默认为1"
     },
     "waterAlphaThreshold": {
       "type": "number",
@@ -55,7 +60,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0.7"
+      "defaultValue": "0.7",
+      "description": "设置流体混和的透明度阈值，取值范围为（0-1），默认值为0.7"
     },
     "bgSrc": {
       "type": "string",
@@ -65,7 +71,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "设置流体的背景"
     },
     "scaleType": {
       "type": "string",
@@ -76,7 +83,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "center_crop"
+      "defaultValue": "center_crop",
+      "description": "背景图片的缩放模式，目前支持两种模式，默认为center_crop。 fill表示填充满屏幕，若图片比例与屏幕不匹配会导致图片拉伸；center_crop表示按照宽或高的比例进行适配，使图片充满整个屏幕，多余部分裁剪"
     },
     "srcid": {
       "type": "number",
@@ -86,7 +94,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "图片序列后缀数字，一般用变量表示，可以根据变量显示不同的图片，如果src=\"pic.png\" srcid=\"1\" 则最后会显示图片 \"pic_1.png\"，大于0， 正整数，支持数字表达式。"
     },
     "persist": {
       "type": "string",
@@ -97,7 +106,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "变量持久化，默认为false不进行持久化，如果需要保存则在声明变量的时候显式设置persist=\"true\"。开启变量持久化之后，会优先读取本地同名变量是否有值，如果没有则赋予expression或者默认值，如果有值则会忽略设置的expression值。"
     }
   },
   "allowedParents": [

@@ -1,6 +1,7 @@
 ﻿{
   "element": "CollaborationCommands",
   "category": "command",
+  "description": "通过碰一碰协同框架能力，支持主题在碰一碰场景定义一些动画交互能力。",
   "requiredAttrs": [
     "collaborationId"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "两个主题可以支持碰一碰协同效果的协同ID，不同协同ID的两个设备主题碰一碰不会触发协同效果，协同ID由ThemeStudio Pro工具自动生成，长度为4的字符串，内容为A-Z或a-z或0-9"
     },
     "abilityId": {
       "type": "number",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "不配置时，默认为碰一碰 0：碰一碰 1：长连接 起始规范版本：HarmonyOS 7.0"
     },
     "enable": {
       "type": "number",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "支持数值表达式控制协同能力是否打开，0：关闭，1：打开。默认为1(例外：针对百变卡片，跨设备互动能力默认为关闭，需要通过设置全局变量enableCollaboration开启能力)"
     }
   },
   "allowedParents": [

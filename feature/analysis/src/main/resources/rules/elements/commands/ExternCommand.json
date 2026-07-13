@@ -1,6 +1,7 @@
 ﻿{
   "element": "ExternCommand",
   "category": "command",
+  "description": "通用命令ExternCommand，用来向外部程序发送命令。目前仅能够支持解锁命令(仅在锁屏中有效)用这个命令可以实现解锁操作；ExternalCommand，与ExternCommand相对，是用来接收外部命令的命令，ExternalCommand是一种特殊的Command，不集成在Trigger标签之下而是直接写在Lockscreen标签之下，作为监测开关屏的命令。",
   "requiredAttrs": [
     "command"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "命令名，目前可以使用的一种命令是解锁命令unlock(仅在锁屏中有效)"
     },
     "condition": {
       "type": "string",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "条件判断该Command是否执行，支持表达式。仅当值为非0或者为true时，该命令执行。为false或者0则不执行。"
     },
     "delay": {
       "type": "number",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "延迟，单位ms。延迟delay毫秒后执行该命令。"
     },
     "delayCondition": {
       "type": "string",
@@ -47,7 +51,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "延迟判断，为真则delay命令生效，否则失效。默认为true或者1时，表示可以延迟启动命令，如果false或者非1则不延迟执行。"
     }
   },
   "allowedParents": [

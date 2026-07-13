@@ -1,6 +1,7 @@
 ﻿{
   "element": "PositionAnimation",
   "category": "animation",
+  "description": "基础命令，有针对一个元素，例如一张图位移，也有多张图组成的帧动画，通过这些动画可以实现动画位移效果。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "延迟，以ms毫秒记。延迟delay毫秒后执行动画播放。"
     },
     "repeat": {
       "type": "number",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "动画重复播放次数，N表示重复N次，0表示无限次循环。"
     }
   },
   "allowedParents": [

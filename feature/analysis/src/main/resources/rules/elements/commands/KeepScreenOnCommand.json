@@ -1,6 +1,7 @@
 ﻿{
   "element": "KeepScreenOnCommand",
   "category": "command",
+  "description": "锁屏灭屏命令，通过该命令可以自定义锁屏亮屏的时间。",
   "requiredAttrs": [
     "action"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "start"
+      "defaultValue": "start",
+      "description": "取值：start（开始亮屏）/reset（重置为系统默认设置），默认：start。"
     },
     "duration": {
       "type": "number",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "10000"
+      "defaultValue": "10000",
+      "description": "单位：ms毫秒。控制锁屏在一定时间内抑制亮屏，不自动灭屏，限制：最小值10秒，最大值 10分钟。默认：10s"
     }
   },
   "allowedParents": [

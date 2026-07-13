@@ -1,6 +1,7 @@
 ﻿{
   "element": "Var",
   "category": "variable",
+  "description": "用户自定义变量，标签为Var，用户指定变量名称、变量类型和变量值等，并被放入全局变量中供其他功能或表达式调用。数组变量通过数组名+[索引值]取值，索引从0开始。对于非数组普通变量，type属性值不为number[]或string[]即可，type为空时默认为数字变量。",
   "requiredAttrs": [
     "name"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "变量名，也是全局变量的调用索引名，在支持表达式的情况中使用#+变量名来调用该变量目前的值。"
     },
     "expression": {
       "type": "string",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "auto",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "变量对应的表达式或常量 注意：如果定义字符串常量需要多一套单引号: expression=\"'my string'\"。"
     },
     "type": {
       "type": "string",
@@ -38,7 +41,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "number"
+      "defaultValue": "number",
+      "description": "定义数值变量或字符串变量，数字为number，字符串为string，如果是数字数组为number[]，字符串数组为string[]， 默认为\"number\"。"
     },
     "threshold": {
       "type": "number",
@@ -48,7 +52,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "阈值，当变量值的变化超过阈值时，可以触发一些命令。"
     },
     "persist": {
       "type": "string",
@@ -59,7 +64,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "变量持久化，默认为false不进行持久化，如果需要保存则在声明变量的时候显式设置persist=\"true\"。开启变量持久化之后，会优先读取本地同名变量是否有值，如果没有则赋予expression或者默认值，如果有值则会忽略设置的expression值。"
     },
     "index": {
       "type": "string",
@@ -69,7 +75,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "如果使用数组型的变量则需要添加该项，标识数组的索引，索引值从0开始，index等于0代表值name[0]的取值。"
     },
     "values": {
       "type": "string",
@@ -79,7 +86,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "格式为values=\"val, val, val, ...\"。该参数会写入所有需要赋的值，然后自动计算数组变量的大小，并且给每一个变量赋值。type类型不同，输出的值的类型也不同，例如：values=\"10,20\"，type为number时，输出的值为10.0,20.0；type为string时，输出的值为10,20。与size冲突，同时存在时优先取size"
     },
     "size": {
       "type": "number",
@@ -89,7 +97,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "声明数组的长度。与values冲突，同时存在时优先取size"
     },
     "const": {
       "type": "string",
@@ -100,7 +109,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "true或者false，变量值是否为常量，表示该变量只要被赋值一次之后其值就不会再改变，默认：false。"
     },
     "globalPersist": {
       "type": "string",
@@ -111,7 +121,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "全局持久化变量标识，设为true时变量值在全局共享，重启后保留。"
     },
     "styleGlobalPersist": {
       "type": "string",
@@ -122,7 +133,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "全景换肤全局持久化变量标识，设为true时变量值在锁屏、桌面、卡片、换肤等模块全场景联动中共享。"
     }
   },
   "allowedParents": [

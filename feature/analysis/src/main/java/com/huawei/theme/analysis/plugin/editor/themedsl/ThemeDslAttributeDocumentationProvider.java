@@ -8,20 +8,22 @@ import com.intellij.lang.documentation.DocumentationMarkup;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.xml.XmlAttribute;
+import com.intellij.psi.xml.XmlTag;
+
+import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
+import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
+import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
+import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
+
+import java.util.Optional;
 
 /**
  * Quick Documentation / hover provider for ThemeDSL <em>attributes</em>
  * ({@link XmlAttribute}).
  *
- * <p>Single responsibility: this provider only handles elements that resolve to a
- * {@link XmlAttribute} (the attribute name, equals sign, or value). It returns
- * {@code null} for everything else, so {@link ThemeDslTagDocumentationProvider}
- * handles tag contexts. Both are registered as {@code lang.documentationProvider}
- * for {@code ThemeDSL}; the platform composes them via
- * {@code CompositeDocumentationProvider}.</p>
- *
- * <p>The documentation body is a placeholder until the real doc files are available.</p>
+ * <p>Shows the attribute description from the rule library JSON.</p>
  */
 public class ThemeDslAttributeDocumentationProvider extends AbstractDocumentationProvider {
 
@@ -31,7 +33,48 @@ public class ThemeDslAttributeDocumentationProvider extends AbstractDocumentatio
         if (attribute == null) {
             return null;
         }
-        return placeholderDoc("Attr", attribute.getName());
+
+        XmlTag tag = PsiTreeUtil.getParentOfType(attribute, XmlTag.class);
+        if (tag == null) {
+            return null;
+        }
+
+        RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
+        Optional<DslElementRule> ruleOpt = repo.getElementRule(tag.getName());
+        if (ruleOpt.isEmpty()) {
+            return null;
+        }
+
+        Optional<AttrTypeSpec> specOpt = repo.getAttrTypeSpec(tag.getName(), attribute.getName());
+        if (specOpt.isEmpty()) {
+            return null;
+        }
+
+        AttrTypeSpec spec = specOpt.get();
+        String desc = spec.getDescription();
+        if (desc == null || desc.isEmpty()) {
+            desc = "No description available.";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(DocumentationMarkup.DEFINITION_START);
+        sb.append("<b>").append(attribute.getName()).append("</b>");
+        sb.append(" <code>").append(spec.getType()).append("</code>");
+        if (spec.getDefaultValue() != null) {
+            sb.append(" <i>(default: ").append(spec.getDefaultValue()).append(")</i>");
+        }
+        if (spec.isSupportsExpression()) {
+            sb.append(" <i>supports expression</i>");
+        }
+        sb.append(DocumentationMarkup.DEFINITION_END);
+        sb.append(DocumentationMarkup.CONTENT_START);
+        sb.append(desc);
+        if (!spec.getEnumValues().isEmpty()) {
+            sb.append("<br><br><b>Allowed values:</b> ");
+            sb.append(String.join(", ", spec.getEnumValues()));
+        }
+        sb.append(DocumentationMarkup.CONTENT_END);
+        return sb.toString();
     }
 
     @Override
@@ -43,13 +86,6 @@ public class ThemeDslAttributeDocumentationProvider extends AbstractDocumentatio
         return "ThemeDSL attribute: " + attribute.getName();
     }
 
-    /**
-     * Explicitly resolves the target element for View | Quick Documentation and
-     * hover, because the platform's default resolution for XML doesn't reliably
-     * pick the {@link XmlAttribute}. Returns the enclosing {@link XmlAttribute}
-     * for ThemeDSL files; {@code null} otherwise (so the tag provider handles
-     * tag contexts).
-     */
     @Override
     public @Nullable PsiElement getCustomDocumentationElement(@NotNull Editor editor,
                                                               @NotNull PsiFile file,
@@ -61,9 +97,6 @@ public class ThemeDslAttributeDocumentationProvider extends AbstractDocumentatio
         return findAttribute(contextElement);
     }
 
-    /**
-     * Walks up from {@code element} to the enclosing {@link XmlAttribute}.
-     */
     @Nullable
     private static XmlAttribute findAttribute(PsiElement element) {
         PsiElement e = element;
@@ -74,14 +107,5 @@ public class ThemeDslAttributeDocumentationProvider extends AbstractDocumentatio
             e = e.getParent();
         }
         return null;
-    }
-
-    private static String placeholderDoc(String kind, String signature) {
-        return DocumentationMarkup.DEFINITION_START
-                + "<b>" + kind + "</b> <code>" + signature + "</code>"
-                + DocumentationMarkup.DEFINITION_END
-                + DocumentationMarkup.CONTENT_START
-                + "Documentation is not yet available."
-                + DocumentationMarkup.CONTENT_END;
     }
 }

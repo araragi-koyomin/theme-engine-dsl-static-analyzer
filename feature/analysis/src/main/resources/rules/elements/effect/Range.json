@@ -1,6 +1,7 @@
 ﻿{
   "element": "Range",
   "category": "effect_sub",
+  "description": "跟手粒子响应的矩形区域，用rect(left,top,right,bottom)表示坐标信息。",
   "requiredAttrs": [
     "rect"
   ],
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "矩形区域坐标，格式为rect(left,top,right,bottom)，其中left/top为左上角坐标，right/bottom为右下角坐标。"
     }
   },
   "allowedParents": [

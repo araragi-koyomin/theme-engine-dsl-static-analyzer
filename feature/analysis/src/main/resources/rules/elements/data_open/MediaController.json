@@ -1,6 +1,7 @@
 ﻿{
   "element": "MediaController",
   "category": "data_open",
+  "description": "音乐控制器，在使用音乐数据和播控功能时需要先声明MediaController，用于指定音乐App包名。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "com.huawei.hmsapp.music"
+      "defaultValue": "com.huawei.hmsapp.music",
+      "description": "指定音乐App的包名，当前仅支持指定华为音乐App（com.huawei.hmsapp.music）"
     }
   },
   "allowedParents": [

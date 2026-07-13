@@ -1,6 +1,7 @@
 ﻿{
   "element": "CountDownTime",
   "category": "view",
+  "description": "能够计算目前时间到另外一个日期时间所剩余的时间，提供了多个不同粒度的时间显示以及不同的目标日期的设定方法。",
   "requiredAttrs": [
     "name", "countDownType", "date"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "设定全局变量的名称，能够使用该名称对全局变量进行值的设置和获取，注意使用全局变量一定要在声明之后。"
     },
     "countDownType": {
       "type": "string",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "输入日期的类型，分为concrete和loop，详情见后文"
     },
     "date": {
       "type": "string",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "目标日期，根据不同的日期或者时间的格式，结合类型判断目标时间"
     },
     "unit": {
       "type": "string",
@@ -48,7 +52,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "day"
+      "defaultValue": "day",
+      "description": "粒度单位，提供不同粒度的倒计时显示，默认为day"
     }
   },
   "allowedParents": [
