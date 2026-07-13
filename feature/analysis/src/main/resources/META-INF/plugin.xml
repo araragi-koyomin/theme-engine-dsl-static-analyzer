@@ -12,6 +12,8 @@
     <depends>com.intellij.modules.xml</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <additionalTextAttributes file="colorSchemes/ThemeDevStudio.xml" scheme="Darcula" />
+
         <applicationService serviceImplementation="com.huawei.theme.analysis.plugin.rule.RuleRepositoryService"/>
 
         <fileType name="ThemeDSL"
@@ -58,6 +60,11 @@
 
         <annotator language="ThemeDSL"
                    implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslDiagnosticAnnotator"/>
+
+        <annotator language="ThemeDSL"
+                   implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslTagCategoryAnnotator"/>
+
+        <colorSettingsPage implementation="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslTagColorSettingsPage"/>
 
         <lang.documentationProvider language="ThemeDSL"
                                      implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslTagDocumentationProvider"/>
