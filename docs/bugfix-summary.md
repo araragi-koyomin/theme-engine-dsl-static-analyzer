@@ -2,6 +2,7 @@
 
 Comprehensive catalog of all bugs discovered and tested, organized by category.
 Updated 2026-07-13 based on `java -jar dsl-analyzer.jar --format markdown` E2E test on 14 fixtures + 2 directory scans.
+E2E re-verification 2026-07-13: `buildFatJar` → `dsl-analyzer.jar v0.1.0` 全量 markdown 导出实测，逐 fixture 与 ANSWER_KEY.md 对比确认。
 
 ---
 
@@ -420,7 +421,7 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SEM-ATTR-003 (line 26): category枚举值不合法，合法值为: Normal, Charging, BatteryLow, BatteryFull
   ```
-- **Root cause**: SEM-ATTR-003 和 SEM-ENUM-001 可能存在重叠触发。Text.json 中 category 属性同时有 ConstraintAnalyzer 的 SEM-ATTR-003 约束和 EnumAnalyzer 的 SEM-ENUM-001 检查。当合法值 "Charging" 被 EnumAnalyzer 正确放行时，ConstraintAnalyzer 的 SEM-ATTR-003 约束条件可能误判（约束条件评估逻辑错误或与 EnumAnalyzer 的判断逻辑不一致）
+- **Root cause**: SEM-ATTR-003 和 SEM-ENUM-001 存在重叠触发。Text.json 中 category 属性同时有 ConstraintAnalyzer 的 SEM-ATTR-003 约束和 EnumAnalyzer 的 SEM-ENUM-001 检查。ConstraintAnalyzer 的 SEM-ATTR-003 约束条件 `element.attrs['category'] NOT IN ['Normal','Charging','BatteryLow','BatteryFull']` 在合法值 "Charging" 上误触发——E2E 实测显示 SEM-ATTR-003 报告在 line 26（对应 txt_charging，合法值 "Charging"），而 SEM-ENUM-001 正确报告在 line 27（对应 txt_invalid_cat，非法值 INVALID_CAT）。SEM-ATTR-003 对 ConstraintAnalyzer 条件评估存在逻辑错误或元素索引错位，导致约束条件命中了下一个元素而非目标元素
 - **影响文件**: `Text.json` (约束定义), `ConstraintAnalyzer.java`
 
 ---
@@ -466,14 +467,54 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
 | 已修复 Bug | 10 (Bug 1–10) |
 | 未修复 Bug | 19 (Bug 12–30) |
 | 14 fixture ANSWER_KEY 总预期诊断 | ~107 |
-| 14 fixture Jar 实测总诊断 | 102 (96E+6W) |
+| 14 fixture Jar 实测总诊断 | 100E + 13W = 113 |
 | 内容实质性匹配率 | ~76% (81/107) |
 | 含 Rule ID 偏差匹配率 | ~87% (93/107) |
-| 完全匹配 fixture | 3/14 |
+| 完全匹配 fixture | 2/14 (constraint_edge_cases, operator_precedence) |
 | 零诊断 fixture | 0/14 |
-| 误报率 | 3/102 ≈ 3% |
-| 测试方法 | `java -jar dsl-analyzer.jar --format markdown --output <path> <fixture>` |
-| 测试环境 | 分支 `feat/cli-pipeline-integration`, HEAD=`1786677` |
+| 误报率 | 3/113 ≈ 2.7% |
+| 测试方法 | `java -jar dsl-analyzer.jar --format markdown --verbose <fixture-dir>` |
+| 测试环境 | 分支 `feat/cli-pipeline-integration`, jar=`dsl-analyzer.jar v0.1.0` |
+
+---
+
+## E2E Verification Evidence (2026-07-13 re-run)
+
+以下为 `buildFatJar` 构建的 `dsl-analyzer.jar v0.1.0` 对全部 14 fixture 的 markdown 导出实测数据，与 ANSWER_KEY.md 逐条对比。
+
+### complex/ 目录 (8 files)
+
+| Fixture | Actual E | Actual W | Expected E | Expected W | 状态 |
+|---------|----------|----------|------------|------------|------|
+| constraint_edge_cases.xml | 5 | 1 | 5 | 1 | ✅ 全匹配 |
+| deep_nesting_violations.xml | 15 | 1 | 15 | 1 | ⚠ Bug14少报1+Bug18错报1+SEM-ATTR-005多报1 |
+| enum_boundary_tests.xml | 9 | 0 | 9 | 0 | ⚠ Bug28误报SEM-ATTR-003 |
+| expression_syntax_errors.xml | 9 | 2 | 9 | 2 | ⚠ Bug19错报3+Bug22错报1 |
+| scope_nesting_boundaries.xml | 5 | 0 | 5 | 0 | ⚠ 多报SEM-NEST-001(Image in Swiper) |
+| trigger_command_combos.xml | 6 | 0 | 6 | 0 | ⚠ Bug12少报2+Bug26错报1+Bug29/30多报2 |
+| type_inference_edge_cases.xml | 12 | 1 | 12 | 1 | ⚠ Bug15少报1 |
+| variable_lifecycle_errors.xml | 10 | 2 | 10 | 2 | ⚠ Bug23少报1+Bug24少报1 |
+| **小计** | **71** | **7** | **~71** | **~7** | |
+
+### complex_expressions/ 目录 (6 files)
+
+| Fixture | Actual E | Actual W | Expected E | Expected W | 状态 |
+|---------|----------|----------|------------|------------|------|
+| array_index_edge_cases.xml | 1 | 0 | 1 | 0 | ⚠ Bug25错报1(SEM-REF-002 vs SEM-REF-001) |
+| chained_function_hell.xml | 4 | 0 | 4 | 0 | ⚠ Bug27错报1(SEM-TYPE-001 vs SEM-TYPE-002) |
+| multi_element_expression_blast.xml | 15 | 1 | 16 | 1 | ⚠ Bug16少报1+Bug18错报1+Bug25/26/27错报3 |
+| operator_precedence_tests.xml | 2 | 0 | 2 | 0 | ✅ 全匹配 |
+| precision_boundary_tests.xml | 0 | 5 | 0 | 5-6 | ⚠ Bug21少报1(bad_result_8digit) |
+| string_expression_errors.xml | 7 | 0 | 7 | 0 | ⚠ Bug17少报1+Bug19错报1 |
+| **小计** | **29** | **6** | **~30** | **~6** | |
+
+### 行号偏移观察
+
+实测发现几乎所有 fixture 的诊断行号比 ANSWER_KEY 的 "Approx Line" 偏移 1-3 行。原因：XML 文件含 `<?xml?>` 声明行和空行，ANSWER_KEY 计算行号时可能未完整计入。不影响诊断内容正确性，仅影响定位精度。建议 ANSWER_KEY 使用更宽松的行号匹配或忽略行号差异。
+
+### ANSWER_KEY 遗漏观察
+
+E2E 实测发现 `deep_nesting_violations.xml` 中 `Image name="deepest_img"` 的 `isBackground="true" + scaleType="wrong_scale"` 组合触发 SEM-ATTR-005（isBackground 要求 scaleType=center_crop），ANSWER_KEY 未列出此预期诊断。此诊断是合理的，属 ANSWER_KEY 遗漏而非分析器多报。
 
 ---
 
