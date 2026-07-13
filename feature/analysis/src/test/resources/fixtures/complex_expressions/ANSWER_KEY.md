@@ -59,7 +59,7 @@
 |---|---------|-------------|----------|-------------|
 | 1 | SYN-EXPR-002 | 5 | WARNING | `Var name="bad_8digit" expression="12345678"` — 8-digit integer literal exceeds 7-digit precision limit |
 | 2 | SYN-EXPR-002 | 6 | WARNING | `Var name="bad_8digit_expr" expression="99999999 + 1"` — contains 8-digit literal `99999999` |
-| 3 | SYN-EXPR-002 | 8 | WARNING | `Var name="bad_result_8digit" expression="5000000 + 5000000"` — each operand is 7 digits, if the analyzer evaluates compile-time constants the result `10000000` is 8 digits |
+| 3 | ~~SYN-EXPR-002~~ | ~~8~~ | ~~WARNING~~ | ~~`Var name="bad_result_8digit" expression="5000000 + 5000000"` — each operand is 7 digits, if the analyzer evaluates compile-time constants the result `10000000` is 8 digits~~ **[已移除：PRD 设计限制 — 不做常量折叠，不检测运算结果精度]** |
 | 4 | SYN-EXPR-002 | 9 | WARNING | `Var name="border_8digit" expression="10000000"` — exactly 8 digits, exceeds 7-digit boundary |
 | 5 | SYN-EXPR-002 | 10 | WARNING | `Var name="decimal_7digit" expression="1.1234567"` — total 8 significant digits (`1` + `1234567`), exceeds 7-digit limit. Note: if the analyzer only counts fractional digits (7 here), this may NOT trigger. |
 | 6 | SYN-EXPR-002 | 11 | WARNING | `Var name="decimal_8digit" expression="1.12345678"` — 9 significant digits, unambiguously exceeds limit |
@@ -125,7 +125,7 @@
 
 | # | Rule ID | Approx Line | Severity | Description |
 |---|---------|-------------|----------|-------------|
-| 1 | SEM-REF-001 | 9 | ERROR | `Var name="ref_forward" expression="#late_var * 2"` — references `late_var` which is declared later at line 57. Forward reference to variable not yet declared at point of use. |
+| ~~1~~ | ~~SEM-REF-001~~ | ~~9~~ | ~~ERROR~~ | ~~`Var name="ref_forward" expression="#late_var * 2"` — references `late_var` which is declared later at line 57. Forward reference to variable not yet declared at point of use.~~ **[已移除：策略变更 — 不检测前向引用]** |
 | 2 | SEM-TYPE-001 | 10 | ERROR | `Var name="implicit_num" type="number" expression="#str_value + 10"` — `str_value` is type `string` (declared at line 7), referenced with `#` prefix which attempts numeric access on a string-typed variable |
 | 3 | SYN-EXPR-001 | 16 | ERROR | `Image name="neg_x_img" x="-#multiplier"` — `-#var` syntax in numeric attribute |
 | 4 | SYN-EXPR-005 | 28 | ERROR | `Text name="bad_nested_text" textExp="'Value: ' + #multiplier + ' is the answer'"` — `#multiplier` embedded in string expression without `{}` braces |

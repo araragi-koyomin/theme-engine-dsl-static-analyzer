@@ -54,6 +54,9 @@ public class LiteralTypeAnalyzer extends BaseXmlAnalyzer {
             if (rawValue == null || !"number".equals(spec.getType())) {
                 continue;
             }
+            if (rawValue.indexOf('#') >= 0 || rawValue.indexOf('@') >= 0) {
+                continue;
+            }
             try {
                 Double.parseDouble(rawValue);
             } catch (NumberFormatException e) {

@@ -34,6 +34,15 @@ public class SymbolTable {
     Set<String> elementNames = Collections.emptySet();
 
     /**
+     * 文件中重复定义的变量名集合（仅用户声明的 Var，不含预设全局变量）。
+     *
+     * <p>M4 VarRefAnalyzer 消费：SEM-REF-003 重复变量定义检测时，
+     * 遍历到 Var 元素后检查此集合，命中则报告重复定义。</p>
+     */
+    @Builder.Default
+    Set<String> duplicateVarNames = Collections.emptySet();
+
+    /**
      * 沿 parent 链查找变量声明，局部作用域优先，全局兜底。
      *
      * <p>M4 VarRefAnalyzer 消费：对每个 #/@var 引用调用本方法判断存在性，
