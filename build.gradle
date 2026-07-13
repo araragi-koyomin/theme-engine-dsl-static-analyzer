@@ -4,6 +4,7 @@ plugins {
 
 allprojects {
     group 'com.intellij.plugin'
+    version themeDevStudio
     apply plugin: 'java'
 
     sourceCompatibility = 17

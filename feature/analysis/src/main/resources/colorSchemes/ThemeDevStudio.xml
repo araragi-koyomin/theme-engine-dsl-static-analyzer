@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<scheme name="ThemeDevStudio" version="142">
+    <attributes>
+        <!-- ThemeDSL Tag Categories — all non-red to avoid error-like appearance -->
+
+        <option name="DSL_TAG_ROOT">
+            <value>
+                <option name="FOREGROUND" value="FF8C00" />
+                <option name="FONT_TYPE" value="1" />
+            </value>
+        </option>
+        <option name="DSL_TAG_VIEW">
+            <value>
+                <option name="FOREGROUND" value="56A8F5" />
+            </value>
+        </option>
+        <option name="DSL_TAG_LAYOUT">
+            <value>
+                <option name="FOREGROUND" value="A0A0A0" />
+            </value>
+        </option>
+        <option name="DSL_TAG_VARIABLE">
+            <value>
+                <option name="FOREGROUND" value="E0A040" />
+                <option name="FONT_TYPE" value="2" />
+            </value>
+        </option>
+        <option name="DSL_TAG_CONTROL">
+            <value>
+                <option name="FOREGROUND" value="B998FF" />
+            </value>
+        </option>
+        <option name="DSL_TAG_COMMAND">
+            <value>
+                <option name="FOREGROUND" value="4EC9B0" />
+                <option name="FONT_TYPE" value="1" />
+            </value>
+        </option>
+        <option name="DSL_TAG_DATA_OPEN">
+            <value>
+                <option name="FOREGROUND" value="6CB6E8" />
+                <option name="FONT_TYPE" value="2" />
+            </value>
+        </option>
+        <option name="DSL_TAG_ANIMATION">
+            <value>
+                <option name="FOREGROUND" value="F2B83C" />
+                <option name="FONT_TYPE" value="1" />
+            </value>
+        </option>
+        <option name="DSL_TAG_EFFECT">
+            <value>
+                <option name="FOREGROUND" value="D17B0C" />
+            </value>
+        </option>
+        <option name="DSL_TAG_LONGTAKE">
+            <value>
+                <option name="FOREGROUND" value="8B5CF6" />
+            </value>
+        </option>
+        <option name="DSL_TAG_THREE_D">
+            <value>
+                <option name="FOREGROUND" value="917C6D" />
+            </value>
+        </option>
+        <option name="DSL_TAG_TRIGGER">
+            <value>
+                <option name="FOREGROUND" value="C586C0" />
+                <option name="FONT_TYPE" value="1" />
+            </value>
+        </option>
+        <option name="DSL_TAG_UNKNOWN">
+            <value>
+                <option name="FOREGROUND" value="888888" />
+            </value>
+        </option>
+    </attributes>
+</scheme>
