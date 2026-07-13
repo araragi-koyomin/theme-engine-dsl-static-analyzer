@@ -32,9 +32,11 @@ import org.jetbrains.annotations.NotNull;
  * {@link DslLspLanguageClient}) as IntelliJ annotations.
  *
  * <p>The daemon is restarted by {@link DslLspLanguageClient#publishDiagnostics}
- * whenever the server pushes a new snapshot; this annotator then maps each
- * diagnostic's range to the enclosing {@link XmlTag} and, when it matches the
- * element being annotated, emits a {@code newAnnotation}.</p>
+ * whenever the server pushes a new snapshot; this annotator then, for each
+ * diagnostic, finds the innermost {@link XmlTag} enclosing it (used only as a
+ * gate so the annotation is emitted exactly once, on the relevant tag) and
+ * highlights the diagnostic's precise LSP range — so attribute-level
+ * diagnostics underline just the attribute name/value, not the whole tag.</p>
  */
 public final class ThemeDslLspAnnotator implements Annotator {
 
@@ -66,12 +68,25 @@ public final class ThemeDslLspAnnotator implements Annotator {
             return;
         }
         for (Diagnostic d : diags) {
+            // Gate: only emit on the innermost XmlTag enclosing the diagnostic,
+            // so an attribute/value diagnostic isn't duplicated on every
+            // ancestor tag. mapToElement walks PSI parents up to the XmlTag.
             PsiElement target = mapToElement(d, file, doc);
-            if (target == element) {
-                holder.newAnnotation(severityOf(d.getSeverity()), messageOf(d))
-                        .range(element)
-                        .create();
+            if (target != element) {
+                continue;
             }
+            // Highlight the precise LSP range rather than the whole tag, so
+            // attribute-level diagnostics underline just the attribute
+            // name/value instead of the entire element.
+            int start = positionToOffset(d.getRange().getStart(), doc);
+            int end = positionToOffset(d.getRange().getEnd(), doc);
+            if (start < 0 || end <= start) {
+                continue;
+            }
+            end = Math.min(end, doc.getTextLength());
+            holder.newAnnotation(severityOf(d.getSeverity()), messageOf(d))
+                    .range(new TextRange(start, end))
+                    .create();
         }
     }
 
