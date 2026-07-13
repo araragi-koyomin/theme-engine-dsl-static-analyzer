@@ -129,7 +129,17 @@ public class TypeAnalyzer implements DslAnalyzer {
             }
             Optional<FunctionSignature> sigOpt = functionLibrary.getSignature(call.getFunctionName(), expressionKind);
             if (sigOpt.isEmpty()) {
-                diagnostics.add(buildFunctionNotApplicableDiagnostic(call, elementNode, expectedType, context));
+                if (functionLibrary.getSignature(call.getFunctionName(), "number").isEmpty()
+                        && functionLibrary.getSignature(call.getFunctionName(), "string").isEmpty()) {
+                    continue;
+                }
+                Optional<FunctionSignature> altSig = functionLibrary.getSignature(call.getFunctionName(), "string");
+                if (altSig.isEmpty()) {
+                    altSig = functionLibrary.getSignature(call.getFunctionName(), "number");
+                }
+                if (altSig.isPresent()) {
+                    checkFunctionParams(call, altSig.get(), engine, context, elementNode, diagnostics);
+                }
                 continue;
             }
             checkFunctionParams(call, sigOpt.get(), engine, context, elementNode, diagnostics);
@@ -254,7 +264,12 @@ public class TypeAnalyzer implements DslAnalyzer {
 
         DslType exprType = inferExpressionType(exprNode, symbolTable, functionLibrary);
         if (exprType != null && !TypeInferenceEngine.typeEquals(exprType, varType)) {
-            diagnostics.add(buildVarTypeMismatchDiagnostic(elementNode, varType, exprType, context));
+            if (isSimpleLiteralExpression(exprNode)) {
+                diagnostics.add(buildSimpleLiteralTypeMismatchDiagnostic(
+                        elementNode, varType, exprType, context));
+            } else {
+                diagnostics.add(buildVarTypeMismatchDiagnostic(elementNode, varType, exprType, context));
+            }
         } else if (exprType == null && hasIfelseMixedBranches(exprNode, symbolTable, functionLibrary)) {
             diagnostics.add(buildVarTypeMismatchDiagnostic(elementNode, varType, new DslMixedType(), context));
         }
@@ -338,6 +353,15 @@ public class TypeAnalyzer implements DslAnalyzer {
             case FUNCTION_CALL:
                 if ("ifelse".equals(node.getFunctionName()) && node.getChildren() != null) {
                     return inferIfelseType(node, symbolTable, functionLibrary);
+                }
+                if (functionLibrary != null && node.getFunctionName() != null) {
+                    FunctionSignature sig = functionLibrary.getSignature(node.getFunctionName(), "number").orElse(null);
+                    if (sig == null) {
+                        sig = functionLibrary.getSignature(node.getFunctionName(), "string").orElse(null);
+                    }
+                    if (sig != null) {
+                        return sig.getReturnType();
+                    }
                 }
                 return null;
             case BINARY_EXPR:
@@ -425,6 +449,29 @@ public class TypeAnalyzer implements DslAnalyzer {
         return false;
     }
 
+    private boolean isSimpleLiteralExpression(ExpressionNode node) {
+        if (node == null) {
+            return false;
+        }
+        switch (node.getKind()) {
+            case LITERAL:
+                return true;
+            case BINARY_EXPR:
+            case UNARY_EXPR:
+                if (node.getChildren() != null) {
+                    for (ExpressionNode child : node.getChildren()) {
+                        if (!isSimpleLiteralExpression(child)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            default:
+                return false;
+        }
+    }
+
     private void checkRefVarExpressionErrors(ExpressionNode node, DslType expectedType,
                                               SymbolTable symbolTable, DslContext context,
                                               DslElementNode elementNode, List<Diagnostic> diagnostics) {
@@ -432,9 +479,9 @@ public class TypeAnalyzer implements DslAnalyzer {
             return;
         }
         if (node.getKind() == ExpressionKind.VARIABLE_REF && "#".equals(node.getPrefix())) {
-            checkSingleVarExprError(node, symbolTable, context, elementNode, diagnostics);
+            checkSingleVarExprError(node, expectedType, symbolTable, context, elementNode, diagnostics);
         } else if (node.getKind() == ExpressionKind.ARRAY_ACCESS && "#".equals(node.getPrefix())) {
-            checkSingleVarExprError(node, symbolTable, context, elementNode, diagnostics);
+            checkSingleVarExprError(node, expectedType, symbolTable, context, elementNode, diagnostics);
         }
         if (node.getChildren() != null) {
             for (ExpressionNode child : node.getChildren()) {
@@ -447,13 +494,20 @@ public class TypeAnalyzer implements DslAnalyzer {
         }
     }
 
-    private void checkSingleVarExprError(ExpressionNode ref, SymbolTable symbolTable, DslContext context,
-                                          DslElementNode elementNode, List<Diagnostic> diagnostics) {
+    private void checkSingleVarExprError(ExpressionNode ref, DslType expectedType,
+                                           SymbolTable symbolTable,
+                                           DslContext context, DslElementNode elementNode, List<Diagnostic> diagnostics) {
         if (symbolTable == null) {
             return;
         }
         VarDeclaration decl = symbolTable.lookup(ref.getVariableName()).orElse(null);
         if (decl == null || decl.getAstNode() == null) {
+            return;
+        }
+        if ("#".equals(ref.getPrefix()) && decl.getType() instanceof DslStringType) {
+            if (expectedType == null || TypeInferenceEngine.typeEquals(decl.getType(), expectedType)) {
+                diagnostics.add(buildHashPrefixOnStringVarDiagnostic(ref, elementNode, context));
+            }
             return;
         }
         DslAttributeNode exprAttr = getAttrNode(decl.getAstNode(), "expression");
@@ -476,6 +530,15 @@ public class TypeAnalyzer implements DslAnalyzer {
         }
         if (declExprType == null && hasIfelseMixedBranches(declExpr, symbolTable, functionLibrary)) {
             diagnostics.add(buildVarRefTypeErrorDiagnostic(ref, elementNode, decl, context));
+            return;
+        }
+        if (functionLibrary != null && varDeclaredType != null) {
+            List<Diagnostic> tempDiagnostics = new ArrayList<>();
+            TypeInferenceEngine engine = new TypeInferenceEngine(functionLibrary);
+            checkFunctionCalls(declExpr, varDeclaredType, engine, context, decl.getAstNode(), tempDiagnostics);
+            if (!tempDiagnostics.isEmpty()) {
+                diagnostics.add(buildVarRefTypeErrorDiagnostic(ref, elementNode, decl, context));
+            }
         }
     }
 
@@ -633,6 +696,22 @@ public class TypeAnalyzer implements DslAnalyzer {
                 .build();
     }
 
+    private Diagnostic buildSimpleLiteralTypeMismatchDiagnostic(DslElementNode elementNode,
+                                                                DslType expected, DslType inferred,
+                                                                DslContext context) {
+        String varName = getAttrValue(elementNode, "name");
+        return Diagnostic.builder()
+                .severity(DiagnosticSeverity.ERROR)
+                .ruleId(RULE_TYPE_003)
+                .message("属性值类型错误: Var type=" + expected.getName()
+                        + " 但表达式返回 " + inferred.getName()
+                        + "（Var name=\"" + (varName != null ? varName : "") + "\"）")
+                .filePath(context.getFilePath())
+                .astNode(elementNode)
+                .ruleDocUrl(resolveDocUrl(context, RULE_TYPE_003))
+                .build();
+    }
+
     private Diagnostic buildVarConstMismatchDiagnostic(DslElementNode elementNode, ExpressionNode ref,
                                                         DslContext context) {
         String varName = getAttrValue(elementNode, "name");
@@ -743,6 +822,18 @@ public class TypeAnalyzer implements DslAnalyzer {
                 .ruleId(RULE_TYPE_001)
                 .message("类型不匹配，期望" + decl.getType().getName() + "类型但变量" + ref.getText()
                         + "的表达式返回值类型不匹配（属性 " + ref.getText() + "）")
+                .filePath(context.getFilePath())
+                .astNode(elementNode)
+                .ruleDocUrl(resolveDocUrl(context, RULE_TYPE_001))
+                .build();
+    }
+
+    private Diagnostic buildHashPrefixOnStringVarDiagnostic(ExpressionNode ref,
+                                                            DslElementNode elementNode, DslContext context) {
+        return Diagnostic.builder()
+                .severity(DiagnosticSeverity.ERROR)
+                .ruleId(RULE_TYPE_001)
+                .message("类型不匹配，" + ref.getText() + " 是 string 类型但以数值访问前缀 # 引用")
                 .filePath(context.getFilePath())
                 .astNode(elementNode)
                 .ruleDocUrl(resolveDocUrl(context, RULE_TYPE_001))

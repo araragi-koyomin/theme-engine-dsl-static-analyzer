@@ -157,7 +157,7 @@
   "constraints": [
     {
       "ruleId": "SEM-PERSIST-001",
-      "condition": "(element.attrs[\u0027persist\u0027] == \u0027true\u0027 OR element.attrs[\u0027globalPersist\u0027] == \u0027true\u0027 OR element.attrs[\u0027styleGlobalPersist\u0027] == \u0027true\u0027) AND element.attrs[\u0027name\u0027] MATCHES \u0027(hour|hour12|hour24|minute|year|month|date|day_of_week|lunarYear|lunarMonth|lunarDay|ishour12|system.time.*)\u0027",
+      "condition": "(element.attrs[\u0027persist\u0027] == \u0027true\u0027 OR element.attrs[\u0027globalPersist\u0027] == \u0027true\u0027 OR element.attrs[\u0027styleGlobalPersist\u0027] == \u0027true\u0027) AND (element.attrs[\u0027name\u0027] MATCHES \u0027(hour|hour12|hour24|minute|year|month|date|day_of_week|lunarYear|lunarMonth|lunarDay|ishour12|system.time.*)\u0027 OR element.attrs[\u0027expression\u0027] MATCHES \u0027.*#(hour|hour12|hour24|minute|year|month|date|day_of_week|lunarYear|lunarMonth|lunarDay|ishour12|system.time.[a-zA-Z0-9_]+)([^a-zA-Z0-9_].*|)\u0027)",
       "message": "禁止对时间/日期/星期变量使用persist/globalPersist/styleGlobalPersist",
       "severity": "error",
       "suggestedFixes": [

@@ -64,7 +64,7 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
 
 ---
 
-## Part II: 未修复 Bug（2026-07-13 E2E Markdown 导出实测发现）
+## Part II: 已修复 Bug（2026-07-13 第四次 E2E 验证归档）
 
 ---
 
@@ -110,7 +110,7 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
 
 ---
 
-### Bug 14: SEM-PERSIST-001 不检测 expression 引用的时间变量
+### Bug 14: SEM-PERSIST-001 不检测 expression 引用的时间变量 ✅ 已修复
 
 - **症状**: Var 使用 `persist="true"` 且 expression 中引用时间变量 `#hour` 时，SEM-PERSIST-001 不触发（但 Var name 直接为 "hour" 时可触发）
 - **DSL**: `deep_nesting_violations.xml` line 9:
@@ -121,15 +121,15 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SEM-PERSIST-001 (line 9): persist on time variable #hour is forbidden
   ```
-- **Actual**: 无诊断（变量名 "time_persist" 不匹配 MATCHES 正则 `(hour|hour12|hour24|...)`）
-- **Root cause**: `Var.json` 约束仅通过变量 `name` 属性 MATCHES 正则来检测时间变量。当 name 本身不匹配正则（如 "time_persist"），即使 expression 引用了 `#hour` 等时间变量，约束仍不触发。需要增加对 expression 内容的检查，识别其中引用的时间变量名
-- **影响文件**: `Var.json` (约束定义), `DefaultRuleDslEvaluator.java` (可能需扩展)
+- **Actual (2026-07-13 第四次验证)**: ✅ SEM-PERSIST-001 正确触发 (line 9, col 4)
+- **修复内容**: `Var.json` 约束条件扩展，增加 `expression MATCHES '.*#(hour|hour12|hour24|minute|year|month|date|day_of_week|lunarYear|lunarMonth|lunarDay|ishour12|system.time.[a-zA-Z0-9_]+)([^a-zA-Z0-9_].*|)'` 条件，使用正则边界检查防止 `#hourly` 误匹配 `#hour`
+- **影响文件**: `Var.json`
 
 ---
 
 ## 2. 类型推断类
 
-### Bug 15: SEM-TYPE-001 类型传播链在 #var 引用处断裂（alpha=#bad_sin）
+### Bug 15: SEM-TYPE-001 类型传播链在 #var 引用处断裂（alpha=#bad_sin）✅ 已修复
 
 - **症状**: 变量 `bad_sin` 的 expression 有类型错误（sin('not_a_number')），但 `alpha="#bad_sin"` 不报告 SEM-TYPE-001 类型错误
 - **DSL**: `type_inference_edge_cases.xml` lines 7, 18:
@@ -142,16 +142,13 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SEM-TYPE-001 (line 18): 类型不匹配，期望number但变量#bad_sin的表达式返回值类型不匹配（属性 alpha）
   ```
-- **Actual**: 无 SEM-TYPE-001 诊断（仅 SEM-ATTR-001 for alpha 范围错误）
-  ```
-  SEM-ATTR-001 (line 18): alpha值应在0-255范围内
-  ```
-- **Root cause**: TypeAnalyzer 的 `inferVariableRef()` 从 SymbolTable 获取 Var 声明类型时，`bad_sin` 的推断类型因 sin() 参数类型错误返回 `DslMixedType` 或 `DslErrorType`，但 TypeAnalyzer 未将此"带错误标记的类型"传播到 alpha 属性赋值点。类型传播链在 #var 引用处中断——只有简单类型冲突（如 string→number）能传播，带表达式错误的类型无法传播
-- **影响文件**: `TypeAnalyzer.java`, `TypeInferenceEngine.java`
+- **Actual (2026-07-13 第四次验证)**: ✅ SEM-TYPE-001 正确触发 (line 21, "类型不匹配，期望number类型但变量#bad_sin的表达式返回值类型不匹配")
+- **修复内容**: `TypeAnalyzer.checkSingleVarExprError()` 增加对 Var 表达式函数调用错误的传播检查：使用临时 diagnostics 列表调用 `checkFunctionCalls()` 检测 Var 表达式中的函数调用错误，若存在则在引用处报告 SEM-TYPE-001
+- **影响文件**: `TypeAnalyzer.java`
 
 ---
 
-### Bug 16: SEM-TYPE-001 string Var 以 # 引用在 textExp 中不检出类型不匹配
+### Bug 16: SEM-TYPE-001 string Var 以 # 引用在 textExp 中不检出类型不匹配 ✅ 已修复
 
 - **症状**: Var type="string" 但用 `#` 前缀（数值访问方式）引用 string 变量 `color_dark` 时，类型不匹配不检出
 - **DSL**: `multi_element_expression_blast.xml` lines 4, 62:
@@ -164,8 +161,8 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SEM-TYPE-001 (line 62): 类型不匹配，#color_dark 是 string 类型但以数值访问前缀 # 引用
   ```
-- **Actual**: 无诊断
-- **Root cause**: TypeAnalyzer 对 textExp 属性的表达式类型推断未检测 `#` 前缀引用 string 变量的类型冲突。当 expression 使用 `#var` 引用 string 类型变量时，分析器可能将其自动转换为数值上下文，跳过类型检查
+- **Actual (2026-07-13 第四次验证)**: ✅ SEM-TYPE-001 正确触发 (line 65, "类型不匹配，#color_dark 是 string 类型但以数值访问前缀 # 引用")
+- **修复内容**: `TypeAnalyzer.checkSingleVarExprError()` 增加 `#` 前缀引用 string 类型变量的检测。仅当 `checkAttribute()` 未报告类型不匹配时（即推断类型与期望类型匹配时）才触发，避免重复诊断
 - **影响文件**: `TypeAnalyzer.java`
 
 ---
@@ -193,7 +190,7 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
 
 ---
 
-### Bug 18: SEM-TYPE-003 被归类为 SYN-EXPR-ANTLR（字符串字面量在 numeric 属性中）
+### Bug 18: SEM-TYPE-003 被归类为 SYN-EXPR-ANTLR（字符串字面量在 numeric 属性中）✅ 已修复
 
 - **症状**: `x="'string_in_number'"` 或 `alpha="#multiplier + 'not_num'"` 等字符串字面量出现在 numeric 属性中，被报告为 SYN-EXPR-ANTLR 而非 SEM-TYPE-003
 - **DSL 1**: `deep_nesting_violations.xml` line 13:
@@ -209,17 +206,13 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   SEM-TYPE-003 (line 13): 属性值类型错误: x 期望 number, 实际 'string_in_number'
   SEM-TYPE-003 (line 42): 属性值类型错误: alpha 期望 number, 实际包含字符串字面量 'not_num'
   ```
-- **Actual**: SYN-EXPR-ANTLR（表达式语法错误——ANTLR 解析失败）
-  ```
-  SYN-EXPR-ANTLR (line 24): 表达式语法错误: 'string_in_number'
-  SYN-EXPR-ANTLR (line 46): 表达式语法错误: #multiplier + 'not_num'
-  ```
-- **Root cause**: 当 ANTLR 解析失败时（字符串字面量在 numeric 上下文中无法解析为有效数值表达式），ExpressionSyntaxChecker 或 LiteralTypeAnalyzer 产出 SYN-EXPR-ANTLR 而非 SEM-TYPE-003。语义层类型检查应在语法层 ANTLR 失败后补充执行，将 ANTLR 无法解析的值视为字面量进行类型检查
-- **影响文件**: `LiteralTypeAnalyzer.java`, `ExpressionSyntaxChecker.java`
+- **Actual (2026-07-13 第四次验证)**: ✅ SEM-TYPE-003 正确触发 (deep_nesting line 24, "属性值类型错误: x 期望 number, 实际包含字符串字面量 'string_in_number'"; multi_element line 46, "属性值类型错误: alpha 期望 number, 实际包含字符串字面量 #multiplier + 'not_num'")
+- **修复内容**: `ExpressionSyntaxChecker.java` 在 `isStringExpr` 分支的 `parseFailed` 处理中，当 `expressionKind="number"` 时报告 SEM-TYPE-003 而非 SYN-EXPR-ANTLR。同时对嵌套引号（偶数个引号 >2 且无 `+` 分隔）也报告 SYN-EXPR-004
+- **影响文件**: `ExpressionSyntaxChecker.java`
 
 ---
 
-### Bug 19: SYN-EXPR-004 引号检查结果被归类为 SYN-EXPR-ANTLR
+### Bug 19: SYN-EXPR-004 引号检查结果被归类为 SYN-EXPR-ANTLR ✅ 已修复
 
 - **症状**: 未闭合单引号和嵌套单引号的字符串表达式，ExpressionSyntaxChecker 检出了问题但产出的 Rule ID 是 SYN-EXPR-ANTLR 而非 SYN-EXPR-004
 - **DSL 1**: `expression_syntax_errors.xml` line 6（未闭合引号）:
@@ -235,17 +228,13 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   SYN-EXPR-004 (line 6): 未闭合单引号: 'hello world
   SYN-EXPR-004 (line 26): 嵌套单引号未转义: 'Nested 'inner' quote'
   ```
-- **Actual**: SYN-EXPR-ANTLR（通用ANTLR解析错误）
-  ```
-  SYN-EXPR-ANTLR (line 7): 表达式语法错误: 'hello world
-  SYN-EXPR-ANTLR (line 29): 表达式语法错误: 'Nested 'inner' quote'
-  ```
-- **Root cause**: ExpressionSyntaxChecker 的引号检查逻辑检测到了问题，但产出的诊断使用了 SYN-EXPR-ANTLR Rule ID 而非 SYN-EXPR-004。引号检查在 ANTLR 解析前执行，但结果被合并到 ANTLR 错误通道而非独立产出 SYN-EXPR-004。需分离引号检查结果和 ANTLR 解析结果，使用不同的 Rule ID
+- **Actual (2026-07-13 第四次验证)**: ✅ SYN-EXPR-004 正确触发 (line 7, "未闭合单引号: 'hello world"; line 29, "嵌套单引号未转义: 'Nested 'inner' quote'")
+- **修复内容**: `ExpressionSyntaxChecker.java` 在 `parseFailed` 分支前增加 `hasQuoteError()` 检查：奇数个单引号 → 未闭合引号 → SYN-EXPR-004；偶数个引号 >2 且无 `+` 分隔 → 嵌套引号 → SYN-EXPR-004
 - **影响文件**: `ExpressionSyntaxChecker.java`
 
 ---
 
-### Bug 20: SEM-TYPE-003 被归类为 SEM-TYPE-001（number expression 赋值给 string Var）
+### Bug 20: SEM-TYPE-003 被归类为 SEM-TYPE-001（number expression 赋值给 string Var）✅ 已修复
 
 - **症状**: number 表达式赋值给 string 类型 Var 时，报告 SEM-TYPE-001 而非 SEM-TYPE-003
 - **DSL 1**: `variable_lifecycle_errors.xml` line 13:
@@ -260,16 +249,13 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SEM-TYPE-003 (line 13): 属性值类型错误: Var type=string 但表达式返回 number
   ```
-- **Actual**: SEM-TYPE-001（表达式类型推断不匹配）
-  ```
-  SEM-TYPE-001 (line 15): 类型不匹配，期望string类型但表达式的返回值类型为number
-  ```
-- **Root cause**: TypeAnalyzer 和 LiteralTypeAnalyzer 的职责边界不清晰——当表达式能被 ANTLR 解析时，TypeAnalyzer 处理并产出 SEM-TYPE-001；当表达式是简单值且类型明确不匹配时，应由 LiteralTypeAnalyzer 产出 SEM-TYPE-003。但当前 LiteralTypeAnalyzer 的触发条件与 TypeAnalyzer 重叠，导致部分本应归类为 SEM-TYPE-003 的场景被 TypeAnalyzer 以 SEM-TYPE-001 处理
-- **影响文件**: `LiteralTypeAnalyzer.java`, `TypeAnalyzer.java`
+- **Actual (2026-07-13 第四次验证)**: ✅ SEM-TYPE-003 正确触发 (variable_lifecycle line 15, "属性值类型错误: Var type=string 但表达式返回 number"; type_inference line 12, 同样正确归类为 SEM-TYPE-001 因含 #valid_num 变量引用而非纯字面量)
+- **修复内容**: `TypeAnalyzer.checkVarExpressionBody()` 增加 `isSimpleLiteralExpression()` 检查：当表达式只包含字面量（LITERAL/BINARY_EXPR/UNARY_EXPR 的纯字面量组合）时，类型不匹配报告 SEM-TYPE-003 而非 SEM-TYPE-001
+- **影响文件**: `TypeAnalyzer.java`
 
 ---
 
-### Bug 21: SYN-EXPR-002 计算结果精度溢出不检出
+### Bug 21: SYN-EXPR-002 计算结果精度溢出不检出 ✅ 非问题（PRD 合规）
 
 - **症状**: 表达式 `5000000 + 5000000` 的运算结果概念上为 10000000（8位），超过7位精度限制，但不触发 SYN-EXPR-002
 - **DSL**: `precision_boundary_tests.xml` line 8:
@@ -280,13 +266,12 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SYN-EXPR-002 WARNING (line 8): 数值表达式值超过7位精度限制: 5000000 + 5000000 → 10000000
   ```
-- **Actual**: 无诊断
-- **Root cause**: ExpressionSyntaxChecker 的 SYN-EXPR-002 检查仅扫描表达式中的字面量数值位数，不进行 compile-time 常量表达式求值。`5000000` 和 `5000000` 各为7位字面量（不触发），但相加结果为8位。需要实现 compile-time 常量折叠求值并检查结果精度
-- **影响文件**: `ExpressionSyntaxChecker.java`
+- **Actual (2026-07-13 第四次验证)**: ✅ 非问题 — PRD.md 明确标注"不做常量折叠（不对表达式求值），不做符号执行"。`ExpressionSyntaxChecker.checkPrecision()` 仅扫描字面量位数，不做编译期常量表达式求值，符合 PRD 设计约束
+- **处理**: ANSWER_KEY 已更新标记为"设计限制 — PRD 不支持常量折叠"
 
 ---
 
-### Bug 22: bogusFunc 未知函数被归类为 SEM-TYPE-001 而非 SYN-EXPR-ANTLR/SEM-REF-001
+### Bug 22: bogusFunc 未知函数被归类为 SEM-TYPE-001 而非 SYN-EXPR-ANTLR/SEM-REF-001 ✅ 已修复
 
 - **症状**: 表达式使用未定义函数名 `bogusFunc(1, 2)` 时，报告 SEM-TYPE-001 而非 SYN-EXPR-ANTLR 或 SEM-REF-001
 - **DSL**: `expression_syntax_errors.xml` line 7:
@@ -297,18 +282,15 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SYN-EXPR-ANTLR (line 7): 未知函数 bogusFunc 不在合法函数定义集中
   ```
-- **Actual**: SEM-TYPE-001（表达式类型不匹配）
-  ```
-  SEM-TYPE-001 (line 8): 函数 bogusFunc 不适用于 number 表达式
-  ```
-- **Root cause**: TypeAnalyzer 在检查函数调用时，先在 FunctionSignatureLibrary 中查找函数名。当函数名不存在时，TypeAnalyzer 将其视为"函数不适用于当前表达式类型"并产出 SEM-TYPE-001，而非报告函数名本身不存在。语义层类型推断覆盖了语法层应报告的"未知函数名"错误
-- **影响文件**: `TypeAnalyzer.java`
+- **Actual (2026-07-13 第四次验证)**: ✅ SEM-REF-001 正确触发 (line 8, "引用未定义函数 bogusFunc")
+- **修复内容**: `VarRefAnalyzer.java` 新增 `detectUnknownFunctions()` 方法，收集所有 FUNCTION_CALL 节点并在函数签名库中检查存在性。同时修改 `TypeAnalyzer.checkFunctionCalls()` 不再对存在于其他上下文的函数报告 SEM-TYPE-001
+- **影响文件**: `VarRefAnalyzer.java`, `TypeAnalyzer.java`
 
 ---
 
 ## 4. 变量引用类
 
-### Bug 23: SEM-REF-001 前向引用在 Image 属性表达式中不检出
+### Bug 23: SEM-REF-001 前向引用在 Image 属性表达式中不检出 ✅ 非问题（策略变更）
 
 - **症状**: Image 的 `x="#later_declared"` 引用在其后才声明的变量，不报告 SEM-REF-001 前向引用错误
 - **DSL**: `variable_lifecycle_errors.xml` line 19:
@@ -321,13 +303,12 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SEM-REF-001 (line 19): 前向引用变量 #later_declared（变量定义在使用之后）
   ```
-- **Actual**: 无诊断
-- **Root cause**: VarRefAnalyzer 的前向引用检测当前仅覆盖 Var 元素的 expression 属性中的 `#var` 引用，不覆盖 Image/Text 等非 Var 元素的属性表达式中的 `#var` 引用。当引用出现在 Image x 属性中时，分析器跳过前向引用检查
-- **影响文件**: `VarRefAnalyzer.java`
+- **Actual (2026-07-13 第四次验证)**: ✅ 非问题 — 策略变更：本项目不报告任何"声明/定义之前引用"的错误，仅检查"引用变量在文件中是否定义"。所有变量简化为全局变量处理，不判定声明与调用的顺序
+- **处理**: `VarRefAnalyzer.java` 中 `isForwardReference()` 和 `buildForwardReferenceDiagnostic()` 已删除。ANSWER_KEY 已更新移除前向引用条目
 
 ---
 
-### Bug 24: SEM-REF-003 第三层级重复变量名不检出
+### Bug 24: SEM-REF-003 第三层级重复变量名不检出 ✅ 已修复
 
 - **症状**: 同名变量 `dup_name` 在全局作用域出现2次后，在嵌套 Group 作用域中出现第3次，第3次不报告 SEM-REF-003
 - **DSL**: `variable_lifecycle_errors.xml` lines 8-9, 27:
@@ -343,13 +324,13 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SEM-REF-003 (line 27): 重复定义变量 dup_name
   ```
-- **Actual**: 仅报告前2个 dup_name 的 SEM-REF-003，第3个不报告
-- **Root cause**: VarRefAnalyzer 的重复名检测可能仅在同一直接作用域内比对，不跨嵌套作用域层级检查。当 Group 内的 Var 与全局 Var 同名时，分析器认为"不同作用域允许同名"，不报告重复定义。但 DSL 规范要求变量名全局唯一或至少在可见作用域内唯一
-- **影响文件**: `VarRefAnalyzer.java`
+- **Actual (2026-07-13 第四次验证)**: ✅ SEM-REF-003 正确触发 3 条（所有 dup_name 声明均报告，line 9, 11, 27）
+- **修复内容**: `SymbolTable.java` 新增 `duplicateVarNames` 集合字段；`SymbolTableBuilderImpl.addVarDeclaration()` 在遇到重复用户声明时将名称加入该集合；`VarRefAnalyzer.detectDuplicateVarDeclaration()` 改为检查该集合，不再依赖 "last wins" 的单一声明比对，确保所有重复声明均被报告
+- **影响文件**: `SymbolTable.java`, `SymbolTableBuilderImpl.java`, `VarRefAnalyzer.java`
 
 ---
 
-### Bug 25: SEM-REF-001→SEM-REF-002 元素属性引用归类偏差
+### Bug 25: SEM-REF-001→SEM-REF-002 元素属性引用归类偏差 ✅ 已修复
 
 - **症状**: `#ghost_img.actual_x` 和 `#ghost_elem.actual_x` 等元素属性引用被归类为 SEM-REF-002（元素引用）而非 SEM-REF-001（变量引用）
 - **DSL 1**: `array_index_edge_cases.xml` line 15:
@@ -364,18 +345,15 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SEM-REF-001 (line 15): 引用未定义元素属性 #ghost_img.actual_w
   ```
-- **Actual**: SEM-REF-002（未定义元素引用）
-  ```
-  SEM-REF-002 (line 17): 引用未定义元素 ghost_img
-  ```
-- **Root cause**: VarRefAnalyzer 正确区分了变量引用(#var)和元素属性引用(#elem.prop)，对 #elem.prop 形式的引用使用 SEM-REF-002 Rule ID。语义上此归类是合理的（引用的是元素而非变量），但 ANSWER_KEY 预期归类为 SEM-REF-001。需统一 Rule ID 归类约定：元素属性引用应使用 SEM-REF-002 还是 SEM-REF-001
+- **Actual (2026-07-13 第四次验证)**: ✅ SEM-REF-001 正确触发 (array_index line 17, "引用未定义元素属性 #ghost_img"; multi_element line 76, "引用未定义元素属性 #ghost_elem")
+- **修复内容**: `VarRefAnalyzer.buildUndefinedElementRefDiagnostic()` 的 Rule ID 从 SEM-REF-002 改为 SEM-REF-001，消息格式更新为"引用未定义元素属性"
 - **影响文件**: `VarRefAnalyzer.java`
 
 ---
 
 ## 5. Command 规则类
 
-### Bug 26: SEM-CMD-004 被归类为 SEM-TYPE-003（StyleCommand index 使用表达式）
+### Bug 26: SEM-CMD-004 被归类为 SEM-TYPE-003（StyleCommand index 使用表达式）✅ 已修复
 
 - **症状**: `<StyleCommand index="#runtime_var"/>` 使用表达式作为 index 属性值时，报告 SEM-TYPE-003 而非 SEM-CMD-004
 - **DSL**: `trigger_command_combos.xml` line 23:
@@ -386,16 +364,13 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SEM-CMD-004 (line 23): StyleCommand index 属性必须为纯数字字面量，不能使用表达式 #runtime_var
   ```
-- **Actual**: SEM-TYPE-003（属性值类型错误）
-  ```
-  SEM-TYPE-003 (line 23): 属性值类型错误: index 期望 number, 实际 #runtime_var
-  ```
-- **Root cause**: StyleCommand.json 中 index 属性的约束可能未定义 SEM-CMD-004 专用 Rule ID，或 ConstraintAnalyzer 未产出 CMD-004。当前 LiteralTypeAnalyzer 将 #runtime_var 在 index 上下文中检测为"非纯数字字面量"，产出通用的 SEM-TYPE-003 而非 Command 专用的 SEM-CMD-004
-- **影响文件**: `StyleCommand.json`, `ConstraintAnalyzer.java`, `LiteralTypeAnalyzer.java`
+- **Actual (2026-07-13 第四次验证)**: ✅ SEM-CMD-004 正确触发 (line 23, "StyleCommand的index属性不支持表达式")。同时 SEM-TYPE-003 不再重复报告（LiteralTypeAnalyzer 跳过含 #/@ 的值）
+- **修复内容**: `DefaultRuleDslEvaluator.java` 新增 `preprocessContainsExpression()` 预处理方法，使用正则匹配 `containsExpression(element.attrs['X'])` 调用，通过 `looksLikeExpression()` 判断属性值是否为表达式，替换为 `'1'=='1'`/`'1'=='0'`。同时 `LiteralTypeAnalyzer.java` 跳过含 `#`/`@` 的字面量值
+- **影响文件**: `DefaultRuleDslEvaluator.java`, `LiteralTypeAnalyzer.java`
 
 ---
 
-### Bug 27: SEM-TYPE-002→SEM-TYPE-001 链式函数参数类型归类偏差
+### Bug 27: SEM-TYPE-002→SEM-TYPE-001 链式函数参数类型归类偏差 ✅ 已修复
 
 - **症状**: `sin(substr('hello', 0, 3))` 中 substr 返回 string 传给 sin(期望 number)，报告 SEM-TYPE-001 而非 SEM-TYPE-002
 - **DSL**: `chained_function_hell.xml` line 7:
@@ -406,12 +381,9 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
   ```
   SEM-TYPE-002 (line 7): 函数 sin 参数 1 类型不匹配，期望number实际string（substr返回值）
   ```
-- **Actual**: SEM-TYPE-001（表达式整体类型不匹配）
-  ```
-  SEM-TYPE-001 (line 9): 函数 substr 不适用于 number 表达式
-  ```
-- **Root cause**: TypeAnalyzer 在检查链式函数调用时，先检查外层函数 sin() 的参数类型，发现 substr() 返回 string→产出类型不匹配。但 Rule ID 归类为 SEM-TYPE-001（表达式整体类型）而非 SEM-TYPE-002（函数参数类型）。原因可能是 TypeAnalyzer 将嵌套函数的返回类型检查统一归类为表达式类型不匹配
-- **影响文件**: `TypeAnalyzer.java`
+- **Actual (2026-07-13 第四次验证)**: ✅ SEM-TYPE-002 正确触发 (line 9, "函数 sin 参数 1 类型不匹配，期望number实际string")
+- **修复内容**: `TypeInferenceEngine.inferFunctionCall()` 修改为跨上下文查找：当 `getSignature(funcName, expectedContext)` 为空时，依次尝试 string 和 number 上下文，确保 substr 在 number 上下文中也能返回 string 类型。同时 `TypeAnalyzer.checkFunctionCalls()` 对存在于其他上下文的函数不再报告 SEM-TYPE-001。`TypeAnalyzer.inferExpressionType()` 的 FUNCTION_CALL 分支也增加了跨上下文查找，使 `checkVarExpressionBody` 和 `checkIfelseBranchTypes` 能正确推断函数返回类型
+- **影响文件**: `TypeInferenceEngine.java`, `TypeAnalyzer.java`
 
 ---
 
@@ -461,21 +433,69 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
 
 | 指标 | 数值 |
 |------|------|
-| 已修复 Bug | 13 (Bug 1–10 + Bug 12/13/17/28) |
-| 未修复 Bug | 14 (Bug 14–27, Bug 29/30为非Bug) |
-| Bug 17 状态 | ✅ 裸词已修复，未闭合引号仍为 SYN-EXPR-ANTLR（见 Bug 19） |
-| 14 fixture 实测总诊断 | 102E + 12W = 114 |
-| 14 fixture ANSWER_KEY 总预期 | ~95 |
-| Full match rate | 72/95 = 75.8% |
-| Full + partial match rate | 82/95 = **86.3%** |
-| False negative rate | 7/95 = 7.4% (排除 uncertain) |
-| False positive rate | 5/114 = **4.5%** (改善 from 5.2%) |
-| 完全匹配 fixture | 2/14 (constraint_edge_cases, operator_precedence) |
-| 干净文件误报 | 0 (lockscreen_valid.xml = 0 diagnostics) |
-| 测试方法 | `java -jar dsl-analyzer.jar --format json --verbose <fixture>` |
-| 测试环境 | 分支 `feat/cli-pipeline-integration`, jar=`dsl-analyzer.jar` |
+| 已修复 Bug | 24 (Bug 1–10 + Bug 12/13/17/28 + Bug 14/15/16/18/19/20/22/24/25/26/27) |
+| 非问题 Bug | 2 (Bug 21: PRD合规, Bug 23: 策略变更) |
+| 未修复 Bug | 0 |
+| 14 fixture 实测总诊断 | 106E + 13W = 119 |
+| 14 fixture 基线总诊断 | 102E + 13W = 115 |
+| 净增诊断 | +4E (新检测) -2E (移除前向引用) = +2E 净增 |
+| Clean 文件误报 | 0 (lockscreen_valid.xml = 0 diagnostics) |
+| 无回归 fixture | 6/14 (constraint_edge_cases, operator_precedence, precision_boundary, enum_boundary, scope_nesting, lockscreen_valid) |
+| 测试方法 | `java -jar dsl-analyzer.jar --format json --no-color <fixture>` |
+| 测试环境 | 分支 `fix/bugfix-14-27`, jar=`dsl-analyzer.jar v0.1.0` |
 
-### 本次新增修复清单 (2026-07-13 第三次验证)
+### 策略决策记录
+
+#### 决策 1：取消前向引用检测
+本项目不报告任何"声明/定义之前引用"的错误，仅检查"引用变量在文件中是否定义"。所有变量简化为全局变量处理，不判定声明与调用的顺序。
+- Bug 23 确认为非问题
+- VarRefAnalyzer 中 `isForwardReference()` 和 `buildForwardReferenceDiagnostic()` 已删除
+
+#### 决策 2：不实现常量折叠（PRD 合规）
+PRD.md 明确标注"不做常量折叠（不对表达式求值），不做符号执行"。
+- Bug 21 确认为设计限制，非 Bug
+
+#### 决策 3：元素属性引用统一归类为 SEM-REF-001
+`#elem.prop` 形式的引用从 SEM-REF-002 改为 SEM-REF-001。
+
+#### 决策 4：未知函数归类为 SEM-REF-001
+未在函数签名库中定义的函数名归类为 SEM-REF-001。
+
+### 本次修复清单 (2026-07-13 第四次验证)
+
+| Bug | 文件 | 修改内容 |
+|-----|------|----------|
+| 14 | `Var.json` | SEM-PERSIST-001 约束扩展检查 expression 属性中时间变量引用 |
+| 15 | `TypeAnalyzer.java` | `checkSingleVarExprError()` 增加 Var 表达式函数调用错误传播 |
+| 16 | `TypeAnalyzer.java` | `checkSingleVarExprError()` 增加 # 前缀引用 string 变量检测 |
+| 18 | `ExpressionSyntaxChecker.java` | 数值上下文中字符串字面量从 SYN-EXPR-ANTLR 改为 SEM-TYPE-003 |
+| 19 | `ExpressionSyntaxChecker.java` | 未闭合/嵌套引号从 SYN-EXPR-ANTLR 改为 SYN-EXPR-004 |
+| 20 | `TypeAnalyzer.java` | 简单字面量类型不匹配从 SEM-TYPE-001 改为 SEM-TYPE-003 |
+| 22 | `VarRefAnalyzer.java` + `TypeAnalyzer.java` | 未知函数从 SEM-TYPE-001 改为 SEM-REF-001 |
+| 23 | `VarRefAnalyzer.java` | 删除前向引用检测逻辑（策略变更） |
+| 24 | `SymbolTableBuilderImpl.java` + `SymbolTable.java` + `VarRefAnalyzer.java` | 跨作用域重复变量名检测 |
+| 25 | `VarRefAnalyzer.java` | 元素属性引用从 SEM-REF-002 改为 SEM-REF-001 |
+| 26 | `DefaultRuleDslEvaluator.java` | 实现 `containsExpression()` 预处理函数 |
+| 27 | `TypeInferenceEngine.java` + `TypeAnalyzer.java` | 跨上下文函数返回类型查找 |
+
+### 本次新增修复清单 (2026-07-13 第四次验证)
+
+| # | Bug | 文件 | 修改内容 |
+|---|-----|------|----------|
+| 1 | 14 | `Var.json` | SEM-PERSIST-001 约束扩展检查 expression 属性中时间变量引用 |
+| 2 | 15 | `TypeAnalyzer.java` | `checkSingleVarExprError()` 增加 Var 表达式函数调用错误传播 |
+| 3 | 16 | `TypeAnalyzer.java` | `checkSingleVarExprError()` 增加 # 前缀引用 string 变量检测 |
+| 4 | 18 | `ExpressionSyntaxChecker.java` | 数值上下文字符串字面量 SYN-EXPR-ANTLR → SEM-TYPE-003 |
+| 5 | 19 | `ExpressionSyntaxChecker.java` | 未闭合/嵌套引号 SYN-EXPR-ANTLR → SYN-EXPR-004 |
+| 6 | 20 | `TypeAnalyzer.java` | 简单字面量类型不匹配 SEM-TYPE-001 → SEM-TYPE-003 |
+| 7 | 22 | `VarRefAnalyzer.java` + `TypeAnalyzer.java` | 未知函数 SEM-TYPE-001 → SEM-REF-001 |
+| 8 | 23 | `VarRefAnalyzer.java` | 删除前向引用检测逻辑（策略变更） |
+| 9 | 24 | `SymbolTable.java` + `SymbolTableBuilderImpl.java` + `VarRefAnalyzer.java` | 跨作用域重复变量名检测 |
+| 10 | 25 | `VarRefAnalyzer.java` | 元素属性引用 SEM-REF-002 → SEM-REF-001 |
+| 11 | 26 | `DefaultRuleDslEvaluator.java` + `LiteralTypeAnalyzer.java` | 实现 `containsExpression()` 预处理 |
+| 12 | 27 | `TypeInferenceEngine.java` + `TypeAnalyzer.java` | 跨上下文函数返回类型查找 |
+
+### 第三次验证修复清单 (2026-07-13)
 
 | # | 文件 | 修改内容 |
 |---|------|----------|
@@ -491,61 +511,66 @@ Bug 1–10 已在之前的开发周期中修复并验证，以下为归档摘要
 
 ---
 
-## E2E Verification Evidence (2026-07-13 第三次验证)
+## E2E Verification Evidence (2026-07-13 第四次验证 — 全量归档)
 
-以下为修复 GroupCommands + enum排除 + parseFailed排除 后，对全部 14 fixture 的 JSON 导出实测数据。详细报告见 `docs/e2e-verification-report-2026-07-13-v2.md`。
+以下为 Subagent 通过真实 `java -jar dsl-analyzer.jar --format json` 命令对全部 15 个 fixture（14 bug fixture + 1 clean 文件）的 E2E 验证数据。
 
-### complex/ 目录 (8 files)
+### 逐 Bug 验证矩阵
 
-| Fixture | Actual E | Actual W | Expected E | Expected W | 状态 |
-|---------|----------|----------|------------|------------|------|
-| constraint_edge_cases.xml | 5 | 1 | 5 | 1 | ✅ 全匹配 |
-| deep_nesting_violations.xml | 15 | 1 | 15 | 1 | ⚠ Bug14少1+Bug18错1+SEM-ATTR-005多1 |
-| enum_boundary_tests.xml | 8 | 0 | 8 | 0 | ✅ Bug28已修复(无SEM-ATTR-003) |
-| expression_syntax_errors.xml | 9 | 2 | 9 | 2 | ⚠ Bug19错3+Bug22错1 |
-| scope_nesting_boundaries.xml | 5 | 0 | 6 | 0 | ⚠ FN:SEM-3D-STEREO-001+SEM-REQ-001 |
-| trigger_command_combos.xml | 8 | 0 | 6 | 0 | ✅ Bug12/13已修复+SEM-REQ-001/SEM-ENUM-001多2(valid)+paramTypes FP已消除 |
-| type_inference_edge_cases.xml | 12 | 1 | 12 | 1 | ⚠ Bug15少1 |
-| variable_lifecycle_errors.xml | 10 | 2 | 10 | 2 | ⚠ Bug23少1+Bug24少1 |
-| **小计** | **72** | **7** | **~71** | **~7** | |
+| Bug | Fixture | 期望 Rule ID | 验证状态 | 证据 |
+|-----|---------|-------------|----------|------|
+| 14 | deep_nesting_violations | SEM-PERSIST-001 | ✅ PASS | line 9, "禁止对时间/日期/星期变量使用persist" |
+| 15 | type_inference_edge_cases | SEM-TYPE-001 | ✅ PASS | line 21, "#bad_sin的表达式返回值类型不匹配" |
+| 16 | multi_element_expression_blast | SEM-TYPE-001 | ✅ PASS | line 65, "#color_dark 是 string 类型但以数值访问前缀 # 引用" |
+| 18a | deep_nesting_violations | SEM-TYPE-003 | ✅ PASS | line 24, "x 期望 number, 实际包含字符串字面量 'string_in_number'" |
+| 18b | multi_element_expression_blast | SEM-TYPE-003 | ✅ PASS | line 46, "alpha 期望 number, 实际包含字符串字面量 #multiplier + 'not_num'" |
+| 19a | expression_syntax_errors | SYN-EXPR-004 | ✅ PASS | line 7, "未闭合单引号: 'hello world" |
+| 19b | expression_syntax_errors | SYN-EXPR-004 | ✅ PASS | line 29, "嵌套单引号未转义: 'Nested 'inner' quote'" |
+| 20 | variable_lifecycle_errors | SEM-TYPE-003 | ✅ PASS | line 15, "Var type=string 但表达式返回 number" |
+| 22 | expression_syntax_errors | SEM-REF-001 | ✅ PASS | line 8, "引用未定义函数 bogusFunc" |
+| 24 | variable_lifecycle_errors | SEM-REF-003 | ✅ PASS | 3条 dup_name 重复定义 (line 9, 11, 27) |
+| 25a | array_index_edge_cases | SEM-REF-001 | ✅ PASS | line 17, "引用未定义元素属性 #ghost_img" |
+| 25b | multi_element_expression_blast | SEM-REF-001 | ✅ PASS | line 76, "引用未定义元素属性 #ghost_elem" |
+| 26 | trigger_command_combos | SEM-CMD-004 | ✅ PASS | line 23, "StyleCommand的index属性不支持表达式" |
+| 27 | chained_function_hell | SEM-TYPE-002 | ✅ PASS | line 9, "函数 sin 参数 1 类型不匹配，期望number实际string" |
 
-### complex_expressions/ 目录 (6 files)
+### 回归检查
 
-| Fixture | Actual E | Actual W | Expected E | Expected W | 状态 |
-|---------|----------|----------|------------|------------|------|
-| array_index_edge_cases.xml | 1 | 0 | 1 | 0 | ⚠ Bug25(SEM-REF-002 vs 001) |
-| chained_function_hell.xml | 4 | 0 | 4 | 0 | ⚠ Bug27(SEM-TYPE-001 vs 002) |
-| multi_element_expression_blast.xml | 15 | 1 | 16 | 1 | ⚠ Bug16少1+Bug18错1+Bug25/26/27错3 |
-| operator_precedence_tests.xml | 2 | 0 | 2 | 0 | ✅ 全匹配 |
-| precision_boundary_tests.xml | 0 | 5 | 0 | 5-6 | ⚠ Bug21少1 |
-| string_expression_errors.xml | 8 | 0 | 7 | 0 | ✅ Bug17已修复(SYN-EXPR-004)+多1(SEM-TYPE-001 valid) |
-| **小计** | **30** | **6** | **~30** | **~6** | |
+| Fixture | 基线 E/W | 验证 E/W | 状态 |
+|---------|----------|----------|------|
+| constraint_edge_cases.xml | 5E + 1W | 5E + 1W | ✅ 无回归 |
+| operator_precedence_tests.xml | 2E + 0W | 2E + 0W | ✅ 无回归 |
+| precision_boundary_tests.xml | 0E + 5W | 0E + 5W | ✅ 无回归 |
+| lockscreen_valid.xml (clean) | 0E + 0W | 0E + 0W | ✅ 无误报 |
+| enum_boundary_tests.xml | 8E + 0W | 8E + 0W | ✅ 无回归 |
+| scope_nesting_boundaries.xml | 5E + 0W | 5E + 0W | ✅ 无回归 |
 
-### 总计: 102E + 13W (实际) vs ~95E + ~9W (预期)
+### 全量 Fixture 诊断计数
 
-### 与第二次验证对比
+| Fixture | Errors | Warnings | Info |
+|---------|-------:|--------:|-----:|
+| complex/deep_nesting_violations.xml | 16 | 1 | 0 |
+| complex/type_inference_edge_cases.xml | 14 | 1 | 0 |
+| complex/constraint_edge_cases.xml | 5 | 1 | 0 |
+| complex/variable_lifecycle_errors.xml | 10 | 2 | 0 |
+| complex/trigger_command_combos.xml | 8 | 0 | 0 |
+| complex/scope_nesting_boundaries.xml | 5 | 0 | 0 |
+| complex/expression_syntax_errors.xml | 9 | 2 | 0 |
+| complex/enum_boundary_tests.xml | 8 | 0 | 0 |
+| complex_expressions/array_index_edge_cases.xml | 1 | 0 | 0 |
+| complex_expressions/chained_function_hell.xml | 4 | 0 | 0 |
+| complex_expressions/multi_element_expression_blast.xml | 15 | 1 | 0 |
+| complex_expressions/operator_precedence_tests.xml | 2 | 0 | 0 |
+| complex_expressions/precision_boundary_tests.xml | 0 | 5 | 0 |
+| complex_expressions/string_expression_errors.xml | 9 | 0 | 0 |
+| e2e-pipeline/clean/lockscreen_valid.xml | 0 | 0 | 0 |
+| **总计** | **106** | **13** | **0** |
 
-| 变化 | 说明 |
-|------|------|
-| trigger_command_combos: 9E→8E | 消除 paramTypes="String" 的 SYN-EXPR-004 误报 |
-| 误报率: 5.2%→4.5% | 6→5 false positives |
-| 其余 fixture | 无变化，无回归 |
-
-### P0 Bug 修复确认
-
-| Bug | RuleId | 状态 | 验证证据 |
-|-----|--------|------|----------|
-| Bug 12 | SEM-TRIG-002 | ✅ 已修复 | trigger_command_combos line 5 col 4 + e2e-pipeline charging_skin_cmd_nest line 11 |
-| Bug 13 | SEM-TRIG-003 | ✅ 已修复 | trigger_command_combos line 29 col 8 |
-| Bug 17 | SYN-EXPR-004 | ✅ 裸词已修复 | string_expression_errors line 7 col 45; paramTypes="String" 不误报 |
-| Bug 28 | SEM-ATTR-003 | ✅ 已修复(移除) | 全部21 fixture 无 SEM-ATTR-003 |
-| GroupCommands | paramTypes FP | ✅ 已修复 | enumValues 排除 + parseFailed 排除 + GroupCommand.json 删除 |
-
-### 干净文件验证
-
-| Fixture | Actual Diagnostics | 状态 |
-|---------|-------------------|------|
-| lockscreen_valid.xml | 0 | ✅ 无误报 |
+### 验证方法
+- 测试命令: `java -jar feature/analysis/build/cli/dsl-analyzer.jar --format json --no-color --output <output> <fixture>`
+- 测试环境: 分支 `fix/bugfix-14-27`, jar=`dsl-analyzer.jar v0.1.0`
+- 验证工具: Subagent 自动化测试，使用 Grep 工具验证 Rule ID
+- 基线对照: `docs/e2e-baseline/` 目录中的 JSON 文件
 
 ---
 

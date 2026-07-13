@@ -21,6 +21,8 @@ public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean
             Pattern.compile("c\\.tagName\\s*==\\s*'([^']*)'");
     private static final Pattern CHILDREN_SIZE_EXPR =
             Pattern.compile("element\\.children\\.(?:filter|where)\\(c\\s*->\\s*c\\.tagName\\s*==\\s*'([^']*)'\\)\\.size\\(\\)\\s*(>=?|<=?|==|!=)\\s*(\\d+)");
+    private static final Pattern CONTAINS_EXPR_CALL =
+            Pattern.compile("containsExpression\\(\\s*element\\.attrs\\[\\s*'([^']+)'\\s*\\]\\s*\\)");
 
     private EvaluationContext context;
 
@@ -28,6 +30,7 @@ public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean
     public boolean evaluate(String condition, EvaluationContext context) {
         this.context = context;
         String processed = preprocessChildrenExpressions(condition, context);
+        processed = preprocessContainsExpression(processed, context);
         return parseAndEvaluate(processed);
     }
 
@@ -83,6 +86,44 @@ public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean
             m = CHILDREN_SIZE_EXPR.matcher(result);
         }
         return result;
+    }
+
+    private String preprocessContainsExpression(String condition, EvaluationContext context) {
+        if (condition == null || !condition.contains("containsExpression(")) {
+            return condition;
+        }
+        Matcher m = CONTAINS_EXPR_CALL.matcher(condition);
+        StringBuilder result = new StringBuilder();
+        int lastEnd = 0;
+        while (m.find()) {
+            result.append(condition, lastEnd, m.start());
+            String attrName = m.group(1);
+            Map<String, String> attrs = context.getElementAttrs();
+            String attrValue = attrs != null ? attrs.get(attrName) : null;
+            boolean isExpr = attrValue != null && looksLikeExpression(attrValue);
+            result.append(isExpr ? "'1'=='1'" : "'1'=='0'");
+            lastEnd = m.end();
+        }
+        result.append(condition, lastEnd, condition.length());
+        return result.toString();
+    }
+
+    private static boolean looksLikeExpression(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        if (value.matches("^[+-]?\\d+(\\.\\d+)?$")) {
+            return false;
+        }
+        return value.indexOf('#') >= 0
+                || value.indexOf('@') >= 0
+                || value.indexOf('\'') >= 0
+                || value.indexOf('+') >= 0
+                || (value.indexOf('-') >= 1 && !value.matches("^-?\\d+(\\.\\d+)?$"))
+                || value.indexOf('*') >= 0
+                || value.indexOf('/') >= 0
+                || value.indexOf('%') >= 0
+                || value.indexOf('(') >= 0;
     }
 
     private boolean parseAndEvaluate(String condition) {

@@ -105,6 +105,9 @@ public class ExpressionSyntaxChecker {
         if (isStandaloneBareWord(rawValue, specOpt.orElse(null))) {
             diagnostics.add(diag("SYN-EXPR-004", DiagnosticSeverity.ERROR,
                     "字符串表达式未使用单引号: " + rawValue, filePath, attr));
+        } else if (isStringExpr && hasQuoteError(rawValue)) {
+            diagnostics.add(diag("SYN-EXPR-004", DiagnosticSeverity.ERROR,
+                    describeQuoteError(rawValue), filePath, attr));
         } else if (isStringExpr) {
             if (hasBareWordInConcat(rawValue, specOpt.orElse(null))) {
                 diagnostics.add(diag("SYN-EXPR-004", DiagnosticSeverity.ERROR,
@@ -113,8 +116,17 @@ public class ExpressionSyntaxChecker {
                 diagnostics.add(diag("SYN-EXPR-005", DiagnosticSeverity.ERROR,
                         "字符串表达式嵌入数值表达式缺少花括号: " + rawValue, filePath, attr));
             } else if (parseFailed && !isEnumValue) {
-                diagnostics.add(diag("SYN-EXPR-ANTLR", DiagnosticSeverity.ERROR,
-                        "表达式语法错误: " + rawValue, filePath, attr));
+                if (countChar(rawValue, '\'') > 2 && rawValue.indexOf('+') < 0) {
+                    diagnostics.add(diag("SYN-EXPR-004", DiagnosticSeverity.ERROR,
+                            "嵌套单引号未转义: " + rawValue, filePath, attr));
+                } else if ("number".equals(expressionKind)) {
+                    diagnostics.add(diag("SEM-TYPE-003", DiagnosticSeverity.ERROR,
+                            "属性值类型错误: " + attr.getName() + " 期望 number, 实际包含字符串字面量 "
+                                    + rawValue, filePath, attr));
+                } else {
+                    diagnostics.add(diag("SYN-EXPR-ANTLR", DiagnosticSeverity.ERROR,
+                            "表达式语法错误: " + rawValue, filePath, attr));
+                }
             }
         } else if (parseFailed && !isEnumValue) {
             diagnostics.add(diag("SYN-EXPR-ANTLR", DiagnosticSeverity.ERROR,
@@ -210,6 +222,33 @@ public class ExpressionSyntaxChecker {
 
     private static boolean isPlainNumeric(String value) {
         return value != null && value.matches("^[+-]?\\d+(\\.\\d+)?$");
+    }
+
+    private static boolean hasQuoteError(String rawValue) {
+        if (rawValue == null || rawValue.indexOf('\'') < 0) {
+            return false;
+        }
+        int quoteCount = countChar(rawValue, '\'');
+        if (quoteCount % 2 != 0) {
+            return true;
+        }
+        return false;
+    }
+
+    private static int countChar(String s, char c) {
+        int count = 0;
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) == c) count++;
+        }
+        return count;
+    }
+
+    private static String describeQuoteError(String rawValue) {
+        int quoteCount = countChar(rawValue, '\'');
+        if (quoteCount % 2 != 0) {
+            return "未闭合单引号: " + rawValue;
+        }
+        return "嵌套单引号未转义: " + rawValue;
     }
 
     private Diagnostic diag(String ruleId, DiagnosticSeverity severity, String message,
