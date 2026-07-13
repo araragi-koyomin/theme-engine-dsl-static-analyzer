@@ -117,7 +117,7 @@
       ]
     }, {
       "ruleId": "SEM-EFFECT-PV-002",
-      "condition": "element.attrs[\u0027w\u0027] != null AND parseInt(element.attrs[\u0027w\u0027]) \u003e 120",
+      "condition": "element.attrs[\u0027w\u0027] != null AND element.attrs[\u0027w\u0027] \u003e 120",
       "message": "粒子尺寸最大为120px",
       "severity": "warning",
       "suggestedFixes": [

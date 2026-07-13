@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="multiplier" type="number" const="true" expression="50"/>
+    <Var name="color_dark" type="string" const="true" expression="'#333333'"/>
+    <Var name="color_light" type="string" const="true" expression="'#EEEEEE'"/>
+    <Var name="x_offset" type="number" const="true" expression="100"/>
+    <Var name="str_value" type="string" const="true" expression="'default'"/>
+    <Var name="num_array" type="number[]" size="5"/>
+    <Var name="ref_forward" type="number" expression="#late_var * 2"/>
+    <Var name="implicit_num" type="number" expression="#str_value + 10"/>
+
+    <Image name="bg" x="0" y="0" width="1080" height="1920"
+           alpha="ifelse(#darkMode == 1, 200, 255)"
+           src="bg.png"/>
+
+    <Image name="neg_x_img" x="-#multiplier" y="0" width="1080" height="1920"
+           src="bg2.png"/>
+
+    <Group name="container" x="#x_offset" y="#multiplier" width="800" height="800">
+        <Image name="nested_img" x="ifelse(#darkMode == 1, ifelse(#battery_level > 50, 100, 200), ifelse(#touch_x > 500, 300, 400))" y="50" width="200" height="200"
+               alpha="ifelse(#darkMode == 1, max(0, min(255, #battery_level * 2)), 128)"
+               src="nested.png"/>
+
+        <Text name="nested_text" x="400" y="200" size="30" color="#FFFFFF"
+              textExp="ifelse(#darkMode == 1, 'Dark: ' + {#battery_level} + '%', 'Light: ' + {#touch_x})"
+              category="Normal"/>
+
+        <Text name="bad_nested_text" x="400" y="300" size="24" color="#FFFFFF"
+              textExp="'Value: ' + #multiplier + ' is the answer'"/>
+
+        <Button name="action_btn" x="300" y="400" width="100" height="50">
+            <Trigger action="click">
+                <VariableCommand name="x_offset" expression="#x_offset + #multiplier"/>
+            </Trigger>
+        </Button>
+    </Group>
+
+    <Image name="ultra_precise" x="3.1415926535" y="0" width="1080" height="200"
+           src="precise.png"/>
+
+    <Image name="weird_alpha" x="540" y="300" width="100" height="100"
+           alpha="#multiplier + 'not_num'"
+           src="alpha_test.png"/>
+
+    <Image name="bad_alpha_over" x="540" y="500" width="100" height="100"
+           alpha="300"
+           src="over_alpha.png"/>
+
+    <Image name="bad_alpha_neg" x="540" y="700" width="100" height="100"
+           alpha="-10"
+           src="neg_alpha.png"/>
+
+    <Var name="typed_arr" type="number[]" size="3"/>
+    <Var name="arr_bad_ref" type="number" expression="#typed_arr[0] * #undefined_global"/>
+
+    <Var name="late_var" type="number" const="true" expression="25"/>
+
+    <Image name="refs_forward" x="#ref_forward" y="0" width="100" height="100"
+           src="forward.png"/>
+
+    <Text name="big_mixed_text" x="540" y="1200" size="16" color="ifelse(#darkMode == 1, '#FFFFFF', '#000000')"
+          textExp="substr(#color_dark, 2, 6)"
+          category="Normal"/>
+
+    <Text name="embed_err_text" x="540" y="1400" size="14" color="#FFFFFF"
+          textExp="'H:' + #hour24 + ' M:' + #minute"
+          category="Normal"/>
+
+    <Image name="propref_bad" x="#ghost_elem.actual_x" y="0" width="100" height="100"
+           src="ghost.png"/>
+
+    <Var name="bad_preciseeval" type="string" expression="preciseeval('3.14159', 2) + ' is pi'"/>
+
+    <Var name="bad_neg_expr" type="number" expression="-#multiplier + 10"/>
+
+    <Image name="neg_in_attr" x="-#multiplier * 3" y="200" width="100" height="100"
+           src="neg_attr.png"/>
+
+    <Text name="type_mix_text" x="540" y="1600" size="20" color="#FFFFFF"
+          textExp="ifelse(#darkMode == 1, sin(0.5), 'hello')"/>
+
+    <Var name="mixed_type_ifelse" type="number" expression="ifelse(#battery_level > 50, sin(0.5), 'fallback')"/>
+</Lockscreen>

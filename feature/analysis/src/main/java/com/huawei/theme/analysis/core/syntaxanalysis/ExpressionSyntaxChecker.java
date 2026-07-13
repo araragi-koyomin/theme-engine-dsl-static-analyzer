@@ -68,8 +68,13 @@ public class ExpressionSyntaxChecker {
             return;
         }
 
-        ExpressionParser.ParseOutcome outcome = ExpressionParser.doParse(rawValue, expressionKind);
-        boolean isString = "string".equals(expressionKind);
+        ExpressionParser.ParseOutcome outcome;
+        if ("auto".equals(expressionKind) && isPlainNumeric(rawValue)) {
+            outcome = ExpressionParser.doParse(rawValue, "number");
+        } else {
+            outcome = ExpressionParser.doParse(rawValue, expressionKind);
+        }
+        boolean isStringExpr = "string".equals(expressionKind) || rawValue.indexOf('\'') >= 0;
         boolean parseFailed = outcome.antlrError() || outcome.leftoverTokens() || outcome.node() == null;
 
         if (outcome.node() != null) {
@@ -80,7 +85,7 @@ public class ExpressionSyntaxChecker {
             checkPrecision(outcome.node(), filePath, attr, rawValue, diagnostics);
         }
 
-        if (isString && rawValue.startsWith("#")
+        if (isStringExpr && rawValue.startsWith("#")
                 && (rawValue.indexOf('*') >= 0 || rawValue.indexOf('/') >= 0
                         || rawValue.indexOf('%') >= 0 || rawValue.indexOf('-') >= 0)) {
             diagnostics.add(diag("SYN-EXPR-003", DiagnosticSeverity.ERROR,
@@ -93,18 +98,25 @@ public class ExpressionSyntaxChecker {
                     "preciseeval 后使用运算符或+连接符: " + rawValue, filePath, attr));
         }
 
-        if (parseFailed && isString) {
-            if (hasBareWordInConcat(rawValue)) {
+        boolean isEnumValue = specOpt.isPresent()
+                && specOpt.get().getEnumValues() != null
+                && specOpt.get().getEnumValues().contains(rawValue);
+
+        if (isStandaloneBareWord(rawValue, specOpt.orElse(null))) {
+            diagnostics.add(diag("SYN-EXPR-004", DiagnosticSeverity.ERROR,
+                    "字符串表达式未使用单引号: " + rawValue, filePath, attr));
+        } else if (isStringExpr) {
+            if (hasBareWordInConcat(rawValue, specOpt.orElse(null))) {
                 diagnostics.add(diag("SYN-EXPR-004", DiagnosticSeverity.ERROR,
                         "字符串表达式未使用单引号: " + rawValue, filePath, attr));
             } else if (hasMissingBraces(rawValue)) {
                 diagnostics.add(diag("SYN-EXPR-005", DiagnosticSeverity.ERROR,
                         "字符串表达式嵌入数值表达式缺少花括号: " + rawValue, filePath, attr));
-            } else {
+            } else if (parseFailed && !isEnumValue) {
                 diagnostics.add(diag("SYN-EXPR-ANTLR", DiagnosticSeverity.ERROR,
                         "表达式语法错误: " + rawValue, filePath, attr));
             }
-        } else if (parseFailed) {
+        } else if (parseFailed && !isEnumValue) {
             diagnostics.add(diag("SYN-EXPR-ANTLR", DiagnosticSeverity.ERROR,
                     "表达式语法错误: " + rawValue, filePath, attr));
         }
@@ -119,18 +131,12 @@ public class ExpressionSyntaxChecker {
             String lv = node.getLiteralValue();
             try {
                 Double.parseDouble(lv);
-                int digits = 0;
-                for (int i = 0; i < lv.length(); i++) {
-                    if (Character.isDigit(lv.charAt(i))) {
-                        digits++;
-                    }
-                }
+                int digits = countSignificantDigits(lv);
                 if (digits > 7) {
                     diagnostics.add(diag("SYN-EXPR-002", DiagnosticSeverity.WARNING,
                             "数值表达式值超过7位精度限制: " + lv, filePath, attr));
                 }
             } catch (NumberFormatException ignored) {
-                // not a numeric literal
             }
         }
         if (node.getChildren() != null) {
@@ -143,10 +149,30 @@ public class ExpressionSyntaxChecker {
         }
     }
 
-    private static boolean hasBareWordInConcat(String rawValue) {
+    private static int countSignificantDigits(String numStr) {
+        if (numStr == null || numStr.isEmpty()) return 0;
+        String s = numStr.trim();
+        if (s.startsWith("+") || s.startsWith("-")) s = s.substring(1);
+        s = s.replaceFirst("^0+(?!$)", "");
+        if (s.contains(".")) {
+            s = s.replaceAll("0+$", "");
+            s = s.replaceAll("\\.$", "");
+        }
+        int count = 0;
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.isDigit(s.charAt(i))) count++;
+        }
+        return count;
+    }
+
+    private static boolean hasBareWordInConcat(String rawValue, AttrTypeSpec spec) {
         String[] terms = rawValue.split("\\+");
         for (String term : terms) {
             String t = term.trim();
+            if (spec != null && spec.getEnumValues() != null
+                    && spec.getEnumValues().contains(t)) {
+                continue;
+            }
             if (t.matches("^[a-zA-Z_]\\w*$")) {
                 return true;
             }
@@ -154,11 +180,36 @@ public class ExpressionSyntaxChecker {
         return false;
     }
 
+    private static boolean isStandaloneBareWord(String rawValue, AttrTypeSpec spec) {
+        if (spec != null && spec.getEnumValues() != null
+                && spec.getEnumValues().contains(rawValue)) {
+            return false;
+        }
+        if (rawValue.contains("'") || rawValue.contains("#") || rawValue.contains("@")
+                || rawValue.contains("+") || rawValue.contains("{")
+                || rawValue.contains("(") || rawValue.contains("*")
+                || rawValue.contains("/") || rawValue.contains("%")) {
+            return false;
+        }
+        if (isPlainNumeric(rawValue)) {
+            return false;
+        }
+        return rawValue.matches("^[a-zA-Z_][\\w ]*$");
+    }
+
     private static boolean hasMissingBraces(String rawValue) {
         String withoutBraces = rawValue.replaceAll("\\{[^}]*}", "");
-        return withoutBraces.indexOf('+') >= 0
-                && (withoutBraces.indexOf('*') >= 0 || withoutBraces.indexOf('/') >= 0
-                        || withoutBraces.indexOf('%') >= 0);
+        String stripped = withoutBraces.replaceAll("'[^']*'", "");
+        boolean hasPlus = stripped.indexOf('+') >= 0;
+        boolean hasOperator = stripped.indexOf('*') >= 0
+                || stripped.indexOf('/') >= 0
+                || stripped.indexOf('%') >= 0;
+        boolean hasHashAfterPlus = Pattern.compile("\\+\\s*#").matcher(stripped).find();
+        return hasPlus && (hasOperator || hasHashAfterPlus);
+    }
+
+    private static boolean isPlainNumeric(String value) {
+        return value != null && value.matches("^[+-]?\\d+(\\.\\d+)?$");
     }
 
     private Diagnostic diag(String ruleId, DiagnosticSeverity severity, String message,

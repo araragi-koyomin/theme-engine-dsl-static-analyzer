@@ -10,6 +10,8 @@ import java.util.Objects;
 
 import com.huawei.theme.analysis.core.batchinspection.model.BatchInspectionResult;
 import com.huawei.theme.analysis.core.batchinspection.model.FileDiagnosticResult;
+import com.huawei.theme.analysis.core.cli.InspectionConfig;
+import com.huawei.theme.analysis.core.cli.PipelineMode;
 import com.huawei.theme.analysis.core.fileidentification.DslFileMatcher;
 import com.huawei.theme.analysis.core.quickfix.FixAction;
 import com.huawei.theme.analysis.core.quickfix.QuickFixProvider;
@@ -29,6 +31,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
     private final QuickFixProvider quickFixProvider;
     private final SymbolTableBuilder symbolTableBuilder;
     private final RuleRepository ruleRepository;
+    private final InspectionConfig inspectionConfig;
 
     public BatchInspectionRunnerImpl(
             DslFileMatcher fileMatcher,
@@ -36,13 +39,15 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
             DiagnosticProvider diagnosticProvider,
             QuickFixProvider quickFixProvider,
             SymbolTableBuilder symbolTableBuilder,
-            RuleRepository ruleRepository) {
+            RuleRepository ruleRepository,
+            InspectionConfig inspectionConfig) {
         this.fileMatcher = Objects.requireNonNull(fileMatcher, "fileMatcher must not be null");
         this.astProvider = Objects.requireNonNull(astProvider, "astProvider must not be null");
         this.diagnosticProvider = Objects.requireNonNull(diagnosticProvider, "diagnosticProvider must not be null");
         this.quickFixProvider = Objects.requireNonNull(quickFixProvider, "quickFixProvider must not be null");
         this.symbolTableBuilder = Objects.requireNonNull(symbolTableBuilder, "symbolTableBuilder must not be null");
         this.ruleRepository = Objects.requireNonNull(ruleRepository, "ruleRepository must not be null");
+        this.inspectionConfig = Objects.requireNonNull(inspectionConfig, "inspectionConfig must not be null");
     }
 
     @Override
@@ -54,13 +59,8 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         }
         if (!fileMatcher.isDslFile(filePath, content)) {
             return BatchInspectionResult.builder()
-                    .totalFiles(0)
-                    .skippedFiles(1)
-                    .errorCount(0)
-                    .warningCount(0)
-                    .infoCount(0)
-                    .fileResults(List.of())
-                    .build();
+                    .totalFiles(0).skippedFiles(1).errorCount(0).warningCount(0).infoCount(0)
+                    .fileResults(List.of()).build();
         }
         FileDiagnosticResult fileResult = analyzeFile(filePath, content);
         return buildSingleFileResult(fileResult);
@@ -82,10 +82,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
             String content = readFileContent(filePath);
             if (content == null) {
                 fileResults.add(FileDiagnosticResult.builder()
-                        .filePath(filePath)
-                        .diagnostics(List.of())
-                        .fixActions(List.of())
-                        .build());
+                        .filePath(filePath).diagnostics(List.of()).fixActions(List.of()).build());
                 totalFiles++;
                 continue;
             }
@@ -102,24 +99,43 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         }
 
         return BatchInspectionResult.builder()
-                .totalFiles(totalFiles)
-                .skippedFiles(skippedFiles)
-                .errorCount(errorCount)
-                .warningCount(warningCount)
-                .infoCount(infoCount)
-                .fileResults(fileResults)
-                .build();
+                .totalFiles(totalFiles).skippedFiles(skippedFiles)
+                .errorCount(errorCount).warningCount(warningCount).infoCount(infoCount)
+                .fileResults(fileResults).build();
     }
 
     private FileDiagnosticResult analyzeFile(String filePath, String content) {
-        DslFileNode ast = astProvider.getDslAst(filePath, content);
-        List<Diagnostic> diagnostics = diagnosticProvider.analyze(ast, ruleRepository, symbolTableBuilder);
-        List<FixAction> fixActions = quickFixProvider.getFixActions(diagnostics);
+        PipelineMode mode = inspectionConfig.getPipelineMode() != null
+                ? inspectionConfig.getPipelineMode() : PipelineMode.FULL;
+
+        DslFileNode ast;
+        try {
+            ast = astProvider.getDslAst(filePath, content);
+        } catch (Exception e) {
+            return FileDiagnosticResult.builder()
+                    .filePath(filePath).diagnostics(List.of()).fixActions(List.of()).build();
+        }
+
+        List<Diagnostic> diagnostics = List.of();
+        if (mode != PipelineMode.SYNTAX_ONLY) {
+            try {
+                diagnostics = diagnosticProvider.analyze(ast, ruleRepository, symbolTableBuilder);
+            } catch (Exception e) {
+                diagnostics = List.of();
+            }
+        }
+
+        List<FixAction> fixActions = List.of();
+        if (mode == PipelineMode.FULL && !diagnostics.isEmpty()) {
+            try {
+                fixActions = quickFixProvider.getFixActions(diagnostics);
+            } catch (Exception e) {
+                fixActions = List.of();
+            }
+        }
+
         return FileDiagnosticResult.builder()
-                .filePath(filePath)
-                .diagnostics(diagnostics)
-                .fixActions(fixActions)
-                .build();
+                .filePath(filePath).diagnostics(diagnostics).fixActions(fixActions).build();
     }
 
     private BatchInspectionResult buildSingleFileResult(FileDiagnosticResult fileResult) {
@@ -127,13 +143,9 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         int warningCount = countBySeverity(fileResult.getDiagnostics(), DiagnosticSeverity.WARNING);
         int infoCount = countBySeverity(fileResult.getDiagnostics(), DiagnosticSeverity.INFO);
         return BatchInspectionResult.builder()
-                .totalFiles(1)
-                .skippedFiles(0)
-                .errorCount(errorCount)
-                .warningCount(warningCount)
-                .infoCount(infoCount)
-                .fileResults(List.of(fileResult))
-                .build();
+                .totalFiles(1).skippedFiles(0)
+                .errorCount(errorCount).warningCount(warningCount).infoCount(infoCount)
+                .fileResults(List.of(fileResult)).build();
     }
 
     private String readFileContent(String filePath) {

@@ -19,6 +19,7 @@ compareExpr
     | valueExpr LT valueExpr
     | valueExpr GEQ valueExpr
     | valueExpr LEQ valueExpr
+    | valueExpr MATCHES literal
     | valueExpr IN setLiteral
     | valueExpr NOT IN setLiteral
     ;
@@ -51,6 +52,7 @@ NOT                 : 'NOT' ;
 AND                 : 'AND' ;
 OR                  : 'OR' ;
 IN                  : 'IN' ;
+MATCHES             : 'MATCHES' ;
 EQ                  : '==' ;
 NEQ                 : '!=' ;
 GT                  : '>' ;

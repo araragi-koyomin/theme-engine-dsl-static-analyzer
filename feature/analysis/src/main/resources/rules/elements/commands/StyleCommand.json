@@ -84,7 +84,7 @@
       ]
     }, {
       "ruleId": "SEM-PERSIST-003",
-      "condition": "element.attrs[\u0027styleGlobalPersist\u0027] != \u0027true\u0027",
+      "condition": "element.attrs[\u0027styleGlobalPersist\u0027] != null AND element.attrs[\u0027styleGlobalPersist\u0027] != \u0027true\u0027",
       "message": "styleGlobalPersist变量初始值默认为0，expression初始赋值会被忽略",
       "severity": "warning",
       "suggestedFixes": [

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="msg_prefix" type="string" expression="'Hello'"/>
+
+    <Var name="no_quote_string" type="string" expression="hello world"/>
+
+    <Var name="unclosed_quote" type="string" expression="'unclosed string"/>
+
+    <Var name="no_brace_num" type="string" expression="'Value: ' + #battery_level + '%'"/>
+
+    <Var name="with_brace_num" type="string" expression="'Battery: ' + {#battery_level} + '%'"/>
+
+    <Var name="multi_embed" type="string" expression="'H:' + {#hour24} + ' M:' + {#minute} + ' S:' + {int(#touch_x)}"/>
+
+    <Var name="string_num_calc" type="string" expression="#battery_level + 10 + '%'"/>
+
+    <Var name="bad_preciseeval" type="string" expression="preciseeval('3.14159', 2) + ' is pi'"/>
+
+    <Var name="string_func_in_num" type="number" expression="substr('hello', 0, 3)"/>
+
+    <Var name="num_func_ok" type="number" expression="sin(#hour24 * 15) + cos(#minute * 6)"/>
+
+    <Var name="garbage_expr" type="number" expression="!@#$%^&amp;*()"/>
+
+    <Text name="complex_text" x="540" y="200" size="40" color="#FFFFFF"
+          textExp="ifelse(#darkMode == 1, 'Dark: ' + {#battery_level}, 'Light: ' + {#battery_level})"/>
+
+    <Text name="bad_format" x="540" y="300" size="40" color="#FFFFFF" format="'%d%%'" textExp="#battery_level"/>
+</Lockscreen>

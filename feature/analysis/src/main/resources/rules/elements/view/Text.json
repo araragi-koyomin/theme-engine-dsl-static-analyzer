@@ -460,19 +460,11 @@
       ]
     }, {
       "ruleId": "SEM-ATTR-001",
-      "condition": "element.attrs[\u0027alpha\u0027] != null AND (parseInt(element.attrs[\u0027alpha\u0027]) \u003c 0 OR parseInt(element.attrs[\u0027alpha\u0027]) \u003e 255)",
+      "condition": "element.attrs[\u0027alpha\u0027] != null AND (element.attrs[\u0027alpha\u0027] \u003c 0 OR element.attrs[\u0027alpha\u0027] \u003e 255)",
       "message": "alpha值应在0-255范围内",
       "severity": "error",
       "suggestedFixes": [
         {"text": "设置alpha值在0-255范围内", "type": "CLAMP_VALUE", "target": "alpha", "range": "0-255"}
-      ]
-    }, {
-      "ruleId": "SEM-ATTR-003",
-      "condition": "element.attrs[\u0027category\u0027] != null AND element.attrs[\u0027category\u0027] NOT IN [\u0027Normal\u0027, \u0027Charging\u0027, \u0027BatteryLow\u0027, \u0027BatteryFull\u0027]",
-      "message": "category枚举值不合法，合法值为: Normal, Charging, BatteryLow, BatteryFull",
-      "severity": "error",
-      "suggestedFixes": [
-        {"text": "修改category为合法枚举值", "type": "REPLACE_ENUM", "target": "category"}
       ]
     }
   ]

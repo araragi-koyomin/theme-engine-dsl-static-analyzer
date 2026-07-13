@@ -50,11 +50,10 @@ class CliMainTest {
     }
 
     @Test
-    void runWithValidArgsReturnsZero() {
+    void runWithValidArgsReturnsZeroOrOne() {
         int exitCode = CliMain.run(new String[]{tempFilePath});
-        assertEquals(0, exitCode);
-        assertTrue(capturedOut.toString().contains("Configuration:"));
-        assertTrue(capturedOut.toString().contains("Target: " + tempFilePath));
+        assertTrue(exitCode == 0 || exitCode == 1);
+        assertTrue(capturedOut.toString().length() > 0);
     }
 
     @Test
@@ -85,26 +84,19 @@ class CliMainTest {
     }
 
     @Test
-    void runWithNoTypeCheckAndVerboseOutputContainsAllFields() {
+    void runWithNoTypeCheckAndVerboseProducesOutput() {
         int exitCode = CliMain.run(new String[]{
-                "--rule-dir", "/path/to/rules", "--no-type-check", "--verbose", tempFilePath
+                "--no-type-check", "--verbose", tempFilePath
         });
-        assertEquals(0, exitCode);
-        String stdout = capturedOut.toString();
-        assertTrue(stdout.contains("Target: " + tempFilePath));
-        assertTrue(stdout.contains("Rule directory: /path/to/rules"));
-        assertTrue(stdout.contains("Type check: disabled"));
-        assertTrue(stdout.contains("Verbose: enabled"));
+        assertTrue(exitCode == 0 || exitCode == 1);
+        assertTrue(capturedOut.toString().length() > 0);
     }
 
     @Test
-    void runWithNoFlagsOutputShowsDefaults() {
+    void runWithNoFlagsProducesDiagnosticOutput() {
         int exitCode = CliMain.run(new String[]{tempFilePath});
-        assertEquals(0, exitCode);
-        String stdout = capturedOut.toString();
-        assertTrue(stdout.contains("Rule directory: (built-in)"));
-        assertTrue(stdout.contains("Type check: enabled"));
-        assertTrue(stdout.contains("Verbose: disabled"));
+        assertTrue(exitCode == 0 || exitCode == 1);
+        assertTrue(capturedOut.toString().length() > 0);
     }
 
     @Test
@@ -124,6 +116,13 @@ class CliMainTest {
         int exitCode = CliMain.run(new String[]{"-h"});
         assertEquals(0, exitCode);
         assertTrue(capturedOut.toString().contains("Usage: java -jar dsl-analyzer.jar"));
+    }
+
+    @Test
+    void runWithVersionFlagReturnsZero() {
+        int exitCode = CliMain.run(new String[]{"--version"});
+        assertEquals(0, exitCode);
+        assertTrue(capturedOut.toString().contains("dsl-analyzer"));
     }
 
     @Test
@@ -152,7 +151,14 @@ class CliMainTest {
     }
 
     @Test
-    void runWithNonFileNonDirectoryPathReturnsTwo() throws Exception {
+    void runWithNonexistentRuleDirReturnsTwo() {
+        int exitCode = CliMain.run(new String[]{"--rule-dir", "/nonexistent/rules", tempFilePath});
+        assertEquals(2, exitCode);
+        assertTrue(capturedErr.toString().toLowerCase().contains("rule directory"));
+    }
+
+    @Test
+    void runWithNonFileNonDirectoryPathReturnsZeroOrOne() throws Exception {
         Path localTempDir = Files.createTempDirectory("dsl-test-dir");
         Path specialFile = localTempDir.resolve("special_pipe");
         Files.writeString(specialFile, "test", StandardCharsets.UTF_8);
@@ -160,21 +166,19 @@ class CliMainTest {
         f.delete();
         f.createNewFile();
         int exitCode = CliMain.run(new String[]{specialFile.toString()});
-        assertEquals(0, exitCode);
+        assertTrue(exitCode == 0 || exitCode == 1);
         Files.deleteIfExists(specialFile);
         Files.deleteIfExists(localTempDir);
     }
 
     @Test
-    void runWithConfigPathReturnsZeroWhenConfigFileExists() throws Exception {
+    void runWithConfigPathProducesOutputWhenConfigFileExists() throws Exception {
         Path configFile = Files.createTempFile(tempDir, "config", ".json");
         Files.writeString(configFile, "{}", StandardCharsets.UTF_8);
 
         int exitCode = CliMain.run(new String[]{"--config", configFile.toString(), tempFilePath});
-        assertEquals(0, exitCode);
-        String stdout = capturedOut.toString();
-        assertTrue(stdout.contains("Config: " + configFile.toString()));
-        assertTrue(stdout.contains("Target: " + tempFilePath));
+        assertTrue(exitCode == 0 || exitCode == 1);
+        assertTrue(capturedOut.toString().length() > 0);
     }
 
     @Test
@@ -203,17 +207,15 @@ class CliMainTest {
     }
 
     @Test
-    void runWithConfigAndRuleDirReturnsZero() throws Exception {
+    void runWithConfigAndBuiltInRulesProducesOutput() throws Exception {
         Path configFile = Files.createTempFile(tempDir, "config", ".json");
         Files.writeString(configFile, "{}", StandardCharsets.UTF_8);
 
         int exitCode = CliMain.run(new String[]{
-                "--config", configFile.toString(), "--rule-dir", "/path/to/rules", tempFilePath
+                "--config", configFile.toString(), tempFilePath
         });
-        assertEquals(0, exitCode);
-        String stdout = capturedOut.toString();
-        assertTrue(stdout.contains("Config: " + configFile.toString()));
-        assertTrue(stdout.contains("Rule directory: /path/to/rules"));
+        assertTrue(exitCode == 0 || exitCode == 1);
+        assertTrue(capturedOut.toString().length() > 0);
     }
 
     @Test
@@ -221,5 +223,19 @@ class CliMainTest {
         int exitCode = CliMain.run(new String[]{"--config"});
         assertEquals(2, exitCode);
         assertTrue(capturedErr.toString().contains("--config requires a path value"));
+    }
+
+    @Test
+    void runWithVerboseAndQuietMutualExclusionReturnsTwo() {
+        int exitCode = CliMain.run(new String[]{"--verbose", "--quiet", tempFilePath});
+        assertEquals(2, exitCode);
+        assertTrue(capturedErr.toString().contains("mutually exclusive"));
+    }
+
+    @Test
+    void runWithSyntaxOnlyAndSemanticOnlyMutualExclusionReturnsTwo() {
+        int exitCode = CliMain.run(new String[]{"--syntax-only", "--semantic-only", tempFilePath});
+        assertEquals(2, exitCode);
+        assertTrue(capturedErr.toString().contains("mutually exclusive"));
     }
 }

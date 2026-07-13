@@ -79,6 +79,12 @@
       "expressionKind": "number"
     },
     {
+      "name": "int",
+      "params": [{"name": "x", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "string"
+    },
+    {
       "name": "rand",
       "params": [],
       "returnType": "number",
@@ -155,6 +161,12 @@
       "params": [{"name": "x", "type": "string", "isVariadic": false}, {"name": "precision", "type": "number", "isVariadic": false}],
       "returnType": "number",
       "expressionKind": "number"
+    },
+    {
+      "name": "preciseeval",
+      "params": [{"name": "x", "type": "string", "isVariadic": false}, {"name": "precision", "type": "number", "isVariadic": false}],
+      "returnType": "number",
+      "expressionKind": "string"
     },
     {
       "name": "substr",

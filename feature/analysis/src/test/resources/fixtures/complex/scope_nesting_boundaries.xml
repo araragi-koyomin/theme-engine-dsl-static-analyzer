@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Widget screenWidth="400" screenHeight="800">
+    <Layer name="bad_layer" w="300" h="300" src="layer.png"/>
+
+    <SourceImage name="src_img" sourceName="weather"
+                 format="png" to="100"
+                 x="0" y="0" width="400" height="200"/>
+
+    <Swiper name="widget_swiper" currentIndex="0" animationTime="300">
+        <Image name="sw1" x="0" y="0" width="400" height="500" src="slide1.png"/>
+    </Swiper>
+
+    <StereoView name="stereo" x="0" y="100" w="400" h="400">
+        <StereoGroup name="sg1"/>
+        <StereoGroup name="sg2"/>
+        <StereoGroup name="sg3"/>
+    </StereoView>
+
+    <Var name="widget_var" type="number" expression="#touch_x"/>
+
+    <Group name="valid_group" x="10" y="10" width="380" height="780" clip="true">
+        <Image name="valid_img" x="0" y="0" width="380" height="100"
+               src="header.png" alpha="200"/>
+        <Text name="valid_text" x="190" y="50" size="16" color="#333333"
+              text="Hello Widget" category="Normal"/>
+        <Button name="valid_btn" x="100" y="600" width="180" height="60">
+            <Trigger action="click"/>
+        </Button>
+    </Group>
+
+    <Image name="valid_icon" x="150" y="700" width="100" height="100"
+           src="icon.png" alpha="255"/>
+</Widget>

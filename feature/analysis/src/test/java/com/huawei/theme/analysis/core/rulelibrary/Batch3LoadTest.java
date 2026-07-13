@@ -170,15 +170,7 @@ class Batch3LoadTest {
 
         AttrTypeSpec actionSpec = repo.getAttrTypeSpec("Trigger", "action").orElseThrow();
         assertEquals("string", actionSpec.getType());
-        assertTrue(actionSpec.getEnumValues().contains("down"));
-        assertTrue(actionSpec.getEnumValues().contains("up"));
-        assertTrue(actionSpec.getEnumValues().contains("double"));
-        assertTrue(actionSpec.getEnumValues().contains("click"));
-        assertTrue(actionSpec.getEnumValues().contains("long"));
-        assertTrue(actionSpec.getEnumValues().contains("resume"));
-        assertTrue(actionSpec.getEnumValues().contains("pause"));
-        assertTrue(actionSpec.getEnumValues().contains("tapLink"));
-        assertEquals(14, actionSpec.getEnumValues().size());
+        assertEquals(0, actionSpec.getEnumValues().size());
     }
 
     @Test

@@ -129,9 +129,7 @@ public class AstBuilder implements DslAstProvider {
         int attrCount = reader.getAttributeCount();
         for (int i = 0; i < attrCount; i++) {
             String attrValue = reader.getAttributeValue(i);
-            String attrName = (i < scan.attrs.size())
-                    ? scan.attrs.get(i).name
-                    : safeAttrName(reader, i);
+            String attrName = reader.getAttributeLocalName(i);
 
             DslAttributeNode attr = new DslAttributeNode();
             attr.setName(attrName);
@@ -259,6 +257,11 @@ public class AstBuilder implements DslAstProvider {
                 return i;
             }
         }
+        for (int i = hint - 1; i >= 0 && i > hint - 64; i--) {
+            if (source.charAt(i) == '<' && source.startsWith(tagName, i + 1)) {
+                return i;
+            }
+        }
         int idx = source.indexOf("<" + tagName, hint);
         return idx >= 0 ? idx : hint;
     }
@@ -295,6 +298,10 @@ public class AstBuilder implements DslAstProvider {
                     tagEndOffset = i;
                 }
                 break;
+            }
+            if (!isNameChar(c)) {
+                i++;
+                continue;
             }
             int nameStart = i;
             while (i < source.length() && isNameChar(source.charAt(i))) {

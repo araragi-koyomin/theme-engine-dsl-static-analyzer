@@ -78,13 +78,21 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 if (varName == null || varName.isEmpty()) {
                     continue;
                 }
+                if ("@".equals(ref.getPrefix())) {
+                    continue;
+                }
                 String elementName = matchTemplate(varName, elementTemplates);
                 if (elementName != null) {
                     if (!elementNames.contains(elementName)) {
                         diagnostics.add(buildUndefinedElementRefDiagnostic(ref, elementName, elementNode, context));
                     }
-                } else if (symbolTable.lookup(varName).isEmpty()) {
-                    diagnostics.add(buildUndefinedReferenceDiagnostic(ref, elementNode, context));
+                } else {
+                    Optional<VarDeclaration> declOpt = symbolTable.lookup(varName);
+                    if (declOpt.isEmpty()) {
+                        diagnostics.add(buildUndefinedReferenceDiagnostic(ref, elementNode, context));
+                    } else if (isForwardReference(ref, declOpt.get(), elementNode)) {
+                        diagnostics.add(buildForwardReferenceDiagnostic(ref, elementNode, context));
+                    }
                 }
             }
         }
@@ -220,8 +228,20 @@ public class VarRefAnalyzer implements DslAnalyzer {
         return null;
     }
 
+    private boolean isForwardReference(ExpressionNode ref, VarDeclaration decl, DslElementNode hostNode) {
+        if (decl.isGlobal() || decl.getAstNode() == null) {
+            return false;
+        }
+        int refLine = ref.getLine();
+        if (refLine <= 0) {
+            refLine = hostNode.getLine();
+        }
+        int declLine = decl.getAstNode().getLine();
+        return declLine > 0 && refLine > 0 && declLine > refLine;
+    }
+
     private Diagnostic buildUndefinedReferenceDiagnostic(ExpressionNode ref, DslElementNode hostNode,
-                                                         DslContext context) {
+                                                          DslContext context) {
         String docUrl = resolveDocUrl(context, RULE_REF_001);
         String refText = ref.getPrefix() != null ? ref.getPrefix() + ref.getVariableName() : ref.getVariableName();
         int line = ref.getLine();
@@ -244,6 +264,33 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .endLine(endLine)
                 .endColumn(endColumn)
                 .suggestedFixes(List.of(SuggestedFix.builder().text("声明 Var name=\"" + ref.getVariableName() + "\"").type("ADD_ATTR").target("name").value(ref.getVariableName()).build()))
+                .ruleDocUrl(docUrl)
+                .build();
+    }
+
+    private Diagnostic buildForwardReferenceDiagnostic(ExpressionNode ref, DslElementNode hostNode,
+                                                        DslContext context) {
+        String docUrl = resolveDocUrl(context, RULE_REF_001);
+        String refText = ref.getPrefix() != null ? ref.getPrefix() + ref.getVariableName() : ref.getVariableName();
+        int line = ref.getLine();
+        int column = ref.getColumn();
+        int endLine = ref.getEndLine();
+        int endColumn = ref.getEndColumn();
+        if (line == 0 && column == 0) {
+            line = hostNode.getLine();
+            column = hostNode.getColumn();
+            endLine = hostNode.getEndLine();
+            endColumn = hostNode.getEndColumn();
+        }
+        return Diagnostic.builder()
+                .severity(DiagnosticSeverity.ERROR)
+                .ruleId(RULE_REF_001)
+                .message("前向引用变量 " + refText + "（变量定义在使用之后）")
+                .filePath(context.getFilePath())
+                .line(line)
+                .column(column)
+                .endLine(endLine)
+                .endColumn(endColumn)
                 .ruleDocUrl(docUrl)
                 .build();
     }

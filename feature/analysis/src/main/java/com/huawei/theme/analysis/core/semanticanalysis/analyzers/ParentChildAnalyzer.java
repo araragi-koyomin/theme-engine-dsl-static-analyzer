@@ -46,6 +46,26 @@ public class ParentChildAnalyzer extends BaseXmlAnalyzer {
             return Collections.emptyList();
         }
 
+        if (!isAllowedInScope(elementNode, context)) {
+            java.util.Set<String> rootNames = new java.util.HashSet<>(ruleRepo.getRootElementNames());
+            for (String allowedParent : allowedParents) {
+                if (rootNames.contains(allowedParent)) {
+                    return Collections.emptyList();
+                }
+            }
+        }
+
+        if (parentTagName != null
+                && context.getRootNode() != null
+                && context.getRootNode().getRootElement() != null
+                && !allowedParents.contains(parentTagName)) {
+            java.util.Set<String> rootNames = new java.util.HashSet<>(ruleRepo.getRootElementNames());
+            if (rootNames.containsAll(allowedParents)
+                    && rootNames.size() == allowedParents.size()) {
+                return Collections.emptyList();
+            }
+        }
+
         String allowed = allowedParents.stream().collect(Collectors.joining(", "));
         String message;
         if (parentTagName == null) {
@@ -55,5 +75,24 @@ public class ParentChildAnalyzer extends BaseXmlAnalyzer {
                     + "'不在允许列表[" + allowed + "]中";
         }
         return List.of(createDiagnostic(context, elementNode, message));
+    }
+
+    private boolean isAllowedInScope(DslElementNode elementNode, DslContext context) {
+        RuleRepository ruleRepo = context.getRuleRepository();
+        String tagName = elementNode.getTagName();
+        java.util.Optional<com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule> ruleOpt =
+                ruleRepo.getElementRule(tagName);
+        if (ruleOpt.isEmpty()) {
+            return true;
+        }
+        java.util.Map<String, Boolean> scope = ruleOpt.get().getScope();
+        if (scope == null || scope.isEmpty()) {
+            return true;
+        }
+        if (context.getRootNode() == null || context.getRootNode().getRootElement() == null) {
+            return true;
+        }
+        String currentScope = context.getRootNode().getRootElement().getTagName();
+        return Boolean.TRUE.equals(scope.get(currentScope));
     }
 }

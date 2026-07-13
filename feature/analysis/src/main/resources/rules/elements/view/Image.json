@@ -339,7 +339,7 @@
   "constraints": [
     {
       "ruleId": "SEM-ATTR-005",
-      "condition": "element.attrs[\u0027isBackground\u0027] == \u0027true\u0027 AND element.attrs[\u0027scaleType\u0027] != \u0027center_crop\u0027",
+      "condition": "element.attrs[\u0027isBackground\u0027] == \u0027true\u0027 AND element.attrs[\u0027scaleType\u0027] != null AND element.attrs[\u0027scaleType\u0027] != \u0027center_crop\u0027",
       "message": "isBackground=true时必须配合scaleType=center_crop",
       "severity": "error",
       "suggestedFixes": [
@@ -365,7 +365,7 @@
       ]
     }, {
       "ruleId": "SEM-ATTR-001",
-      "condition": "element.attrs[\u0027alpha\u0027] != null AND (parseInt(element.attrs[\u0027alpha\u0027]) \u003c 0 OR parseInt(element.attrs[\u0027alpha\u0027]) \u003e 255)",
+      "condition": "element.attrs[\u0027alpha\u0027] != null AND (element.attrs[\u0027alpha\u0027] \u003c 0 OR element.attrs[\u0027alpha\u0027] \u003e 255)",
       "message": "alpha值应在0-255范围内",
       "severity": "error",
       "suggestedFixes": [

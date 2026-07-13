@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="valid_var" type="number" const="true" expression="42"/>
+
+    <Group name="level1" x="0" y="0" width="1080" height="1920" alpha="300">
+        <Var name="nested_var" type="string" expression="'hello'"/>
+
+        <Group name="level2" x="100" y="200" width="800" height="600" category="INVALID_CATEGORY">
+            <Var name="time_persist" type="number" persist="true" expression="#hour"/>
+
+            <Group name="level3" x="50" y="50" width="700" height="500" enableMove="BAD_BOOL">
+                <Image name="deepest_img"
+                       x="'string_in_number'"
+                       y="#undefined_var"
+                       alpha="999"
+                       category="IMAGINARY"
+                       src="deep.png"
+                       srcExp="@deep_dynamic"
+                       scaleType="wrong_scale"
+                       isBackground="true"
+                       align="center"/>
+
+                <Swiper name="nested_swiper" currentIndex="0" animationTime="500">
+                    <Image name="slide1" x="0" y="0" width="700" height="500" src="slide1.png"/>
+                    <Button name="bad_swiper_child" x="10" y="10" width="50" height="50">
+                        <Trigger action="slide"/>
+                    </Button>
+                </Swiper>
+            </Group>
+
+            <Image name="level2_img" width="200" height="200"
+                   scaleType="fill" src="level2.png"/>
+        </Group>
+
+        <Layer name="bad_layer" w="300" h="300" src="layer_src.png"/>
+    </Group>
+
+    <Text name="bottom_text" x="540" y="1800" size="24" color="#FFFFFF"
+          textExp="@ishour12"/>
+</Lockscreen>

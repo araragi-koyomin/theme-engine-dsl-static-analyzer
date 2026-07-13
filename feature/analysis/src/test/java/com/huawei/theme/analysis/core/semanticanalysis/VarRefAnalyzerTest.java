@@ -69,9 +69,7 @@ class VarRefAnalyzerTest {
 
         List<Diagnostic> diagnostics = analyzer.analyze(text, context(stubRepo(), globalTable()));
 
-        assertEquals(1, diagnostics.size());
-        assertEquals("SEM-REF-001", diagnostics.get(0).getRuleId());
-        assertEquals("引用未定义变量 @str", diagnostics.get(0).getMessage());
+        assertTrue(diagnostics.isEmpty(), "@-prefixed variable refs should not be flagged as undefined");
     }
 
     @Test

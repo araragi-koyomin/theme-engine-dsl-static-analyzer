@@ -1,5 +1,6 @@
 package com.huawei.theme.analysis.core.ruledsl;
 
+import java.util.List;
 import java.util.Map;
 
 import lombok.Builder;
@@ -13,4 +14,6 @@ public class EvaluationContext {
     String elementCategory;
     Map<String, Boolean> scope;
     Map<String, Boolean> deviceSupport;
+    List<java.util.Map<String, Object>> childElements;
+    String parentTagName;
 }
