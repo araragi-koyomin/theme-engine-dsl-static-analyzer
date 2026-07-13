@@ -76,7 +76,8 @@ public final class ThemeDslLspHoverProvider implements DocumentationProvider {
 
         Hover hover;
         try {
-            hover = server.getTextDocumentService().hover(params).join();
+            hover = server.getTextDocumentService().hover(params)
+                    .get(500, java.util.concurrent.TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             LOG.log(Level.WARNING, "fetchHover: hover request failed", e);
             return null;

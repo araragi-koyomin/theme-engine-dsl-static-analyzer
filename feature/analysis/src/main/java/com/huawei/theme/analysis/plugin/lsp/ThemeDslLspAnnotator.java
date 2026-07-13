@@ -73,7 +73,6 @@ public final class ThemeDslLspAnnotator implements Annotator {
                         .create();
             }
         }
-        renderSemanticTokens(element, holder, uri, doc, client);
     }
 
     private static void renderSemanticTokens(PsiElement element, AnnotationHolder holder,

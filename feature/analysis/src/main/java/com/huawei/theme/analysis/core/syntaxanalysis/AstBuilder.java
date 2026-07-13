@@ -316,6 +316,13 @@ public class AstBuilder implements DslAstProvider {
                 i++;
             }
             if (i >= source.length() || source.charAt(i) != '=') {
+                // Guarantee progress: if the name scan did not advance (e.g.
+                // landed on '<' which is not a name char), skip one char so
+                // the loop cannot spin forever on malformed input like
+                // "<Var n<Group>".
+                if (i == nameStart && i < source.length()) {
+                    i++;
+                }
                 continue;
             }
             i++;

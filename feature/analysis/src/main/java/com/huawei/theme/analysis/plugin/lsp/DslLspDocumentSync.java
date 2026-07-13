@@ -1,6 +1,12 @@
 package com.huawei.theme.analysis.plugin.lsp;
 
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
@@ -53,6 +59,13 @@ final class DslLspDocumentSync implements Disposable {
     private final Project project;
     private final DslLspServerService serverService;
     private final MessageBusConnection connection;
+    private final ScheduledExecutorService debounceScheduler =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "dsl-lsp-debounce");
+                t.setDaemon(true);
+                return t;
+            });
+    private final Map<String, ScheduledFuture<?>> pendingSync = new ConcurrentHashMap<>();
 
     DslLspDocumentSync(Project project, DslLspServerService serverService) {
         this.project = project;
@@ -85,11 +98,15 @@ final class DslLspDocumentSync implements Disposable {
                 if (file == null || !isDsl(file)) {
                     return;
                 }
-                // Only sync documents that belong to this project.
                 if (PsiDocumentManager.getInstance(project).getPsiFile(doc) == null) {
                     return;
                 }
-                sendDidChange(file.getUrl(), doc.getText());
+                // Debounce: cancel any pending sync, schedule a new one after 300ms.
+                // This avoids sending didChange + semanticTokensFull on every keystroke,
+                // which would flood the server and block the EDT with markup updates.
+                final String uri = file.getUrl();
+                final String text = doc.getText();
+                scheduleSync(uri, text, 300);
             }
         }, connection);
 
@@ -131,7 +148,7 @@ final class DslLspDocumentSync implements Disposable {
         DidOpenTextDocumentParams p = new DidOpenTextDocumentParams();
         p.setTextDocument(new TextDocumentItem(uri, "xml", 1, text));
         s.getTextDocumentService().didOpen(p);
-        requestSemanticTokens(uri);
+        scheduleSync(uri, text, 100);
     }
 
     private void sendDidChange(String uri, String text) {
@@ -143,7 +160,6 @@ final class DslLspDocumentSync implements Disposable {
         p.setTextDocument(new VersionedTextDocumentIdentifier(uri, (int) System.currentTimeMillis()));
         p.setContentChanges(List.of(new TextDocumentContentChangeEvent(text)));
         s.getTextDocumentService().didChange(p);
-        requestSemanticTokens(uri);
     }
 
     private void sendDidClose(String uri) {
@@ -154,6 +170,19 @@ final class DslLspDocumentSync implements Disposable {
         DidCloseTextDocumentParams p = new DidCloseTextDocumentParams();
         p.setTextDocument(new TextDocumentIdentifier(uri));
         s.getTextDocumentService().didClose(p);
+    }
+
+    private void scheduleSync(String uri, String text, long delayMs) {
+        ScheduledFuture<?> prev = pendingSync.get(uri);
+        if (prev != null) {
+            prev.cancel(false);
+        }
+        ScheduledFuture<?> future = debounceScheduler.schedule(() -> {
+            pendingSync.remove(uri);
+            sendDidChange(uri, text);
+            requestSemanticTokens(uri);
+        }, delayMs, TimeUnit.MILLISECONDS);
+        pendingSync.put(uri, future);
     }
 
     private void requestSemanticTokens(String uri) {
@@ -233,7 +262,6 @@ final class DslLspDocumentSync implements Disposable {
             }
             mm.addRangeHighlighter(start, end, SEMANTIC_LAYER, attrs, HighlighterTargetArea.EXACT_RANGE);
         }
-        DaemonCodeAnalyzer.getInstance(project).restart();
     }
 
     private static TextAttributes attrsForType(int type) {
@@ -254,5 +282,6 @@ final class DslLspDocumentSync implements Disposable {
     @Override
     public void dispose() {
         connection.dispose();
+        debounceScheduler.shutdownNow();
     }
 }

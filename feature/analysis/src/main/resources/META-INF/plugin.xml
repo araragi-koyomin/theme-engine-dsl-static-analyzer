@@ -35,6 +35,8 @@
 
         <projectService serviceImplementation="com.huawei.theme.analysis.plugin.lsp.DslLspServerService"/>
 
+        <psi.referenceContributor implementation="com.huawei.theme.analysis.plugin.lsp.ThemeDslVarReferenceContributor"/>
+
         <postStartupActivity implementation="com.huawei.theme.analysis.plugin.lsp.DslLspStartupActivity"/>
     </extensions>
 </idea-plugin>

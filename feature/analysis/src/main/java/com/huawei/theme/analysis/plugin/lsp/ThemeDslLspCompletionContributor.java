@@ -57,7 +57,11 @@ public final class ThemeDslLspCompletionContributor extends CompletionContributo
 
         Either<List<CompletionItem>, CompletionList> res;
         try {
-            res = server.getTextDocumentService().completion(params).join();
+            // Non-blocking with timeout: the completion thread must not hang
+            // waiting for the server if didChange/semanticTokens are queued
+            // ahead of the completion request on the same JSON-RPC connection.
+            res = server.getTextDocumentService().completion(params)
+                    .get(500, java.util.concurrent.TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             return;
         }
