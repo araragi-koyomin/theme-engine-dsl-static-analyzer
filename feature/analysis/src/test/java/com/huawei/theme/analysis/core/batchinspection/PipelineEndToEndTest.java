@@ -359,7 +359,7 @@ class PipelineEndToEndTest {
 
     private Set<String> extractRuleIdsFromTerminal(String terminal) {
         Set<String> ruleIds = new HashSet<>();
-        Pattern p = Pattern.compile("\\[([A-Z]+-[A-Z]+-[0-9]+)\\]");
+        Pattern p = Pattern.compile("\\[([A-Z]+-[A-Z]+-[A-Z0-9]+)\\]");
         Matcher m = p.matcher(terminal);
         while (m.find()) {
             ruleIds.add(m.group(1));
@@ -369,7 +369,7 @@ class PipelineEndToEndTest {
 
     private Set<String> extractRuleIdsFromMarkdown(String markdown) {
         Set<String> ruleIds = new HashSet<>();
-        Pattern p = Pattern.compile("\\*\\*([A-Z]+-[A-Z]+-[0-9]+)\\*\\*");
+        Pattern p = Pattern.compile("\\*\\*([A-Z]+-[A-Z]+-[A-Z0-9]+)\\*\\*");
         Matcher m = p.matcher(markdown);
         while (m.find()) {
             ruleIds.add(m.group(1));

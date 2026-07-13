@@ -169,6 +169,16 @@ public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean
             double r = Double.parseDouble(right);
             return Double.compare(l, r);
         } catch (NumberFormatException e) {
+            try {
+                Double.parseDouble(left);
+            } catch (NumberFormatException e2) {
+                return 0;
+            }
+            try {
+                Double.parseDouble(right);
+            } catch (NumberFormatException e2) {
+                return 0;
+            }
             return left.compareTo(right);
         }
     }
@@ -189,6 +199,9 @@ public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean
         }
         if (ctx.ELEMENT_TAG_NAME() != null) {
             return context.getElementName();
+        }
+        if (ctx.ELEMENT_PARENT_TAG_NAME() != null) {
+            return context.getParentTagName();
         }
         return null;
     }

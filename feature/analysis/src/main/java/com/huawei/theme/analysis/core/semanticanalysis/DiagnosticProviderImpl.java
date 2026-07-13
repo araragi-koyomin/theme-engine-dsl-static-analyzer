@@ -7,6 +7,7 @@ import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
+import com.huawei.theme.analysis.core.syntaxanalysis.ExpressionSyntaxChecker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +16,10 @@ public class DiagnosticProviderImpl implements DiagnosticProvider {
 
     @Override
     public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder symbolTableBuilder) {
-        return new DiagnosticProviderImplInner(ast, ruleRepo, symbolTableBuilder).getDiagnostics();
+        List<Diagnostic> diagnostics =
+                new DiagnosticProviderImplInner(ast, ruleRepo, symbolTableBuilder).getDiagnostics();
+        diagnostics.addAll(new ExpressionSyntaxChecker(ruleRepo).check(ast.getFilePath(), ast));
+        return diagnostics;
     }
 
     static class DiagnosticProviderImplInner {

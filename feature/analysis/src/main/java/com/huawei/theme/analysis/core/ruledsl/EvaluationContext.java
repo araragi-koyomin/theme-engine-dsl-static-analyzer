@@ -15,4 +15,5 @@ public class EvaluationContext {
     Map<String, Boolean> scope;
     Map<String, Boolean> deviceSupport;
     List<java.util.Map<String, Object>> childElements;
+    String parentTagName;
 }

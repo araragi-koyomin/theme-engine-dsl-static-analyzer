@@ -41,7 +41,7 @@ public class TypeInferenceEngine {
     }
 
     private DslType inferLiteral(ExpressionNode node, DslType expectedContext) {
-        if (expectedContext instanceof DslStringType) {
+        if (node.getText() != null && node.getText().startsWith("'") && node.getText().endsWith("'")) {
             return new DslStringType();
         }
         if (isNumeric(node.getLiteralValue())) {

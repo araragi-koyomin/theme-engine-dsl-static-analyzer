@@ -74,6 +74,10 @@ public class ConstraintAnalyzer implements DslAnalyzer {
         String elementCategory = null;
         Map<String, Boolean> scope = null;
         Map<String, Boolean> deviceSupport = null;
+        String parentTagName = null;
+        if (elementNode.getParent() instanceof DslElementNode parentElement) {
+            parentTagName = parentElement.getTagName();
+        }
 
         if (elementRuleOpt.isPresent()) {
             DslElementRule elementRule = elementRuleOpt.get();
@@ -88,6 +92,7 @@ public class ConstraintAnalyzer implements DslAnalyzer {
                 .elementCategory(elementCategory)
                 .scope(scope)
                 .deviceSupport(deviceSupport)
+                .parentTagName(parentTagName)
                 .childElements(buildChildElementInfos(elementNode))
                 .build();
     }
@@ -131,5 +136,17 @@ public class ConstraintAnalyzer implements DslAnalyzer {
                 .suggestedFixes(constraint.getSuggestedFixes())
                 .ruleDocUrl(ruleDocUrl)
                 .build();
+    }
+
+    private static boolean isNumeric(String value) {
+        if (value == null) {
+            return false;
+        }
+        try {
+            Double.parseDouble(value);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 }

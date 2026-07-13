@@ -42,6 +42,7 @@ class ConstraintAnalyzerTest {
             attrNode.setName(entry.getKey());
             DslAttributeValueNode valueNode = new DslAttributeValueNode();
             valueNode.setRawValue(entry.getValue());
+            valueNode.setLiteral(true);
             attrNode.setValue(valueNode);
             attrNodes.add(attrNode);
         }

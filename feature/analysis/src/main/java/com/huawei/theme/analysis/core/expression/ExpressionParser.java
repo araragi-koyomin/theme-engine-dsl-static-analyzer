@@ -38,7 +38,14 @@ public final class ExpressionParser {
         if (value.indexOf('#') >= 0) {
             return !(isColorAttribute(attrName) && isHexColor(value));
         }
+        if (isPlainNumeric(value)) {
+            return true;
+        }
         return false;
+    }
+
+    private static boolean isPlainNumeric(String value) {
+        return value.matches("^[+-]?\\d+(\\.\\d+)?$");
     }
 
     public static ExpressionNode parseExpression(String value, String expressionKind) {

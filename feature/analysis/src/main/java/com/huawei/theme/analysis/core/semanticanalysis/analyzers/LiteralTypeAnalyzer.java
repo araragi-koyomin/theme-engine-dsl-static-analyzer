@@ -47,7 +47,7 @@ public class LiteralTypeAnalyzer extends BaseXmlAnalyzer {
             if (value == null) {
                 continue;
             }
-            if (value.getExpression() != null && value.getExpression().isPresent()) {
+            if (!value.isLiteral()) {
                 continue;
             }
             String rawValue = value.getRawValue();

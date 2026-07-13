@@ -15,7 +15,16 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
 
     @Override
     public ExpressionNode visitExpression(DslExpressionParser.ExpressionContext ctx) {
-        return visit(ctx.additiveExpr());
+        return visit(ctx.comparisonExpr());
+    }
+
+    @Override
+    public ExpressionNode visitComparisonExpr(DslExpressionParser.ComparisonExprContext ctx) {
+        List<DslExpressionParser.AdditiveExprContext> operands = ctx.additiveExpr();
+        if (operands.size() == 1) {
+            return visit(operands.get(0));
+        }
+        return buildBinaryChain(operands, ctx);
     }
 
     @Override

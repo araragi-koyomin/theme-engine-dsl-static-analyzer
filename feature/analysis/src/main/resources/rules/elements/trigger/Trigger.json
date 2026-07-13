@@ -10,8 +10,6 @@
     "action": {
       "type": "string",
       "enumValues": [
-        "down", "up", "double", "click", "long", "resume", "pause", "tapLink", "tapConnected", "tapDisconnected",
-        "move_left_start", "move_left_end", "move_right_start", "move_right_end"
       ],
       "aliases": [
       ],

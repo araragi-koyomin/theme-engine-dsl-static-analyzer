@@ -50,6 +50,17 @@ public class ScopeAnalyzer extends BaseXmlAnalyzer {
             return Collections.emptyList();
         }
 
+        if (elementNode.getParent() instanceof DslElementNode parentElement) {
+            Optional<DslElementRule> parentRuleOpt = ruleRepo.getElementRule(parentElement.getTagName());
+            if (parentRuleOpt.isPresent()) {
+                Map<String, Boolean> parentScope = parentRuleOpt.get().getScope();
+                if (parentScope != null && !parentScope.isEmpty()
+                        && !Boolean.TRUE.equals(parentScope.get(currentScope))) {
+                    return Collections.emptyList();
+                }
+            }
+        }
+
         String message = "元素不支持当前应用位置：'" + tagName + "'不允许在'" + currentScope + "'中使用";
         return List.of(createDiagnostic(context, elementNode, message));
     }

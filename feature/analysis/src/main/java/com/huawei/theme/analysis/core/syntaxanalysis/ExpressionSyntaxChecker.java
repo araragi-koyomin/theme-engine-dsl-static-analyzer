@@ -68,8 +68,13 @@ public class ExpressionSyntaxChecker {
             return;
         }
 
-        ExpressionParser.ParseOutcome outcome = ExpressionParser.doParse(rawValue, expressionKind);
-        boolean isString = "string".equals(expressionKind);
+        ExpressionParser.ParseOutcome outcome;
+        if ("auto".equals(expressionKind) && isPlainNumeric(rawValue)) {
+            outcome = ExpressionParser.doParse(rawValue, "number");
+        } else {
+            outcome = ExpressionParser.doParse(rawValue, expressionKind);
+        }
+        boolean isStringExpr = "string".equals(expressionKind) || rawValue.indexOf('\'') >= 0;
         boolean parseFailed = outcome.antlrError() || outcome.leftoverTokens() || outcome.node() == null;
 
         if (outcome.node() != null) {
@@ -80,7 +85,7 @@ public class ExpressionSyntaxChecker {
             checkPrecision(outcome.node(), filePath, attr, rawValue, diagnostics);
         }
 
-        if (isString && rawValue.startsWith("#")
+        if (isStringExpr && rawValue.startsWith("#")
                 && (rawValue.indexOf('*') >= 0 || rawValue.indexOf('/') >= 0
                         || rawValue.indexOf('%') >= 0 || rawValue.indexOf('-') >= 0)) {
             diagnostics.add(diag("SYN-EXPR-003", DiagnosticSeverity.ERROR,
@@ -93,14 +98,14 @@ public class ExpressionSyntaxChecker {
                     "preciseeval 后使用运算符或+连接符: " + rawValue, filePath, attr));
         }
 
-        if (parseFailed && isString) {
+        if (isStringExpr) {
             if (hasBareWordInConcat(rawValue)) {
                 diagnostics.add(diag("SYN-EXPR-004", DiagnosticSeverity.ERROR,
                         "字符串表达式未使用单引号: " + rawValue, filePath, attr));
             } else if (hasMissingBraces(rawValue)) {
                 diagnostics.add(diag("SYN-EXPR-005", DiagnosticSeverity.ERROR,
                         "字符串表达式嵌入数值表达式缺少花括号: " + rawValue, filePath, attr));
-            } else {
+            } else if (parseFailed) {
                 diagnostics.add(diag("SYN-EXPR-ANTLR", DiagnosticSeverity.ERROR,
                         "表达式语法错误: " + rawValue, filePath, attr));
             }
@@ -166,9 +171,17 @@ public class ExpressionSyntaxChecker {
 
     private static boolean hasMissingBraces(String rawValue) {
         String withoutBraces = rawValue.replaceAll("\\{[^}]*}", "");
-        return withoutBraces.indexOf('+') >= 0
-                && (withoutBraces.indexOf('*') >= 0 || withoutBraces.indexOf('/') >= 0
-                        || withoutBraces.indexOf('%') >= 0);
+        String stripped = withoutBraces.replaceAll("'[^']*'", "");
+        boolean hasPlus = stripped.indexOf('+') >= 0;
+        boolean hasOperator = stripped.indexOf('*') >= 0
+                || stripped.indexOf('/') >= 0
+                || stripped.indexOf('%') >= 0;
+        boolean hasHashAfterPlus = Pattern.compile("\\+\\s*#").matcher(stripped).find();
+        return hasPlus && (hasOperator || hasHashAfterPlus);
+    }
+
+    private static boolean isPlainNumeric(String value) {
+        return value != null && value.matches("^[+-]?\\d+(\\.\\d+)?$");
     }
 
     private Diagnostic diag(String ruleId, DiagnosticSeverity severity, String message,
