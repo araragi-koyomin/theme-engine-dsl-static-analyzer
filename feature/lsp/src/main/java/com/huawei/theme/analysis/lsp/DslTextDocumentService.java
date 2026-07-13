@@ -18,6 +18,8 @@ import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
+import org.eclipse.lsp4j.SemanticTokens;
+import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -46,6 +48,7 @@ public final class DslTextDocumentService implements TextDocumentService {
     private volatile CompletionProvider completionProvider;
     private volatile HoverProvider hoverProvider;
     private volatile DslFileIdentifier fileIdentifier;
+    private volatile SemanticTokensProvider semanticTokensProvider;
     private final DslTextDocuments documents = new DslTextDocuments();
     private final ScheduledExecutorService scheduler =
             Executors.newSingleThreadScheduledExecutor(r -> {
@@ -88,6 +91,7 @@ public final class DslTextDocumentService implements TextDocumentService {
         this.completionProvider = new CompletionProvider(ruleRepository);
         this.hoverProvider = new HoverProvider(ruleRepository);
         this.fileIdentifier = new DslFileIdentifier(ruleRepository);
+        this.semanticTokensProvider = new SemanticTokensProvider(ruleRepository);
     }
 
     @Override
@@ -154,6 +158,17 @@ public final class DslTextDocumentService implements TextDocumentService {
                 params.getPosition().getCharacter());
         ContextResolver.Context ctx = new ContextResolver(text).resolve(offset);
         return CompletableFuture.completedFuture(hoverProvider.hover(ctx));
+    }
+
+    @Override
+    public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
+        String uri = params.getTextDocument().getUri();
+        String text = documents.get(uri);
+        if (text == null || semanticTokensProvider == null) {
+            return CompletableFuture.completedFuture(new SemanticTokens(List.of()));
+        }
+        return CompletableFuture.completedFuture(
+                new SemanticTokens(semanticTokensProvider.collect(uri, text)));
     }
 
     private void scheduleAnalyze(String uri) {

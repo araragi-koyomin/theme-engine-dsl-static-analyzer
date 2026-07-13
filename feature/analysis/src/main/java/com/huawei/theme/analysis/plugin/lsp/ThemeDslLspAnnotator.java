@@ -1,6 +1,8 @@
 package com.huawei.theme.analysis.plugin.lsp;
 
 import java.util.List;
+import java.util.logging.Logger;
+import java.awt.Font;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -10,13 +12,19 @@ import org.eclipse.lsp4j.Range;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
+import com.intellij.openapi.editor.colors.TextAttributesKey;
+import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.xml.XmlTag;
+import com.intellij.ui.JBColor;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -29,6 +37,8 @@ import org.jetbrains.annotations.NotNull;
  * element being annotated, emits a {@code newAnnotation}.</p>
  */
 public final class ThemeDslLspAnnotator implements Annotator {
+
+    private static final Logger LOG = Logger.getLogger(ThemeDslLspAnnotator.class.getName());
 
     @Override
     public void annotate(@NotNull PsiElement element, @NotNull AnnotationHolder holder) {
@@ -62,6 +72,89 @@ public final class ThemeDslLspAnnotator implements Annotator {
                         .range(element)
                         .create();
             }
+        }
+        renderSemanticTokens(element, holder, uri, doc, client);
+    }
+
+    private static void renderSemanticTokens(PsiElement element, AnnotationHolder holder,
+                                             String uri, Document doc, DslLspLanguageClient client) {
+        List<Integer> tokens = client.getSemanticTokens(uri);
+        if (tokens.isEmpty()) {
+            return;
+        }
+        TextRange tagRange = element.getTextRange();
+        LOG.info("renderSemanticTokens: uri=" + uri + " tokens=" + tokens.size() + " tag=" + tagRange);
+        int line = 0;
+        int col = 0;
+        int rendered = 0;
+        for (int i = 0; i + 4 < tokens.size(); i += 5) {
+            int deltaLine = tokens.get(i);
+            int deltaStart = tokens.get(i + 1);
+            int length = tokens.get(i + 2);
+            int type = tokens.get(i + 3);
+            line += deltaLine;
+            col = (deltaLine == 0) ? col + deltaStart : deltaStart;
+            if (line < 0 || line >= doc.getLineCount()) {
+                continue;
+            }
+            int start = doc.getLineStartOffset(line) + col;
+            int end = Math.min(start + length, doc.getTextLength());
+            if (start >= end || !tagRange.containsRange(start, end)) {
+                continue;
+            }
+            TextAttributesKey key = keyForType(type);
+            if (key == null) {
+                continue;
+            }
+            TextAttributes attrs = EditorColorsManager.getInstance().getGlobalScheme().getAttributes(key);
+            if (attrs == null || attrs.getForegroundColor() == null) {
+                attrs = defaultAttrsForType(type);
+            }
+            if (rendered == 0) {
+                LOG.info("renderSemanticTokens: first token type=" + type + " line=" + line + " col=" + col
+                        + " start=" + start + " end=" + end + " tag=" + tagRange
+                        + " attrsNull=" + (attrs == null)
+                        + " fg=" + (attrs == null ? "null" : attrs.getForegroundColor()));
+            }
+            if (attrs == null) {
+                continue;
+            }
+            holder.newSilentAnnotation(HighlightSeverity.INFORMATION)
+                    .range(new TextRange(start, end))
+                    .enforcedTextAttributes(attrs)
+                    .create();
+            rendered++;
+        }
+        LOG.info("renderSemanticTokens: rendered=" + rendered + " for tag=" + tagRange);
+    }
+
+    private static TextAttributesKey keyForType(int type) {
+        switch (type) {
+            case 0:
+                return DefaultLanguageHighlighterColors.IDENTIFIER;
+            case 1:
+                return DefaultLanguageHighlighterColors.FUNCTION_CALL;
+            case 2:
+                return DefaultLanguageHighlighterColors.NUMBER;
+            case 3:
+                return DefaultLanguageHighlighterColors.STRING;
+            default:
+                return null;
+        }
+    }
+
+    private static TextAttributes defaultAttrsForType(int type) {
+        switch (type) {
+            case 0:
+                return new TextAttributes(JBColor.BLUE, null, null, null, Font.PLAIN);
+            case 1:
+                return new TextAttributes(JBColor.YELLOW, null, null, null, Font.ITALIC);
+            case 2:
+                return new TextAttributes(JBColor.CYAN, null, null, null, Font.BOLD);
+            case 3:
+                return new TextAttributes(JBColor.GREEN, null, null, null, Font.PLAIN);
+            default:
+                return null;
         }
     }
 

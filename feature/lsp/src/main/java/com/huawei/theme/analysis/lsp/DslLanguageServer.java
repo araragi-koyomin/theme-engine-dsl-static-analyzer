@@ -8,6 +8,8 @@ import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.InitializedParams;
 import org.eclipse.lsp4j.ServerCapabilities;
+import org.eclipse.lsp4j.SemanticTokensLegend;
+import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -77,6 +79,11 @@ public final class DslLanguageServer implements LanguageServer {
         caps.setTextDocumentSync(Either.forLeft(TextDocumentSyncKind.Full));
         caps.setCompletionProvider(new CompletionOptions(false, List.of("<", " ", "=")));
         caps.setHoverProvider(Either.forLeft(true));
+        SemanticTokensLegend legend = new SemanticTokensLegend(
+                SemanticTokensProvider.TOKEN_TYPES, SemanticTokensProvider.TOKEN_MODIFIERS);
+        SemanticTokensWithRegistrationOptions stOptions = new SemanticTokensWithRegistrationOptions(legend);
+        stOptions.setFull(true);
+        caps.setSemanticTokensProvider(stOptions);
         return CompletableFuture.completedFuture(new InitializeResult(caps));
     }
 

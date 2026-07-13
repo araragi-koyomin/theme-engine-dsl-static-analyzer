@@ -27,6 +27,7 @@ public final class DslLspLanguageClient implements LanguageClient {
 
     private final Project project;
     private final Map<String, List<Diagnostic>> diagnosticsByUri = new ConcurrentHashMap<>();
+    private final Map<String, List<Integer>> semanticTokensByUri = new ConcurrentHashMap<>();
 
     DslLspLanguageClient(Project project) {
         this.project = project;
@@ -38,6 +39,14 @@ public final class DslLspLanguageClient implements LanguageClient {
      */
     List<Diagnostic> getDiagnostics(String uri) {
         return diagnosticsByUri.getOrDefault(uri, List.of());
+    }
+
+    List<Integer> getSemanticTokens(String uri) {
+        return semanticTokensByUri.getOrDefault(uri, List.of());
+    }
+
+    void setSemanticTokens(String uri, List<Integer> data) {
+        semanticTokensByUri.put(uri, data);
     }
 
     @Override

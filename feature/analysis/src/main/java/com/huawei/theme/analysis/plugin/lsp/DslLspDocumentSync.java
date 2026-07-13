@@ -1,27 +1,40 @@
 package com.huawei.theme.analysis.plugin.lsp;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
+import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.services.LanguageServer;
 
+import java.awt.Font;
+
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.impl.DocumentMarkupModel;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
+import com.intellij.openapi.editor.markup.HighlighterTargetArea;
+import com.intellij.openapi.editor.markup.MarkupModel;
+import com.intellij.openapi.editor.markup.RangeHighlighter;
+import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiDocumentManager;
+import com.intellij.ui.JBColor;
 import com.intellij.util.messages.MessageBusConnection;
 
 /**
@@ -34,6 +47,8 @@ import com.intellij.util.messages.MessageBusConnection;
  * to keep the client simple.</p>
  */
 final class DslLspDocumentSync implements Disposable {
+
+    private static final Logger LOG = Logger.getLogger(DslLspDocumentSync.class.getName());
 
     private final Project project;
     private final DslLspServerService serverService;
@@ -116,6 +131,7 @@ final class DslLspDocumentSync implements Disposable {
         DidOpenTextDocumentParams p = new DidOpenTextDocumentParams();
         p.setTextDocument(new TextDocumentItem(uri, "xml", 1, text));
         s.getTextDocumentService().didOpen(p);
+        requestSemanticTokens(uri);
     }
 
     private void sendDidChange(String uri, String text) {
@@ -127,6 +143,7 @@ final class DslLspDocumentSync implements Disposable {
         p.setTextDocument(new VersionedTextDocumentIdentifier(uri, (int) System.currentTimeMillis()));
         p.setContentChanges(List.of(new TextDocumentContentChangeEvent(text)));
         s.getTextDocumentService().didChange(p);
+        requestSemanticTokens(uri);
     }
 
     private void sendDidClose(String uri) {
@@ -137,6 +154,101 @@ final class DslLspDocumentSync implements Disposable {
         DidCloseTextDocumentParams p = new DidCloseTextDocumentParams();
         p.setTextDocument(new TextDocumentIdentifier(uri));
         s.getTextDocumentService().didClose(p);
+    }
+
+    private void requestSemanticTokens(String uri) {
+        LanguageServer s = serverService.getServerProxy();
+        if (s == null) {
+            LOG.info("requestSemanticTokens: no server proxy, uri=" + uri);
+            return;
+        }
+        LOG.info("requestSemanticTokens: requesting uri=" + uri);
+        SemanticTokensParams params = new SemanticTokensParams();
+        params.setTextDocument(new TextDocumentIdentifier(uri));
+        s.getTextDocumentService().semanticTokensFull(params).thenAccept(tokens -> {
+            DslLspLanguageClient client = serverService.getClient();
+            if (client == null || tokens == null || tokens.getData() == null) {
+                LOG.info("requestSemanticTokens: null response, uri=" + uri);
+                return;
+            }
+            LOG.info("requestSemanticTokens: received uri=" + uri + " tokens=" + tokens.getData().size());
+            client.setSemanticTokens(uri, tokens.getData());
+            ApplicationManager.getApplication().invokeLater(() -> {
+                if (project.isDisposed()) {
+                    return;
+                }
+                applySemanticTokensToEditor(uri, tokens.getData());
+            });
+        }).exceptionally(e -> {
+            LOG.warning("requestSemanticTokens: failed uri=" + uri + " " + e.getMessage());
+            return null;
+        });
+    }
+
+    private static final int SEMANTIC_LAYER = 7000;
+    private static final TextAttributes VARIABLE_ATTR =
+            new TextAttributes(JBColor.BLUE, null, null, null, Font.PLAIN);
+    private static final TextAttributes FUNCTION_ATTR =
+            new TextAttributes(JBColor.YELLOW, null, null, null, Font.ITALIC);
+    private static final TextAttributes NUMBER_ATTR =
+            new TextAttributes(JBColor.CYAN, null, null, null, Font.BOLD);
+    private static final TextAttributes STRING_ATTR =
+            new TextAttributes(JBColor.GREEN, null, null, null, Font.PLAIN);
+
+    private void applySemanticTokensToEditor(String uri, List<Integer> data) {
+        VirtualFile vf = VirtualFileManager.getInstance().findFileByUrl(uri);
+        if (vf == null) {
+            return;
+        }
+        Document doc = FileDocumentManager.getInstance().getDocument(vf);
+        if (doc == null) {
+            return;
+        }
+        MarkupModel mm = DocumentMarkupModel.forDocument(doc, project, true);
+        for (RangeHighlighter h : mm.getAllHighlighters()) {
+            if (h.getLayer() == SEMANTIC_LAYER) {
+                mm.removeHighlighter(h);
+            }
+        }
+        int line = 0;
+        int col = 0;
+        for (int i = 0; i + 4 < data.size(); i += 5) {
+            int deltaLine = data.get(i);
+            int deltaStart = data.get(i + 1);
+            int length = data.get(i + 2);
+            int type = data.get(i + 3);
+            line += deltaLine;
+            col = (deltaLine == 0) ? col + deltaStart : deltaStart;
+            if (line < 0 || line >= doc.getLineCount()) {
+                continue;
+            }
+            int start = doc.getLineStartOffset(line) + col;
+            int end = Math.min(start + length, doc.getTextLength());
+            if (start >= end) {
+                continue;
+            }
+            TextAttributes attrs = attrsForType(type);
+            if (attrs == null) {
+                continue;
+            }
+            mm.addRangeHighlighter(start, end, SEMANTIC_LAYER, attrs, HighlighterTargetArea.EXACT_RANGE);
+        }
+        DaemonCodeAnalyzer.getInstance(project).restart();
+    }
+
+    private static TextAttributes attrsForType(int type) {
+        switch (type) {
+            case 0:
+                return VARIABLE_ATTR;
+            case 1:
+                return FUNCTION_ATTR;
+            case 2:
+                return NUMBER_ATTR;
+            case 3:
+                return STRING_ATTR;
+            default:
+                return null;
+        }
     }
 
     @Override
