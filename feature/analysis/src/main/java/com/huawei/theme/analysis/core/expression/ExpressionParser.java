@@ -41,6 +41,9 @@ public final class ExpressionParser {
         if (isPlainNumeric(value)) {
             return true;
         }
+        if (value.matches(".*[a-zA-Z_].*")) {
+            return true;
+        }
         return false;
     }
 

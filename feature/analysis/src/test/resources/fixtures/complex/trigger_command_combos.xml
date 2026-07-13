@@ -32,7 +32,7 @@
 
     <Button name="group_cmd_btn" x="100" y="700" width="200" height="80">
         <Trigger action="double">
-            <GroupCommand method="perform" params="actionA,actionB" paramTypes="String"/>
+            <GroupCommands method="perform" params="actionA,actionB" paramTypes="String"/>
         </Trigger>
     </Button>
 

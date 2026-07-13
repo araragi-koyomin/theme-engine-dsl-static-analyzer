@@ -98,18 +98,25 @@ public class ExpressionSyntaxChecker {
                     "preciseeval 后使用运算符或+连接符: " + rawValue, filePath, attr));
         }
 
-        if (isStringExpr) {
-            if (hasBareWordInConcat(rawValue)) {
+        boolean isEnumValue = specOpt.isPresent()
+                && specOpt.get().getEnumValues() != null
+                && specOpt.get().getEnumValues().contains(rawValue);
+
+        if (isStandaloneBareWord(rawValue, specOpt.orElse(null))) {
+            diagnostics.add(diag("SYN-EXPR-004", DiagnosticSeverity.ERROR,
+                    "字符串表达式未使用单引号: " + rawValue, filePath, attr));
+        } else if (isStringExpr) {
+            if (hasBareWordInConcat(rawValue, specOpt.orElse(null))) {
                 diagnostics.add(diag("SYN-EXPR-004", DiagnosticSeverity.ERROR,
                         "字符串表达式未使用单引号: " + rawValue, filePath, attr));
             } else if (hasMissingBraces(rawValue)) {
                 diagnostics.add(diag("SYN-EXPR-005", DiagnosticSeverity.ERROR,
                         "字符串表达式嵌入数值表达式缺少花括号: " + rawValue, filePath, attr));
-            } else if (parseFailed) {
+            } else if (parseFailed && !isEnumValue) {
                 diagnostics.add(diag("SYN-EXPR-ANTLR", DiagnosticSeverity.ERROR,
                         "表达式语法错误: " + rawValue, filePath, attr));
             }
-        } else if (parseFailed) {
+        } else if (parseFailed && !isEnumValue) {
             diagnostics.add(diag("SYN-EXPR-ANTLR", DiagnosticSeverity.ERROR,
                     "表达式语法错误: " + rawValue, filePath, attr));
         }
@@ -158,15 +165,36 @@ public class ExpressionSyntaxChecker {
         return count;
     }
 
-    private static boolean hasBareWordInConcat(String rawValue) {
+    private static boolean hasBareWordInConcat(String rawValue, AttrTypeSpec spec) {
         String[] terms = rawValue.split("\\+");
         for (String term : terms) {
             String t = term.trim();
+            if (spec != null && spec.getEnumValues() != null
+                    && spec.getEnumValues().contains(t)) {
+                continue;
+            }
             if (t.matches("^[a-zA-Z_]\\w*$")) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static boolean isStandaloneBareWord(String rawValue, AttrTypeSpec spec) {
+        if (spec != null && spec.getEnumValues() != null
+                && spec.getEnumValues().contains(rawValue)) {
+            return false;
+        }
+        if (rawValue.contains("'") || rawValue.contains("#") || rawValue.contains("@")
+                || rawValue.contains("+") || rawValue.contains("{")
+                || rawValue.contains("(") || rawValue.contains("*")
+                || rawValue.contains("/") || rawValue.contains("%")) {
+            return false;
+        }
+        if (isPlainNumeric(rawValue)) {
+            return false;
+        }
+        return rawValue.matches("^[a-zA-Z_][\\w ]*$");
     }
 
     private static boolean hasMissingBraces(String rawValue) {

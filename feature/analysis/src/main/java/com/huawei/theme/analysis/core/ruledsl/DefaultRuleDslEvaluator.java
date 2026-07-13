@@ -79,7 +79,7 @@ public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean
                     evalResult = false;
                     break;
             }
-            result = result.replace(fullMatch, String.valueOf(evalResult));
+            result = result.replace(fullMatch, evalResult ? "'1'=='1'" : "'1'=='0'");
             m = CHILDREN_SIZE_EXPR.matcher(result);
         }
         return result;
