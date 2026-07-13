@@ -1,4 +1,4 @@
-package com.huawei.theme.analysis.plugin.editor;
+package com.huawei.theme.analysis.plugin.editor.themedsl;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.highlighter.XmlLikeFileType;

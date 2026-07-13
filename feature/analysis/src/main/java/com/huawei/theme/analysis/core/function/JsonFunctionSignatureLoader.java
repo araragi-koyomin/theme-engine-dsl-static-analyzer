@@ -55,22 +55,22 @@ public class JsonFunctionSignatureLoader implements FunctionSignatureLibrary {
         }
 
         try (FileReader reader = new FileReader(filePath.toFile(), StandardCharsets.UTF_8)) {
-            FunctionFileWrapper wrapper = gson.fromJson(reader, FunctionFileWrapper.class);
-            if (wrapper == null || wrapper.functions == null) {
-                return new JsonFunctionSignatureLoader(Collections.emptyMap());
-            }
-
-            Map<String, List<FunctionSignature>> index = wrapper.functions.stream()
-                    .filter(s -> s.getName() != null)
-                    .peek(JsonFunctionSignatureLoader::normalizeSignature)
-                    .collect(Collectors.groupingBy(FunctionSignature::getName));
-
-            return new JsonFunctionSignatureLoader(index);
+            return loadFromReader(reader);
         } catch (IOException e) {
             throw new FunctionLoadException("Failed to read functions file: " + filePath, e);
-        } catch (JsonSyntaxException e) {
-            throw new FunctionLoadException("JSON syntax error in functions file: " + filePath, e);
         }
+    }
+
+    public JsonFunctionSignatureLoader loadFromReader(java.io.Reader reader) {
+        FunctionFileWrapper wrapper = gson.fromJson(reader, FunctionFileWrapper.class);
+        if (wrapper == null || wrapper.functions == null) {
+            return new JsonFunctionSignatureLoader(Collections.emptyMap());
+        }
+        Map<String, List<FunctionSignature>> index = wrapper.functions.stream()
+                .filter(s -> s.getName() != null)
+                .peek(JsonFunctionSignatureLoader::normalizeSignature)
+                .collect(Collectors.groupingBy(FunctionSignature::getName));
+        return new JsonFunctionSignatureLoader(index);
     }
 
     public JsonFunctionSignatureLoader loadFromClasspath() {
@@ -105,6 +105,12 @@ public class JsonFunctionSignatureLoader implements FunctionSignatureLibrary {
     @Override
     public boolean hasFunction(String name) {
         return signatureIndex.containsKey(name);
+    }
+
+    public List<FunctionSignature> getAllSignatures() {
+        return signatureIndex.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
     }
 
     public static class FunctionLoadException extends RuntimeException {

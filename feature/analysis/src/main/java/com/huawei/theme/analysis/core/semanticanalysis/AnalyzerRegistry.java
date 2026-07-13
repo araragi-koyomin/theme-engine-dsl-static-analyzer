@@ -18,6 +18,14 @@ public class AnalyzerRegistry {
         analyzers.add(analyzer);
     }
 
+    static{
+        init();
+    }
+
+    /**
+     * init已经在static快中执行了。
+     */
+    @Deprecated()
     public static void init() {
         if (initialized) {
             return;

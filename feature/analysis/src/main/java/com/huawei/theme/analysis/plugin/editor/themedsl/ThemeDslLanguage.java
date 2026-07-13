@@ -1,4 +1,4 @@
-package com.huawei.theme.analysis.plugin.editor;
+package com.huawei.theme.analysis.plugin.editor.themedsl;
 
 import com.intellij.lang.xml.XMLLanguage;
 
