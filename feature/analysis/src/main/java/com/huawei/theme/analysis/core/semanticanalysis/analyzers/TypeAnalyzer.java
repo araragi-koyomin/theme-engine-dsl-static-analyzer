@@ -97,6 +97,13 @@ public class TypeAnalyzer implements DslAnalyzer {
         }
         SymbolTable symbolTable = context.getSymbolTable();
         DslType inferred = engine.inferType(exprNode, expectedType, symbolTable);
+        if (context.getVerboseCollector() != null) {
+            context.getVerboseCollector().recordTypeInference(
+                    elementNode.getTagName() + "." + attr.getName(),
+                    inferred != null ? inferred.getName() : "unknown",
+                    expectedType.getName(),
+                    inferred != null && TypeInferenceEngine.typeEquals(inferred, expectedType));
+        }
         if (inferred != null && !TypeInferenceEngine.typeEquals(inferred, expectedType)) {
             if (expectedType instanceof DslStringType && inferred instanceof DslNumberType) {
             } else {

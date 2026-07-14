@@ -86,6 +86,12 @@ public class DiagnosticProviderImpl implements DiagnosticProvider {
             this.collector = collector;
             this.filteredAnalyzers = filterAnalyzers(config, mode);
             globalTable = symbolTableBuilder.buildGlobal(root, ruleRepo);
+            if (collector != null) {
+                int globals = ruleRepo.getAllGlobalVars() != null ? ruleRepo.getAllGlobalVars().size() : 0;
+                int userVars = Math.max(0, globalTable.getDeclarations().size() - globals);
+                int dups = globalTable.getDuplicateVarNames().size();
+                collector.recordSymbolStats(globals, userVars, dups);
+            }
         }
 
         private List<DslAnalyzer> filterAnalyzers(InspectionConfig config, PipelineMode mode) {
@@ -117,7 +123,7 @@ public class DiagnosticProviderImpl implements DiagnosticProvider {
             for (var analyzer : filteredAnalyzers) {
                 try {
                     var list = analyzer.analyze(elementNode,
-                            new DslContext(ruleRepo, symbolTable, root.getFilePath(), root));
+                            new DslContext(ruleRepo, symbolTable, root.getFilePath(), root, collector));
                     diagnostics.addAll(list);
                     if (collector != null) {
                         collector.recordAnalyzerCount(analyzer.getClass().getSimpleName(), list.size());

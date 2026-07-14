@@ -19,6 +19,8 @@ import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProvider;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilder;
 import com.huawei.theme.analysis.core.semanticanalysis.VerboseCollector;
+import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
+import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
@@ -134,6 +136,8 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
             ast = astProvider.getDslAst(filePath, content);
             if (verboseCollector != null) {
                 verboseCollector.recordStageTime("AST build", System.currentTimeMillis() - astStart);
+                int[] stats = countAstNodes(ast);
+                verboseCollector.recordAstStats(stats[0], stats[1], stats[2]);
             }
         } catch (Exception e) {
             Diagnostic internalError = Diagnostic.builder()
@@ -237,5 +241,41 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         return (int) diagnostics.stream()
                 .filter(d -> d.getSeverity() == severity)
                 .count();
+    }
+
+    private int[] countAstNodes(DslFileNode ast) {
+        int elements = 0;
+        int attributes = 0;
+        int expressions = 0;
+        if (ast != null && ast.getRootElement() != null) {
+            int[] counts = countElement(ast.getRootElement());
+            elements = counts[0];
+            attributes = counts[1];
+            expressions = counts[2];
+        }
+        return new int[]{elements, attributes, expressions};
+    }
+
+    private int[] countElement(DslElementNode element) {
+        int elements = 1;
+        int attributes = 0;
+        int expressions = 0;
+        if (element.getAttributes() != null) {
+            attributes += element.getAttributes().size();
+            for (DslAttributeNode attr : element.getAttributes()) {
+                if (attr.getValue() != null && !attr.getValue().isLiteral()) {
+                    expressions++;
+                }
+            }
+        }
+        if (element.getChildElements() != null) {
+            for (DslElementNode child : element.getChildElements()) {
+                int[] childCounts = countElement(child);
+                elements += childCounts[0];
+                attributes += childCounts[1];
+                expressions += childCounts[2];
+            }
+        }
+        return new int[]{elements, attributes, expressions};
     }
 }

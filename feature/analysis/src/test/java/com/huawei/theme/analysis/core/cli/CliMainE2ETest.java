@@ -401,7 +401,23 @@ class CliMainE2ETest {
         Path targetFile = copyDslResourceToTemp("valid_lockscreen.xml");
         int exitCode = CliMain.run(new String[]{"--verbose", "--no-color", targetFile.toString()});
         assertTrue(exitCode == 0 || exitCode == 1);
-        assertTrue(stdout().contains("[verbose]"));
+        String out = stdout();
+        assertTrue(out.contains("[verbose]"));
+        assertTrue(out.contains("AST:"));
+        assertFalse(out.contains("AST: 0 elements, 0 attributes, 0 expressions"));
+        assertTrue(out.contains("Symbols:"));
+        assertTrue(out.contains("Diagnostics:"));
+        assertTrue(out.contains("Type inference:"));
+    }
+
+    @Test
+    void verboseMode_typeInference_showsTraces() throws Exception {
+        Path targetFile = copyResourceToTemp("complex/type_inference_edge_cases.xml", "type_inference_edge_cases.xml");
+        int exitCode = CliMain.run(new String[]{"--verbose", "--no-color", targetFile.toString()});
+        assertTrue(exitCode == 0 || exitCode == 1);
+        String out = stdout();
+        assertTrue(out.contains("[verbose]"));
+        assertFalse(out.contains("Type inference: (none)"));
     }
 
     @Test
