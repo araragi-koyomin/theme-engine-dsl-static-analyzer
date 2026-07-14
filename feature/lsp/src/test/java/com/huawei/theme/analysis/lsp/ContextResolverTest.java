@@ -36,12 +36,36 @@ class ContextResolverTest {
     }
 
     @Test
-    void attributeValueIsOther() {
+    void attributeValuePosition() {
+        // "<Widget attr=\"val" : '"'(13) v(14) a(15) l(16) ; cursor after 'l' -> offset 17
         String text = "<Widget attr=\"val";
-        // cursor inside the quoted value -> offset 16 (after 'l')
-        ContextResolver.Context ctx = new ContextResolver(text).resolve(16);
-        assertEquals(ContextResolver.PositionType.OTHER, ctx.type);
+        ContextResolver.Context ctx = new ContextResolver(text).resolve(17);
+        assertEquals(ContextResolver.PositionType.ATTRIBUTE_VALUE, ctx.type);
         assertEquals("Widget", ctx.tagName);
+        assertEquals("attr", ctx.attrName);
+        assertEquals("val", ctx.word);
+    }
+
+    @Test
+    void attributeValueEmptyAfterOpeningQuote() {
+        // cursor right after the opening quote of an (unclosed) value
+        // "<Widget attr=\"" -> offset 14
+        String text = "<Widget attr=\"";
+        ContextResolver.Context ctx = new ContextResolver(text).resolve(14);
+        assertEquals(ContextResolver.PositionType.ATTRIBUTE_VALUE, ctx.type);
+        assertEquals("Widget", ctx.tagName);
+        assertEquals("attr", ctx.attrName);
+        assertEquals("", ctx.word);
+    }
+
+    @Test
+    void attributeValueBetweenBalancedQuotes() {
+        // cursor inside a balanced value of a closed tag -> offset 14
+        // "<Widget attr=\"center\"/>" : '='(12) '"'(13) 'c'(14)
+        String text = "<Widget attr=\"center\"/>";
+        ContextResolver.Context ctx = new ContextResolver(text).resolve(14);
+        assertEquals(ContextResolver.PositionType.ATTRIBUTE_VALUE, ctx.type);
+        assertEquals("attr", ctx.attrName);
     }
 
     @Test

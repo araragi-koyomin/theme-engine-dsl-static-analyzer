@@ -95,4 +95,35 @@ class CompletionProviderTest {
         assertEquals("required", nameItem.getDetail());
         assertTrue(nameItem.getSortText().startsWith("0_"));
     }
+
+    /**
+     * End-to-end via the text {@link ContextResolver} (the AST-failure
+     * fallback): on an unclosed tag the three cursor positions must still
+     * resolve to element-name / attribute-name / attribute-value completion.
+     */
+    @Test
+    void threePositionsOnUnclosedTagViaTextFallback() {
+        // "<Text align=\"" — unclosed tag (mid-typing); AST would fail.
+        // positions: '<'(0) T(1)e(2)x(3)t(4) ' '(5) a(6)l(7)i(8)g(9)n(10) '='(11) '"'(12)
+        String text = "<Text align=\"";
+
+        // 1) right after '<' (offset 1) -> element name
+        ContextResolver.Context elemCtx = new ContextResolver(text).resolve(1);
+        assertEquals(ContextResolver.PositionType.ELEMENT_NAME, elemCtx.type);
+        assertTrue(provider.complete(elemCtx).stream().anyMatch(i -> "Text".equals(i.getLabel())));
+
+        // 2) in the attribute name "ali|gn" (offset 9) -> attribute name
+        ContextResolver.Context attrCtx = new ContextResolver(text).resolve(9);
+        assertEquals(ContextResolver.PositionType.ATTRIBUTE_NAME, attrCtx.type);
+        assertEquals("Text", attrCtx.tagName);
+        assertTrue(provider.complete(attrCtx).stream().anyMatch(i -> "align".equals(i.getLabel())));
+
+        // 3) inside the quotes (offset 13, after opening quote) -> value
+        ContextResolver.Context valCtx = new ContextResolver(text).resolve(13);
+        assertEquals(ContextResolver.PositionType.ATTRIBUTE_VALUE, valCtx.type);
+        assertEquals("align", valCtx.attrName);
+        List<CompletionItem> valItems = provider.complete(valCtx);
+        assertTrue(valItems.stream().anyMatch(i -> "left".equals(i.getLabel())));
+        assertTrue(valItems.stream().anyMatch(i -> "center".equals(i.getLabel())));
+    }
 }

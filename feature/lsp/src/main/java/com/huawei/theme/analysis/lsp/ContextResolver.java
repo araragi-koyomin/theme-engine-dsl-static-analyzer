@@ -61,19 +61,66 @@ final class ContextResolver {
             return new Context(PositionType.ELEMENT_NAME,
                     tagName.isEmpty() ? null : tagName, text.substring(nameStart, n));
         }
-        // cursor past the tag name → attribute region
-        int wordStart = n;
-        while (wordStart > nameEnd && isNameChar(text.charAt(wordStart - 1))) {
-            wordStart--;
-        }
-        String w = text.substring(wordStart, n);
-        if (wordStart > nameEnd) {
-            char prev = text.charAt(wordStart - 1);
-            if (prev == '"' || prev == '\'') {
-                return new Context(PositionType.OTHER, tagName, w);
+        // cursor past the tag name → attribute region. Forward-scan from the
+        // tag-name end to the cursor, tracking quote state and the current
+        // attribute name, so we can distinguish attribute-name vs
+        // attribute-value positions even when the XML is incomplete (the AST
+        // path may have failed on mid-typed markup like an unclosed tag).
+        boolean inValue = false;
+        char quote = 0;
+        int valueStartOffset = -1;
+        int attrNameStart = -1;
+        int attrNameEnd = -1;
+        for (int i = nameEnd; i < n; i++) {
+            char c = text.charAt(i);
+            if (inValue) {
+                if (c == quote) {
+                    inValue = false;
+                }
+                continue;
             }
+            if (c == '"' || c == '\'') {
+                inValue = true;
+                quote = c;
+                valueStartOffset = i + 1;
+            } else if (isNameChar(c)) {
+                int s = i;
+                while (i < n && isNameChar(text.charAt(i))) {
+                    i++;
+                }
+                attrNameStart = s;
+                attrNameEnd = i;
+                i--; // offset for loop's i++
+            }
+            // '=', whitespace, '/', '>' and other separators are skipped.
         }
-        return new Context(PositionType.ATTRIBUTE_NAME, tagName, w);
+        if (inValue) {
+            // cursor inside a quoted value
+            String attrName = (attrNameStart >= 0) ? text.substring(attrNameStart, attrNameEnd) : null;
+            String word = safeSubstring(valueStartOffset, n);
+            return new Context(PositionType.ATTRIBUTE_VALUE, tagName, word, attrName);
+        }
+        if (attrNameStart >= 0 && n > attrNameStart && n <= attrNameEnd) {
+            // cursor within the last attribute name token
+            String word = text.substring(attrNameStart, n);
+            String attrName = text.substring(attrNameStart, attrNameEnd);
+            return new Context(PositionType.ATTRIBUTE_NAME, tagName, word, attrName);
+        }
+        // cursor on '=', a quote char, whitespace, or between attributes
+        return new Context(PositionType.OTHER, tagName, wordBefore(n));
+    }
+
+    private String safeSubstring(int start, int end) {
+        if (start < 0) {
+            start = 0;
+        }
+        if (end < start) {
+            end = start;
+        }
+        if (end > text.length()) {
+            end = text.length();
+        }
+        return text.substring(start, end);
     }
 
     private int findTagOpen(int from) {
