@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="cond" type="number" const="true" expression="1"/>
+    <Var name="bad_type" type="number" expression="ifelse(#cond, 1, 'string_result')"/>
+    <Image name="bg" x="#undefined_var" y="0" width="1080" height="1920" src="bg.png"/>
+    <Swiper currentIndex="0" animationTime="500">
+        <Button name="bad_swiper_child" x="10" y="10" width="50" height="50">
+            <Trigger action="slide"/>
+        </Button>
+    </Swiper>
+</Lockscreen>
