@@ -79,6 +79,7 @@ public final class DslLanguageServer implements LanguageServer {
         caps.setTextDocumentSync(Either.forLeft(TextDocumentSyncKind.Full));
         caps.setCompletionProvider(new CompletionOptions(false, List.of("<", " ", "=")));
         caps.setHoverProvider(Either.forLeft(true));
+        caps.setCodeActionProvider(Either.forLeft(true));
         SemanticTokensLegend legend = new SemanticTokensLegend(
                 SemanticTokensProvider.TOKEN_TYPES, SemanticTokensProvider.TOKEN_MODIFIERS);
         SemanticTokensWithRegistrationOptions stOptions = new SemanticTokensWithRegistrationOptions(legend);
