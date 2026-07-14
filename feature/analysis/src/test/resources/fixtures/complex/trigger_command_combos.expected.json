@@ -1,0 +1,19 @@
+{
+  "fixture": "trigger_command_combos.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 8, "warnings": 0, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SEM-TRIG-002", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
+    { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 6, "lineTolerance": 2 },
+    { "ruleId": "SEM-REQ-001", "severity": "error", "approxLine": 14, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 14, "lineTolerance": 2 },
+    { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 16, "lineTolerance": 2 },
+    { "ruleId": "SEM-CMD-001", "severity": "error", "approxLine": 20, "lineTolerance": 2 },
+    { "ruleId": "SEM-CMD-004", "severity": "error", "approxLine": 23, "lineTolerance": 2 },
+    { "ruleId": "SEM-TRIG-003", "severity": "error", "approxLine": 29, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": [
+    { "approxLine": 10, "reason": "mixed_actions_btn Triggers container structure valid" },
+    { "approxLine": 37, "reason": "valid_bg valid Image" }
+  ]
+}

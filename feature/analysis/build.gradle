@@ -13,6 +13,8 @@ dependencies {
     implementation project(":antlr4-intellij-adaptor")
     compileOnly 'org.projectlombok:lombok:1.18.22'
     annotationProcessor 'org.projectlombok:lombok:1.18.22'
+    testCompileOnly 'org.projectlombok:lombok:1.18.22'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.3'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.3'
@@ -131,4 +133,26 @@ task buildFatJar(type: Jar) {
     }
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+task e2e(type: Test) {
+    group = 'verification'
+    description = 'Fat-jar subprocess E2E with golden matching (L4)'
+
+    dependsOn buildFatJar
+    systemProperty 'fatJar.path', layout.buildDirectory.file('cli/dsl-analyzer.jar').get().asFile.absolutePath
+
+    include '**/FatJarSubprocessE2ETest*'
+    exclude '**/GoldenDiagnosticMatchTest*'
+    exclude '**/GoldenMatcherTest*'
+    exclude '**/GoldenExpectationParserTest*'
+    exclude '**/FixtureCoverageTest*'
+
+    useJUnitPlatform()
+    shouldRunAfter test
+
+    reports {
+        junitXml.outputLocation = layout.buildDirectory.dir('test-results/e2e')
+        html.outputLocation = layout.buildDirectory.dir('reports/tests/e2e')
+    }
 }

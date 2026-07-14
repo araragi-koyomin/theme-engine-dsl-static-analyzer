@@ -1,0 +1,23 @@
+{
+  "fixture": "variable_lifecycle_errors.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 10, "warnings": 2, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SEM-PERSIST-001", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
+    { "ruleId": "SEM-PERSIST-001", "severity": "error", "approxLine": 4, "lineTolerance": 2 },
+    { "ruleId": "SEM-PERSIST-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SEM-PERSIST-001", "severity": "error", "approxLine": 6, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 9, "lineTolerance": 2 },
+    { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 11, "lineTolerance": 2 },
+    { "ruleId": "SEM-TYPE-003", "severity": "error", "approxLine": 13, "lineTolerance": 2 },
+    { "ruleId": "SEM-VAR-004", "severity": "warning", "approxLine": 15, "lineTolerance": 2 },
+    { "ruleId": "SEM-VAR-003", "severity": "warning", "approxLine": 17, "lineTolerance": 2 },
+    { "ruleId": "SEM-ARR-001", "severity": "error", "approxLine": 26, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 27, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": [
+    { "approxLine": 22, "reason": "later_declared valid const number Var (forward ref no longer reported)" },
+    { "approxLine": 31, "reason": "valid_ref valid reference to already-declared variable" }
+  ]
+}

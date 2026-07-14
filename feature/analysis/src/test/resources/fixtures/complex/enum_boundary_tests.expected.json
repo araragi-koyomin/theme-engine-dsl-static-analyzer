@@ -1,0 +1,24 @@
+{
+  "fixture": "enum_boundary_tests.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 8, "warnings": 0, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 13, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 24, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 34, "lineTolerance": 2 },
+    { "ruleId": "SEM-SCOPE-001", "severity": "error", "approxLine": 40, "lineTolerance": 2 },
+    { "ruleId": "SEM-SCOPE-001", "severity": "error", "approxLine": 45, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 46, "lineTolerance": 2 },
+    { "ruleId": "SEM-SCOPE-001", "severity": "error", "approxLine": 50, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 51, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": [
+    { "approxLine": 3, "reason": "fill_valid scaleType=fill boundary valid" },
+    { "approxLine": 6, "reason": "center_crop_valid scaleType=center_crop boundary valid" },
+    { "approxLine": 9, "reason": "hold_center_crop_valid scaleType=hold_center_crop boundary valid" },
+    { "approxLine": 16, "reason": "dt_date valid DateTime date format" },
+    { "approxLine": 19, "reason": "txt_normal category=Normal valid enum" },
+    { "approxLine": 27, "reason": "container valid Group with valid nested elements" },
+    { "approxLine": 28, "reason": "group_img enableMove=true valid bool" }
+  ]
+}

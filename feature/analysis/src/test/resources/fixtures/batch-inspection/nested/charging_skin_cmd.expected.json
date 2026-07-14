@@ -1,0 +1,11 @@
+{
+  "fixture": "charging_skin_cmd.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 3, "warnings": 0, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 4, "lineTolerance": 2 },
+    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SEM-CMD-001", "severity": "error", "approxLine": 6, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": []
+}

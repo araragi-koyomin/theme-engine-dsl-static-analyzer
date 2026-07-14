@@ -1,0 +1,14 @@
+{
+  "fixture": "wallpaper_constraint_enum.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 5, "warnings": 1, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SEM-ATTR-005", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
+    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
+    { "ruleId": "SEM-IMG-003", "severity": "warning", "approxLine": 3, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 6, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": []
+}
