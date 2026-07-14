@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.huawei.theme.analysis.core.cli.CliMain;
@@ -63,11 +64,19 @@ public class GoldenDumper {
 
     private static ActualDiagnostic[] extractDiagnostics(String json) {
         JsonElement root = JsonParser.parseString(json);
-        JsonElement diagsElement;
-        if (root.isJsonObject() && root.getAsJsonObject().has("files")) {
-            diagsElement = root.getAsJsonObject().getAsJsonArray("files").get(0).getAsJsonObject().get("diagnostics");
-        } else {
-            diagsElement = root.getAsJsonObject().get("diagnostics");
+        JsonElement diagsElement = null;
+        if (root.isJsonObject()) {
+            if (root.getAsJsonObject().has("files")) {
+                JsonArray filesArray = root.getAsJsonObject().getAsJsonArray("files");
+                if (!filesArray.isEmpty()) {
+                    diagsElement = filesArray.get(0).getAsJsonObject().get("diagnostics");
+                }
+            } else if (root.getAsJsonObject().has("diagnostics")) {
+                diagsElement = root.getAsJsonObject().get("diagnostics");
+            }
+        }
+        if (diagsElement == null || diagsElement.isJsonNull()) {
+            return new ActualDiagnostic[0];
         }
         return GSON.fromJson(diagsElement, ActualDiagnostic[].class);
     }
