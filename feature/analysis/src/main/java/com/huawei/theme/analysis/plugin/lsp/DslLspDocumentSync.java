@@ -25,6 +25,9 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
+import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.editor.impl.DocumentMarkupModel;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
@@ -211,13 +214,21 @@ final class DslLspDocumentSync implements Disposable {
     }
 
     private static final int SEMANTIC_LAYER = 7000;
-    private static final TextAttributes VARIABLE_ATTR =
+    // Theme-aware keys for expression token types (variable/function/number/
+    // string). Resolved against the current editor color scheme at apply time
+    // so colors follow the user's theme; the JBColor fallbacks below are used
+    // only when a scheme lacks attributes for a key.
+    private static final TextAttributesKey VARIABLE_KEY = DefaultLanguageHighlighterColors.IDENTIFIER;
+    private static final TextAttributesKey FUNCTION_KEY = DefaultLanguageHighlighterColors.FUNCTION_CALL;
+    private static final TextAttributesKey NUMBER_KEY = DefaultLanguageHighlighterColors.NUMBER;
+    private static final TextAttributesKey STRING_KEY = DefaultLanguageHighlighterColors.STRING;
+    private static final TextAttributes VARIABLE_FALLBACK =
             new TextAttributes(JBColor.BLUE, null, null, null, Font.PLAIN);
-    private static final TextAttributes FUNCTION_ATTR =
+    private static final TextAttributes FUNCTION_FALLBACK =
             new TextAttributes(JBColor.YELLOW, null, null, null, Font.ITALIC);
-    private static final TextAttributes NUMBER_ATTR =
+    private static final TextAttributes NUMBER_FALLBACK =
             new TextAttributes(JBColor.CYAN, null, null, null, Font.BOLD);
-    private static final TextAttributes STRING_ATTR =
+    private static final TextAttributes STRING_FALLBACK =
             new TextAttributes(JBColor.GREEN, null, null, null, Font.PLAIN);
 
     private void applySemanticTokensToEditor(String uri, List<Integer> data) {
@@ -235,6 +246,10 @@ final class DslLspDocumentSync implements Disposable {
                 mm.removeHighlighter(h);
             }
         }
+        // Resolve once per apply so colors track the active theme; structural
+        // token types (tag/attribute/comment/keyword, index >= 4) return null
+        // and are skipped — IntelliJ's native XML highlighter handles them.
+        TextAttributes[] resolved = resolveThemeAttrs();
         int line = 0;
         int col = 0;
         for (int i = 0; i + 4 < data.size(); i += 5) {
@@ -252,7 +267,7 @@ final class DslLspDocumentSync implements Disposable {
             if (start >= end) {
                 continue;
             }
-            TextAttributes attrs = attrsForType(type);
+            TextAttributes attrs = (type >= 0 && type < resolved.length) ? resolved[type] : null;
             if (attrs == null) {
                 continue;
             }
@@ -260,19 +275,33 @@ final class DslLspDocumentSync implements Disposable {
         }
     }
 
-    private static TextAttributes attrsForType(int type) {
-        switch (type) {
-            case 0:
-                return VARIABLE_ATTR;
-            case 1:
-                return FUNCTION_ATTR;
-            case 2:
-                return NUMBER_ATTR;
-            case 3:
-                return STRING_ATTR;
-            default:
-                return null;
+    /**
+     * Resolves the four expression {@link TextAttributesKey}s against the
+     * current global editor color scheme, falling back to the hardcoded
+     * {@link JBColor} attributes when the scheme defines no attributes for a
+     * key. Index 0–3 hold the resolved expression attributes; index 4+ are
+     * null (structural types are skipped — see {@link #applySemanticTokensToEditor}).
+     */
+    private static TextAttributes[] resolveThemeAttrs() {
+        TextAttributes[] out = new TextAttributes[4];
+        out[0] = resolveAttr(VARIABLE_KEY, VARIABLE_FALLBACK);
+        out[1] = resolveAttr(FUNCTION_KEY, FUNCTION_FALLBACK);
+        out[2] = resolveAttr(NUMBER_KEY, NUMBER_FALLBACK);
+        out[3] = resolveAttr(STRING_KEY, STRING_FALLBACK);
+        return out;
+    }
+
+    private static TextAttributes resolveAttr(TextAttributesKey key, TextAttributes fallback) {
+        try {
+            TextAttributes attrs = EditorColorsManager.getInstance()
+                    .getGlobalScheme().getAttributes(key);
+            if (attrs != null) {
+                return attrs;
+            }
+        } catch (Exception ignored) {
+            // fall through to fallback
         }
+        return fallback;
     }
 
     @Override
