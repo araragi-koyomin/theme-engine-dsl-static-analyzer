@@ -22,6 +22,7 @@ import com.intellij.codeInsight.completion.InsertHandler;
 import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
@@ -29,6 +30,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
+
+import javax.swing.Icon;
 
 /**
  * Completion contributor that delegates to the LSP server: converts the
@@ -126,11 +129,40 @@ public final class ThemeDslLspCompletionContributor extends CompletionContributo
         if (kind == CompletionItemKind.Field || kind == CompletionItemKind.Property) {
             lookup = lookup.withInsertHandler(ATTR_INSERT_HANDLER);
         }
+        Icon icon = iconForKind(kind);
+        if (icon != null) {
+            lookup = lookup.withIcon(icon);
+        }
         // The server's sortText ("0_"/"1_") is intentionally NOT used as a
         // lookup string: that would let digits/underscores match unrelated
         // items (the prior chaos). IntelliJ orders by label; the detail text
         // ("required"/"optional") conveys priority visually.
         return lookup;
+    }
+
+    /**
+     * Maps an LSP {@link CompletionItemKind} to an IntelliJ icon so the
+     * completion list visually distinguishes element names (class/tag),
+     * attribute names (field/property) and enum values.
+     */
+    private static Icon iconForKind(CompletionItemKind kind) {
+        if (kind == null) {
+            return null;
+        }
+        switch (kind) {
+            case Class:
+                return AllIcons.Nodes.Class;
+            case Field:
+                return AllIcons.Nodes.Field;
+            case Property:
+                return AllIcons.Nodes.Property;
+            case EnumMember:
+                return AllIcons.Nodes.Enum;
+            case Enum:
+                return AllIcons.Nodes.Enum;
+            default:
+                return null;
+        }
     }
 
     private static void sendDidChange(LanguageServer server, String uri, String text) {
