@@ -36,6 +36,17 @@ class ContextResolverTest {
     }
 
     @Test
+    void attributeNameAfterSpaceFollowingTagName() {
+        // "<Var " (trailing space) — typing the space should ready attribute
+        // completion even though no attribute char has been typed yet.
+        String text = "<Var ";
+        ContextResolver.Context ctx = new ContextResolver(text).resolve(5);
+        assertEquals(ContextResolver.PositionType.ATTRIBUTE_NAME, ctx.type);
+        assertEquals("Var", ctx.tagName);
+        assertEquals("", ctx.word);
+    }
+
+    @Test
     void attributeValuePosition() {
         // "<Widget attr=\"val" : '"'(13) v(14) a(15) l(16) ; cursor after 'l' -> offset 17
         String text = "<Widget attr=\"val";

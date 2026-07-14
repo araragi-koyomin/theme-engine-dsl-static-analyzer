@@ -169,6 +169,29 @@ class AstContextResolverTest {
     }
 
     @Test
+    void whitespaceBetweenAttributesIsAttributeName() {
+        // cursor in the whitespace between two attributes -> ready to type
+        // the next attribute name, so completion should offer all attrs.
+        // "<Widget align=\"x\" count=\"y\"/>" : '"'(16) ' '(17) 'c'(18)
+        String text = "<Widget align=\"x\" count=\"y\"/>";
+        ContextResolver.Context ctx = resolve(text, 17);
+        assertEquals(ContextResolver.PositionType.ATTRIBUTE_NAME, ctx.type);
+        assertEquals("Widget", ctx.tagName);
+        assertEquals("", ctx.word);
+    }
+
+    @Test
+    void spaceAfterTagNameIsAttributeName() {
+        // "<Var align=\"x\"/>" cursor on the space right after the tag name
+        // '<'(0)V(1)a(2)r(3)' '(4)a(5)...
+        String text = "<Var align=\"x\"/>";
+        ContextResolver.Context ctx = resolve(text, 4);
+        assertEquals(ContextResolver.PositionType.ATTRIBUTE_NAME, ctx.type);
+        assertEquals("Var", ctx.tagName);
+        assertEquals("", ctx.word);
+    }
+
+    @Test
     void nullAstReturnsNull() {
         ContextResolver.Context ctx = new AstContextResolver("text").resolve(0, null);
         assertNull(ctx);

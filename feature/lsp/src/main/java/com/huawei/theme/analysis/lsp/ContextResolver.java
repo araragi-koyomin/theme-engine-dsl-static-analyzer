@@ -106,8 +106,18 @@ final class ContextResolver {
             String attrName = text.substring(attrNameStart, attrNameEnd);
             return new Context(PositionType.ATTRIBUTE_NAME, tagName, word, attrName);
         }
-        // cursor on '=', a quote char, whitespace, or between attributes
-        return new Context(PositionType.OTHER, tagName, wordBefore(n));
+        // cursor in the attribute region but not inside a value or a name
+        // token: the user just typed the space after the tag name or between
+        // attributes, so default to ATTRIBUTE_NAME (empty word) so completion
+        // offers the canonical attribute set. Skip when sitting right after
+        // '=' (mid-attribute, before the value) or on a tag-boundary char
+        // ('>', '/', '<') where attribute completion would be wrong.
+        char atCursor = (n < text.length()) ? text.charAt(n) : ' ';
+        char prev = (n > 0) ? text.charAt(n - 1) : ' ';
+        if (atCursor == '>' || atCursor == '/' || atCursor == '<' || prev == '=') {
+            return new Context(PositionType.OTHER, tagName, wordBefore(n));
+        }
+        return new Context(PositionType.ATTRIBUTE_NAME, tagName, "", null);
     }
 
     private String safeSubstring(int start, int end) {

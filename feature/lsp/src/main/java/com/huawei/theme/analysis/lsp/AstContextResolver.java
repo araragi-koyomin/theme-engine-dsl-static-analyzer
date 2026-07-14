@@ -110,10 +110,31 @@ final class AstContextResolver {
                     attrName);
         }
 
+        // cursor in the element's start tag but past the tag name and not in
+        // any attribute: the user is on whitespace between attributes or
+        // right after the tag name, about to type an attribute. Default to
+        // ATTRIBUTE_NAME (empty word) so completion offers the canonical
+        // attribute set. Skip on tag-boundary chars ('>', '/', '<') where
+        // attribute completion would be wrong.
+        int len = text.length();
+        char atCursor = (cursor < len) ? text.charAt(cursor) : ' ';
+        if (atCursor == '>' || atCursor == '/' || atCursor == '<') {
+            return new ContextResolver.Context(
+                    ContextResolver.PositionType.OTHER,
+                    tagName.isEmpty() ? null : tagName,
+                    null);
+        }
+        char prev = (cursor > 0) ? text.charAt(cursor - 1) : ' ';
+        if (prev == '=') {
+            return new ContextResolver.Context(
+                    ContextResolver.PositionType.OTHER,
+                    tagName.isEmpty() ? null : tagName,
+                    null);
+        }
         return new ContextResolver.Context(
-                ContextResolver.PositionType.OTHER,
+                ContextResolver.PositionType.ATTRIBUTE_NAME,
                 tagName.isEmpty() ? null : tagName,
-                null);
+                "");
     }
 
     /**
