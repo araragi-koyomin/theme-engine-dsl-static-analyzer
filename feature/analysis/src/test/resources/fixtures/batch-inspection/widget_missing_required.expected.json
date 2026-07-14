@@ -5,7 +5,7 @@
   "expectedDiagnostics": [
     { "ruleId": "SEM-REQ-001", "severity": "error", "approxLine": 2, "lineTolerance": 2 },
     { "ruleId": "SEM-REQ-001", "severity": "error", "approxLine": 2, "lineTolerance": 2 },
-    { "ruleId": "SEM-TRIG-002", "severity": "error", "approxLine": 3, "lineTolerance": 2 }
+    { "ruleId": "SEM-TRIG-002", "severity": "error", "approxLine": 3, "lineTolerance": 2, "expectedFixes": ["添加Trigger子元素"] }
   ],
   "mustNotTrigger": []
 }

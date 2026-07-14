@@ -3,13 +3,13 @@
   "expectedExitCode": 1,
   "expectedCounts": { "errors": 8, "warnings": 0, "info": 0 },
   "expectedDiagnostics": [
-    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
-    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 4, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 3, "lineTolerance": 2, "expectedFixes": ["移除重复的 Var 声明"] },
+    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 4, "lineTolerance": 2, "expectedFixes": ["移除重复的 Var 声明"] },
     { "ruleId": "SEM-TYPE-002", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
-    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 6, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 6, "lineTolerance": 2, "expectedFixes": ["声明 Var name=\"missing_cond\""] },
     { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 6, "lineTolerance": 2 },
-    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
-    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 8, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
+    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 8, "lineTolerance": 2, "expectedFixes": ["声明 Var name=\"undefined_var\""] },
     { "ruleId": "SYN-EXPR-ANTLR", "severity": "error", "approxLine": 10, "lineTolerance": 2 }
   ],
   "mustNotTrigger": []

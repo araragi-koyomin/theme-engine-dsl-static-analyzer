@@ -3,13 +3,13 @@
   "expectedExitCode": 1,
   "expectedCounts": { "errors": 8, "warnings": 0, "info": 0 },
   "expectedDiagnostics": [
-    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
-    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 4, "lineTolerance": 2 },
-    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
-    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 3, "lineTolerance": 2, "expectedFixes": ["移除重复的 Var 声明"] },
+    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 4, "lineTolerance": 2, "expectedFixes": ["移除重复的 Var 声明"] },
+    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 5, "lineTolerance": 2, "expectedFixes": ["移除srcExp属性", "移除src属性"] },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 5, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
     { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 7, "lineTolerance": 2 },
-    { "ruleId": "SEM-CMD-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
-    { "ruleId": "SEM-TRIG-002", "severity": "error", "approxLine": 11, "lineTolerance": 2 },
+    { "ruleId": "SEM-CMD-001", "severity": "error", "approxLine": 8, "lineTolerance": 2, "expectedFixes": ["移除play属性", "移除sound属性"] },
+    { "ruleId": "SEM-TRIG-002", "severity": "error", "approxLine": 11, "lineTolerance": 2, "expectedFixes": ["添加Trigger子元素"] },
     { "ruleId": "SEM-SCOPE-001", "severity": "error", "approxLine": 11, "lineTolerance": 2 }
   ],
   "mustNotTrigger": []

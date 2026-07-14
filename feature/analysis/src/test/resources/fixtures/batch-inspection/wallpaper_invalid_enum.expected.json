@@ -3,10 +3,10 @@
   "expectedExitCode": 1,
   "expectedCounts": { "errors": 4, "warnings": 1, "info": 0 },
   "expectedDiagnostics": [
-    { "ruleId": "SEM-ATTR-005", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
-    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
-    { "ruleId": "SEM-IMG-003", "severity": "warning", "approxLine": 3, "lineTolerance": 2 },
-    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-005", "severity": "error", "approxLine": 3, "lineTolerance": 2, "expectedFixes": ["设置scaleType=center_crop"] },
+    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 3, "lineTolerance": 2, "expectedFixes": ["移除srcExp属性", "移除src属性"] },
+    { "ruleId": "SEM-IMG-003", "severity": "warning", "approxLine": 3, "lineTolerance": 2, "expectedFixes": ["移除align属性", "移除isBackground属性"] },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 3, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
     { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 4, "lineTolerance": 2 }
   ],
   "mustNotTrigger": []

@@ -5,11 +5,11 @@
   "expectedDiagnostics": [
     { "ruleId": "SEM-REQ-001", "severity": "error", "approxLine": 2, "lineTolerance": 2 },
     { "ruleId": "SEM-REQ-001", "severity": "error", "approxLine": 2, "lineTolerance": 2 },
-    { "ruleId": "SEM-TRIG-002", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
-    { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SEM-TRIG-002", "severity": "error", "approxLine": 3, "lineTolerance": 2, "expectedFixes": ["添加Trigger子元素"] },
+    { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 5, "lineTolerance": 2, "expectedFixes": ["修改action值为合法枚举值"] },
     { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 7, "lineTolerance": 2 },
     { "ruleId": "SEM-SCOPE-001", "severity": "error", "approxLine": 7, "lineTolerance": 2 },
-    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 8, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
     { "ruleId": "SYN-004", "severity": "warning", "approxLine": 7, "lineTolerance": 2 }
   ],
   "mustNotTrigger": []

@@ -3,9 +3,9 @@
   "expectedExitCode": 1,
   "expectedCounts": { "errors": 3, "warnings": 0, "info": 0 },
   "expectedDiagnostics": [
-    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 4, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 4, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
     { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
-    { "ruleId": "SEM-CMD-001", "severity": "error", "approxLine": 6, "lineTolerance": 2 }
+    { "ruleId": "SEM-CMD-001", "severity": "error", "approxLine": 6, "lineTolerance": 2, "expectedFixes": ["移除play属性", "移除sound属性"] }
   ],
   "mustNotTrigger": []
 }

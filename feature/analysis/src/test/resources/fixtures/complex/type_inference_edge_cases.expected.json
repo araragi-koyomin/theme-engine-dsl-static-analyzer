@@ -12,7 +12,7 @@
     { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 14, "lineTolerance": 2 },
     { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 14, "lineTolerance": 2 },
     { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 14, "lineTolerance": 2 },
-    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 21, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 21, "lineTolerance": 2, "expectedFixes": ["声明 Var name=\"not_declared\""] },
     { "ruleId": "SEM-ARR-001", "severity": "error", "approxLine": 21, "lineTolerance": 2 },
     { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 25, "lineTolerance": 2 },
     { "ruleId": "SYN-EXPR-001", "severity": "error", "approxLine": 10, "lineTolerance": 2 },
