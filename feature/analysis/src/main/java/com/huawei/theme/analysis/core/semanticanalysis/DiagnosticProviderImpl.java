@@ -115,7 +115,11 @@ public class DiagnosticProviderImpl implements DiagnosticProvider {
         }
 
         List<Diagnostic> getDiagnostics() {
+            long start = collector != null ? System.currentTimeMillis() : 0;
             analyze(root.getRootElement(), globalTable);
+            if (collector != null) {
+                collector.recordStageTime("semantic analysis", System.currentTimeMillis() - start);
+            }
             return diagnostics;
         }
 

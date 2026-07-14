@@ -32,9 +32,6 @@ class ExpressionSyntaxCheckerNoSemTest {
         return diags.stream().anyMatch(d -> d.getRuleId() != null && d.getRuleId().startsWith("SEM-"));
     }
 
-    // Regression: ExpressionSyntaxChecker must not produce any SEM-* diagnostics.
-    // Previously a number-typed attribute with a string literal ('hello') produced
-    // SEM-TYPE-003; that branch is removed so the case falls through to SYN-EXPR-ANTLR.
     @Test
     void noSemType003ForStringLiteralInNumberContext() {
         List<Diagnostic> diags = check("<Image x=\"'hello'\"/>");

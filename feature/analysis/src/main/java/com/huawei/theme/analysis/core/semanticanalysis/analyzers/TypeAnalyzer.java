@@ -270,6 +270,14 @@ public class TypeAnalyzer implements DslAnalyzer {
         checkVarConstRefs(elementNode, exprNode, symbolTable, context, diagnostics);
 
         DslType exprType = inferExpressionType(exprNode, symbolTable, functionLibrary);
+        if (context.getVerboseCollector() != null) {
+            String varName = getAttrValue(elementNode, "name");
+            context.getVerboseCollector().recordTypeInference(
+                    "Var." + (varName != null ? varName : "?") + ".expression",
+                    exprType != null ? exprType.getName() : "unknown",
+                    varType.getName(),
+                    exprType != null && TypeInferenceEngine.typeEquals(exprType, varType));
+        }
         if (exprType != null && !TypeInferenceEngine.typeEquals(exprType, varType)) {
             if (isSimpleLiteralExpression(exprNode)) {
                 diagnostics.add(buildSimpleLiteralTypeMismatchDiagnostic(
