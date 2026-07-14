@@ -28,7 +28,6 @@ import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.psi.xml.XmlTokenType;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
@@ -72,12 +71,16 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
         if (node != null && node.getElementType() == XmlTokenType.XML_NAME
                 && position.getParent() instanceof XmlAttribute currentAttr) {
             fillAttributeNameCompletion(position, currentAttr, result);
+            // Suppress the default XML completion contributor (junk from no schema/DTD).
+            result.stopHere();
             return;
         }
 
         // Case 2: Attribute value position → offer enum values
         if (position.getParent() instanceof XmlAttributeValue valueElement) {
             fillAttributeValueCompletion(valueElement, result);
+            // Suppress the default XML completion contributor.
+            result.stopHere();
         }
     }
 

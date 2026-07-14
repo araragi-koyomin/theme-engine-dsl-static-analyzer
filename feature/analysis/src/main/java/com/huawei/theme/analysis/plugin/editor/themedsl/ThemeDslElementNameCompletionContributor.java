@@ -48,6 +48,8 @@ public class ThemeDslElementNameCompletionContributor extends CompletionContribu
                     .withTypeText("ThemeDSL Tag")
                     .withIcon(AllIcons.Nodes.Tag));
         }
+        // Suppress the default XML completion contributor (junk from no schema/DTD).
+        result.stopHere();
     }
 
     /**
