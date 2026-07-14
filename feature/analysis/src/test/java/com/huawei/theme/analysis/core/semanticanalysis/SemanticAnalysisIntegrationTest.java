@@ -99,7 +99,7 @@ class SemanticAnalysisIntegrationTest {
         assertEquals("引用未定义变量 #undefinedVar", refType.get(0).getMessage());
     }
 
-    // --- SEM-REF-002: 元素 name 引用 ---
+    // --- SEM-REF-001/002: 元素 name 引用 ---
 
     @Test
     void commandTargetUndefinedElementProducesSEM_REF_002() {
@@ -109,10 +109,10 @@ class SemanticAnalysisIntegrationTest {
     }
 
     @Test
-    void elementPropertyRefUndefinedProducesSEM_REF_002() {
+    void elementPropertyRefUndefinedProducesSEM_REF_001() {
         List<Diagnostic> refType = refAndTypeDiagnostics(analyze(
                 "<Lockscreen><Image name=\"img\" x=\"#missing.move_x\"/></Lockscreen>"));
-        assertHasRule(refType, "SEM-REF-002");
+        assertHasRule(refType, "SEM-REF-001");
     }
 
     @Test
@@ -149,10 +149,10 @@ class SemanticAnalysisIntegrationTest {
     }
 
     @Test
-    void functionNotApplicableToContextProducesSEM_TYPE_001() {
+    void crossContextFunctionParamMismatchProducesSEM_TYPE_002() {
         List<Diagnostic> refType = refAndTypeDiagnostics(analyze(
                 "<Lockscreen><Text name=\"t\" textExp=\"sin('1')\"/></Lockscreen>"));
-        assertHasRule(refType, "SEM-TYPE-001");
+        assertHasRule(refType, "SEM-TYPE-002");
     }
 
     // --- SEM-TYPE-002: 函数参数不匹配 ---
