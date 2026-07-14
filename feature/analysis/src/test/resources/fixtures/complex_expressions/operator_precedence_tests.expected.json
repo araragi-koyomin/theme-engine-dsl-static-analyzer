@@ -1,0 +1,15 @@
+{
+  "fixture": "operator_precedence_tests.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 2, "warnings": 0, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SYN-EXPR-001", "severity": "error", "approxLine": 13, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-001", "severity": "error", "approxLine": 17, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": [
+    { "approxLine": 3, "reason": "base valid const number declaration" },
+    { "approxLine": 5, "reason": "prec1-prec4 valid precedence with proper parentheses" },
+    { "approxLine": 20, "reason": "deep_parens valid 4-level nested parentheses" },
+    { "approxLine": 22, "reason": "test valid Image with literal values" }
+  ]
+}

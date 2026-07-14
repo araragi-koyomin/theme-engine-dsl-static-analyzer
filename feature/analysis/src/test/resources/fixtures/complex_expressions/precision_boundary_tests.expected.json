@@ -1,0 +1,13 @@
+{
+  "fixture": "precision_boundary_tests.xml",
+  "expectedExitCode": 0,
+  "expectedCounts": { "errors": 0, "warnings": 5, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SYN-EXPR-002", "severity": "warning", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-002", "severity": "warning", "approxLine": 6, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-002", "severity": "warning", "approxLine": 9, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-002", "severity": "warning", "approxLine": 10, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-002", "severity": "warning", "approxLine": 11, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": []
+}

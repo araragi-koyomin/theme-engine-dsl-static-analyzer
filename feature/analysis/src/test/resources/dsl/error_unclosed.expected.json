@@ -1,0 +1,9 @@
+{
+  "fixture": "error_unclosed.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 1, "warnings": 0, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SYN-SAX-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": []
+}
