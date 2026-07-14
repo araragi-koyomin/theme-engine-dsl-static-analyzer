@@ -76,6 +76,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         int errorCount = 0;
         int warningCount = 0;
         int infoCount = 0;
+        boolean hasInternalErrors = false;
 
         for (Path path : xmlFiles) {
             String filePath = path.toString();
@@ -93,6 +94,9 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
             FileDiagnosticResult fileResult = analyzeFile(filePath, content);
             fileResults.add(fileResult);
             totalFiles++;
+            if (fileResult.isHasInternalError()) {
+                hasInternalErrors = true;
+            }
             errorCount += countBySeverity(fileResult.getDiagnostics(), DiagnosticSeverity.ERROR);
             warningCount += countBySeverity(fileResult.getDiagnostics(), DiagnosticSeverity.WARNING);
             infoCount += countBySeverity(fileResult.getDiagnostics(), DiagnosticSeverity.INFO);
@@ -101,7 +105,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         return BatchInspectionResult.builder()
                 .totalFiles(totalFiles).skippedFiles(skippedFiles)
                 .errorCount(errorCount).warningCount(warningCount).infoCount(infoCount)
-                .fileResults(fileResults).build();
+                .fileResults(fileResults).hasInternalErrors(hasInternalErrors).build();
     }
 
     private FileDiagnosticResult analyzeFile(String filePath, String content) {
@@ -112,8 +116,20 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         try {
             ast = astProvider.getDslAst(filePath, content);
         } catch (Exception e) {
+            Diagnostic internalError = Diagnostic.builder()
+                    .severity(DiagnosticSeverity.ERROR)
+                    .ruleId("INTERNAL-AST-ERROR")
+                    .message("AST build failed: " + e.getMessage())
+                    .filePath(filePath)
+                    .line(0)
+                    .column(0)
+                    .build();
             return FileDiagnosticResult.builder()
-                    .filePath(filePath).diagnostics(List.of()).fixActions(List.of()).build();
+                    .filePath(filePath)
+                    .diagnostics(List.of(internalError))
+                    .fixActions(List.of())
+                    .hasInternalError(true)
+                    .build();
         }
 
         List<Diagnostic> diagnostics = List.of();
@@ -121,21 +137,41 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
             try {
                 diagnostics = diagnosticProvider.analyze(ast, ruleRepository, symbolTableBuilder);
             } catch (Exception e) {
-                diagnostics = List.of();
+                Diagnostic internalError = Diagnostic.builder()
+                        .severity(DiagnosticSeverity.ERROR)
+                        .ruleId("INTERNAL-ANALYZER-ERROR")
+                        .message("Diagnostic analysis failed: " + e.getMessage())
+                        .filePath(filePath)
+                        .line(0)
+                        .column(0)
+                        .build();
+                diagnostics = List.of(internalError);
+                return FileDiagnosticResult.builder()
+                        .filePath(filePath)
+                        .diagnostics(diagnostics)
+                        .fixActions(List.of())
+                        .hasInternalError(true)
+                        .build();
             }
         }
 
         List<FixAction> fixActions = List.of();
+        boolean hasInternalError = false;
         if (mode == PipelineMode.FULL && !diagnostics.isEmpty()) {
             try {
                 fixActions = quickFixProvider.getFixActions(diagnostics);
             } catch (Exception e) {
                 fixActions = List.of();
+                hasInternalError = true;
             }
         }
 
         return FileDiagnosticResult.builder()
-                .filePath(filePath).diagnostics(diagnostics).fixActions(fixActions).build();
+                .filePath(filePath)
+                .diagnostics(diagnostics)
+                .fixActions(fixActions)
+                .hasInternalError(hasInternalError)
+                .build();
     }
 
     private BatchInspectionResult buildSingleFileResult(FileDiagnosticResult fileResult) {
@@ -145,7 +181,9 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         return BatchInspectionResult.builder()
                 .totalFiles(1).skippedFiles(0)
                 .errorCount(errorCount).warningCount(warningCount).infoCount(infoCount)
-                .fileResults(List.of(fileResult)).build();
+                .fileResults(List.of(fileResult))
+                .hasInternalErrors(fileResult.isHasInternalError())
+                .build();
     }
 
     private String readFileContent(String filePath) {

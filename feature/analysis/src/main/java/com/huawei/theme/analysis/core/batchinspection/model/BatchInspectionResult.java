@@ -14,4 +14,6 @@ public class BatchInspectionResult {
     int warningCount;
     int infoCount;
     List<FileDiagnosticResult> fileResults;
+    @Builder.Default
+    boolean hasInternalErrors = false;
 }

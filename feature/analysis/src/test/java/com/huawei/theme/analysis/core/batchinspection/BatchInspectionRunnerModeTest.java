@@ -262,7 +262,7 @@ class BatchInspectionRunnerModeTest {
     }
 
     @Test
-    void astFailureGracefullyDegraded() throws Exception {
+    void astFailureProducesInternalAstError() throws Exception {
         StubAstProvider failingAst = new StubAstProvider() {
             @Override
             public DslFileNode getDslAst(String filePath, String content) {
@@ -279,12 +279,15 @@ class BatchInspectionRunnerModeTest {
                 config);
         BatchInspectionResult result = runner.runOnFile(tempFile.toString());
         assertEquals(1, result.getTotalFiles());
-        assertEquals(0, result.getErrorCount());
-        assertEquals(0, result.getFileResults().get(0).getDiagnostics().size());
+        assertEquals(1, result.getErrorCount());
+        assertEquals(1, result.getFileResults().get(0).getDiagnostics().size());
+        assertEquals("INTERNAL-AST-ERROR",
+                result.getFileResults().get(0).getDiagnostics().get(0).getRuleId());
+        assertTrue(result.getFileResults().get(0).isHasInternalError());
     }
 
     @Test
-    void diagnosticFailureGracefullyDegraded() throws Exception {
+    void diagnosticFailureProducesInternalAnalyzerError() throws Exception {
         StubDiagnosticProvider failingDiag = new StubDiagnosticProvider() {
             @Override
             public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
@@ -301,8 +304,11 @@ class BatchInspectionRunnerModeTest {
                 config);
         BatchInspectionResult result = runner.runOnFile(tempFile.toString());
         assertEquals(1, result.getTotalFiles());
-        assertEquals(0, result.getErrorCount());
-        assertEquals(0, result.getFileResults().get(0).getDiagnostics().size());
+        assertEquals(1, result.getErrorCount());
+        assertEquals(1, result.getFileResults().get(0).getDiagnostics().size());
+        assertEquals("INTERNAL-ANALYZER-ERROR",
+                result.getFileResults().get(0).getDiagnostics().get(0).getRuleId());
+        assertTrue(result.getFileResults().get(0).isHasInternalError());
     }
 
     @Test
@@ -325,6 +331,7 @@ class BatchInspectionRunnerModeTest {
         assertEquals(1, result.getTotalFiles());
         assertTrue(result.getFileResults().get(0).getDiagnostics().size() > 0);
         assertEquals(0, result.getFileResults().get(0).getFixActions().size());
+        assertTrue(result.getFileResults().get(0).isHasInternalError());
     }
 
     private static class StubDslFileMatcher implements DslFileMatcher {

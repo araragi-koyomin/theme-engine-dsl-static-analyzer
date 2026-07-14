@@ -8,6 +8,9 @@ public final class ExitCodeCalculator {
     }
 
     public static int compute(BatchInspectionResult result) {
+        if (result.isHasInternalErrors()) {
+            return 2;
+        }
         if (result.getErrorCount() > 0) {
             return 1;
         }
