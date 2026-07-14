@@ -355,7 +355,7 @@ ExitCodeCalculator --> CliMain : exit code 2
 | Filter 在 DiagnosticProviderImpl 内部（不改 AnalyzerRegistry） | 不引入 static 类的 config 依赖，P2 再重构 |
 | FileDiagnosticResult.hasInternalError 字段 | 测试可直接断言该字段 |
 | FixActionRegistry.init() 在 CliMain 生产路径调用（非测试 setup） | CliMainE2ETest 跑 `--format json` 后解析 JSON 断言 suggestedFixes 非空，验证生产初始化生效 |
-| suggestedFixes 纳入 golden 匹配（可选 minFixCount） | golden schema 加可选 `minFixCount` 字段：对有此字段的 expected diagnostic，GoldenMatcher 校验 `actual.suggestedFixes.size() >= minFixCount`。向后兼容（不写则跳过）。捕获"registry 未 init"或"generator 未注册"导致的 fix 缺失。fix **内容**正确性由单元测试（58 个 FixActionGenerator 测试）覆盖，golden 只校验 fix **存在性** |
+| suggestedFixes 纳入 golden 匹配（可选 expectedFixes 精确文本匹配） | golden schema 加可选 `expectedFixes` 字段（List<String>）：对有此字段的 expected diagnostic，GoldenMatcher 校验 `actual.suggestedFixes` 与 `expectedFixes` **精确匹配**（顺序无关，内容+数量一致）。向后兼容（不写则跳过）。实测证明 fix 文本是具体语义的（如 `"设置alpha值在0-255范围内"`），措辞变化 = generator/规则 JSON 变化 = 应捕获的回归。三格式（JSON/Markdown/Terminal）共享同一 fix 数据源，JSON golden 覆盖即可，无需重复验 Markdown/Terminal。fix **生成逻辑**正确性由 58 个 FixActionGenerator 单元测试覆盖 |
 | rule_sources.json 为 classpath 资源（非硬编码） | 加载后可通过 `RuleRepository.getRuleSource("SYN-EXPR-001").getCategory()` 断言为 `"SYN"`，验证 SPEC-2 |
 | ExpressionSyntaxChecker.check() 输出为纯 List<Diagnostic> | 单元测试可直接断言输出中所有 ruleId 均以 `SYN-EXPR-` 前缀开头，无 `SEM-*`，验证 SPEC-3 |
 | ExitCodeCalculator.compute() 接受 BatchInspectionResult（含 hasInternalErrors） | 单元测试可构造 hasInternalErrors=true 的 result 断言返回 2，构造 hasInternalErrors=false+errorCount>0 断言返回 1，验证 SPEC-9 |
