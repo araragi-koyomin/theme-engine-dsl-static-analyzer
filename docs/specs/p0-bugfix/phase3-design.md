@@ -260,6 +260,41 @@ Runner --> CliMain : FileDiagnosticResult (SEM-* count = 0)
 @enduml
 ```
 
+### 3.2b SEMANTIC_ONLY 模式
+
+```plantuml
+@startuml
+title SEMANTIC_ONLY 模式分析时序
+
+actor CliMain
+participant Runner as BatchInspectionRunnerImpl
+participant DP as DiagnosticProviderImpl
+participant Inner as DiagnosticProviderImplInner
+participant Collector as VerboseCollector
+
+CliMain -> Runner : new(...mode=SEMANTIC_ONLY, config, collector)
+Runner -> DP : analyze(ast, ruleRepo, symbolTableBuilder, SEMANTIC_ONLY, config, collector)
+
+DP -> Inner : new(ast, ruleRepo, symbolTableBuilder, config, SEMANTIC_ONLY, collector)
+Inner -> Inner : filterAnalyzers(config, SEMANTIC_ONLY)
+note right of Inner
+  移除 TypeAnalyzer（类型推断）
+  移除 SyntaxErrorAnalyzer（SYN-SAX-001）
+end note
+Inner -> Inner : analyze each element (M4 only)
+loop per element per analyzer
+    Inner -> Collector : recordAnalyzerCount(analyzerName, count)
+end
+Inner --> DP : diagnostics (SEM-* only, no SYN-*, no SEM-TYPE-*)
+
+note right of DP : 不调 SyntaxChecker / ExpressionSyntaxChecker
+DP --> Runner : only SEM-* diagnostics (SYN-* count = 0)
+
+Runner --> CliMain : FileDiagnosticResult
+
+@enduml
+```
+
 ### 3.3 异常处理时序（P0-4）
 
 ```plantuml
@@ -297,13 +332,17 @@ ExitCodeCalculator --> CliMain : exit code 2
 
 | 模块 | 职责（P0 后） | 不负责 |
 |---|---|---|
+| CliMain | 调 FixActionRegistry.init()；创建 VerboseCollector + Runner（传 mode/config/collector）；verbose 输出 render()；退出码计算 | 具体诊断逻辑、分析过程 |
 | DiagnosticProviderImpl | 按 mode 分发 M3/M4；TypeAnalyzer 过滤 | Quick Fix 生成 |
 | DiagnosticProviderImplInner | M4 analyzer 遍历 + per-analyzer 计数 | M3 语法检查 |
 | SyntaxChecker | SYN-001/003/004 | SEM-* 任何规则 |
 | ExpressionSyntaxChecker | SYN-EXPR-* only（不产 SEM-*） | SEM-TYPE-003（已移除） |
 | BatchInspectionRunnerImpl | 管线编排 + quiet 过滤 + 异常不吞 | 具体诊断逻辑 |
 | VerboseCollector | 收集 + 渲染 5 类 verbose 信息 | 分析逻辑本身 |
+| FixActionRegistry | 生产初始化 generator 注册表 + generator 查询 | 修复执行 |
 | ExitCodeCalculator | 退出码计算（2/1/0） | 诊断产出 |
+| FileDiagnosticResult | 单文件诊断 + 修复 + 内部异常标记（数据类） | — |
+| BatchInspectionResult | 批量结果汇总 + 内部异常聚合标记（数据类） | — |
 
 ## 5. 可测试性设计
 
@@ -317,6 +356,9 @@ ExitCodeCalculator --> CliMain : exit code 2
 | FileDiagnosticResult.hasInternalError 字段 | 测试可直接断言该字段 |
 | FixActionRegistry.init() 在 CliMain 生产路径调用（非测试 setup） | CliMainE2ETest 跑 `--format json` 后解析 JSON 断言 suggestedFixes 非空，验证生产初始化生效 |
 | suggestedFixes 不纳入 golden 匹配 | golden 只校验诊断（ruleId/severity/count/line），修复建议是附属数据；AC-7 由 dedicated E2E 断言覆盖 |
+| rule_sources.json 为 classpath 资源（非硬编码） | 加载后可通过 `RuleRepository.getRuleSource("SYN-EXPR-001").getCategory()` 断言为 `"SYN"`，验证 SPEC-2 |
+| ExpressionSyntaxChecker.check() 输出为纯 List<Diagnostic> | 单元测试可直接断言输出中所有 ruleId 均以 `SYN-EXPR-` 前缀开头，无 `SEM-*`，验证 SPEC-3 |
+| ExitCodeCalculator.compute() 接受 BatchInspectionResult（含 hasInternalErrors） | 单元测试可构造 hasInternalErrors=true 的 result 断言返回 2，构造 hasInternalErrors=false+errorCount>0 断言返回 1，验证 SPEC-9 |
 
 ## 6. 不涉及的设计（留给 TDD 探索）
 
