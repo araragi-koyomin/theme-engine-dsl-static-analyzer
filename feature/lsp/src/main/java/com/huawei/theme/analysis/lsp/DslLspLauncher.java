@@ -2,7 +2,10 @@ package com.huawei.theme.analysis.lsp;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -36,7 +39,23 @@ public final class DslLspLauncher {
         InputStream in = System.in;
         OutputStream out = System.out;
 
-        var launcher = LSPLauncher.createServerLauncher(server, in, out);
+        // Single-thread executor so JSON-RPC messages are dispatched in
+        // receive order (FIFO). This is essential for completion/hover: the
+        // IntelliJ client flushes a didChange with the current editor text
+        // immediately before the completion request; with a concurrent
+        // executor the two can race and completion would read a stale
+        // document (e.g. the didOpen snapshot), resolving the cursor to the
+        // wrong context (element-name instead of attribute-name/value). A
+        // single-threaded dispatcher guarantees didChange is applied before
+        // completion runs. Heavy analysis still runs on the separate
+        // debounce scheduler, so this never blocks on diagnostics.
+        ExecutorService rpcExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "dsl-lsp-jsonrpc");
+            t.setDaemon(true);
+            return t;
+        });
+        var launcher = LSPLauncher.createServerLauncher(
+                server, in, out, rpcExecutor, Function.identity());
         LanguageClient client = launcher.getRemoteProxy();
         server.connect(client);
 
