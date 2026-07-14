@@ -1,7 +1,7 @@
 {
   "fixture": "deep_nesting_violations.xml",
   "expectedExitCode": 1,
-  "expectedCounts": { "errors": 16, "warnings": 1, "info": 0 },
+  "expectedCounts": { "errors": 16, "warnings": 3, "info": 0 },
   "expectedDiagnostics": [
     { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
     { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
@@ -19,7 +19,9 @@
     { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 25, "lineTolerance": 2 },
     { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 26, "lineTolerance": 2 },
     { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 35, "lineTolerance": 2 },
-    { "ruleId": "SYN-EXPR-ANTLR", "severity": "error", "approxLine": 13, "lineTolerance": 2 }
+    { "ruleId": "SYN-EXPR-ANTLR", "severity": "error", "approxLine": 13, "lineTolerance": 2 },
+    { "ruleId": "SYN-004", "severity": "warning", "approxLine": 23, "lineTolerance": 2 },
+    { "ruleId": "SYN-004", "severity": "warning", "approxLine": 35, "lineTolerance": 2 }
   ],
   "mustNotTrigger": [
     { "approxLine": 29, "reason": "level2_img valid Image with scaleType=fill" }

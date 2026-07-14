@@ -25,6 +25,7 @@ import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
 import com.huawei.theme.analysis.core.rulelibrary.model.SuggestedFix;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProvider;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilder;
+import com.huawei.theme.analysis.core.semanticanalysis.VerboseCollector;
 import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
@@ -140,13 +141,14 @@ class BatchInspectionRunnerModeTest {
     }
 
     @Test
-    void syntaxOnlyModeDoesNotInvokeDiagnosticProvider() throws Exception {
+    void syntaxOnlyModeInvokesDiagnosticProvider() throws Exception {
         AtomicInteger diagCount = new AtomicInteger(0);
         StubDiagnosticProvider trackingDiag = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb,
+                                           PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 diagCount.incrementAndGet();
-                return super.analyze(ast, ruleRepo, stb);
+                return super.analyze(ast, ruleRepo, stb, mode, config, collector);
             }
         };
         InspectionConfig config = InspectionConfig.builder()
@@ -158,7 +160,7 @@ class BatchInspectionRunnerModeTest {
                 stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
                 config);
         runner.runOnFile(tempFile.toString());
-        assertEquals(0, diagCount.get());
+        assertEquals(1, diagCount.get());
     }
 
     @Test
@@ -211,9 +213,10 @@ class BatchInspectionRunnerModeTest {
         AtomicInteger fixCount = new AtomicInteger(0);
         StubDiagnosticProvider trackingDiag = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb,
+                                           PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 diagCount.incrementAndGet();
-                return super.analyze(ast, ruleRepo, stb);
+                return super.analyze(ast, ruleRepo, stb, mode, config, collector);
             }
         };
         StubQuickFixProvider trackingFix = new StubQuickFixProvider() {
@@ -290,7 +293,8 @@ class BatchInspectionRunnerModeTest {
     void diagnosticFailureProducesInternalAnalyzerError() throws Exception {
         StubDiagnosticProvider failingDiag = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb,
+                                           PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 throw new RuntimeException("Diagnostic analysis failed");
             }
         };
@@ -359,7 +363,11 @@ class BatchInspectionRunnerModeTest {
 
     private static class StubDiagnosticProvider implements DiagnosticProvider {
         @Override
-        public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder symbolTableBuilder) {
+        public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder symbolTableBuilder,
+                                        PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
+            if (mode == PipelineMode.SYNTAX_ONLY) {
+                return List.of();
+            }
             return List.of(Diagnostic.builder()
                     .severity(DiagnosticSeverity.ERROR)
                     .ruleId("SEM-REF-001")

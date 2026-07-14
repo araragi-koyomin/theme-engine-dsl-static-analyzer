@@ -1,13 +1,16 @@
 {
   "fixture": "lockscreen_nesting_var.xml",
   "expectedExitCode": 1,
-  "expectedCounts": { "errors": 5, "warnings": 0, "info": 0 },
+  "expectedCounts": { "errors": 5, "warnings": 3, "info": 0 },
   "expectedDiagnostics": [
     { "ruleId": "SEM-PERSIST-001", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
     { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 4, "lineTolerance": 2 },
     { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
     { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 7, "lineTolerance": 2 },
-    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 }
+    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
+    { "ruleId": "SYN-004", "severity": "warning", "approxLine": 8, "lineTolerance": 2 },
+    { "ruleId": "SYN-004", "severity": "warning", "approxLine": 9, "lineTolerance": 2 },
+    { "ruleId": "SYN-004", "severity": "warning", "approxLine": 10, "lineTolerance": 2 }
   ],
   "mustNotTrigger": []
 }

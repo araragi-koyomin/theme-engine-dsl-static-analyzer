@@ -27,6 +27,7 @@ import com.huawei.theme.analysis.core.rulelibrary.model.RuleConstraint;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProvider;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilder;
+import com.huawei.theme.analysis.core.semanticanalysis.VerboseCollector;
 import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
@@ -83,7 +84,7 @@ class ExceptionHandlingTest {
 
     @Test
     void diagnosticProviderFailureProducesInternalAnalyzerErrorDiagnostic() {
-        DiagnosticProvider throwingDiag = (ast, ruleRepo, stb) -> {
+        DiagnosticProvider throwingDiag = (ast, ruleRepo, stb, mode, config, collector) -> {
             throw new RuntimeException("Analyzer boom");
         };
         BatchInspectionRunnerImpl runner = newRunner(new NormalAstProvider(),
@@ -102,7 +103,7 @@ class ExceptionHandlingTest {
 
     @Test
     void diagnosticProviderFailureYieldsExitCode2() {
-        DiagnosticProvider throwingDiag = (ast, ruleRepo, stb) -> {
+        DiagnosticProvider throwingDiag = (ast, ruleRepo, stb, mode, config, collector) -> {
             throw new RuntimeException("Analyzer boom");
         };
         BatchInspectionRunnerImpl runner = newRunner(new NormalAstProvider(),
@@ -227,7 +228,10 @@ class ExceptionHandlingTest {
     private static class NormalDiagnosticProvider implements DiagnosticProvider {
         @Override
         public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo,
-                                        SymbolTableBuilder stb) {
+                                        SymbolTableBuilder stb,
+                                        com.huawei.theme.analysis.core.cli.PipelineMode mode,
+                                        com.huawei.theme.analysis.core.cli.InspectionConfig config,
+                                        VerboseCollector collector) {
             return List.of(Diagnostic.builder()
                     .severity(DiagnosticSeverity.ERROR)
                     .ruleId("SEM-REF-001")

@@ -126,7 +126,11 @@ public class ThemeDslDiagnosticAnnotator implements Annotator {
                     ? file.getVirtualFile().getPath() : file.getName();
 
             DslFileNode ast = astProvider.getDslAst(filePath, content);
-            List<Diagnostic> diagnostics = diagnosticProvider.analyze(ast, repo, symbolTableBuilder);
+            List<Diagnostic> diagnostics = diagnosticProvider.analyze(
+                    ast, repo, symbolTableBuilder,
+                    com.huawei.theme.analysis.core.cli.PipelineMode.FULL,
+                    com.huawei.theme.analysis.core.cli.InspectionConfig.builder().build(),
+                    null);
             Map<PsiElement, List<Diagnostic>> map = new HashMap<>();
             for (Diagnostic diagnostic : diagnostics) {
                 int offset = lineColToOffset(document, diagnostic.getLine(), diagnostic.getColumn());

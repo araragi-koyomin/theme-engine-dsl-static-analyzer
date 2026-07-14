@@ -132,27 +132,25 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
                     .build();
         }
 
-        List<Diagnostic> diagnostics = List.of();
-        if (mode != PipelineMode.SYNTAX_ONLY) {
-            try {
-                diagnostics = diagnosticProvider.analyze(ast, ruleRepository, symbolTableBuilder);
-            } catch (Exception e) {
-                Diagnostic internalError = Diagnostic.builder()
-                        .severity(DiagnosticSeverity.ERROR)
-                        .ruleId("INTERNAL-ANALYZER-ERROR")
-                        .message("Diagnostic analysis failed: " + e.getMessage())
-                        .filePath(filePath)
-                        .line(0)
-                        .column(0)
-                        .build();
-                diagnostics = List.of(internalError);
-                return FileDiagnosticResult.builder()
-                        .filePath(filePath)
-                        .diagnostics(diagnostics)
-                        .fixActions(List.of())
-                        .hasInternalError(true)
-                        .build();
-            }
+        List<Diagnostic> diagnostics;
+        try {
+            diagnostics = diagnosticProvider.analyze(ast, ruleRepository, symbolTableBuilder,
+                    mode, inspectionConfig, null);
+        } catch (Exception e) {
+            Diagnostic internalError = Diagnostic.builder()
+                    .severity(DiagnosticSeverity.ERROR)
+                    .ruleId("INTERNAL-ANALYZER-ERROR")
+                    .message("Diagnostic analysis failed: " + e.getMessage())
+                    .filePath(filePath)
+                    .line(0)
+                    .column(0)
+                    .build();
+            return FileDiagnosticResult.builder()
+                    .filePath(filePath)
+                    .diagnostics(List.of(internalError))
+                    .fixActions(List.of())
+                    .hasInternalError(true)
+                    .build();
         }
 
         List<FixAction> fixActions = List.of();

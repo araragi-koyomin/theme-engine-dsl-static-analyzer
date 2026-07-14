@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.huawei.theme.analysis.core.batchinspection.model.BatchInspectionResult;
 import com.huawei.theme.analysis.core.batchinspection.model.FileDiagnosticResult;
+import com.huawei.theme.analysis.core.cli.InspectionConfig;
+import com.huawei.theme.analysis.core.cli.PipelineMode;
 import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.fileidentification.DslFileMatcher;
 import com.huawei.theme.analysis.core.quickfix.FixAction;
@@ -27,12 +29,11 @@ import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
 import com.huawei.theme.analysis.core.rulelibrary.model.SuggestedFix;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProvider;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilder;
+import com.huawei.theme.analysis.core.semanticanalysis.VerboseCollector;
 import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
-import com.huawei.theme.analysis.core.cli.InspectionConfig;
-import com.huawei.theme.analysis.core.cli.PipelineMode;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 import com.huawei.theme.analysis.core.shared.model.FixActionType;
 import com.huawei.theme.analysis.core.shared.diagnostic.TextRange;
@@ -186,9 +187,9 @@ class BatchInspectionRunnerImplTest {
         };
         StubDiagnosticProvider trackingDiag = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb, PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 diagCount.incrementAndGet();
-                return super.analyze(ast, ruleRepo, stb);
+                return super.analyze(ast, ruleRepo, stb, mode, config, collector);
             }
         };
         StubDslFileMatcher falseMatcher = new StubDslFileMatcher(false);
@@ -254,7 +255,7 @@ class BatchInspectionRunnerImplTest {
         AtomicInteger invocationCount = new AtomicInteger(0);
         StubDiagnosticProvider mixedProvider = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb, PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 invocationCount.incrementAndGet();
                 return List.of(
                         Diagnostic.builder().severity(DiagnosticSeverity.ERROR).ruleId("SEM-REF-001")
@@ -327,7 +328,7 @@ class BatchInspectionRunnerImplTest {
     void runOnFileWithZeroDiagnostics() {
         StubDiagnosticProvider emptyProvider = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb, PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 return List.of();
             }
         };
@@ -422,7 +423,7 @@ class BatchInspectionRunnerImplTest {
         AtomicInteger fileIndex = new AtomicInteger(0);
         StubDiagnosticProvider alternatingProvider = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb, PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 int idx = fileIndex.getAndIncrement();
                 if (idx == 0) {
                     return List.of(
@@ -481,13 +482,13 @@ class BatchInspectionRunnerImplTest {
         AtomicInteger diagCallCount = new AtomicInteger(0);
         StubDiagnosticProvider trackingDiagProvider = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb, PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 diagCallCount.incrementAndGet();
                 assertNotNull(ast);
                 assertEquals(tempFile.toString(), ast.getFilePath());
                 assertNotNull(ruleRepo);
                 assertNotNull(stb);
-                return super.analyze(ast, ruleRepo, stb);
+                return super.analyze(ast, ruleRepo, stb, mode, config, collector);
             }
         };
         BatchInspectionRunnerImpl trackingRunner = new BatchInspectionRunnerImpl(
@@ -615,9 +616,9 @@ class BatchInspectionRunnerImplTest {
         };
         StubDiagnosticProvider trackingDiag = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb, PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 diagCount.incrementAndGet();
-                return super.analyze(ast, ruleRepo, stb);
+                return super.analyze(ast, ruleRepo, stb, mode, config, collector);
             }
         };
         StubQuickFixProvider trackingFix = new StubQuickFixProvider() {
@@ -646,9 +647,9 @@ class BatchInspectionRunnerImplTest {
         AtomicInteger diagCount = new AtomicInteger(0);
         StubDiagnosticProvider trackingDiag = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb, PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 diagCount.incrementAndGet();
-                return super.analyze(ast, ruleRepo, stb);
+                return super.analyze(ast, ruleRepo, stb, mode, config, collector);
             }
         };
         BatchInspectionRunnerImpl pipelineRunner = new BatchInspectionRunnerImpl(
@@ -729,7 +730,7 @@ class BatchInspectionRunnerImplTest {
         Path dir = Files.createTempDirectory("batch-only-dsl");
         StubDiagnosticProvider multiDiagProvider = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb, PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 return List.of(
                         Diagnostic.builder().severity(DiagnosticSeverity.ERROR).ruleId("E1")
                                 .message("err").filePath(ast.getFilePath()).line(1).column(0).build(),
@@ -817,7 +818,8 @@ class BatchInspectionRunnerImplTest {
 
     private static class StubDiagnosticProvider implements DiagnosticProvider {
         @Override
-        public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder symbolTableBuilder) {
+        public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder symbolTableBuilder,
+                                        PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
             return List.of(Diagnostic.builder()
                     .severity(DiagnosticSeverity.ERROR)
                     .ruleId("SEM-REF-001")
