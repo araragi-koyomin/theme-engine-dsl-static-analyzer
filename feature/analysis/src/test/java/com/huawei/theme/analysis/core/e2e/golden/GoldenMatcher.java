@@ -63,12 +63,42 @@ public class GoldenMatcher {
             if (matched == null) {
                 result.addDiff(String.format("FN: missing %s/%s near line %d (tolerance %d)",
                         ed.getRuleId(), ed.getSeverity(), ed.getApproxLine(), ed.getLineTolerance()));
+            } else {
+                checkExpectedFixes(ed, matched, result);
             }
         }
         for (ActualDiagnostic leftover : remaining) {
             result.addDiff(String.format("FP: unexpected %s/%s at line %d col %d: %s",
                     leftover.getRuleId(), leftover.getSeverity(), leftover.getLine(), leftover.getCol(),
                     leftover.getMessage()));
+        }
+    }
+
+    private void checkExpectedFixes(ExpectedDiagnostic ed, ActualDiagnostic matched, MatchResult result) {
+        if (ed.getExpectedFixes() == null) {
+            return;
+        }
+        List<String> expectedFixes = new ArrayList<>(ed.getExpectedFixes());
+        List<String> actualFixes = matched.getSuggestedFixes() != null
+                ? new ArrayList<>(matched.getSuggestedFixes()) : new ArrayList<>();
+
+        List<String> missing = new ArrayList<>(expectedFixes);
+        missing.removeAll(actualFixes);
+        List<String> extra = new ArrayList<>(actualFixes);
+        extra.removeAll(expectedFixes);
+
+        if (missing.isEmpty() && extra.isEmpty() && expectedFixes.size() == actualFixes.size()) {
+            return;
+        }
+        if (!missing.isEmpty()) {
+            result.addDiff(String.format("FN: missing fixes %s for %s", missing, ed.getRuleId()));
+        }
+        if (!extra.isEmpty()) {
+            result.addDiff(String.format("FP: unexpected fixes %s for %s", extra, ed.getRuleId()));
+        }
+        if (missing.isEmpty() && extra.isEmpty() && expectedFixes.size() != actualFixes.size()) {
+            result.addDiff(String.format("FN: fix count mismatch for %s (expected=%d actual=%d)",
+                    ed.getRuleId(), expectedFixes.size(), actualFixes.size()));
         }
     }
 

@@ -12,7 +12,7 @@
     { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 7, "lineTolerance": 2 },
     { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 9, "lineTolerance": 2 },
     { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 14, "lineTolerance": 2 },
-    { "ruleId": "SEM-TYPE-003", "severity": "error", "approxLine": 12, "lineTolerance": 2 }
+    { "ruleId": "SYN-EXPR-ANTLR", "severity": "error", "approxLine": 12, "lineTolerance": 2 }
   ],
   "mustNotTrigger": []
 }

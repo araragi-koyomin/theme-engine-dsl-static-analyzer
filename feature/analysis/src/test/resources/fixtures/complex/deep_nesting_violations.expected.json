@@ -19,7 +19,7 @@
     { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 25, "lineTolerance": 2 },
     { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 26, "lineTolerance": 2 },
     { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 35, "lineTolerance": 2 },
-    { "ruleId": "SEM-TYPE-003", "severity": "error", "approxLine": 13, "lineTolerance": 2 }
+    { "ruleId": "SYN-EXPR-ANTLR", "severity": "error", "approxLine": 13, "lineTolerance": 2 }
   ],
   "mustNotTrigger": [
     { "approxLine": 29, "reason": "level2_img valid Image with scaleType=fill" }

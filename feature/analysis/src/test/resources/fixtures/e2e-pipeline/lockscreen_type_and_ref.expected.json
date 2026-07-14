@@ -10,7 +10,7 @@
     { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 6, "lineTolerance": 2 },
     { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
     { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
-    { "ruleId": "SEM-TYPE-003", "severity": "error", "approxLine": 10, "lineTolerance": 2 }
+    { "ruleId": "SYN-EXPR-ANTLR", "severity": "error", "approxLine": 10, "lineTolerance": 2 }
   ],
   "mustNotTrigger": []
 }
