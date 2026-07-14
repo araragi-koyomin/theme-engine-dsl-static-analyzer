@@ -1,20 +1,29 @@
 package com.huawei.theme.analysis.plugin.lsp;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
+import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageServer;
 
 import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.InsertHandler;
+import com.intellij.codeInsight.completion.InsertionContext;
+import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -26,8 +35,22 @@ import org.jetbrains.annotations.NotNull;
  * IntelliJ cursor offset to an LSP {@link Position}, calls
  * {@code textDocument/completion}, and wraps each returned
  * {@link CompletionItem} as a {@link LookupElementBuilder}.
+ *
+ * <p>Before issuing the request, the current document text is flushed to the
+ * server via a synchronous {@code didChange} so the server's cached document
+ * (which otherwise lags behind by the didChange debounce) reflects what the
+ * user actually typed and the cursor resolves to the right context.</p>
+ *
+ * <p>The server's {@code sortText} is intentionally NOT used as a lookup
+ * string — that was the source of the prior chaos (typing digits/underscores
+ * matched unrelated items via "0_align"/"1_left" lookup strings). Only the
+ * label is matchable; the detail text conveys required/optional. Attribute-name
+ * items (kind Field/Property) get an insert handler that appends {@code =""}
+ * and places the caret between the quotes.</p>
  */
 public final class ThemeDslLspCompletionContributor extends CompletionContributor {
+
+    private static final InsertHandler<LookupElement> ATTR_INSERT_HANDLER = new AttrInsertHandler();
 
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters,
@@ -47,21 +70,24 @@ public final class ThemeDslLspCompletionContributor extends CompletionContributo
         if (doc == null) {
             return;
         }
+        String uri = vf.getUrl();
+        String text = doc.getText();
         int offset = parameters.getOffset();
         int line = doc.getLineNumber(offset);
         int col = offset - doc.getLineStartOffset(line);
 
+        // Flush current text so the server resolves the cursor context against
+        // the document the user actually sees, not a debounce-lagged snapshot.
+        sendDidChange(server, uri, text);
+
         CompletionParams params = new CompletionParams();
-        params.setTextDocument(new TextDocumentIdentifier(vf.getUrl()));
+        params.setTextDocument(new TextDocumentIdentifier(uri));
         params.setPosition(new Position(line, col));
 
         Either<List<CompletionItem>, CompletionList> res;
         try {
-            // Non-blocking with timeout: the completion thread must not hang
-            // waiting for the server if didChange/semanticTokens are queued
-            // ahead of the completion request on the same JSON-RPC connection.
             res = server.getTextDocumentService().completion(params)
-                    .get(500, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    .get(500, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             return;
         }
@@ -77,14 +103,64 @@ public final class ThemeDslLspCompletionContributor extends CompletionContributo
             return;
         }
         for (CompletionItem item : items) {
-            LookupElementBuilder lookup = LookupElementBuilder.create(item.getLabel());
-            if (item.getDetail() != null) {
-                lookup = lookup.withTypeText(item.getDetail());
+            LookupElement lookup = toLookup(item);
+            if (lookup != null) {
+                result.addElement(lookup);
             }
-            if (item.getSortText() != null) {
-                lookup = lookup.withLookupString(item.getSortText());
+        }
+    }
+
+    private static LookupElement toLookup(CompletionItem item) {
+        String label = item.getLabel();
+        if (label == null || label.isEmpty()) {
+            return null;
+        }
+        LookupElementBuilder lookup = LookupElementBuilder.create(label);
+        if (item.getDetail() != null && !item.getDetail().isEmpty()) {
+            lookup = lookup.withTypeText(item.getDetail());
+        }
+        // Attribute-name items: insert as name="" with the caret between the
+        // quotes so the user can type the value immediately. Element names and
+        // enum values insert as the bare label.
+        CompletionItemKind kind = item.getKind();
+        if (kind == CompletionItemKind.Field || kind == CompletionItemKind.Property) {
+            lookup = lookup.withInsertHandler(ATTR_INSERT_HANDLER);
+        }
+        // The server's sortText ("0_"/"1_") is intentionally NOT used as a
+        // lookup string: that would let digits/underscores match unrelated
+        // items (the prior chaos). IntelliJ orders by label; the detail text
+        // ("required"/"optional") conveys priority visually.
+        return lookup;
+    }
+
+    private static void sendDidChange(LanguageServer server, String uri, String text) {
+        try {
+            DidChangeTextDocumentParams p = new DidChangeTextDocumentParams();
+            p.setTextDocument(new VersionedTextDocumentIdentifier(uri, (int) System.currentTimeMillis()));
+            p.setContentChanges(List.of(new TextDocumentContentChangeEvent(text)));
+            server.getTextDocumentService().didChange(p);
+        } catch (Exception ignored) {
+            // Best-effort flush; completion will still use whatever text the
+            // server last received via the debounce path.
+        }
+    }
+
+    /**
+     * Appends {@code =""} after an inserted attribute name and moves the caret
+     * between the quotes.
+     */
+    private static final class AttrInsertHandler implements InsertHandler<LookupElement> {
+        @Override
+        public void handleInsert(@NotNull InsertionContext ctx, @NotNull LookupElement item) {
+            Editor editor = ctx.getEditor();
+            Document doc = editor.getDocument();
+            int offset = editor.getCaretModel().getOffset();
+            // Skip if an '=' already follows the inserted name (user typed it).
+            if (offset < doc.getTextLength() && doc.getCharsSequence().charAt(offset) == '=') {
+                return;
             }
-            result.addElement(lookup);
+            doc.insertString(offset, "=\"\"");
+            editor.getCaretModel().moveToOffset(offset + 2);
         }
     }
 }
