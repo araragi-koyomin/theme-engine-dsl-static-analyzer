@@ -292,7 +292,7 @@ class VarRefAnalyzerTest {
         assertTrue(diagnostics.isEmpty());
     }
 
-    // --- SEM-REF-002: 元素 name 引用存在性（表达式场景） ---
+    // --- SEM-REF-001: 元素属性引用存在性（表达式场景） ---
 
     @Test
     void elementPropertyRefWithExistingElementNoViolation() {
@@ -307,7 +307,7 @@ class VarRefAnalyzerTest {
     }
 
     @Test
-    void elementPropertyRefWithUndefinedElementProducesSEM_REF_002() {
+    void elementPropertyRefWithUndefinedElementProducesSEM_REF_001() {
         ExpressionNode ref = ExpressionNode.variableRef("#", "unlocker.move_x", "#unlocker.move_x", 15, 3);
         DslElementNode image = element("Image", 10, 5, exprAttr("x", ref, "#unlocker.move_x"));
 
@@ -316,9 +316,9 @@ class VarRefAnalyzerTest {
 
         assertEquals(1, diagnostics.size());
         Diagnostic diag = diagnostics.get(0);
-        assertEquals("SEM-REF-002", diag.getRuleId());
+        assertEquals("SEM-REF-001", diag.getRuleId());
         assertEquals(DiagnosticSeverity.ERROR, diag.getSeverity());
-        assertEquals("引用未定义元素 unlocker", diag.getMessage());
+        assertEquals("引用未定义元素属性 #unlocker", diag.getMessage());
         assertEquals("test.xml", diag.getFilePath());
         assertEquals(15, diag.getLine());
         assertEquals(3, diag.getColumn());
@@ -327,7 +327,7 @@ class VarRefAnalyzerTest {
     }
 
     @Test
-    void videoNameTemplateRefWithUndefinedElementProducesSEM_REF_002() {
+    void videoNameTemplateRefWithUndefinedElementProducesSEM_REF_001() {
         ExpressionNode ref = ExpressionNode.variableRef("#", "myVideo.state", "#myVideo.state", 15, 3);
         DslElementNode image = element("Image", 10, 5, exprAttr("x", ref, "#myVideo.state"));
 
@@ -335,8 +335,8 @@ class VarRefAnalyzerTest {
                 context(repoWithTemplates(), globalTable(elementNames())));
 
         assertEquals(1, diagnostics.size());
-        assertEquals("SEM-REF-002", diagnostics.get(0).getRuleId());
-        assertEquals("引用未定义元素 myVideo", diagnostics.get(0).getMessage());
+        assertEquals("SEM-REF-001", diagnostics.get(0).getRuleId());
+        assertEquals("引用未定义元素属性 #myVideo", diagnostics.get(0).getMessage());
     }
 
     @Test
@@ -355,14 +355,14 @@ class VarRefAnalyzerTest {
         ExpressionNode ref = ExpressionNode.variableRef("#", "unlocker.move_x", "#unlocker.move_x", 15, 3);
         DslElementNode image = element("Image", 10, 5, exprAttr("x", ref, "#unlocker.move_x"));
         RuleSource source = RuleSource.builder()
-                .ruleId("SEM-REF-002").category("SEM").description("引用未定义的元素name")
-                .docUrl("https://doc/sem-ref-002").build();
-        RuleRepository repo = repoWithTemplatesAndSources(Map.of("SEM-REF-002", source));
+                .ruleId("SEM-REF-001").category("SEM").description("引用未定义的元素属性")
+                .docUrl("https://doc/sem-ref-001").build();
+        RuleRepository repo = repoWithTemplatesAndSources(Map.of("SEM-REF-001", source));
 
         List<Diagnostic> diagnostics = analyzer.analyze(image, context(repo, globalTable(elementNames())));
 
         assertEquals(1, diagnostics.size());
-        assertEquals("https://doc/sem-ref-002", diagnostics.get(0).getRuleDocUrl());
+        assertEquals("https://doc/sem-ref-001", diagnostics.get(0).getRuleDocUrl());
     }
 
     // --- SEM-REF-001 协同：模板匹配引用不走 001 ---
@@ -518,11 +518,11 @@ class VarRefAnalyzerTest {
     // --- SEM-REF-003: 重复变量定义 ---
 
     @Test
-    void duplicateVarDeclarationReportsOverriddenOnes() {
+    void duplicateVarDeclarationReportsEveryOccurrence() {
         DslElementNode var1 = element("Var", 5, 0, literalAttr("name", "v"), literalAttr("type", "number"));
         DslElementNode var2 = element("Var", 8, 0, literalAttr("name", "v"), literalAttr("type", "number"));
         VarDeclaration effective = varDecl("v", new DslNumberType(), var2);
-        SymbolTable table = globalTable(effective);
+        SymbolTable table = globalTableWithDuplicateVars(Set.of("v"), effective);
 
         List<Diagnostic> d1 = analyzer.analyze(var1, context(stubRepo(), table));
         List<Diagnostic> d2 = analyzer.analyze(var2, context(stubRepo(), table));
@@ -536,7 +536,8 @@ class VarRefAnalyzerTest {
         assertEquals(0, d1.get(0).getColumn());
         assertEquals(1, d1.get(0).getSuggestedFixes().size());
         assertEquals("移除重复的 Var 声明", d1.get(0).getSuggestedFixes().get(0).getText());
-        assertTrue(d2.isEmpty());
+        assertEquals(1, d2.size());
+        assertEquals("SEM-REF-003", d2.get(0).getRuleId());
     }
 
     @Test
@@ -556,11 +557,11 @@ class VarRefAnalyzerTest {
         DslElementNode var2 = element("Var", 8, 0, literalAttr("name", "v"));
         DslElementNode var3 = element("Var", 12, 0, literalAttr("name", "v"));
         VarDeclaration effective = varDecl("v", new DslNumberType(), var3);
-        SymbolTable table = globalTable(effective);
+        SymbolTable table = globalTableWithDuplicateVars(Set.of("v"), effective);
 
         assertEquals(1, analyzer.analyze(var1, context(stubRepo(), table)).size());
         assertEquals(1, analyzer.analyze(var2, context(stubRepo(), table)).size());
-        assertTrue(analyzer.analyze(var3, context(stubRepo(), table)).isEmpty());
+        assertEquals(1, analyzer.analyze(var3, context(stubRepo(), table)).size());
     }
 
     @Test
@@ -594,7 +595,8 @@ class VarRefAnalyzerTest {
                 .build();
         RuleRepository repo = stubRepo(Map.of("SEM-REF-003", source));
 
-        List<Diagnostic> diagnostics = analyzer.analyze(var1, context(repo, globalTable(effective)));
+        SymbolTable table = globalTableWithDuplicateVars(Set.of("v"), effective);
+        List<Diagnostic> diagnostics = analyzer.analyze(var1, context(repo, table));
 
         assertEquals(1, diagnostics.size());
         assertEquals("https://doc/sem-ref-003", diagnostics.get(0).getRuleDocUrl());
@@ -678,6 +680,19 @@ class VarRefAnalyzerTest {
             map.put(d.getName(), d);
         }
         return SymbolTable.builder().parent(null).declarations(map).elementNames(elementNames).build();
+    }
+
+    private static SymbolTable globalTableWithDuplicateVars(Set<String> duplicateVarNames,
+                                                            VarDeclaration... decls) {
+        Map<String, VarDeclaration> map = new HashMap<>();
+        for (VarDeclaration d : decls) {
+            map.put(d.getName(), d);
+        }
+        return SymbolTable.builder()
+                .parent(null)
+                .declarations(map)
+                .duplicateVarNames(duplicateVarNames)
+                .build();
     }
 
     private static Set<String> elementNames(String... names) {
