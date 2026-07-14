@@ -4,7 +4,7 @@
 
 ## M-1: per-analyzer INTERNAL-ANALYZER-ERROR 是 WARNING 级
 
-- **位置**: `DiagnosticProviderImpl.java:133`
+- **位置**: `DiagnosticProviderImpl.java:137-138`
 - **描述**: 单个 analyzer 抛异常时产出 WARNING 级诊断。`--quiet` 模式过滤 WARNING → analyzer 异常在 quiet 模式被"吞"。
 - **根因**: pre-existing 代码,P0 前就有。P0-4 只改了 Runner 层 catch(AST/语义/修复→ERROR+hasInternalError),未动 Inner 层 per-analyzer catch(软降级:一个 analyzer 挂了继续跑其他)。
 - **影响**: quiet 模式下 analyzer 异常不可见。非 quiet 模式下 WARNING 诊断可见。
