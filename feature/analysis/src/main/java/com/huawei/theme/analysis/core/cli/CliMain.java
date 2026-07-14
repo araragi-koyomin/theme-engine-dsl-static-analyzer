@@ -16,6 +16,8 @@ import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderImpl;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilderImpl;
 import com.huawei.theme.analysis.core.semanticanalysis.AnalyzerRegistry;
+import com.huawei.theme.analysis.core.semanticanalysis.VerboseCollector;
+import com.huawei.theme.analysis.core.quickfix.FixActionRegistry;
 import com.huawei.theme.analysis.core.quickfix.QuickFixProviderImpl;
 
 public class CliMain {
@@ -103,6 +105,10 @@ public class CliMain {
 
             RuleRepository effectiveRepo = new ConfigAwareRuleRepository(ruleRepo, effectiveConfig);
 
+            FixActionRegistry.init(effectiveRepo);
+
+            VerboseCollector collector = config.isVerbose() ? new VerboseCollector() : null;
+
             CliDslFileMatcher matcher = new CliDslFileMatcher(effectiveRepo);
             CliDslAstProvider astProvider = new CliDslAstProvider(effectiveRepo);
 
@@ -112,7 +118,8 @@ public class CliMain {
                     new QuickFixProviderImpl(),
                     new SymbolTableBuilderImpl(),
                     effectiveRepo,
-                    effectiveConfig
+                    effectiveConfig,
+                    collector
             );
 
             BatchInspectionResult result;
@@ -123,6 +130,10 @@ public class CliMain {
             }
 
             exportReport(result, config);
+
+            if (collector != null) {
+                System.out.println(collector.render());
+            }
 
             return ExitCodeCalculator.compute(result);
         } catch (IllegalArgumentException e) {

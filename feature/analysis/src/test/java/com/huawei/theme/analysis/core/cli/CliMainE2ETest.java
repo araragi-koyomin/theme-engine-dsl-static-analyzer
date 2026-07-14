@@ -385,4 +385,34 @@ class CliMainE2ETest {
         assertEquals(2, exitCode);
         assertTrue(stderr().contains("Multiple target paths"));
     }
+
+    @Test
+    void quietMode_jsonOutput_containsOnlyErrorSeverity() throws Exception {
+        Path targetFile = copyResourceToTemp("batch-inspection/wallpaper_invalid_enum.xml", "wallpaper_invalid_enum.xml");
+        int exitCode = CliMain.run(new String[]{"--quiet", "--format", "json", "--no-color", targetFile.toString()});
+        assertTrue(exitCode == 0 || exitCode == 1);
+        String json = stdout();
+        assertFalse(json.contains("\"severity\": \"warning\""));
+        assertFalse(json.contains("\"severity\": \"info\""));
+    }
+
+    @Test
+    void verboseMode_output_containsVerboseLines() throws Exception {
+        Path targetFile = copyDslResourceToTemp("valid_lockscreen.xml");
+        int exitCode = CliMain.run(new String[]{"--verbose", "--no-color", targetFile.toString()});
+        assertTrue(exitCode == 0 || exitCode == 1);
+        assertTrue(stdout().contains("[verbose]"));
+    }
+
+    @Test
+    void jsonOutput_suggestedFixes_nonEmpty() throws Exception {
+        Path targetFile = copyResourceToTemp("batch-inspection/wallpaper_invalid_enum.xml", "wallpaper_invalid_enum.xml");
+        Path outputFile = tempDir.resolve("report.json");
+        int exitCode = CliMain.run(new String[]{"--format", "json", "--no-color",
+                "--output", outputFile.toString(), targetFile.toString()});
+        assertTrue(exitCode == 0 || exitCode == 1);
+        String content = Files.readString(outputFile, StandardCharsets.UTF_8);
+        assertTrue(content.contains("\"suggestedFixes\""));
+        assertTrue(content.replaceAll("\\s", "").contains("[\""));
+    }
 }

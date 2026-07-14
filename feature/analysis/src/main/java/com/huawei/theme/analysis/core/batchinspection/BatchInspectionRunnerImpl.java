@@ -18,6 +18,7 @@ import com.huawei.theme.analysis.core.quickfix.QuickFixProvider;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProvider;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilder;
+import com.huawei.theme.analysis.core.semanticanalysis.VerboseCollector;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
@@ -32,6 +33,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
     private final SymbolTableBuilder symbolTableBuilder;
     private final RuleRepository ruleRepository;
     private final InspectionConfig inspectionConfig;
+    private final VerboseCollector verboseCollector;
 
     public BatchInspectionRunnerImpl(
             DslFileMatcher fileMatcher,
@@ -41,6 +43,19 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
             SymbolTableBuilder symbolTableBuilder,
             RuleRepository ruleRepository,
             InspectionConfig inspectionConfig) {
+        this(fileMatcher, astProvider, diagnosticProvider, quickFixProvider,
+                symbolTableBuilder, ruleRepository, inspectionConfig, null);
+    }
+
+    public BatchInspectionRunnerImpl(
+            DslFileMatcher fileMatcher,
+            DslAstProvider astProvider,
+            DiagnosticProvider diagnosticProvider,
+            QuickFixProvider quickFixProvider,
+            SymbolTableBuilder symbolTableBuilder,
+            RuleRepository ruleRepository,
+            InspectionConfig inspectionConfig,
+            VerboseCollector verboseCollector) {
         this.fileMatcher = Objects.requireNonNull(fileMatcher, "fileMatcher must not be null");
         this.astProvider = Objects.requireNonNull(astProvider, "astProvider must not be null");
         this.diagnosticProvider = Objects.requireNonNull(diagnosticProvider, "diagnosticProvider must not be null");
@@ -48,6 +63,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         this.symbolTableBuilder = Objects.requireNonNull(symbolTableBuilder, "symbolTableBuilder must not be null");
         this.ruleRepository = Objects.requireNonNull(ruleRepository, "ruleRepository must not be null");
         this.inspectionConfig = Objects.requireNonNull(inspectionConfig, "inspectionConfig must not be null");
+        this.verboseCollector = verboseCollector;
     }
 
     @Override
@@ -114,7 +130,11 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
 
         DslFileNode ast;
         try {
+            long astStart = verboseCollector != null ? System.currentTimeMillis() : 0;
             ast = astProvider.getDslAst(filePath, content);
+            if (verboseCollector != null) {
+                verboseCollector.recordStageTime("AST build", System.currentTimeMillis() - astStart);
+            }
         } catch (Exception e) {
             Diagnostic internalError = Diagnostic.builder()
                     .severity(DiagnosticSeverity.ERROR)
@@ -135,7 +155,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         List<Diagnostic> diagnostics;
         try {
             diagnostics = diagnosticProvider.analyze(ast, ruleRepository, symbolTableBuilder,
-                    mode, inspectionConfig, null);
+                    mode, inspectionConfig, verboseCollector);
         } catch (Exception e) {
             Diagnostic internalError = Diagnostic.builder()
                     .severity(DiagnosticSeverity.ERROR)
@@ -151,6 +171,12 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
                     .fixActions(List.of())
                     .hasInternalError(true)
                     .build();
+        }
+
+        if (inspectionConfig.isQuiet()) {
+            diagnostics = new ArrayList<>(diagnostics.stream()
+                    .filter(d -> d.getSeverity() == DiagnosticSeverity.ERROR)
+                    .toList());
         }
 
         List<FixAction> fixActions = List.of();
