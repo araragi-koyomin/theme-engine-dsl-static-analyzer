@@ -1,8 +1,12 @@
 package com.huawei.theme.analysis.core.ruledsl;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -13,12 +17,72 @@ import com.huawei.theme.analysis.core.ruledsl.generated.DslRuleConditionParser;
 
 public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean> implements RuleDslEvaluator {
 
+    private static final Pattern CHILDREN_FILTER_TAGNAME =
+            Pattern.compile("c\\.tagName\\s*==\\s*'([^']*)'");
+    private static final Pattern CHILDREN_SIZE_EXPR =
+            Pattern.compile("element\\.children\\.(?:filter|where)\\(c\\s*->\\s*c\\.tagName\\s*==\\s*'([^']*)'\\)\\.size\\(\\)\\s*(>=?|<=?|==|!=)\\s*(\\d+)");
+
     private EvaluationContext context;
 
     @Override
     public boolean evaluate(String condition, EvaluationContext context) {
         this.context = context;
-        return parseAndEvaluate(condition);
+        String processed = preprocessChildrenExpressions(condition, context);
+        return parseAndEvaluate(processed);
+    }
+
+    private String preprocessChildrenExpressions(String condition, EvaluationContext context) {
+        if (condition == null || !condition.contains("children.")) {
+            return condition;
+        }
+        if (!condition.contains("children.filter") && !condition.contains("children.where")) {
+            return condition;
+        }
+        String result = condition;
+        Matcher m = CHILDREN_SIZE_EXPR.matcher(result);
+        while (m.find()) {
+            String tagName = m.group(1);
+            String operator = m.group(2);
+            int threshold = Integer.parseInt(m.group(3));
+            String fullMatch = m.group(0);
+            int count = 0;
+            List<Map<String, Object>> childElements = context.getChildElements();
+            if (childElements != null) {
+                for (Map<String, Object> child : childElements) {
+                    Object childTag = child.get("tagName");
+                    if (tagName.equals(childTag)) {
+                        count++;
+                    }
+                }
+            }
+            boolean evalResult = false;
+            switch (operator) {
+                case ">":
+                    evalResult = count > threshold;
+                    break;
+                case ">=":
+                    evalResult = count >= threshold;
+                    break;
+                case "<":
+                    evalResult = count < threshold;
+                    break;
+                case "<=":
+                    evalResult = count <= threshold;
+                    break;
+                case "==":
+                    evalResult = count == threshold;
+                    break;
+                case "!=":
+                    evalResult = count != threshold;
+                    break;
+                default:
+                    evalResult = false;
+                    break;
+            }
+            result = result.replace(fullMatch, evalResult ? "'1'=='1'" : "'1'=='0'");
+            m = CHILDREN_SIZE_EXPR.matcher(result);
+        }
+        return result;
     }
 
     private boolean parseAndEvaluate(String condition) {
@@ -73,6 +137,12 @@ public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean
             if (value == null) return false;
             return set.contains(value);
         }
+        if (ctx.MATCHES() != null) {
+            String left = resolveValue(ctx.valueExpr(0));
+            String right = resolveLiteral(ctx.literal());
+            if (left == null || right == null) return false;
+            return java.util.regex.Pattern.compile(right).matcher(left).matches();
+        }
         String left = resolveValue(ctx.valueExpr(0));
         String right = resolveValue(ctx.valueExpr(1));
         if (ctx.EQ() != null) {
@@ -99,6 +169,16 @@ public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean
             double r = Double.parseDouble(right);
             return Double.compare(l, r);
         } catch (NumberFormatException e) {
+            try {
+                Double.parseDouble(left);
+            } catch (NumberFormatException e2) {
+                return 0;
+            }
+            try {
+                Double.parseDouble(right);
+            } catch (NumberFormatException e2) {
+                return 0;
+            }
             return left.compareTo(right);
         }
     }
@@ -119,6 +199,9 @@ public class DefaultRuleDslEvaluator extends DslRuleConditionBaseVisitor<Boolean
         }
         if (ctx.ELEMENT_TAG_NAME() != null) {
             return context.getElementName();
+        }
+        if (ctx.ELEMENT_PARENT_TAG_NAME() != null) {
+            return context.getParentTagName();
         }
         return null;
     }

@@ -74,6 +74,10 @@ public class ConstraintAnalyzer implements DslAnalyzer {
         String elementCategory = null;
         Map<String, Boolean> scope = null;
         Map<String, Boolean> deviceSupport = null;
+        String parentTagName = null;
+        if (elementNode.getParent() instanceof DslElementNode parentElement) {
+            parentTagName = parentElement.getTagName();
+        }
 
         if (elementRuleOpt.isPresent()) {
             DslElementRule elementRule = elementRuleOpt.get();
@@ -88,7 +92,29 @@ public class ConstraintAnalyzer implements DslAnalyzer {
                 .elementCategory(elementCategory)
                 .scope(scope)
                 .deviceSupport(deviceSupport)
+                .parentTagName(parentTagName)
+                .childElements(buildChildElementInfos(elementNode))
                 .build();
+    }
+
+    private List<Map<String, Object>> buildChildElementInfos(DslElementNode elementNode) {
+        List<Map<String, Object>> infos = new ArrayList<>();
+        if (elementNode.getChildElements() != null) {
+            for (DslElementNode child : elementNode.getChildElements()) {
+                Map<String, Object> childInfo = new HashMap<>();
+                childInfo.put("tagName", child.getTagName());
+                Map<String, String> childAttrs = new HashMap<>();
+                if (child.getAttributes() != null) {
+                    for (DslAttributeNode attr : child.getAttributes()) {
+                        DslAttributeValueNode valueNode = attr.getValue();
+                        childAttrs.put(attr.getName(), valueNode != null ? valueNode.getRawValue() : null);
+                    }
+                }
+                childInfo.put("attrs", childAttrs);
+                infos.add(childInfo);
+            }
+        }
+        return infos;
     }
 
     private Diagnostic buildDiagnostic(RuleConstraint constraint, DslElementNode elementNode, DslContext context) {
@@ -110,5 +136,17 @@ public class ConstraintAnalyzer implements DslAnalyzer {
                 .suggestedFixes(constraint.getSuggestedFixes())
                 .ruleDocUrl(ruleDocUrl)
                 .build();
+    }
+
+    private static boolean isNumeric(String value) {
+        if (value == null) {
+            return false;
+        }
+        try {
+            Double.parseDouble(value);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 }

@@ -245,7 +245,9 @@
       "message": "clip=true时需要设置width和height来定义裁剪边界",
       "severity": "warning",
       "suggestedFixes": [
-        "添加width属性", "添加height属性", "移除clip属性"
+        {"text": "添加width属性", "type": "ADD_ATTR", "target": "width"},
+        {"text": "添加height属性", "type": "ADD_ATTR", "target": "height"},
+        {"text": "移除clip属性", "type": "REMOVE_ATTR", "target": "clip"}
       ]
     }, {
       "ruleId": "SEM-ATTR-005",
@@ -253,15 +255,17 @@
       "message": "layered=true时最后一个Image子元素必须有hybridMode属性，前面所有视图不能有hybridMode",
       "severity": "error",
       "suggestedFixes": [
-        "为最后一个Image添加hybridMode属性", "移除前面视图的hybridMode属性", "移除layered属性"
+        {"text": "为最后一个Image添加hybridMode属性", "type": "ADD_ATTR", "target": "hybridMode"},
+        {"text": "移除前面视图的hybridMode属性", "type": "REMOVE_ATTR", "target": "hybridMode"},
+        {"text": "移除layered属性", "type": "REMOVE_ATTR", "target": "layered"}
       ]
     }, {
       "ruleId": "SEM-ATTR-001",
-      "condition": "element.attrs[\u0027alpha\u0027] != null AND (parseInt(element.attrs[\u0027alpha\u0027]) \u003c 0 OR parseInt(element.attrs[\u0027alpha\u0027]) \u003e 255)",
+      "condition": "element.attrs[\u0027alpha\u0027] != null AND (element.attrs[\u0027alpha\u0027] \u003c 0 OR element.attrs[\u0027alpha\u0027] \u003e 255)",
       "message": "alpha值应在0-255范围内",
       "severity": "error",
       "suggestedFixes": [
-        "设置alpha值在0-255范围内"
+        {"text": "设置alpha值在0-255范围内", "type": "CLAMP_VALUE", "target": "alpha", "range": "0-255"}
       ]
     }
   ]

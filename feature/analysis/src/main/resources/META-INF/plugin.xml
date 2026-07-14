@@ -1,0 +1,84 @@
+<idea-plugin>
+    <id>com.huawei.theme.analysis</id>
+    <name>ThemeDevStudio Analysis</name>
+    <vendor email="support@huawei.com" url="https://www.huawei.com">Huawei</vendor>
+
+    <description><![CDATA[
+    DSL static analysis tool for Huawei Theme Engine.<br>
+    Provides syntax and semantic inspection, quick fix, and batch checking capabilities.
+  ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.xml</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <additionalTextAttributes file="colorSchemes/ThemeDevStudio.xml" scheme="Darcula" />
+
+        <applicationService serviceImplementation="com.huawei.theme.analysis.plugin.rule.RuleRepositoryService"/>
+
+        <fileType name="ThemeDSL"
+                  implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslFileType"
+                  fieldName="INSTANCE"
+                  language="ThemeDSL"
+                  fileNames="script.xml"
+                  patterns="script_*.xml"/>
+
+        <lang.parserDefinition language="ThemeDSL"
+                               implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslParserDefinition"/>
+
+        <completion.contributor language="ThemeDSL"
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslElementNameCompletionContributor"/>
+
+        <completion.contributor language="ThemeDSL"
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslAttributeCompletionContributor"/>
+
+        <fileType name="DslExpression"
+                  implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionFileType"
+                  fieldName="INSTANCE"
+                  language="DslExpression"
+                  extensions="de"/>
+
+        <lang.parserDefinition language="DslExpression"
+                               implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionParserDefinition"/>
+
+        <lang.parserDefinition language="VarName"
+                               implementationClass="com.huawei.theme.analysis.plugin.editor.varname.VarNameParserDefinition"/>
+
+        <completion.contributor language="DslExpression"
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionCompletionContributor"/>
+
+        <lang.documentationProvider language="DslExpression"
+                                     implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionDocumentationProvider"/>
+
+        <lang.syntaxHighlighterFactory language="DslExpression"
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionSyntaxHighlighterFactory"/>
+
+        <colorSettingsPage implementation="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionColorSettingsPage"/>
+
+        <annotator language="DslExpression"
+                   implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionSemanticAnnotator"/>
+
+        <annotator language="ThemeDSL"
+                   implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslDiagnosticAnnotator"/>
+
+        <annotator language="ThemeDSL"
+                   implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslTagCategoryAnnotator"/>
+
+        <colorSettingsPage implementation="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslTagColorSettingsPage"/>
+
+        <lang.documentationProvider language="ThemeDSL"
+                                     implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslTagDocumentationProvider"/>
+        <lang.documentationProvider language="ThemeDSL"
+                                     implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslAttributeDocumentationProvider"/>
+
+        <renamePsiElementProcessor implementation="com.huawei.theme.analysis.plugin.editor.reference.ThemeDslVarRenameProcessor"/>
+
+        <findUsagesHandlerFactory implementation="com.huawei.theme.analysis.plugin.editor.reference.ThemeDslVarFindUsagesHandlerFactory"/>
+
+        <psi.referenceContributor implementation="com.huawei.theme.analysis.plugin.editor.reference.ThemeDslVariableReferenceContributor"
+                                  language="ThemeDSL"/>
+
+        <multiHostInjector implementation="com.huawei.theme.analysis.plugin.editor.reference.ThemeDslExpressionInjector"/>
+        <multiHostInjector implementation="com.huawei.theme.analysis.plugin.editor.reference.ThemeDslVarNameInjector"/>
+    </extensions>
+</idea-plugin>

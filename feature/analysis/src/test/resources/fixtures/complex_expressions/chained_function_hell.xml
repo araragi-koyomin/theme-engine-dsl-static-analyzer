@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="deep_ifelse" type="number" expression="ifelse(#screen_width > 500, ifelse(#battery_level > 50, 100, 50), ifelse(#darkMode == 1, 75, 25))"/>
+
+    <Var name="type_mix_deep" type="string" expression="ifelse(#touch_x > 100, ifelse(#darkMode == 2, 'dark_mode', 123), 'light_mode')"/>
+
+    <Var name="chained_bad_type" type="number" expression="sin(substr('hello', 0, 3))"/>
+
+    <Var name="complex_math" type="number" expression="(sin(#hour24 * 15) + cos(#minute * 6)) * 50 + 100"/>
+
+    <Var name="ultra_deep_ifelse" type="number" expression="ifelse(#battery_level > 80, ifelse(#darkMode == 1, ifelse(#screen_width > 1000, ifelse(#touch_x > 0, 999, 0), 500), 300), 100)"/>
+
+    <Var name="bad_arithmetic" type="number" expression="#screen_width + 'hello'"/>
+
+    <Var name="boundary_calc" type="number" expression="ifelse(#battery_level == 0, 0, ifelse(#battery_level == 100, 255, #battery_level * 2.55))"/>
+
+    <Image name="deep_expr_img" x="ifelse(#touch_x > 500, max(100, min(#touch_x, 500)), sqrt(abs(#touch_x - 500) * 100))" y="50" width="1080" height="1920" src="bg.png"/>
+
+    <Image name="bad_expr_img" x="ifelse(#touch_x > 500, 'left', 100)" y="50" width="1080" height="1920" src="bg.png"/>
+
+    <Text name="complex_text" x="540" y="100" size="40" color="#FFFFFF" textExp="'Time: ' + {#hour24} + ':' + {#minute}"/>
+</Lockscreen>

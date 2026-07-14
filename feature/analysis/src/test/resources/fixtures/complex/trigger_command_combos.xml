@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Button name="no_trigger_btn" x="100" y="100" width="200" height="80"/>
+
+    <Button name="bad_action_btn" x="100" y="250" width="200" height="80">
+        <Trigger action="swipe_left">
+            <VisibilityCommand name="vis" target="some_target" visibility="0"/>
+        </Trigger>
+    </Button>
+
+    <Button name="mixed_actions_btn" x="100" y="400" width="200" height="80">
+        <Triggers>
+            <Trigger action="down">
+                <VariableCommand name="v1" type="set" value="1"/>
+            </Trigger>
+            <Trigger action="invalid_action2">
+                <SoundCommand name="snd" sound="click.mp3" volume="10"/>
+            </Trigger>
+            <Trigger action="up">
+                <VideoCommand name="vid" play="1" sound="1"/>
+            </Trigger>
+            <Trigger action="click">
+                <StyleCommand name="style" index="#runtime_var"/>
+            </Trigger>
+        </Triggers>
+    </Button>
+
+    <Button name="empty_triggers_btn" x="100" y="550" width="200" height="80">
+        <Triggers>
+        </Triggers>
+    </Button>
+
+    <Button name="group_cmd_btn" x="100" y="700" width="200" height="80">
+        <Trigger action="double">
+            <GroupCommands method="perform" params="actionA,actionB" paramTypes="String"/>
+        </Trigger>
+    </Button>
+
+    <Image name="valid_bg" x="0" y="0" width="1080" height="1920" src="bg.png"/>
+</Lockscreen>

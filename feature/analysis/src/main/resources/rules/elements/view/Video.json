@@ -331,7 +331,7 @@
       "message": "透明视频仅支持mp4格式",
       "severity": "error",
       "suggestedFixes": [
-        "将视频转换为mp4格式"
+        {"text": "将视频转换为mp4格式", "type": "UNKNOWN"}
       ]
     }, {
       "ruleId": "SEM-VID-003",
@@ -339,7 +339,7 @@
       "message": "透明视频不支持isFullScreenNode属性",
       "severity": "error",
       "suggestedFixes": [
-        "移除isFullScreenNode属性"
+        {"text": "移除isFullScreenNode属性", "type": "REMOVE_ATTR", "target": "isFullScreenNode"}
       ]
     }, {
       "ruleId": "SEM-VID-004",
@@ -347,15 +347,16 @@
       "message": "isTransparent与isFullScreenNode不能同时使用",
       "severity": "error",
       "suggestedFixes": [
-        "移除isFullScreenNode或移除isTransparent"
+        {"text": "移除isFullScreenNode属性", "type": "REMOVE_ATTR", "target": "isFullScreenNode"},
+        {"text": "移除isTransparent属性", "type": "REMOVE_ATTR", "target": "isTransparent"}
       ]
     }, {
       "ruleId": "SEM-ATTR-001",
-      "condition": "element.attrs[\u0027alpha\u0027] != null AND (parseInt(element.attrs[\u0027alpha\u0027]) \u003c 0 OR parseInt(element.attrs[\u0027alpha\u0027]) \u003e 255)",
+      "condition": "element.attrs[\u0027alpha\u0027] != null AND (element.attrs[\u0027alpha\u0027] \u003c 0 OR element.attrs[\u0027alpha\u0027] \u003e 255)",
       "message": "alpha值应在0-255范围内",
       "severity": "error",
       "suggestedFixes": [
-        "设置alpha值在0-255范围内"
+        {"text": "设置alpha值在0-255范围内", "type": "CLAMP_VALUE", "target": "alpha", "range": "0-255"}
       ]
     }
   ]

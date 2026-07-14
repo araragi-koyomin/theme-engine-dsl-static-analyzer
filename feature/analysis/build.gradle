@@ -1,3 +1,7 @@
+intellij {
+    plugins = []
+}
+
 configurations {
     antlr4
 }
@@ -6,6 +10,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.9.0'
     antlr4 'org.antlr:antlr4:4.13.1'
     implementation 'org.antlr:antlr4-runtime:4.13.1'
+    implementation project(":antlr4-intellij-adaptor")
     compileOnly 'org.projectlombok:lombok:1.18.22'
     annotationProcessor 'org.projectlombok:lombok:1.18.22'
 
@@ -13,11 +18,6 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.3'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
 }
-
-// The IntelliJ LSP client lives in :feature:clients:intellij and stages the
-// server fat jar itself. This core module no longer packages an IntelliJ
-// plugin; it is a plain-Java engine consumed by the CLI fat jar, the LSP
-// server (:feature:lsp) and the IntelliJ client (:feature:clients:intellij).
 
 def generatedRootDir = 'build/generated-src/antlr/main'
 

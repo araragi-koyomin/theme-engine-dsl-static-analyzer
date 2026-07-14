@@ -2,6 +2,8 @@ package com.huawei.theme.analysis.core.function;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,6 +57,35 @@ public class JsonFunctionSignatureLoader implements FunctionSignatureLibrary {
         }
 
         try (FileReader reader = new FileReader(filePath.toFile(), StandardCharsets.UTF_8)) {
+            return loadFromReader(reader);
+        } catch (IOException e) {
+            throw new FunctionLoadException("Failed to read functions file: " + filePath, e);
+        }
+    }
+
+    public JsonFunctionSignatureLoader loadFromReader(java.io.Reader reader) {
+        FunctionFileWrapper wrapper = gson.fromJson(reader, FunctionFileWrapper.class);
+        if (wrapper == null || wrapper.functions == null) {
+            return new JsonFunctionSignatureLoader(Collections.emptyMap());
+        }
+        Map<String, List<FunctionSignature>> index = wrapper.functions.stream()
+                .filter(s -> s.getName() != null)
+                .peek(JsonFunctionSignatureLoader::normalizeSignature)
+                .collect(Collectors.groupingBy(FunctionSignature::getName));
+        return new JsonFunctionSignatureLoader(index);
+    }
+
+    public JsonFunctionSignatureLoader loadFromClasspath() {
+        ClassLoader cl = getClass().getClassLoader();
+        if (cl == null) {
+            cl = ClassLoader.getSystemClassLoader();
+        }
+        InputStream in = cl.getResourceAsStream(DEFAULT_FUNCTIONS_DIR + "/" + FUNCTIONS_FILE);
+        if (in == null) {
+            throw new FunctionLoadException("Functions file not found on classpath: "
+                    + DEFAULT_FUNCTIONS_DIR + "/" + FUNCTIONS_FILE);
+        }
+        try (InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
             FunctionFileWrapper wrapper = gson.fromJson(reader, FunctionFileWrapper.class);
             if (wrapper == null || wrapper.functions == null) {
                 return new JsonFunctionSignatureLoader(Collections.emptyMap());
@@ -67,15 +98,12 @@ public class JsonFunctionSignatureLoader implements FunctionSignatureLibrary {
 
             return new JsonFunctionSignatureLoader(index);
         } catch (IOException e) {
-            throw new FunctionLoadException("Failed to read functions file: " + filePath, e);
+            throw new FunctionLoadException("Failed to read functions file from classpath: "
+                    + DEFAULT_FUNCTIONS_DIR + "/" + FUNCTIONS_FILE, e);
         } catch (JsonSyntaxException e) {
-            throw new FunctionLoadException("JSON syntax error in functions file: " + filePath, e);
+            throw new FunctionLoadException("JSON syntax error in functions file from classpath: "
+                    + DEFAULT_FUNCTIONS_DIR + "/" + FUNCTIONS_FILE, e);
         }
-    }
-
-    public JsonFunctionSignatureLoader loadFromClasspath() {
-        String moduleDir = System.getProperty("user.dir");
-        return loadFromDirectory(moduleDir + "/src/main/resources/" + DEFAULT_FUNCTIONS_DIR);
     }
 
     private static void normalizeSignature(FunctionSignature signature) {
@@ -105,6 +133,12 @@ public class JsonFunctionSignatureLoader implements FunctionSignatureLibrary {
     @Override
     public boolean hasFunction(String name) {
         return signatureIndex.containsKey(name);
+    }
+
+    public List<FunctionSignature> getAllSignatures() {
+        return signatureIndex.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
     }
 
     public static class FunctionLoadException extends RuntimeException {

@@ -18,11 +18,25 @@ public class AnalyzerRegistry {
         analyzers.add(analyzer);
     }
 
+    static{
+        init();
+    }
+
+    public static void clear() {
+        analyzers.clear();
+        initialized = false;
+    }
+
+    /**
+     * init已经在static块中执行了。
+     */
+    @Deprecated()
     public static void init() {
         if (initialized) {
             return;
         }
         initialized = true;
+        register(new SyntaxErrorAnalyzer());
         register(new ConstraintAnalyzer());
         register(new ParentChildAnalyzer());
         register(new ScopeAnalyzer());

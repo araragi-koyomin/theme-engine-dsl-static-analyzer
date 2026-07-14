@@ -245,15 +245,15 @@
       "message": "GroupImage必须设置layered=true以启用图片混合",
       "severity": "error",
       "suggestedFixes": [
-        "设置layered=\u0027true\u0027"
+        {"text": "设置layered=\u0027true\u0027", "type": "SET_VALUE", "target": "layered", "value": "true"}
       ]
     }, {
       "ruleId": "SEM-ATTR-001",
-      "condition": "element.attrs[\u0027alpha\u0027] != null AND (parseInt(element.attrs[\u0027alpha\u0027]) \u003c 0 OR parseInt(element.attrs[\u0027alpha\u0027]) \u003e 255)",
+      "condition": "element.attrs[\u0027alpha\u0027] != null AND (element.attrs[\u0027alpha\u0027] \u003c 0 OR element.attrs[\u0027alpha\u0027] \u003e 255)",
       "message": "alpha值应在0-255范围内",
       "severity": "error",
       "suggestedFixes": [
-        "设置alpha值在0-255范围内"
+        {"text": "设置alpha值在0-255范围内", "type": "CLAMP_VALUE", "target": "alpha", "range": "0-255"}
       ]
     }
   ]

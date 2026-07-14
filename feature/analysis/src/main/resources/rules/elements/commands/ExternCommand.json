@@ -69,11 +69,11 @@
   "constraints": [
     {
       "ruleId": "SEM-EXTERN-001",
-      "condition": "element.attrs[\u0027delay\u0027] != null AND parseInt(element.attrs[\u0027delay\u0027]) \u003e 3000",
+      "condition": "element.attrs[\u0027delay\u0027] != null AND element.attrs[\u0027delay\u0027] \u003e 3000",
       "message": "延迟解锁最大时间不超过3000ms",
       "severity": "error",
       "suggestedFixes": [
-        "设置delay值不超过3000"
+        {"text": "设置delay值不超过3000", "type": "CLAMP_VALUE", "target": "delay", "value": "3000"}
       ]
     }
   ]

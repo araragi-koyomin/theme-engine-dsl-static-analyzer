@@ -57,8 +57,13 @@ class DslExpressionEmbeddingTest {
     @Test
     void varExpressionLiteralValue() {
         DslElementNode var = build("<Var name=\"v\" expression=\"1\" type=\"number\"/>");
-        assertLiteral(var, "expression");
-        assertEquals("1", attrValue(var, "expression").getRawValue());
+        DslAttributeValueNode v = attrValue(var, "expression");
+        assertFalse(v.isLiteral());
+        assertTrue(v.getExpression().isPresent());
+        ExpressionNode e = (ExpressionNode) v.getExpression().get();
+        assertEquals(ExpressionKind.LITERAL, e.getKind());
+        assertEquals("1", e.getLiteralValue());
+        assertEquals("1", v.getRawValue());
     }
 
     @Test
@@ -92,7 +97,12 @@ class DslExpressionEmbeddingTest {
     @Test
     void numberAttrLiteralValue() {
         DslElementNode image = build("<Image x=\"0\"/>");
-        assertLiteral(image, "x");
+        DslAttributeValueNode v = attrValue(image, "x");
+        assertFalse(v.isLiteral());
+        assertTrue(v.getExpression().isPresent());
+        ExpressionNode e = (ExpressionNode) v.getExpression().get();
+        assertEquals(ExpressionKind.LITERAL, e.getKind());
+        assertEquals("0", e.getLiteralValue());
     }
 
     @Test

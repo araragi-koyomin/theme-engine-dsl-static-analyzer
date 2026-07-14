@@ -3,8 +3,10 @@ package com.huawei.theme.analysis.core.rulelibrary.model;
 import java.util.Collections;
 import java.util.List;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 
@@ -18,6 +20,8 @@ import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
  * <p>示例：SEM-CMD-001的condition为"element.attrs['play'] != null AND element.attrs['sound'] != null"</p>
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class RuleConstraint {
     /** 规则唯一标识，格式[类别]-[子类]-[编号]，如SEM-CMD-001。Diagnostic.ruleId引用此值 */
@@ -29,5 +33,5 @@ public class RuleConstraint {
     /** 诊断严重级别，JSON中存储为小写字符串("error"/"warning"/"info")，通过DiagnosticSeverityAdapter映射为枚举 */
     DiagnosticSeverity severity;
     /** 修复建议文本列表，M5 FixAction直接消费 */
-    @Builder.Default List<String> suggestedFixes = Collections.emptyList();
+    @Builder.Default List<SuggestedFix> suggestedFixes = Collections.emptyList();
 }

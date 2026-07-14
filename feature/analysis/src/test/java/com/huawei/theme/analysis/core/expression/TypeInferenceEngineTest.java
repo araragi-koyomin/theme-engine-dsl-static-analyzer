@@ -31,10 +31,10 @@ class TypeInferenceEngineTest {
     }
 
     @Test
-    void numberLiteralInStringContextReturnsString() {
+    void numberLiteralInStringContextReturnsNumber() {
         ExpressionNode node = ExpressionNode.literal("42", "42", 1, 0);
         DslType result = engine.inferType(node, new DslStringType(), emptyTable());
-        assertEquals("string", result.getName());
+        assertEquals("number", result.getName());
     }
 
     @Test

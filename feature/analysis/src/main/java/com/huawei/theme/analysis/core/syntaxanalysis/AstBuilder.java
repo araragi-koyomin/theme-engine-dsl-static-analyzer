@@ -169,6 +169,7 @@ public class AstBuilder implements DslAstProvider {
                         vlc[0], vlc[1], vEnd[0], vEnd[1]);
                 attachExpression(value, attrValue, tagName, attrName, vlc[0], vlc[1]);
                 attr.setValue(value);
+                attr.setParent(node);
             } else {
                 attr.setLine(lc[0]);
                 attr.setColumn(lc[1]);
@@ -178,6 +179,7 @@ public class AstBuilder implements DslAstProvider {
                 DslAttributeValueNode value = buildValueNode(attrValue, lc[0], lc[1], lc[0], lc[1]);
                 attachExpression(value, attrValue, tagName, attrName, lc[0], lc[1]);
                 attr.setValue(value);
+                attr.setParent(node);
             }
             node.getAttributes().add(attr);
         }
@@ -316,6 +318,10 @@ public class AstBuilder implements DslAstProvider {
                     tagEndOffset = i;
                 }
                 break;
+            }
+            if (!isNameChar(c)) {
+                i++;
+                continue;
             }
             int nameStart = i;
             while (i < source.length() && isNameChar(source.charAt(i))) {

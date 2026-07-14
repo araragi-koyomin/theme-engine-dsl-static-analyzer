@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="arr_val_0" type="number" const="true" expression="10"/>
+    <Var name="arr_val_1" type="number" const="true" expression="20"/>
+    <Var name="arr_val_2" type="number" const="true" expression="30"/>
+
+    <Var name="arr_access" type="number" expression="#arr_val_0 * 100"/>
+
+    <Var name="result_nested" type="number" expression="#arr_val_0 + #arr_val_1 * 10 + #arr_val_2 * 100"/>
+
+    <Image name="test_img" x="0" y="0" width="1080" height="1920" src="bg.png"/>
+
+    <Var name="elem_prop" type="number" expression="#test_img.actual_w * 2"/>
+
+    <Var name="bad_elem_prop" type="number" expression="#ghost_img.actual_w * 2"/>
+
+    <Var name="sys_prop" type="number" expression="#system.time.hour1 * 10 + #system.time.min1"/>
+
+    <Var name="deep_ref" type="number" expression="ifelse(#touch_x > #test_img.actual_x, #test_img.actual_w, #screen_width)"/>
+</Lockscreen>

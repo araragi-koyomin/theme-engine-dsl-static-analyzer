@@ -44,7 +44,10 @@ public class LiteralTypeAnalyzer extends BaseXmlAnalyzer {
             }
             AttrTypeSpec spec = specOpt.get();
             DslAttributeValueNode value = attr.getValue();
-            if (value == null || !value.isLiteral()) {
+            if (value == null) {
+                continue;
+            }
+            if (!value.isLiteral()) {
                 continue;
             }
             String rawValue = value.getRawValue();

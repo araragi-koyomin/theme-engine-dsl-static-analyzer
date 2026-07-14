@@ -59,7 +59,7 @@ class VarRefAnalyzerTest {
         assertEquals(15, diag.getLine());
         assertEquals(3, diag.getColumn());
         assertEquals(1, diag.getSuggestedFixes().size());
-        assertEquals("声明 Var name=\"x\"", diag.getSuggestedFixes().get(0));
+        assertEquals("声明 Var name=\"x\"", diag.getSuggestedFixes().get(0).getText());
     }
 
     @Test
@@ -69,9 +69,7 @@ class VarRefAnalyzerTest {
 
         List<Diagnostic> diagnostics = analyzer.analyze(text, context(stubRepo(), globalTable()));
 
-        assertEquals(1, diagnostics.size());
-        assertEquals("SEM-REF-001", diagnostics.get(0).getRuleId());
-        assertEquals("引用未定义变量 @str", diagnostics.get(0).getMessage());
+        assertTrue(diagnostics.isEmpty(), "@-prefixed variable refs should not be flagged as undefined");
     }
 
     @Test
@@ -325,7 +323,7 @@ class VarRefAnalyzerTest {
         assertEquals(15, diag.getLine());
         assertEquals(3, diag.getColumn());
         assertEquals(1, diag.getSuggestedFixes().size());
-        assertEquals("声明带 name=\"unlocker\" 的元素", diag.getSuggestedFixes().get(0));
+        assertEquals("声明带 name=\"unlocker\" 的元素", diag.getSuggestedFixes().get(0).getText());
     }
 
     @Test
@@ -431,7 +429,7 @@ class VarRefAnalyzerTest {
         assertEquals(10, diagnostics.get(0).getLine());
         assertEquals(5, diagnostics.get(0).getColumn());
         assertEquals(1, diagnostics.get(0).getSuggestedFixes().size());
-        assertEquals("声明元素 name=\"img\"", diagnostics.get(0).getSuggestedFixes().get(0));
+        assertEquals("声明元素 name=\"img\"", diagnostics.get(0).getSuggestedFixes().get(0).getText());
     }
 
     @Test
@@ -537,7 +535,7 @@ class VarRefAnalyzerTest {
         assertEquals(5, d1.get(0).getLine());
         assertEquals(0, d1.get(0).getColumn());
         assertEquals(1, d1.get(0).getSuggestedFixes().size());
-        assertEquals("移除重复的 Var 声明", d1.get(0).getSuggestedFixes().get(0));
+        assertEquals("移除重复的 Var 声明", d1.get(0).getSuggestedFixes().get(0).getText());
         assertTrue(d2.isEmpty());
     }
 

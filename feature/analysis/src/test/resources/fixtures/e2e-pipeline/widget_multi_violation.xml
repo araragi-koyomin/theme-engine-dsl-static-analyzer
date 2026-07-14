@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Widget>
+    <Button name="btn1"/>
+    <Button name="btn2" x="100" y="200" width="300" height="100">
+        <Trigger action="invalid_action"/>
+    </Button>
+     <Layer name="bg_layer" w="300" h="100" src="layer.png"/>
+    <Image name="icon" x="50" y="50" width="100" height="100"
+           alpha="999" src="icon.png"/>
+</Widget>

@@ -13,6 +13,15 @@ public class CliConfig {
     boolean helpRequested;
     String targetPath;
     String configPath;
+    @Builder.Default
+    String format = "terminal";
+    String outputPath;
+    @Builder.Default
+    boolean noColor = false;
+    boolean quiet;
+    boolean syntaxOnly;
+    boolean semanticOnly;
+    boolean versionRequested;
 
     public static CliConfig fromArgs(String[] args) {
         CliConfigBuilder builder = CliConfig.builder();
@@ -31,6 +40,33 @@ public class CliConfig {
                     break;
                 case "--verbose":
                     builder.verbose(true);
+                    break;
+                case "--quiet":
+                    builder.quiet(true);
+                    break;
+                case "--format":
+                    if (i + 1 >= args.length) {
+                        throw new IllegalArgumentException("--format requires a value (json/markdown/terminal)");
+                    }
+                    builder.format(args[++i]);
+                    break;
+                case "--output":
+                    if (i + 1 >= args.length) {
+                        throw new IllegalArgumentException("--output requires a path value");
+                    }
+                    builder.outputPath(args[++i]);
+                    break;
+                case "--no-color":
+                    builder.noColor(true);
+                    break;
+                case "--syntax-only":
+                    builder.syntaxOnly(true);
+                    break;
+                case "--semantic-only":
+                    builder.semanticOnly(true);
+                    break;
+                case "--version":
+                    builder.versionRequested(true);
                     break;
                 case "--help":
                 case "-h":
@@ -55,7 +91,7 @@ public class CliConfig {
             }
         }
 
-        if (builder.build().isHelpRequested()) {
+        if (builder.build().isHelpRequested() || builder.build().isVersionRequested()) {
             builder.targetPath(targetPath);
             return builder.build();
         }

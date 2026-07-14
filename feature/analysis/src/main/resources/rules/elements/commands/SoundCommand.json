@@ -114,7 +114,7 @@
       "message": "音频文件超过1MB会被截断处理",
       "severity": "warning",
       "suggestedFixes": [
-        "压缩音频文件至1MB以内"
+        {"text": "压缩音频文件至1MB以内", "type": "UNKNOWN", "target": "音频文件"}
       ]
     }
   ]

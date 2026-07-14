@@ -10,8 +10,6 @@
     "action": {
       "type": "string",
       "enumValues": [
-        "down", "up", "double", "click", "long", "resume", "pause", "tapLink", "tapConnected", "tapDisconnected",
-        "move_left_start", "move_left_end", "move_right_start", "move_right_end"
       ],
       "aliases": [
       ],
@@ -43,7 +41,7 @@
       "message": "Trigger action值不在合法集合中，合法值为: down, up, double, click, long, resume, pause, tapLink, tapConnected, tapDisconnected, move_left_start, move_left_end, move_right_start, move_right_end",
       "severity": "error",
       "suggestedFixes": [
-        "修改action值为合法枚举值"
+        {"text": "修改action值为合法枚举值", "type": "REPLACE_ENUM", "target": "action"}
       ]
     }
   ]

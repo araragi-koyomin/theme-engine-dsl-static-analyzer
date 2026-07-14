@@ -47,11 +47,11 @@
   "constraints": [
     {
       "ruleId": "SEM-VPOINT-001",
-      "condition": "parseInt(element.attrs[\u0027frameRate\u0027]) \u003e 60 OR parseInt(element.attrs[\u0027frameRate\u0027]) \u003c 1",
+      "condition": "element.attrs[\u0027frameRate\u0027] \u003e 60 OR element.attrs[\u0027frameRate\u0027] \u003c 1",
       "message": "frameRate推荐值30，默认60",
       "severity": "warning",
       "suggestedFixes": [
-        "设置frameRate为30"
+        {"text": "设置frameRate为30", "type": "SET_VALUE", "target": "frameRate", "value": "30"}
       ]
     }
   ]

@@ -23,6 +23,7 @@ import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 import com.huawei.theme.analysis.core.shared.diagnostic.TextRange;
+import com.huawei.theme.analysis.core.shared.model.FixActionType;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -47,7 +48,7 @@ class CodeActionProviderTest {
         // Diagnostic at "name" (line 0, cols 8..12). Fix replaces it with "w".
         FixActionRegistry.register(generator("TEST-RULE-001", diagnostic -> List.of(
                 FixAction.builder()
-                        .fixType("replace_attr")
+                        .fixType(FixActionType.REPLACE_VALUE)
                         .description("Replace with alias 'w'")
                         .targetRange(TextRange.builder()
                                 .startLine(1).startColumn(8).endLine(1).endColumn(12).build())
@@ -74,7 +75,7 @@ class CodeActionProviderTest {
     void candidateActionsProduceOnePerCandidate() {
         FixActionRegistry.register(generator("TEST-RULE-002", diagnostic -> List.of(
                 FixAction.builder()
-                        .fixType("suggest_attr")
+                        .fixType(FixActionType.USE_ALTERNATIVE)
                         .description("Did you mean")
                         .targetRange(TextRange.builder()
                                 .startLine(1).startColumn(8).endLine(1).endColumn(12).build())
@@ -99,7 +100,7 @@ class CodeActionProviderTest {
     void noOverlapReturnsEmpty() {
         FixActionRegistry.register(generator("TEST-RULE-003", diagnostic -> List.of(
                 FixAction.builder()
-                        .fixType("x")
+                        .fixType(FixActionType.UNKNOWN)
                         .description("d")
                         .targetRange(TextRange.builder()
                                 .startLine(1).startColumn(8).endLine(1).endColumn(12).build())
@@ -123,7 +124,7 @@ class CodeActionProviderTest {
     void actionWithoutTargetRangeIsSkipped() {
         FixActionRegistry.register(generator("TEST-RULE-004", diagnostic -> List.of(
                 FixAction.builder()
-                        .fixType("noop")
+                        .fixType(FixActionType.UNKNOWN)
                         .description("no range")
                         .replacementText("w")
                         .build()

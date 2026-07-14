@@ -30,7 +30,7 @@
       "message": "目前只支持改变一次帧率，VariablePoint最多2个",
       "severity": "error",
       "suggestedFixes": [
-        "减少VariablePoint数量至2个以内"
+        {"text": "减少VariablePoint数量至2个以内", "type": "REDUCE_VALUE", "target": "VariablePoint", "range": "2"}
       ]
     }
   ]

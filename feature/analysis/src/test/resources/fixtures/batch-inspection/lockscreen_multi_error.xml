@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="dup_var" type="number" const="true" expression="1"/>
+    <Var name="dup_var" type="number" const="true" expression="2"/>
+    <Var name="hour" type="number" persist="true"/>
+    <Image name="bg" x="#undefined_var" y="0" width="1080" height="1920" alpha="300" src="bg.png"/>
+    <Image name="conflict" src="icon.png" srcExp="@weather_icon" scaleType="invalid_type"/>
+    <Button name="btn">
+        <Trigger action="swipe"/>
+    </Button>
+    <Group name="container" x="0" y="0" width="1080" height="500">
+        <Image name="inner" x="'hello'" y="100" width="200" height="200" src="inner.png"/>
+    </Group>
+    <Layer w="1080" h="1920" src="layer_bg.png"/>
+</Lockscreen>

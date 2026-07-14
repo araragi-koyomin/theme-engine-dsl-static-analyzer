@@ -125,7 +125,7 @@
       "message": "Layer z值范围应在[-10,7]之间",
       "severity": "warning",
       "suggestedFixes": [
-        "设置z值在-10到7范围内"
+        {"text": "设置z值在-10到7范围内", "type": "CLAMP_VALUE", "target": "z", "range": "-10到7"}
       ]
     }
   ]

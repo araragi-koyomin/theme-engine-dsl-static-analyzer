@@ -72,7 +72,7 @@
       "message": "Slice的time属性取值范围为[0,1800000]",
       "severity": "error",
       "suggestedFixes": [
-        "将time值调整到合法范围内"
+        {"text": "将time值调整到合法范围内", "type": "CLAMP_VALUE", "target": "time"}
       ]
     }, {
       "ruleId": "SEM-VIBRATE-005",
@@ -80,7 +80,7 @@
       "message": "Slice的duration属性取值范围为[0,1800000]",
       "severity": "error",
       "suggestedFixes": [
-        "将duration值调整到合法范围内"
+        {"text": "将duration值调整到合法范围内", "type": "CLAMP_VALUE", "target": "duration"}
       ]
     }, {
       "ruleId": "SEM-VIBRATE-006",
@@ -88,7 +88,7 @@
       "message": "Slice的intensity属性取值范围为[0,1]",
       "severity": "error",
       "suggestedFixes": [
-        "将intensity值调整到0-1范围内"
+        {"text": "将intensity值调整到0-1范围内", "type": "CLAMP_VALUE", "target": "intensity", "range": "0-1"}
       ]
     }
   ]

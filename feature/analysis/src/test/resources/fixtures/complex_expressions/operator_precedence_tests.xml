@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="base" type="number" const="true" expression="10"/>
+
+    <Var name="prec1" type="number" expression="#base + #base * #base"/>
+
+    <Var name="prec2" type="number" expression="(#base + #base) * #base"/>
+
+    <Var name="prec3" type="number" expression="#base - #base / 2"/>
+
+    <Var name="prec4" type="number" expression="(#base - #base) / 2"/>
+
+    <Var name="prec5" type="number" expression="-#base * #base"/>
+
+    <Var name="prec6" type="number" expression="0 - #base * #base"/>
+
+    <Var name="prec7" type="number" expression="-#base"/>
+
+    <Var name="prec8" type="number" expression="0 - #base"/>
+
+    <Var name="mod1" type="number" expression="#battery_level % 10"/>
+
+    <Var name="mod2" type="number" expression="(#battery_level + 5) % 10 - 5"/>
+
+    <Var name="deep_parens" type="number" expression="(((#base * 2) + 3) * 4) - 5"/>
+
+    <Image name="test" x="0" y="0" width="1080" height="1920" src="bg.png"/>
+</Lockscreen>

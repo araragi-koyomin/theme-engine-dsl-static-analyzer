@@ -113,15 +113,15 @@
       "message": "ParticleView必须为根标签的直接子元素",
       "severity": "error",
       "suggestedFixes": [
-        "将ParticleView移至根标签下"
+        {"text": "将ParticleView移至根标签下", "type": "MOVE_ELEMENT", "target": "ParticleView", "value": "根标签下"}
       ]
     }, {
       "ruleId": "SEM-EFFECT-PV-002",
-      "condition": "element.attrs[\u0027w\u0027] != null AND parseInt(element.attrs[\u0027w\u0027]) \u003e 120",
+      "condition": "element.attrs[\u0027w\u0027] != null AND element.attrs[\u0027w\u0027] \u003e 120",
       "message": "粒子尺寸最大为120px",
       "severity": "warning",
       "suggestedFixes": [
-        "减小w/h值至120以内"
+        {"text": "减小w/h值至120以内", "type": "REDUCE_VALUE", "target": "w/h", "range": 120}
       ]
     }
   ]

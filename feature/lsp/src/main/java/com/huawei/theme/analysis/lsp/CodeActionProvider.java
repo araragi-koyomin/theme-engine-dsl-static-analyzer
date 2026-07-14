@@ -126,7 +126,7 @@ final class CodeActionProvider {
         if (action.getDescription() != null && !action.getDescription().isEmpty()) {
             return action.getDescription();
         }
-        return action.getFixType() != null ? action.getFixType() : "Quick fix";
+        return action.getFixType() != null ? action.getFixType().name() : "Quick fix";
     }
 
     private static org.eclipse.lsp4j.Diagnostic toLspDiagnostic(Diagnostic d, PositionMapper mapper,

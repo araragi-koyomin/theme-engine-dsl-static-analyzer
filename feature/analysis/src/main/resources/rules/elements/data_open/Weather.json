@@ -30,7 +30,7 @@
       "message": "Weather子Var变量名必须遵循格式: Weather.{today|yesterday|tomorrow}.{字段名}",
       "severity": "error",
       "suggestedFixes": [
-        "修改Var的name属性为Weather.today.weatherIcon等标准格式"
+        {"text": "修改Var的name属性为Weather.today.weatherIcon等标准格式", "type": "MODIFY_NAME_FORMAT", "target": "name", "value": "Weather.today.weatherIcon"}
       ]
     }, {
       "ruleId": "SEM-WEATHER-002",
@@ -38,7 +38,7 @@
       "message": "currentTem/humidity/dressingLevel/sportsLevel/coldLevel/carWashLevel不支持yesterday和tomorrow",
       "severity": "error",
       "suggestedFixes": [
-        "使用Weather.today替代yesterday/tomorrow"
+        {"text": "使用Weather.today替代yesterday/tomorrow", "type": "USE_ALTERNATIVE", "target": "Weather.today", "value": "yesterday/tomorrow"}
       ]
     }
   ]
