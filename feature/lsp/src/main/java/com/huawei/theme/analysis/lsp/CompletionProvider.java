@@ -7,17 +7,23 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
+import org.eclipse.lsp4j.InsertTextFormat;
 
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
+import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 
 /**
- * Provides completion items for element names and attribute names based on
- * the cursor context resolved by {@link ContextResolver}.
+ * Provides completion items for element names, attribute names, and attribute
+ * values based on the cursor context resolved by {@link ContextResolver}.
  *
  * <p>Element-name completion offers every tag from the rule library. Attribute
  * completion offers the canonical attribute set of the enclosing tag, with
- * required attributes sorted first.</p>
+ * required attributes sorted first; each item is inserted as a snippet
+ * {@code name="$0"} so the cursor lands inside the quotes for immediate value
+ * entry. Attribute-value completion offers the attribute's enum values (e.g.
+ * {@code Var.type} → number/string/..., {@code Text.align} → left/center/right)
+ * when the rule library declares them; the default value is sorted first.</p>
  */
 final class CompletionProvider {
 
@@ -33,6 +39,10 @@ final class CompletionProvider {
         }
         if (ctx.type == ContextResolver.PositionType.ATTRIBUTE_NAME && ctx.tagName != null) {
             return attributeNameItems(ctx.tagName, ctx.word);
+        }
+        if (ctx.type == ContextResolver.PositionType.ATTRIBUTE_VALUE
+                && ctx.tagName != null && ctx.attrName != null) {
+            return attributeValueItems(ctx.tagName, ctx.attrName, ctx.word);
         }
         return List.of();
     }
@@ -69,6 +79,39 @@ final class CompletionProvider {
             item.setKind(isRequired ? CompletionItemKind.Field : CompletionItemKind.Property);
             item.setDetail(isRequired ? "required" : "optional");
             item.setSortText(isRequired ? "0_" + attr : "1_" + attr);
+            // Insert as a snippet so the cursor lands inside the quotes,
+            // ready for value entry (clients that don't support snippets fall
+            // back to the label).
+            item.setInsertText(attr + "=\"$0\"");
+            item.setInsertTextFormat(InsertTextFormat.Snippet);
+            items.add(item);
+        }
+        return items;
+    }
+
+    private List<CompletionItem> attributeValueItems(String tagName, String attrName, String prefix) {
+        Optional<AttrTypeSpec> specOpt = ruleRepository.getAttrTypeSpec(tagName, attrName);
+        if (specOpt.isEmpty()) {
+            return List.of();
+        }
+        AttrTypeSpec spec = specOpt.get();
+        List<String> enumValues = spec.getEnumValues();
+        if (enumValues == null || enumValues.isEmpty()) {
+            return List.of();
+        }
+        String defaultValue = spec.getDefaultValue();
+        List<CompletionItem> items = new ArrayList<>();
+        for (String value : enumValues) {
+            if (!matches(prefix, value)) {
+                continue;
+            }
+            boolean isDefault = value.equals(defaultValue);
+            CompletionItem item = new CompletionItem(value);
+            item.setKind(CompletionItemKind.EnumMember);
+            item.setDetail(spec.getType());
+            item.setSortText(isDefault ? "0_" + value : "1_" + value);
+            // Insert the bare value; the surrounding quotes already exist.
+            item.setInsertText(value);
             items.add(item);
         }
         return items;

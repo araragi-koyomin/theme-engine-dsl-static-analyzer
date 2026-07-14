@@ -12,7 +12,7 @@ package com.huawei.theme.analysis.lsp;
  */
 final class ContextResolver {
 
-    enum PositionType { ELEMENT_NAME, ATTRIBUTE_NAME, OTHER }
+    enum PositionType { ELEMENT_NAME, ATTRIBUTE_NAME, ATTRIBUTE_VALUE, OTHER }
 
     static final class Context {
         final PositionType type;

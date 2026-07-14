@@ -1,6 +1,7 @@
 package com.huawei.theme.analysis.lsp;
 
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
+import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 
@@ -53,11 +54,12 @@ final class AstContextResolver {
         if (r.element == null) {
             return null;
         }
-        return buildContext(r.element, r.attribute, n);
+        return buildContext(r.element, r.attribute, r.attributeValue, n);
     }
 
     private ContextResolver.Context buildContext(DslElementNode element,
-                                                DslAttributeNode attribute, int cursor) {
+                                                DslAttributeNode attribute,
+                                                DslAttributeValueNode attributeValue, int cursor) {
         String tagName = element.getTagName() != null ? element.getTagName() : "";
         int elemStart = mapper.coreOffset(element.getLine(), element.getColumn());
         int tagNameStart = elemStart + 1;
@@ -82,6 +84,24 @@ final class AstContextResolver {
                         tagName.isEmpty() ? null : tagName,
                         word,
                         attrName);
+            }
+            // Inside the attribute but past its name: distinguish the value
+            // content (between quotes) from the '=' / quote characters, so the
+            // completion provider can offer enum values for the attribute.
+            if (attributeValue != null) {
+                int valueStart = mapper.coreOffset(attributeValue.getLine(), attributeValue.getColumn());
+                int valueEnd = mapper.coreOffset(attributeValue.getEndLine(), attributeValue.getEndColumn());
+                // Half-open [valueStart, valueEnd) covers the value content;
+                // for an empty value (attr="") the range is zero-width, so
+                // also accept the cursor exactly at valueStart.
+                if (cursor >= valueStart && cursor <= valueEnd) {
+                    String word = safeSubstring(valueStart, cursor);
+                    return new ContextResolver.Context(
+                            ContextResolver.PositionType.ATTRIBUTE_VALUE,
+                            tagName.isEmpty() ? null : tagName,
+                            word,
+                            attrName);
+                }
             }
             return new ContextResolver.Context(
                     ContextResolver.PositionType.OTHER,
@@ -114,12 +134,23 @@ final class AstContextResolver {
         if (cursor >= start && cursor < end) {
             r.element = element;
             r.attribute = null;
+            r.attributeValue = null;
             if (element.getAttributes() != null) {
                 for (DslAttributeNode attr : element.getAttributes()) {
                     int as = mapper.coreOffset(attr.getLine(), attr.getColumn());
                     int ae = mapper.coreOffset(attr.getEndLine(), attr.getEndColumn());
                     if (cursor >= as && cursor < ae) {
                         r.attribute = attr;
+                        DslAttributeValueNode value = attr.getValue();
+                        if (value != null) {
+                            int vs = mapper.coreOffset(value.getLine(), value.getColumn());
+                            int ve = mapper.coreOffset(value.getEndLine(), value.getEndColumn());
+                            // value range is half-open [vs, ve); also accept the
+                            // empty-value cursor-at-start case (attr="").
+                            if (cursor >= vs && cursor <= ve) {
+                                r.attributeValue = value;
+                            }
+                        }
                         break;
                     }
                 }
@@ -151,5 +182,6 @@ final class AstContextResolver {
     private static final class Result {
         DslElementNode element;
         DslAttributeNode attribute;
+        DslAttributeValueNode attributeValue;
     }
 }

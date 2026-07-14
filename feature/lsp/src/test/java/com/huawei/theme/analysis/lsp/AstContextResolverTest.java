@@ -63,21 +63,44 @@ class AstContextResolverTest {
     }
 
     @Test
-    void attributeValueIsOther() {
+    void attributeValuePosition() {
         // "<Widget attr=\"val\"/>"
+        // '<'(0)W(1)i(2)d(3)g(4)e(5)t(6)' '(7)a(8)t(9)t(10)r(11)=(12)"(13)v(14)a(15)l(16)"(17)
         // cursor inside the quoted value -> offset 16 (after 'l')
         String text = "<Widget attr=\"val\"/>";
         ContextResolver.Context ctx = resolve(text, 16);
+        assertEquals(ContextResolver.PositionType.ATTRIBUTE_VALUE, ctx.type);
+        assertEquals("Widget", ctx.tagName);
+        assertEquals("attr", ctx.attrName);
+        assertEquals("va", ctx.word);
+    }
+
+    @Test
+    void emptyAttributeValuePosition() {
+        // "<Widget attr=\"\"/>"
+        // cursor between the quotes of an empty value -> offset 14
+        String text = "<Widget attr=\"\"/>";
+        // '<'(0)...=(12)"(13)"(14)
+        ContextResolver.Context ctx = resolve(text, 14);
+        assertEquals(ContextResolver.PositionType.ATTRIBUTE_VALUE, ctx.type);
+        assertEquals("Widget", ctx.tagName);
+        assertEquals("attr", ctx.attrName);
+        assertEquals("", ctx.word);
+    }
+
+    @Test
+    void attributeEqualsSignIsOther() {
+        // "<Widget attr=\"val\"/>" cursor on '=' -> offset 12
+        String text = "<Widget attr=\"val\"/>";
+        ContextResolver.Context ctx = resolve(text, 12);
         assertEquals(ContextResolver.PositionType.OTHER, ctx.type);
         assertEquals("Widget", ctx.tagName);
         assertEquals("attr", ctx.attrName);
     }
 
     @Test
-    void attributeEqualsSignIsOther() {
-        // "<Widget attr=\"val\"/>"
-        // '<'(0)...t(7)' '(8)a(9)t(10)t(11)r(12)'='(13)...
-        // cursor on '=' -> offset 13
+    void attributeOpeningQuoteIsOther() {
+        // "<Widget attr=\"val\"/>" cursor on the opening quote -> offset 13
         String text = "<Widget attr=\"val\"/>";
         ContextResolver.Context ctx = resolve(text, 13);
         assertEquals(ContextResolver.PositionType.OTHER, ctx.type);
@@ -129,7 +152,7 @@ class AstContextResolverTest {
         String text = "<Outer o=\"1\"><Inner/></Outer>";
         // cursor in outer "o" value -> offset 10 (inside "1")
         ContextResolver.Context ctx = resolve(text, 10);
-        assertEquals(ContextResolver.PositionType.OTHER, ctx.type);
+        assertEquals(ContextResolver.PositionType.ATTRIBUTE_VALUE, ctx.type);
         assertEquals("Outer", ctx.tagName);
         assertEquals("o", ctx.attrName);
     }
