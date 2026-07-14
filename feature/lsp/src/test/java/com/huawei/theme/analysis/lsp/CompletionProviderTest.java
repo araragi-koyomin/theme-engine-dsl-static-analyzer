@@ -7,16 +7,23 @@ import org.junit.jupiter.api.Test;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.InsertTextFormat;
+import org.eclipse.lsp4j.MarkupContent;
 
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CompletionProviderTest {
 
     private final RuleRepository repo = new RuleRepositoryFactory(null).create();
     private final CompletionProvider provider = new CompletionProvider(repo);
+
+    private static ContextResolver.Context elemCtx(String word) {
+        return new ContextResolver.Context(
+                ContextResolver.PositionType.ELEMENT_NAME, null, word, null);
+    }
 
     private static ContextResolver.Context attrValueCtx(String tagName, String attrName, String word) {
         return new ContextResolver.Context(
@@ -32,8 +39,7 @@ class CompletionProviderTest {
     void enumValueCompletionForTextAlign() {
         // Text.align: enumValues = [left, center, right]
         List<CompletionItem> items = provider.complete(attrValueCtx("Text", "align", ""));
-        assertEquals(3, items.size());
-        List<String> labels = items.stream().map(CompletionItem::getLabel).toList();
+        assertEquals(3, items.size());        List<String> labels = items.stream().map(CompletionItem::getLabel).toList();
         assertTrue(labels.contains("left"));
         assertTrue(labels.contains("center"));
         assertTrue(labels.contains("right"));
@@ -125,5 +131,35 @@ class CompletionProviderTest {
         List<CompletionItem> valItems = provider.complete(valCtx);
         assertTrue(valItems.stream().anyMatch(i -> "left".equals(i.getLabel())));
         assertTrue(valItems.stream().anyMatch(i -> "center".equals(i.getLabel())));
+    }
+
+    @Test
+    void elementCompletionCarriesDocumentationAndCategoryDetail() {
+        List<CompletionItem> items = provider.complete(elemCtx(""));
+        CompletionItem text = items.stream()
+                .filter(i -> "Text".equals(i.getLabel()))
+                .findFirst()
+                .orElseThrow();
+        // Detail reflects the element's category (not a generic "tag").
+        assertEquals("view", text.getDetail());
+        // Documentation carries the element-rule markup (category / required /
+        // optional / allowed parents / inherits).
+        MarkupContent doc = text.getDocumentation().getRight();
+        assertNotNull(doc);
+        assertTrue(doc.getValue().contains("Text"));
+        assertTrue(doc.getValue().contains("Required") || doc.getValue().contains("Optional"));
+    }
+
+    @Test
+    void attributeCompletionCarriesDocumentation() {
+        List<CompletionItem> items = provider.complete(attrNameCtx("Text", ""));
+        CompletionItem align = items.stream()
+                .filter(i -> "align".equals(i.getLabel()))
+                .findFirst()
+                .orElseThrow();
+        MarkupContent doc = align.getDocumentation().getRight();
+        assertNotNull(doc, "attribute completion must carry documentation");
+        assertTrue(doc.getValue().contains("align"));
+        assertTrue(doc.getValue().contains("Enum"));
     }
 }

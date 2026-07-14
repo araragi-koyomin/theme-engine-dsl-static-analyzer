@@ -32,6 +32,16 @@ class HoverProviderTest {
         assertNotNull(hover);
         String content = hover.getContents().getRight().getValue();
         assertTrue(content.contains("Text"), "tag hover should mention the tag name");
+        // Markup is Markdown (not HTML) so standard LSP clients render it.
+        // VS Code treats MarkupContent as Markdown and strips raw HTML tags,
+        // which is why the prior HTML markup didn't render there.
+        assertTrue(content.startsWith("### "), "tag hover should use a Markdown heading");
+        assertTrue(content.contains("**"), "tag hover should use Markdown bold for labels");
+        assertTrue(content.contains("`"), "tag hover should use Markdown inline code");
+        // Must not contain raw HTML tags that VS Code would strip.
+        assertTrue(!content.contains("<h3>") && !content.contains("<b>")
+                        && !content.contains("<code>") && !content.contains("<br>"),
+                "tag hover must not emit raw HTML tags");
     }
 
     @Test

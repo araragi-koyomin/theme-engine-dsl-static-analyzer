@@ -8,6 +8,8 @@ import java.util.Set;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.InsertTextFormat;
+import org.eclipse.lsp4j.MarkupContent;
+import org.eclipse.lsp4j.MarkupKind;
 
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
@@ -28,9 +30,11 @@ import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 final class CompletionProvider {
 
     private final RuleRepository ruleRepository;
+    private final HoverProvider hoverProvider;
 
     CompletionProvider(RuleRepository ruleRepository) {
         this.ruleRepository = ruleRepository;
+        this.hoverProvider = new HoverProvider(ruleRepository);
     }
 
     List<CompletionItem> complete(ContextResolver.Context ctx) {
@@ -55,7 +59,13 @@ final class CompletionProvider {
             }
             CompletionItem item = new CompletionItem(name);
             item.setKind(CompletionItemKind.Class);
-            item.setDetail("ThemeDSL tag");
+            Optional<DslElementRule> ruleOpt = ruleRepository.getElementRule(name);
+            String category = ruleOpt.map(DslElementRule::getCategory).orElse(null);
+            item.setDetail((category != null && !category.isEmpty()) ? category : "ThemeDSL tag");
+            String markup = hoverProvider.tagMarkup(name);
+            if (markup != null) {
+                item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markup));
+            }
             items.add(item);
         }
         return items;
@@ -84,6 +94,10 @@ final class CompletionProvider {
             // back to the label).
             item.setInsertText(attr + "=\"$0\"");
             item.setInsertTextFormat(InsertTextFormat.Snippet);
+            String markup = hoverProvider.attributeMarkup(tagName, attr);
+            if (markup != null) {
+                item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markup));
+            }
             items.add(item);
         }
         return items;

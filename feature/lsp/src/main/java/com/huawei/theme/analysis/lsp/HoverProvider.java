@@ -21,6 +21,14 @@ import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
  * the AST-based {@link AstContextResolver} which sets {@code ctx.attrName}.
  * The rule library has no per-attribute free-text description, so hover is
  * synthesized from the structured {@link AttrTypeSpec} metadata.</p>
+ *
+ * <p>The markup is produced as <b>Markdown</b> (not HTML) so that standard LSP
+ * clients (VS Code, Neovim, Helix) render it natively — those clients treat
+ * {@code MarkupContent} as Markdown and strip raw HTML tags, which is why the
+ * prior HTML markup appeared as unformatted run-on text in VS Code. The
+ * IntelliJ client (which renders HTML in its documentation panel) converts
+ * this Markdown back to HTML in
+ * {@code ThemeDslLspHoverProvider#markdownToHtml}.</p>
  */
 final class HoverProvider {
 
@@ -32,92 +40,113 @@ final class HoverProvider {
 
     Hover hover(ContextResolver.Context ctx) {
         if (ctx.attrName != null && ctx.tagName != null) {
-            Hover attrHover = hoverAttribute(ctx.tagName, ctx.attrName);
-            if (attrHover != null) {
-                return attrHover;
+            String attrMarkup = attributeMarkup(ctx.tagName, ctx.attrName);
+            if (attrMarkup != null) {
+                return new Hover(new MarkupContent(MarkupKind.MARKDOWN, attrMarkup));
             }
         }
-        String tagName = ctx.tagName;
+        String tagMarkup = tagMarkup(ctx.tagName);
+        if (tagMarkup == null) {
+            return null;
+        }
+        return new Hover(new MarkupContent(MarkupKind.MARKDOWN, tagMarkup));
+    }
+
+    /**
+     * Renders the element-rule markup (category / required / optional / allowed
+     * parents / inherits) for the given tag, or {@code null} if the tag is
+     * unknown to the rule library. Reused by {@link CompletionProvider} to
+     * attach documentation to element-name completion items.
+     */
+    String tagMarkup(String tagName) {
         if (tagName == null || tagName.isEmpty()) {
             return null;
         }
         Optional<DslElementRule> ruleOpt = ruleRepository.getElementRule(tagName);
-        if (ruleOpt.isEmpty()) {
-            return null;
-        }
-        DslElementRule rule = ruleOpt.get();
-        return new Hover(new MarkupContent(MarkupKind.MARKDOWN, renderTag(rule)));
+        return ruleOpt.isEmpty() ? null : renderTag(ruleOpt.get());
     }
 
-    private Hover hoverAttribute(String tagName, String attrName) {
-        Optional<AttrTypeSpec> specOpt = ruleRepository.getAttrTypeSpec(tagName, attrName);
-        if (specOpt.isEmpty()) {
+    /**
+     * Renders the attribute type-spec markup (type / default / enum / aliases /
+     * expression) for the given attribute, or {@code null} if unknown. Reused
+     * by {@link CompletionProvider} to attach documentation to attribute-name
+     * completion items.
+     */
+    String attributeMarkup(String tagName, String attrName) {
+        if (tagName == null || attrName == null) {
             return null;
         }
-        String rendered = renderAttribute(attrName, specOpt.get());
-        return new Hover(new MarkupContent(MarkupKind.MARKDOWN, rendered));
+        Optional<AttrTypeSpec> specOpt = ruleRepository.getAttrTypeSpec(tagName, attrName);
+        return specOpt.isEmpty() ? null : renderAttribute(attrName, specOpt.get());
     }
 
     private String renderTag(DslElementRule rule) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<h3>").append(esc(rule.getElementName())).append("</h3>");
+        sb.append("### ").append(esc(rule.getElementName()));
         if (rule.getCategory() != null && !rule.getCategory().isEmpty()) {
-            sb.append(" <code>").append(esc(rule.getCategory())).append("</code>");
+            sb.append(" `").append(esc(rule.getCategory())).append("`");
         }
-        sb.append("<br>");
+        sb.append("\n\n");
         if (!rule.getRequiredAttrs().isEmpty()) {
-            sb.append("<b>Required:</b> ")
-                    .append(esc(String.join(", ", rule.getRequiredAttrs())))
-                    .append("<br>");
+            sb.append("**Required:** `").append(esc(String.join("`, `", rule.getRequiredAttrs())))
+                    .append("`  \n");
         }
         if (!rule.getOptionalAttrs().isEmpty()) {
-            sb.append("<b>Optional:</b> ")
-                    .append(esc(String.join(", ", rule.getOptionalAttrs())))
-                    .append("<br>");
+            sb.append("**Optional:** `").append(esc(String.join("`, `", rule.getOptionalAttrs())))
+                    .append("`  \n");
         }
         if (!rule.getAllowedParents().isEmpty()) {
-            sb.append("<b>Allowed parents:</b> ")
-                    .append(esc(String.join(", ", rule.getAllowedParents())))
-                    .append("<br>");
+            sb.append("**Allowed parents:** `").append(esc(String.join("`, `", rule.getAllowedParents())))
+                    .append("`  \n");
         }
         if (rule.getInherits() != null && !rule.getInherits().isEmpty()) {
-            sb.append("<b>Inherits:</b> <code>").append(esc(rule.getInherits())).append("</code><br>");
+            sb.append("**Inherits:** `").append(esc(rule.getInherits())).append("`  \n");
         }
         return sb.toString();
     }
 
     private String renderAttribute(String attrName, AttrTypeSpec spec) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<h3>").append(esc(attrName)).append("</h3>");
+        sb.append("### ").append(esc(attrName));
         if (spec.getType() != null && !spec.getType().isEmpty()) {
-            sb.append(" <code>").append(esc(spec.getType())).append("</code>");
+            sb.append(" `").append(esc(spec.getType())).append("`");
         }
-        sb.append("<br>");
+        sb.append("\n\n");
         if (spec.getDefaultValue() != null && !spec.getDefaultValue().isEmpty()) {
-            sb.append("<b>Default:</b> <code>").append(esc(spec.getDefaultValue())).append("</code><br>");
+            sb.append("**Default:** `").append(esc(spec.getDefaultValue())).append("`  \n");
         }
         if (spec.getEnumValues() != null && !spec.getEnumValues().isEmpty()) {
-            sb.append("<b>Enum:</b> ").append(esc(String.join(", ", spec.getEnumValues()))).append("<br>");
+            sb.append("**Enum:** `").append(esc(String.join("`, `", spec.getEnumValues()))).append("`  \n");
         }
         if (spec.getAliases() != null && !spec.getAliases().isEmpty()) {
-            sb.append("<b>Aliases:</b> ").append(esc(String.join(", ", spec.getAliases()))).append("<br>");
+            sb.append("**Aliases:** `").append(esc(String.join("`, `", spec.getAliases()))).append("`  \n");
         }
         if (spec.isSupportsExpression()) {
-            sb.append("<b>Expression:</b> supported");
+            sb.append("**Expression:** supported");
             if (spec.getExpressionKind() != null && !spec.getExpressionKind().isEmpty()) {
-                sb.append(" (<code>").append(esc(spec.getExpressionKind())).append("</code>)");
+                sb.append(" (`").append(esc(spec.getExpressionKind())).append("`)");
             }
-            sb.append("<br>");
+            sb.append("  \n");
         }
         return sb.toString();
     }
 
+    /**
+     * Escapes Markdown special characters in raw text so element/attribute
+     * names and values render literally. Backticks are the delimiter for
+     * inline code, so any literal backtick in a name (none expected) would
+     * break formatting — escape them. {@code *}, {@code #}, {@code [} are
+     * also escaped to avoid accidental bold/heading/link interpretation.
+     */
     private static String esc(String s) {
         if (s == null) {
             return "";
         }
-        return s.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;");
+        return s.replace("\\", "\\\\")
+                .replace("`", "\\`")
+                .replace("*", "\\*")
+                .replace("#", "\\#")
+                .replace("[", "\\[")
+                .replace("]", "\\]");
     }
 }

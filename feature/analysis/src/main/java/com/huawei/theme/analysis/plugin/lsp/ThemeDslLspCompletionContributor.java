@@ -118,7 +118,13 @@ public final class ThemeDslLspCompletionContributor extends CompletionContributo
         if (label == null || label.isEmpty()) {
             return null;
         }
-        LookupElementBuilder lookup = LookupElementBuilder.create(label);
+        String docMarkup = documentationOf(item);
+        // Carry the server-supplied documentation as the lookup's object so the
+        // ThemeDslLspHoverProvider can show it in the completion documentation
+        // panel via getDocumentationElementForLookupItem.
+        LookupElementBuilder lookup = (docMarkup != null)
+                ? LookupElementBuilder.create(new DslLookupDoc(label, docMarkup), label)
+                : LookupElementBuilder.create(label);
         if (item.getDetail() != null && !item.getDetail().isEmpty()) {
             lookup = lookup.withTypeText(item.getDetail());
         }
@@ -138,6 +144,20 @@ public final class ThemeDslLspCompletionContributor extends CompletionContributo
         // items (the prior chaos). IntelliJ orders by label; the detail text
         // ("required"/"optional") conveys priority visually.
         return lookup;
+    }
+
+    /** Extracts the markup string from the LSP CompletionItem.documentation. */
+    private static String documentationOf(CompletionItem item) {
+        org.eclipse.lsp4j.jsonrpc.messages.Either<String, org.eclipse.lsp4j.MarkupContent> doc =
+                item.getDocumentation();
+        if (doc == null) {
+            return null;
+        }
+        if (doc.isLeft()) {
+            return doc.getLeft();
+        }
+        org.eclipse.lsp4j.MarkupContent mc = doc.getRight();
+        return (mc != null && mc.getValue() != null && !mc.getValue().isEmpty()) ? mc.getValue() : null;
     }
 
     /**
