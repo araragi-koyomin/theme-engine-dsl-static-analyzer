@@ -134,3 +134,25 @@ task buildFatJar(type: Jar) {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+task e2e(type: Test) {
+    group = 'verification'
+    description = 'Fat-jar subprocess E2E with golden matching (L4)'
+
+    dependsOn buildFatJar
+    systemProperty 'fatJar.path', layout.buildDirectory.file('cli/dsl-analyzer.jar').get().asFile.absolutePath
+
+    include '**/FatJarSubprocessE2ETest*'
+    exclude '**/GoldenDiagnosticMatchTest*'
+    exclude '**/GoldenMatcherTest*'
+    exclude '**/GoldenExpectationParserTest*'
+    exclude '**/FixtureCoverageTest*'
+
+    useJUnitPlatform()
+    shouldRunAfter test
+
+    reports {
+        junitXml.outputLocation = layout.buildDirectory.dir('test-results/e2e')
+        html.outputLocation = layout.buildDirectory.dir('reports/tests/e2e')
+    }
+}
