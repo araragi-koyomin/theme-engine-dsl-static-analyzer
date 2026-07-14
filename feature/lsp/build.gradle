@@ -60,3 +60,58 @@ task buildLspFatJar(type: Jar) {
 }
 
 build.dependsOn buildLspFatJar
+
+// ---------------------------------------------------------------------------
+// VS Code client extension
+// ---------------------------------------------------------------------------
+// The client lives under clients/vscode and is a Node/npm project. This task
+// builds a self-contained .vsix: it stages the LSP fat jar into the
+// extension's server/ folder (so the extension works with no server.path
+// setting), installs npm dependencies, and packages the extension via vsce.
+//
+// It is NOT wired into the default `build` task — it requires Node/npm on
+// the build host — so run it explicitly:
+//   gradle :feature:lsp:buildVscodeExtension
+def vscodeClientDir = file("$projectDir/clients/vscode")
+def vscodeServerDir = file("$vscodeClientDir/server")
+// On Windows npm is a .cmd shim that Gradle's Exec won't resolve directly;
+// route through `cmd /c`. On other platforms invoke npm plainly.
+def npmBase = org.gradle.internal.os.OperatingSystem.current().windows
+        ? ['cmd', '/c', 'npm'] : ['npm']
+
+task stageVscodeServerJar(type: Copy, dependsOn: buildLspFatJar) {
+    group = 'build'
+    description = "Copies the LSP fat jar into the VS Code extension's server/ folder"
+    from("$buildDir/lsp/dsl-analyzer-lsp.jar")
+    into vscodeServerDir
+}
+
+task npmInstallVscode(type: Exec, dependsOn: stageVscodeServerJar) {
+    group = 'build'
+    description = 'Installs VS Code client npm dependencies'
+    workingDir vscodeClientDir
+    inputs.file file("$vscodeClientDir/package.json")
+    inputs.file file("$vscodeClientDir/package-lock.json")
+    outputs.dir file("$vscodeClientDir/node_modules")
+    // `npm ci` requires a package-lock and installs exactly that; fall back to
+    // `npm install` if the lock is missing (e.g. during local iteration).
+    if (file("$vscodeClientDir/package-lock.json").exists()) {
+        commandLine npmBase + ['ci']
+    } else {
+        commandLine npmBase + ['install']
+    }
+}
+
+task buildVscodeExtension(type: Exec, dependsOn: npmInstallVscode) {
+    group = 'build'
+    description = 'Builds the VS Code client extension .vsix (bundles the LSP server jar)'
+    workingDir vscodeClientDir
+    inputs.dir file("$vscodeClientDir/src")
+    inputs.file file("$vscodeClientDir/package.json")
+    inputs.file file("$vscodeClientDir/tsconfig.json")
+    inputs.file file("$vscodeClientDir/.vscodeignore")
+    inputs.file file("$vscodeServerDir/dsl-analyzer-lsp.jar")
+    // `npm run package` runs tsc (typecheck) + esbuild (bundle) + vsce package.
+    // Produces dsl-analyzer-lsp-<version>.vsix (version from package.json).
+    commandLine npmBase + ['run', 'package']
+}

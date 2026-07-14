@@ -1,0 +1,70 @@
+{
+  "name": "dsl-analyzer-lsp",
+  "displayName": "DSL Analyzer (Theme Engine)",
+  "description": "Theme Engine DSL language server: diagnostics, completion, hover, code actions, semantic tokens.",
+  "version": "0.1.0",
+  "publisher": "huawei-theme",
+  "engines": { "vscode": "^1.82.0" },
+  "categories": ["Programming Languages", "Linters"],
+  "activationEvents": ["onLanguage:xml"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "DSL Analyzer",
+      "properties": {
+        "dsl-analyzer-lsp.server.path": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to dsl-analyzer-lsp.jar (produced by `./gradlew :feature:lsp:buildLspFatJar`)."
+        },
+        "dsl-analyzer-lsp.server.javaPath": {
+          "type": "string",
+          "default": "java",
+          "description": "Java 17+ executable used to launch the server jar."
+        },
+        "dsl-analyzer.config": {
+          "type": "object",
+          "default": {},
+          "description": "InspectionConfig forwarded to the server as LSP initializationOptions / workspace/didChangeConfiguration. Hot-reloaded on save.",
+          "properties": {
+            "rootElementNames": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Override the set of tags treated as DSL roots (affects file identification)."
+            },
+            "enabledRuleIds": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "If non-empty, only these rule ids fire."
+            },
+            "disabledRuleIds": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Suppress these rule ids."
+            },
+            "severityOverrides": {
+              "type": "object",
+              "description": "Map ruleId -> \"error\" | \"warning\" | \"info\".",
+              "additionalProperties": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./ && esbuild src/extension.ts --bundle --platform=node --external:vscode --format=cjs --sourcemap --outfile=out/extension.js",
+    "watch": "esbuild src/extension.ts --bundle --platform=node --external:vscode --format=cjs --sourcemap --watch --outfile=out/extension.js",
+    "package": "npm run compile && vsce package"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.82.0",
+    "typescript": "^5.4.0",
+    "@vscode/vsce": "^2.27.0",
+    "esbuild": "^0.21.0"
+  }
+}

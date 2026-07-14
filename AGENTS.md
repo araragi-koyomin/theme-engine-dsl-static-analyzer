@@ -12,7 +12,11 @@
 ./gradlew clean build          # 构建整个项目（跳过测试）
 ./gradlew :modulename:build    # 构建特定模块
 ./gradlew clean                # 清理构建产物
+./gradlew :feature:lsp:buildLspFatJar        # 仅构建 LSP server fat jar
+./gradlew :feature:lsp:buildVscodeExtension  # 构建 VS Code 客户端 .vsix（含 server jar，需 Node/npm）
 ```
+
+> `:feature:lsp:buildVscodeExtension` 不在默认 `build` 内（依赖 Node/npm）；构建、安装、配置见 `feature/lsp/clients/vscode/README.md`。
 
 ## 测试命令
 
