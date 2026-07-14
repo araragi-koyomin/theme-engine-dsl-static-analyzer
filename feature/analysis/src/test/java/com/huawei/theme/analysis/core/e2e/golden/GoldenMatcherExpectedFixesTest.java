@@ -1,4 +1,4 @@
-﻿package com.huawei.theme.analysis.core.e2e.golden;
+package com.huawei.theme.analysis.core.e2e.golden;
 
 import java.util.List;
 
