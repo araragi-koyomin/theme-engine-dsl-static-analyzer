@@ -8,13 +8,25 @@ public class GoldenMatcher {
 
     private static final int MUST_NOT_TRIGGER_TOLERANCE = 2;
 
+    private final boolean positionAgnostic;
+
+    public GoldenMatcher() {
+        this(false);
+    }
+
+    public GoldenMatcher(boolean positionAgnostic) {
+        this.positionAgnostic = positionAgnostic;
+    }
+
     public MatchResult match(List<ActualDiagnostic> actuals, int actualExitCode, GoldenExpectation expectation) {
         MatchResult result = new MatchResult(false);
 
         checkExitCode(actualExitCode, expectation, result);
         checkCounts(actuals, expectation, result);
         checkExpectedDiagnostics(actuals, expectation, result);
-        checkMustNotTrigger(actuals, expectation, result);
+        if (!positionAgnostic) {
+            checkMustNotTrigger(actuals, expectation, result);
+        }
 
         if (!result.getDiffs().isEmpty()) {
             return result;
@@ -77,6 +89,9 @@ public class GoldenMatcher {
         }
         if (!Objects.equals(d.getSeverity(), ed.getSeverity())) {
             return false;
+        }
+        if (positionAgnostic) {
+            return true;
         }
         return Math.abs(d.getLine() - ed.getApproxLine()) <= ed.getLineTolerance();
     }

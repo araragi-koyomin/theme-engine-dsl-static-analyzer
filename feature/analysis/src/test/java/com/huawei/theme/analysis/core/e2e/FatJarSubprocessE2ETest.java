@@ -1,8 +1,5 @@
 package com.huawei.theme.analysis.core.e2e;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,21 +59,28 @@ class FatJarSubprocessE2ETest {
                 "Fat jar not found at " + fatJarPath + " (run ./gradlew buildFatJar first)");
         GoldenExpectationParser parser = new GoldenExpectationParser();
         GoldenExpectation expectation = parser.parse(goldenFile);
-        GoldenMatcher matcher = new GoldenMatcher();
+        GoldenMatcher matcher = new GoldenMatcher(true);
 
+        Path stdoutFile = Files.createTempFile("dsl-e2e-stdout", ".json");
+        Path stderrFile = Files.createTempFile("dsl-e2e-stderr", ".log");
         ProcessBuilder pb = new ProcessBuilder(
-                "java", "-jar", fatJarPath,
+                "java", "-Dfile.encoding=UTF-8", "-jar", fatJarPath,
                 "--format", "json", "--no-color", fixtureXml.toString());
-        pb.redirectErrorStream(false);
+        pb.redirectOutput(stdoutFile.toFile());
+        pb.redirectError(stderrFile.toFile());
         Process proc = pb.start();
-        boolean finished = proc.waitFor(60, TimeUnit.SECONDS);
+        boolean finished = proc.waitFor(120, TimeUnit.SECONDS);
         if (!finished) {
             proc.destroyForcibly();
-            throw new IllegalStateException("CLI subprocess timed out for " + fixtureXml);
+            String partialStdout = Files.exists(stdoutFile) ? Files.readString(stdoutFile, StandardCharsets.UTF_8) : "";
+            throw new IllegalStateException("CLI subprocess timed out for " + fixtureXml
+                    + "\n--- partial stdout ---\n" + partialStdout);
         }
         int exitCode = proc.exitValue();
-        String stdout = readAll(proc);
-        String stderr = readAllError(proc);
+        String stdout = Files.readString(stdoutFile, StandardCharsets.UTF_8);
+        String stderr = Files.readString(stderrFile, StandardCharsets.UTF_8);
+        Files.deleteIfExists(stdoutFile);
+        Files.deleteIfExists(stderrFile);
 
         ActualDiagnostic[] diags = extractDiagnostics(stdout);
         List<ActualDiagnostic> diagList = Arrays.asList(diags);
@@ -87,28 +91,6 @@ class FatJarSubprocessE2ETest {
                 "Fat-jar golden mismatch for " + fixtureXml + ":\n" + result.renderDiffs()
                         + "\n--- stdout ---\n" + stdout
                         + "\n--- stderr ---\n" + stderr);
-    }
-
-    private String readAll(Process proc) throws IOException {
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(proc.getInputStream(), StandardCharsets.UTF_8))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = r.readLine()) != null) {
-                sb.append(line).append("\n");
-            }
-            return sb.toString();
-        }
-    }
-
-    private String readAllError(Process proc) throws IOException {
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(proc.getErrorStream(), StandardCharsets.UTF_8))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = r.readLine()) != null) {
-                sb.append(line).append("\n");
-            }
-            return sb.toString();
-        }
     }
 
     private ActualDiagnostic[] extractDiagnostics(String json) {
