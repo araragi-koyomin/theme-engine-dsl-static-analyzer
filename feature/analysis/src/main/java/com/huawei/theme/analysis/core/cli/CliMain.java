@@ -44,7 +44,7 @@ public class CliMain {
         System.exit(run(args));
     }
 
-    static int run(String[] args) {
+    public static int run(String[] args) {
         try {
             AnalyzerRegistry.init();
             CliConfig config = CliConfig.fromArgs(args);
