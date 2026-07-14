@@ -72,22 +72,51 @@ final class PositionMapper {
         return new Position(lspLine, lspChar);
     }
 
-    /** Builds an LSP range for a core diagnostic, using the AST node text when available. */
+    /** Builds an LSP range for a core diagnostic. */
     Range toRange(Diagnostic diagnostic) {
         Position start = toPosition(diagnostic.getLine(), diagnostic.getColumn());
-        Position end = computeEnd(start, diagnostic.getAstNode());
-        return new Range(start, end);
+        return new Range(start, computeEnd(start, diagnostic));
     }
 
-    private Position computeEnd(Position start, DslAstNode node) {
-        String nodeText = node == null ? null : node.getText();
-        if (nodeText == null || nodeText.isEmpty() || nodeText.indexOf('\n') >= 0) {
-            return start;
+    /**
+     * Computes the end position for a diagnostic's LSP range.
+     *
+     * <p>Core diagnostics always carry explicit {@code endLine/endColumn}
+     * (populated by {@code DiagnosticBuilder.astNode()} from the node, or set
+     * directly by analyzers like {@code VarRefAnalyzer} which build position
+     * without an astNode). We prefer those coordinates so diagnostics without
+     * an astNode still get a non-zero-width range instead of collapsing to a
+     * point — which previously caused the IntelliJ annotator to drop them.
+     * When the explicit end equals the start (rare point diagnostic, or an
+     * analyzer that left end unset), we fall back to extending by the
+     * astNode's text length for single-line nodes — the historical behavior —
+     * so existing single-line tag ranges keep rendering.</p>
+     */
+    private Position computeEnd(Position start, Diagnostic diagnostic) {
+        int endLine = diagnostic.getEndLine();
+        int endColumn = diagnostic.getEndColumn();
+        if (endLine > 0 || endColumn > 0) {
+            Position end = toPosition(endLine, endColumn);
+            if (isAfter(end, start)) {
+                return end;
+            }
         }
-        int startOffset = lineStarts[start.getLine()];
-        int maxChar = Math.max(lineEnd(start.getLine()) - startOffset, 0);
-        int endChar = Math.min(start.getCharacter() + nodeText.length(), maxChar);
-        return new Position(start.getLine(), endChar);
+        DslAstNode node = diagnostic.getAstNode();
+        String nodeText = node == null ? null : node.getText();
+        if (nodeText != null && !nodeText.isEmpty() && nodeText.indexOf('\n') < 0) {
+            int startOffset = lineStarts[start.getLine()];
+            int maxChar = Math.max(lineEnd(start.getLine()) - startOffset, 0);
+            int endChar = Math.min(start.getCharacter() + nodeText.length(), maxChar);
+            if (endChar > start.getCharacter()) {
+                return new Position(start.getLine(), endChar);
+            }
+        }
+        return start;
+    }
+
+    private static boolean isAfter(Position a, Position b) {
+        int c = Integer.compare(a.getLine(), b.getLine());
+        return c != 0 ? c > 0 : a.getCharacter() > b.getCharacter();
     }
 
     /** Converts an LSP position (0-based line / 0-based char) to a text offset. */

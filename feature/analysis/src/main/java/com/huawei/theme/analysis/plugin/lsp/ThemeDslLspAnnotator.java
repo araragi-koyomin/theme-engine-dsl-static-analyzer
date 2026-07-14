@@ -80,12 +80,18 @@ public final class ThemeDslLspAnnotator implements Annotator {
             // name/value instead of the entire element.
             int start = positionToOffset(d.getRange().getStart(), doc);
             int end = positionToOffset(d.getRange().getEnd(), doc);
+            TextRange highlight;
             if (start < 0 || end <= start) {
-                continue;
+                // Zero-width or invalid LSP range (degenerate diagnostic, e.g.
+                // an analyzer that left end unset): fall back to the enclosing
+                // tag so the diagnostic still renders instead of being
+                // silently dropped.
+                highlight = element.getTextRange();
+            } else {
+                highlight = new TextRange(start, Math.min(end, doc.getTextLength()));
             }
-            end = Math.min(end, doc.getTextLength());
             holder.newAnnotation(severityOf(d.getSeverity()), messageOf(d))
-                    .range(new TextRange(start, end))
+                    .range(highlight)
                     .create();
         }
     }
