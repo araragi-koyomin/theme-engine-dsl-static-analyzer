@@ -252,12 +252,20 @@ public class AstBuilder implements DslAstProvider {
         if (hint < 0) {
             return -1;
         }
-        for (int i = hint; i < source.length() && i < hint + 16; i++) {
+        if (hint < source.length() && source.charAt(hint) == '<'
+                && source.startsWith(tagName, hint + 1)) {
+            return hint;
+        }
+        for (int i = hint - 1; i >= 0 && i > hint - 64; i--) {
             if (source.charAt(i) == '<' && source.startsWith(tagName, i + 1)) {
                 return i;
             }
         }
-        for (int i = hint - 1; i >= 0 && i > hint - 64; i--) {
+        int bwdIdx = source.lastIndexOf("<" + tagName, hint);
+        if (bwdIdx >= 0) {
+            return bwdIdx;
+        }
+        for (int i = hint; i < source.length() && i < hint + 16; i++) {
             if (source.charAt(i) == '<' && source.startsWith(tagName, i + 1)) {
                 return i;
             }
