@@ -1,9 +1,14 @@
 package com.huawei.theme.analysis.plugin.editor.themedsl;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.intellij.codeInsight.completion.CompletionContributor;
@@ -16,6 +21,7 @@ import com.intellij.icons.AllIcons;
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.XmlElementFactory;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
@@ -49,6 +55,13 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
 
     private static final double REQUIRED_PRIORITY = 1.0;
     private static final double OPTIONAL_PRIORITY = 0.1;
+
+    /**
+     * Cache of "tagName:attrName" → dummy XmlAttribute for documentation.
+     * The dummy attribute is created inside a dummy XmlTag with the correct
+     * tag name, so the doc provider can look up the AttrTypeSpec.
+     */
+    private static final Map<String, XmlAttribute> DOC_ATTR_CACHE = new HashMap<>();
 
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters, @NotNull CompletionResultSet result) {
@@ -91,7 +104,12 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
             }
             boolean required = rule.getRequiredAttrs() != null && rule.getRequiredAttrs().contains(attrName);
             String type = getTypeHint(spec);
-            LookupElementBuilder builder = LookupElementBuilder.create(attrName)
+
+            // Create a dummy XmlAttribute inside a dummy XmlTag with the correct
+            // tag name, so the doc provider can look up the AttrTypeSpec.
+            XmlAttribute dummyAttr = getDocAttribute(position.getProject(), tag.getName(), attrName);
+
+            LookupElementBuilder builder = LookupElementBuilder.create(dummyAttr, attrName)
                     .withTypeText(type)
                     .withIcon(getIcon(type))
                     .withBoldness(required);
@@ -99,6 +117,33 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
                     builder, required ? REQUIRED_PRIORITY : OPTIONAL_PRIORITY);
             result.addElement(element);
         }
+    }
+
+    /**
+     * Returns a cached dummy {@link XmlAttribute} for documentation purposes.
+     * The attribute is created inside a dummy {@code <tagName attrName=""/>}
+     * tag so the doc provider can find both the tag name and attr name.
+     */
+    @Nullable
+    private static XmlAttribute getDocAttribute(@NotNull com.intellij.openapi.project.Project project,
+                                                @NotNull String tagName,
+                                                @NotNull String attrName) {
+        String key = tagName + ":" + attrName;
+        XmlAttribute cached = DOC_ATTR_CACHE.get(key);
+        if (cached != null && cached.isValid()) {
+            return cached;
+        }
+        try {
+            XmlElementFactory factory = XmlElementFactory.getInstance(project);
+            XmlTag dummyTag = factory.createTagFromText("<" + tagName + " " + attrName + "=\"\"/>");
+            XmlAttribute attr = dummyTag.getAttribute(attrName);
+            if (attr != null) {
+                DOC_ATTR_CACHE.put(key, attr);
+                return attr;
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
     /**
