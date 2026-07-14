@@ -2,6 +2,7 @@ package com.huawei.theme.analysis.core.e2e.golden;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class GoldenMatcher {
 
@@ -71,10 +72,10 @@ public class GoldenMatcher {
     }
 
     private boolean matches(ActualDiagnostic d, ExpectedDiagnostic ed) {
-        if (!d.getRuleId().equals(ed.getRuleId())) {
+        if (!Objects.equals(d.getRuleId(), ed.getRuleId())) {
             return false;
         }
-        if (!d.getSeverity().equals(ed.getSeverity())) {
+        if (!Objects.equals(d.getSeverity(), ed.getSeverity())) {
             return false;
         }
         return Math.abs(d.getLine() - ed.getApproxLine()) <= ed.getLineTolerance();
