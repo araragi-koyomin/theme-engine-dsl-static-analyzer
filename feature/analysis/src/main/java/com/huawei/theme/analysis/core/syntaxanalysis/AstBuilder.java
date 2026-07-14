@@ -127,17 +127,35 @@ public class AstBuilder implements DslAstProvider {
         node.setEndColumn(endLc[1]);
 
         int attrCount = reader.getAttributeCount();
+        // Pair reader attributes with the scan AttrPos by NAME, not by index.
+        // XMLInputFactory.newInstance() is SPI-resolved and StAX implementations
+        // (JDK default vs the one formerly supplied via the IntelliJ SDK) may
+        // return attributes in a different order than document order. The old
+        // index-based pairing (scan.attrs.get(i) <-> reader.getAttributeValue(i))
+        // silently mis-assigned values when the orders differed — e.g. type
+        // receiving #undefinedVar's value. Names are unique per element in
+        // well-formed DSL, so name-based pairing is order-independent.
+        boolean[] scanUsed = new boolean[scan.attrs.size()];
         for (int i = 0; i < attrCount; i++) {
             String attrValue = reader.getAttributeValue(i);
-            String attrName = (i < scan.attrs.size())
-                    ? scan.attrs.get(i).name
-                    : safeAttrName(reader, i);
+            String attrName = safeAttrName(reader, i);
+            if (attrName == null || attrName.isEmpty()) {
+                attrName = (i < scan.attrs.size()) ? scan.attrs.get(i).name : "";
+            }
+
+            AttrPos pos = null;
+            for (int j = 0; j < scan.attrs.size(); j++) {
+                if (!scanUsed[j] && attrName.equals(scan.attrs.get(j).name)) {
+                    pos = scan.attrs.get(j);
+                    scanUsed[j] = true;
+                    break;
+                }
+            }
 
             DslAttributeNode attr = new DslAttributeNode();
             attr.setName(attrName);
             attr.setText(attrValue);
-            if (i < scan.attrs.size()) {
-                AttrPos pos = scan.attrs.get(i);
+            if (pos != null) {
                 int[] nlc = mapper.lineCol(pos.nameOffset);
                 int[] vlc = mapper.lineCol(pos.valueOffset);
                 int[] nEnd = mapper.lineCol(pos.valueEndOffset + 1);

@@ -1,0 +1,40 @@
+// IntelliJ LSP client plugin module. Parallel to the VS Code client
+// (feature/clients/vscode): a standalone, independently-built IntelliJ plugin
+// that launches the :feature:lsp server (fat jar) as a child process over
+// stdio and bridges diagnostics / completion / hover / codeAction /
+// semantic tokens to IntelliJ.
+//
+// Depends on :feature:analysis (the core engine) only for
+// core.expression.ExpressionParser, used by the var-reference contributor.
+// The server runs in a separate process; its fat jar is staged into the
+// plugin lib/ by prepareSandbox (not a compile dependency).
+
+intellij {
+    plugins = []
+}
+
+dependencies {
+    implementation project(':feature:analysis')
+    implementation 'org.eclipse.lsp4j:org.eclipse.lsp4j:0.21.2'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.3'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Ship the LSP server fat jar inside the plugin lib/ directory so the client
+// can launch it via ProcessBuilder. Mirrors the wiring that used to live in
+// :feature:analysis before the module extraction.
+prepareSandbox.dependsOn ':feature:lsp:buildLspFatJar'
+prepareSandbox.doLast {
+    def libDir = file("${buildDir}/idea-sandbox/plugins/${project.name}/lib")
+    libDir.mkdirs()
+    copy {
+        from project(':feature:lsp').tasks.named('buildLspFatJar')
+        into libDir
+    }
+}

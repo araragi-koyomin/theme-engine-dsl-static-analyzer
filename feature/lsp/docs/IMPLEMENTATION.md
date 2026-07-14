@@ -27,8 +27,10 @@
 ```
 settings.gradle
 ├── common:base
-├── feature:analysis     ← core 引擎 + (待废弃) plugin.editor
-└── feature:lsp          ← 本模块：LSP server
+├── feature:analysis     ← 纯 core 引擎（plain Java，无 IntelliJ SDK）
+├── feature:lsp          ← 本模块：LSP server
+├── feature:clients:intellij  ← IntelliJ LSP 客户端插件（plugin.lsp + plugin.editor）
+└── feature:clients/vscode    ← VS Code LSP 客户端扩展
 ```
 
 ### 依赖关系
@@ -266,7 +268,7 @@ gradle :feature:lsp:buildLspFatJar
 | 来源 | 包含 |
 |---|---|
 | `sourceSets.main.output` | 本模块 15 个类 |
-| `project(':feature:analysis').sourceSets.main.output.classesDirs` | `com/huawei/theme/analysis/core/**`（仅 core，排除 plugin.editor） |
+| `project(':feature:analysis').sourceSets.main.output.classesDirs` | `com/huawei/theme/analysis/core/**`（`:feature:analysis` 已退化为纯 core，plugin.* 已迁至 `:feature:clients:intellij`） |
 | `project(':feature:analysis').sourceSets.main.output.resourcesDir` | `rules/**` + `functions/**` |
 | `configurations.runtimeClasspath` 过滤 | gson + antlr4-runtime + lsp4j（**不含** IntelliJ SDK） |
 
@@ -315,9 +317,9 @@ java -jar dsl-analyzer-lsp.jar --stdio [--rule-dir <path>]
 
 ## 11. 与 IntelliJ 插件的关系（阶段三已实现）
 
-`feature:analysis` 的 IntelliJ 插件现为 **LSP4J 客户端**（`plugin.lsp` 包），启动 `feature:lsp` 的 server 进程并桥接结果，不再有原生 PSI 分析层。
+IntelliJ LSP 客户端现为独立 Gradle 模块 **`:feature:clients:intellij`**（`plugin.lsp` + `plugin.editor` 包 + `META-INF/plugin.xml`），与 VS Code 客户端（`feature/clients/vscode`）平行；启动 `feature:lsp` 的 server 进程并桥接结果，不再有原生 PSI 分析层。`feature:analysis` 退化为纯 `core` 引擎（plain Java，无 IntelliJ SDK 依赖，`checkCoreIntellijDependency` 守卫）。
 
-- **客户端层**（`com.huawei.theme.analysis.plugin.lsp`）：
+- **客户端层**（`:feature:clients:intellij` 的 `com.huawei.theme.analysis.plugin.lsp`）：
   - `DslLspServerService`（`projectService` `Disposable`）：`ProcessBuilder` 启 `java -jar <plugin>/lib/dsl-analyzer-lsp.jar --stdio`；`LSPLauncher.createClientLauncher` + `getRemoteProxy()` 持 `LanguageServer`；`initialize` 握手；dispose 停进程。
   - `DslLspLanguageClient`（`implements LanguageClient`）：`publishDiagnostics` 缓存 `uri→List<Diagnostic>` + `DaemonCodeAnalyzer.restart` 触发重跑。
   - `DslLspDocumentSync`：`FileEditorManagerListener`（didOpen/didClose）+ `EditorFactory.getEventMulticaster`（didChange 全量文本）。
@@ -325,11 +327,11 @@ java -jar dsl-analyzer-lsp.jar --stdio [--rule-dir <path>]
 - **桥接层**：
   - `ThemeDslLspAnnotator`（`Annotator`）：读诊断缓存 → `newAnnotation`（LSP `Range` → `XmlTag`）。
   - `ThemeDslLspCompletionContributor`（`CompletionContributor`）：PSI cursor offset → LSP `Position` → `textDocument/completion` → `LookupElement`。
-  - `ThemeDslLspHoverProvider`（`DocumentationProvider`）：PSI → `textDocument/hover` → `MarkupContent`。
-- **保留** `ThemeDslLanguage`/`FileType`/`ParserDefinition`（文件识别 + 基础 XML PSI，供 cursor 定位）；**废弃** 旧 `ThemeDslCompletionContributor`（占位）。
-- **server 分发**：`build.gradle` `runtimeOnly` 引用 `:feature:lsp:buildLspFatJar` 产物，`prepareSandbox` dependsOn 它，server jar 进插件 `lib/`。
+  - `ThemeDslLspHoverProvider`（`DocumentationProvider`）：PSI → `textDocument/hover` → `MarkupContent`，并经 `getDocumentationElementForLookupItem` 在补全文档面板展示。
+- **保留** `ThemeDslLanguage`/`FileType`/`ParserDefinition`（文件识别 + 基础 XML PSI，供 cursor 定位，随客户端模块一起迁入）。
+- **server 分发**：`:feature:clients:intellij` 的 `build.gradle` 中 `prepareSandbox.dependsOn ':feature:lsp:buildLspFatJar'`，把 server jar 复制进插件 `lib/`。
 
-`feature:lsp` 的 server 现被两端共用（通用编辑器 + IntelliJ），消除双套适配层。`checkCoreIntellijDependency` 保证 `core.*` 不 import `com.intellij.*`，是这层分离的基石。
+`:feature:clients:intellij` 与 main 原生插件（合并时由 main 侧恢复至 `:feature:analysis`）二选一安装；`feature:lsp` 的 server 被两端共用（通用编辑器 + IntelliJ）。`checkCoreIntellijDependency` 保证 `core.*` 不 import `com.intellij.*`，是这层分离的基石。
 
 ---
 

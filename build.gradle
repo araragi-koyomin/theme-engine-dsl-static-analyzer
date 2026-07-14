@@ -51,9 +51,12 @@ subprojects {
     }
 
     // IntelliJ Platform packaging applies only to IDE-facing modules. The
-    // `lsp` module is a standalone Java application and must not pull the
-    // IntelliJ SDK or trigger an IDE distribution download.
-    if (project.path != ':feature:lsp') {
+    // `lsp` module is a standalone Java application (the LSP server); the
+    // `analysis` module is the pure core engine (no IntelliJ imports, enforced
+    // by checkCoreIntellijDependency). Neither should pull the IntelliJ SDK or
+    // trigger an IDE distribution download. The IntelliJ LSP client lives in
+    // `:feature:clients:intellij` and DOES get the plugin applied here.
+    if (project.path != ':feature:lsp' && project.path != ':feature:analysis') {
         apply plugin: 'org.jetbrains.intellij'
 
         intellij {

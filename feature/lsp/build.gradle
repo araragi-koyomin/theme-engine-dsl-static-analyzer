@@ -72,7 +72,7 @@ build.dependsOn buildLspFatJar
 // It is NOT wired into the default `build` task — it requires Node/npm on
 // the build host — so run it explicitly:
 //   gradle :feature:lsp:buildVscodeExtension
-def vscodeClientDir = file("$projectDir/clients/vscode")
+def vscodeClientDir = rootProject.file("feature/clients/vscode")
 def vscodeServerDir = file("$vscodeClientDir/server")
 // On Windows npm is a .cmd shim that Gradle's Exec won't resolve directly;
 // route through `cmd /c`. On other platforms invoke npm plainly.
