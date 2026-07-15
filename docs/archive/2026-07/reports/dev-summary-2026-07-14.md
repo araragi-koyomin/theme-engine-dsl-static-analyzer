@@ -1,7 +1,7 @@
 ---
 module_ids: [CORE]
 doc_kind: report
-status: active
+status: archived
 created: 2026-07-14
 ---
 # Theme Engine DSL 静态分析器当前阶段开发总结

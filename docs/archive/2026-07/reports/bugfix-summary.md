@@ -1,7 +1,7 @@
 ---
 module_ids: [CORE]
 doc_kind: report
-status: active
+status: archived
 created: 2026-07-13
 ---
 # Bug Fix Summary

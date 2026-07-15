@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  FIX005 reproduction probe.
+  Each marked element violates a constraint that exists in the bundled JSON rule library,
+  but whose condition uses syntax/predicates outside the current Rule DSL capability set.
+-->
+<Lockscreen frameRate="60" screenWidth="1080">
+    <!-- Expected by rule JSON: SEM-3D-LAYER-001 (z must be in [-10, 7]). -->
+    <MultiLayer touchType="0" gravityX="0" gravityY="0">
+        <Layer x="0" y="0" z="8" w="1080" h="2400" src="scene/sky.jpg"/>
+    </MultiLayer>
+
+    <!-- Expected by rule JSON: SEM-ATTR-005 (last layered image requires hybridMode). -->
+    <Group name="layered_card" x="0" y="0" width="1080" height="300" layered="true">
+        <Image x="0" y="0" width="1080" height="300" src="cards/base.png"/>
+    </Group>
+
+    <!-- Expected by rule JSON: SEM-COLLAB-001 (collaborationId is four alphanumeric chars). -->
+    <CollaborationCommands collaborationId="BAD!"/>
+
+    <!-- Expected by rule JSON: SEM-EFFECT-003 (Translation duration must be >= 1000 ms). -->
+    <MeshImage mesh="6,6">
+        <Translation duration="500" values="1.0,0"/>
+    </MeshImage>
+</Lockscreen>

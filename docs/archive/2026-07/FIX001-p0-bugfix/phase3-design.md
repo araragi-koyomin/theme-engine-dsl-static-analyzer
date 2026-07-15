@@ -2,7 +2,7 @@
 module_ids: [M3, M4, M5, M7, CLI]
 phase: P0
 doc_kind: spec
-status: active
+status: archived
 created: 2026-07-14
 ---
 # P0 Beta 闭环修复 — PHASE 3 设计

@@ -2,7 +2,7 @@
 module_ids: [M3, M4, M5, M7, CLI]
 phase: P0
 doc_kind: note
-status: active
+status: archived
 created: 2026-07-14
 ---
 # P0 已知问题(非阻塞)

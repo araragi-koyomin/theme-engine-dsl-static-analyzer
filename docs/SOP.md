@@ -1,3 +1,10 @@
+---
+module_ids: [CORE]
+doc_kind: guide
+status: active
+created: 2026-07-15
+---
+
 # SOP: 开发全流程导航图
 
 > 用途：Debug 定位（主要） + 新功能开发启动 + 代码库导航。

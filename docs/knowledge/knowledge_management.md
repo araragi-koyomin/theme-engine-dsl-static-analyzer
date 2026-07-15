@@ -1,7 +1,9 @@
 ---
+module_ids: [CORE]
 feature_ids: [F040, F042, F049]
 topics: [lessons, knowledge-management, documentation, backlog]
 doc_kind: note
+status: active
 created: 2026-03-03
 ---
 
@@ -13,7 +15,7 @@ created: 2026-03-03
 >
 > **难度**：进阶
 >
-> **前置知识**：[第九课](./09-context-engineering.md)（上下文工程四层解法）
+> **前置知识**：第九课《上下文工程四层解法》（原课程材料未随本仓库归档）
 >
 > **证据标注**（延续前几课）：
 > `[事实]` 有 commit / 文档 / 代码佐证 ·
@@ -367,13 +369,8 @@ Lessons Learned 是"踩过坑"的结构化记录。我们的模板有 7 个字�
 
 "毕业"是单向的：Inbox → docs/features/。一旦毕业，Inbox 里的原始条目可以删掉，所有后续操作都在 Feature 聚合文件上进行。
 
-下面是我们的 Mission Hub 实际界面——任务从 Inbox 进来，经过分拣、批准、领取，最终"毕业"到正式 Feature：
-
-![Mission Hub Backlog Center](./assets/010-mission-hub.png)
-
-而这是 IDE 中打开 BACKLOG.md 看到的活跃项索引——只有十几行，一眼扫完就知道项目在做什么：
-
-![BACKLOG 活跃索引](./assets/010-backlog-active.png)
+原课程材料曾配有 Mission Hub 和 BACKLOG 活跃索引界面截图，但图片未随本仓库归档；
+仓库内的当前任务状态应直接以 `docs/BACKLOG.md` 为准。
 
 ---
 

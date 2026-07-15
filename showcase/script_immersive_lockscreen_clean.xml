@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <!-- Shared state -->
+    <Var name="theme_index" type="number" expression="0" styleGlobalPersist="true"/>
+    <Var name="cached_greeting" type="string"
+         expression="ifelse(lt(#hour24,12),'Good morning','Good evening')"/>
+    <Var name="video_enabled" type="number" expression="1"/>
+    <Var name="accent_palette" type="string[]" values="cyan,blue,violet"/>
+
+    <Image name="fallback_background" x="0" y="0" width="#screen_width" height="#screen_height"
+           src="scene/fallback.jpg" isBackground="true" scaleType="center_crop"/>
+
+    <!-- HarmonyOS weather data -->
+    <Weather>
+        <Var name="Weather.today.weatherIcon" type="number" expression="1"/>
+        <Var name="Weather.today.weatherIconDes" type="string" expression="'Sunny'"/>
+        <Var name="Weather.today.currentTem" type="number" expression="25"/>
+        <Var name="Weather.today.maxtemp" type="number" expression="29"/>
+        <Var name="Weather.today.mintemp" type="number" expression="18"/>
+        <Var name="Weather.tomorrow.maxtemp" type="number" expression="30"/>
+    </Weather>
+
+    <!-- Music data source -->
+    <MediaController packageName="com.huawei.hmsapp.music"/>
+
+    <!-- Depth-aware background -->
+    <MultiLayer touchType="2" gravityX="0" gravityY="0"
+                pitchAngle="8,-8" sidesAngle="10,-10">
+        <Layer x="0-0.12*#screen_width" y="0-0.08*#screen_height" z="-8"
+               w="1.24*#screen_width" h="1.16*#screen_height" src="scene/sky.jpg"
+               staticCondition="true"/>
+        <Layer x="0-0.10*#screen_width" y="0-0.05*#screen_height" z="-2.5"
+               w="1.20*#screen_width" h="1.10*#screen_height" src="scene/city.png"/>
+        <Layer x="0-0.08*#screen_width" y="0" z="6.5"
+               w="1.16*#screen_width" h="#screen_height" src="scene/foreground.png"/>
+    </MultiLayer>
+
+    <!-- Glass material card -->
+    <Group name="weather_glass" x="54" y="210" width="972" height="310" layered="true">
+        <Image x="0" y="0" width="972" height="310" src="cards/glass_noise.png"/>
+        <Image x="0" y="0" width="972" height="310" src="cards/glass_tint.png"
+               hybridMode="oriOver"/>
+    </Group>
+
+    <!-- Frame-based unlock scene -->
+    <SourceImage name="unlock_frames" sourceName="unlock/frame_" format="png"
+                 from="0" to="36" space="40" loop="true" direction="0" unlockTo="24"/>
+
+    <!-- Clock and weather content -->
+    <Group name="information_panel" x="54" y="220" width="972" height="300">
+        <Time x="0" y="0" src="clock/digit.png" space="8"/>
+        <Text x="0" y="152" color="#D9FFFFFF" size="34" textExp="@cached_greeting"/>
+        <Image x="610" y="22" width="116" height="116"
+               srcExp="'weather/icon_'+{#Weather.today.weatherIcon}+'.png'"/>
+        <Text x="752" y="30" color="#FFFFFFFF" size="42" format="%d°"
+              paras="#Weather.today.currentTem"/>
+        <Text x="752" y="92" color="#B3FFFFFF" size="28" format="H:%d°"
+              paras="#Weather.today.maxtemp"/>
+        <Text x="872" y="92" color="#B3FFFFFF" size="28" format="L:%d°"
+              paras="#Weather.today.mintemp"/>
+    </Group>
+
+    <!-- Music card -->
+    <Group name="music_card" x="54" y="1320" width="972" height="250" clip="true">
+        <Image x="0" y="0" width="972" height="250" src="cards/music_panel.png"/>
+        <MediaIcon x="34" y="34" w="182" h="182" src="media/default_album.png"/>
+        <Text x="252" y="44" width="520" color="#FFFFFFFF" size="36"
+              textExp="@media_title" scrollDisplay="true" marqueeRepeatLimit="2"/>
+        <Text x="252" y="104" width="520" color="#B3FFFFFF" size="28"
+              textExp="@media_subtitle"/>
+        <Button name="music_like" x="820" y="64" width="112" height="112">
+            <Trigger action="click">
+                <MediaCommand command="mediaLike" condition="1"/>
+            </Trigger>
+        </Button>
+    </Group>
+
+    <!-- Ambient video and interaction -->
+    <Video name="ambient_video" src="media/ambient.mp4" x="0" y="0"
+           width="#screen_width" height="#screen_height" play="true" looping="true"
+           sound="0" visibility="#video_enabled"/>
+    <Button name="video_toggle" x="0" y="0" width="#screen_width" height="#screen_height">
+        <Trigger action="double">
+            <VideoCommand name="ambient_video" play="1" condition="#video_enabled"/>
+            <VariableCommand name="video_enabled" expression="not(#video_enabled)"/>
+            <StyleCommand name="season_theme" index="0" condition="eq(#theme_index,0)"/>
+        </Trigger>
+    </Button>
+
+    <!-- Touch trail effect -->
+    <ParticleView w="96" h="96" count="12" move_radius="18" speek_sec="2.5"
+                  reduce_size="2.2" set_path="false" src="effects/star.png"/>
+
+    <!-- Screen lifecycle -->
+    <ExternalCommands>
+        <Trigger action="resume">
+            <Command target="ambient_video.animation" value="play"/>
+        </Trigger>
+        <Trigger action="pause">
+            <Command target="ambient_video.animation" value="stop"/>
+        </Trigger>
+    </ExternalCommands>
+</Lockscreen>
