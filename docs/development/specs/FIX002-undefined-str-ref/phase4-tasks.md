@@ -8,7 +8,7 @@ created: 2026-07-15
 # FIX002 — PHASE 4 任务拆分
 
 > 阶段：PHASE 4（任务拆分）
-> 状态：待用户确认
+> 状态：已确认（review 通过 + 修正 3 issue）
 > 每个 task 对应一个 TDD 循环，粒度 5-25min。
 
 ## 任务列表

@@ -8,7 +8,7 @@ created: 2026-07-15
 # FIX002 — PHASE 3 设计
 
 > 阶段：PHASE 3（设计）
-> 状态：待用户确认
+> 状态：已确认（review 通过 + 修正 4 issue）
 > 原则：只设计到接口和协作关系，不设计算法和实现细节（留给 TDD 探索）。
 
 ## 1. 设计概述
@@ -123,7 +123,7 @@ VRA --> AST : [SEM-REF-001: "引用未定义变量 @str"]
 
 7 个 fixture（8 处 Var 声明，constraint_edge_cases 占 2 处）在根元素首部插入 `<Var name="xxx" type="string"/>`。Var 声明置于已有 Var 声明同列位置（若 fixture 已有 Var 则紧随其后；若无则在根元素首个子元素前）。
 
-**不变项**：`expected.json` 全部不改（counts/diagnostics 不变，因 `@xxx` 变已定义）。`@ishour12`（deep_nesting_violations:39）不动。
+**修正**：`expected.json` counts/diagnostics 不变，但 `constraint_edge_cases`(+2) 和 `deep_nesting_violations`(+1) 需更新 approxLine（Var 插入致行号位移，PHASE 5 证伪"全部不改"）。`@ishour12`（deep_nesting_violations:39）不动。
 
 ## 6. 测试结构设计
 
