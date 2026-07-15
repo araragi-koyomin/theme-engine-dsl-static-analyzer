@@ -76,6 +76,7 @@ main (稳定,全量门禁绿)
 2. 调 reviewer agent 审查
 3. 审查通过 → push → 创建 PR
 4. 用户确认 → merge to main
+5. 独立的 fix/feat 分支采用 **squash merge**，保证 main commit 干净（1 个 fix/feat = 1 个 main commit）。squash 后将 SDD spec 目录归档至 `docs/archive/YYYY-MM/`，BACKLOG 热层条目移除
 
 ---
 

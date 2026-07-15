@@ -8,7 +8,7 @@ created: 2026-07-15
 # FIX002 — PHASE 6 一致性验证
 
 > 阶段：PHASE 6（一致性验证）
-> 状态：待用户确认
+> 状态：已确认（review 通过，Ready to merge: Yes）
 > 方法：逐项核对 spec→测试覆盖 + 代码→设计一致性 + 新测试反剧场自检 + 偏差说明
 
 ## 1. spec→测试覆盖核对
@@ -153,5 +153,44 @@ BUILD SUCCESSFUL in 33s
 
 ---
 
-> **阶段切换**：PHASE 6 完成。8/8 AC 绿，全量门禁绿，spec→测试 100% 覆盖，新测试无剧场问题，4 项偏差已说明。
-> 如需合入 main，须先调 reviewer agent 审查。
+## 8. Review 结果
+
+> reviewer agent 冷启动审查，独立验证（重新跑 cleanTest + 穷举 grep 全 fixture）
+
+**Verdict: Ready to merge: Yes**（0 Critical, 0 Important, 4 Minor）
+
+### Strengths（reviewer 独立验证）
+1. Bug A 编译修复正确——双变量 highlightText(宽度) + refText(消息) 语义清晰
+2. docUrl 修复精准——RULE_REF_002→001 与 ruleId 一致，未误伤 Command target 的 RULE_REF_002
+3. Bug B `@` 跳过移除是最小正确改动——buildUndefinedReferenceDiagnostic 零改动
+4. 无附带 fixture 损伤——穷举 grep 全 fixture+dsl XML 确认仅 7 处 `@xxx` + `@ishour12`
+5. approxLine 位移算术正确，L4 positionAgnostic 免疫
+6. AnalysisService 6 参数修复正确，FULL mode 适合 LSP
+7. 测试是真实行为断言，非剧场
+
+### Minor 问题（非阻塞，记录待后续 polish）
+
+| # | 文件:行 | 问题 | 处理 |
+|---|---|---|---|
+| M1 | `VarRefAnalyzerTest.java:99` | `undefinedStringElementPropertyRef` 缺 endLine/endColumn 对称断言（`#` 兄弟有） | 纳入 FIX004 |
+| M2 | `VarRefAnalyzer.java:354` | `refText` 名在两个兄弟方法中语义不同（buildUndefinedReferenceDiagnostic=prefix+varName, buildUndefinedElementRefDiagnostic=prefix+elementName） | 纳入 FIX004，建议改名 messageRef |
+| M3 | 5 个 fixture expected.json | 靠 ±2 tolerance 吸收行号位移而非精确更新（constraint_edge_cases/deep_nesting 精确更新了，其余 5 个未更新） | 可接受（tolerance 设计如此） |
+| M4 | C1-T7/T8 | 无显式 `@` 二元表达式/数组访问变体测试 | 已 deferred FIX004 |
+
+---
+
+## 9. 文档生命周期审计
+
+| 文档 | 当前 status | 生命周期变化 | 时机 |
+|---|---|---|---|
+| `FIX002-undefined-str-ref/phase1-6` | `active` | → `archived`，移至 `docs/archive/2026-07/` | **merge 后** |
+| `reports/test-theater-audit-2026-07-15.md` | `active` | 保持 `active`（FIX003/004 引用） | 不变 |
+| `knowledge/lessons-learned.md` LL-006~009 | `validated` | 保持 `validated` | 不变 |
+| `BACKLOG.md` FIX002/FIX005 | `done` | merge 后从热层移除（移入归档引用） | **merge 后** |
+| `SOP.md` §2.1/§2.3 | `active` | 保持 `active`（活文档） | 不变 |
+| `doc-management`/`gradle-build-test` skill | `active` | 保持 `active`（活文档） | 不变 |
+
+---
+
+> **阶段切换**：PHASE 6 完成 + review 通过（Ready to merge: Yes）。8/8 AC 绿，全量门禁绿，spec→测试 100% 覆盖，新测试无剧场问题，4 项偏差 + 4 项 Minor 已说明。
+> 下一步：push → 创建 PR → 用户确认 → squash merge to main → 归档 spec 目录。
