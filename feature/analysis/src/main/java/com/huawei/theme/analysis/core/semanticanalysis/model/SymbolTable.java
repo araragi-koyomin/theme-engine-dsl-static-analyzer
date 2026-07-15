@@ -7,6 +7,7 @@ import java.util.Set;
 
 import lombok.Builder;
 import lombok.Data;
+import org.jetbrains.annotations.Nullable;
 
 @Data
 @Builder
@@ -14,6 +15,7 @@ public class SymbolTable {
     /**
      * 他的上一层变量scope。如果是全局变量层，则为null
      */
+    @Nullable
     @Builder.Default
     SymbolTable parent = null;
 
