@@ -1,7 +1,7 @@
 ---
 module_ids: [CLI]
 doc_kind: guide
-status: stale
+status: active
 created: 2026-07-06
 ---
 # DSL 静态分析器 — 命令行使用指南

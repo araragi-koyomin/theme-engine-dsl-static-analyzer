@@ -35,15 +35,7 @@ created: 2026-07-15
 
 ## 文档待办 (stale docs)
 
-| 文档 | 偏差 | 状态 | 说明 |
-|---|---|---|---|
-| PRD.md | 多处 | **stale** | SAX→StAX;CLI 参数名;FileType 范围 |
-| Architecture.md | 8处 | **stale** | PSI Adapter 包不存在;Editor 完成度;版本号 |
-| TDD.md | 5处 | **stale** | CLI 参数语义;Editor 后台/增量 |
-| CLI-Usage.md | 多处 | **stale** | --syntax-only/--semantic-only 语义 |
-| architecture/M3 | 多处 | **stale** | SAX→StAX;SYN 编号 |
-| architecture/M4 | 多处 | **stale** | CLI 参数语义 |
-| architecture/M7 | 多处 | **stale** | CLI 参数语义 |
+> All core docs updated to reflect P0 changes. No stale docs remaining.
 
 ## 活跃分支
 

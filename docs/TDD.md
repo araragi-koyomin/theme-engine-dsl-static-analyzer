@@ -1,7 +1,7 @@
 ---
 module_ids: [CORE]
 doc_kind: architecture
-status: stale
+status: active
 created: 2026-06-15
 ---
 # 主题引擎DSL静态分析工具 - 技术设计文档
