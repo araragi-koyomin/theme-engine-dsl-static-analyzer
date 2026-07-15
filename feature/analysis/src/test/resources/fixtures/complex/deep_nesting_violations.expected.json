@@ -1,0 +1,27 @@
+{
+  "fixture": "deep_nesting_violations.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 16, "warnings": 1, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
+    { "ruleId": "SEM-PERSIST-001", "severity": "error", "approxLine": 9, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 11, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-005", "severity": "error", "approxLine": 12, "lineTolerance": 2 },
+    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 12, "lineTolerance": 2 },
+    { "ruleId": "SEM-IMG-003", "severity": "warning", "approxLine": 12, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 12, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 16, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 19, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 14, "lineTolerance": 2 },
+    { "ruleId": "SEM-SWIPER-001", "severity": "error", "approxLine": 23, "lineTolerance": 2 },
+    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 24, "lineTolerance": 2 },
+    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 25, "lineTolerance": 2 },
+    { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 26, "lineTolerance": 2 },
+    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 35, "lineTolerance": 2 },
+    { "ruleId": "SEM-TYPE-003", "severity": "error", "approxLine": 13, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": [
+    { "approxLine": 29, "reason": "level2_img valid Image with scaleType=fill" }
+  ]
+}

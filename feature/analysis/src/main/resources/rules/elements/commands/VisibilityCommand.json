@@ -1,6 +1,7 @@
 ﻿{
   "element": "VisibilityCommand",
   "category": "command",
+  "description": "除了在基础命令command中通过target的visibility属性来控制对象的可见性外，还支持在图片、文本等对象中配置visibility参数来控制对象可见性。",
   "requiredAttrs": [
     "visibility"
   ],
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "用于设置对象可见性，为true、>0则可见，为false、<=0不可见，支持表达式"
     }
   },
   "allowedParents": [

@@ -1,6 +1,7 @@
 ﻿{
   "element": "Video",
   "category": "view",
+  "description": "视频播放控件，将一段视频加入到视图中，能够设置播放、循环播放、声音控制等功能；支持AVI，MP4，MOV等多种格式的本地视频的播放。",
   "requiredAttrs": [
     "name", "src"
   ],
@@ -18,7 +19,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "视频命名，可用于videoCommand的定位Video对象，以控制视频的播放、换源和音量等。"
     },
     "src": {
       "type": "string",
@@ -28,7 +30,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "视频的文件路径，可带文件夹路径，例如aa/exmple.mp4，js.mp4等。视频格式支持mp4/avi/mov。视频文件须小于25M。"
     },
     "x": {
       "type": "number",
@@ -38,7 +41,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "视频左上角x位置，支持数字表达式，默认值为0。"
     },
     "y": {
       "type": "number",
@@ -48,7 +52,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "视频左上角y位置，支持数字表达式，默认值为0。"
     },
     "width": {
       "type": "number",
@@ -59,7 +64,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "显示在屏幕上的宽，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），支持表达式，w和width写法都可以。"
     },
     "height": {
       "type": "number",
@@ -70,7 +76,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "显示在屏幕上的高，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），支持表达式，h和height写法都可以。"
     },
     "pivotX": {
       "type": "number",
@@ -81,7 +88,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转的点的X坐标，相对于View的左上角位置，单位为像素，支持表达式，pivotX和centerX写法都可以。"
     },
     "pivotY": {
       "type": "number",
@@ -92,7 +100,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转的点的Y坐标，相对于View的左上角位置，单位为像素，支持表达式，pivotY和centerY写法都可以。"
     },
     "rotation": {
       "type": "number",
@@ -103,7 +112,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转角度，一周360度，围绕(pivotX,pivotY)点旋转（若无pivotX和pivotY，则默认(0,0)点旋转），支持表达式。正数表示顺时针，负数表示逆时针，rotation和angle写法都可以。"
     },
     "rotationX": {
       "type": "number",
@@ -114,7 +124,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "以X轴为旋转中心旋转，一周360度，支持表达式。正数表示顺时针，负数表示逆时针，rotationX和angleX写法都可以。"
     },
     "rotationY": {
       "type": "number",
@@ -125,7 +136,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "以Y轴为旋转中心旋转，一周360度，支持表达式。正数表示顺时针，负数表示逆时针，rotationY和angleY写法都可以。"
     },
     "alpha": {
       "type": "number",
@@ -135,7 +147,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "255"
+      "defaultValue": "255",
+      "description": "透明度，0-255，默认为255，当值小于0时则该值取0，当值大于255时，该值取255，支持表达式。"
     },
     "visibility": {
       "type": "number",
@@ -145,7 +158,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "视频组件的可见性，支持true/false和1/0来分别调整视频的可见或者不可见。"
     },
     "category": {
       "type": "string",
@@ -156,7 +170,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "取值\"Normal\", \"Charging\", \"BatteryLow\", \"BatteryFull\"，表示当手机处于指定充电状态时显示该元素。"
     },
     "align": {
       "type": "string",
@@ -167,7 +182,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "坐标点水平对齐方式left, center, right，对齐的效果为view的左上角x坐标分别表示该view的左、中、右位置。"
     },
     "alignV": {
       "type": "string",
@@ -178,7 +194,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "坐标点垂直对齐方式top, center, bottom，对齐的效果为view的左上角y坐标分别表示该view的上、中、下位置。"
     },
     "enableMove": {
       "type": "string",
@@ -189,7 +206,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "元素是否支持移动，当值为false或者0时表示不可移动，当值为true或者非0值表示可移动，默认为0。"
     },
     "moveRect": {
       "type": "string",
@@ -199,7 +217,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "移动区域，当enableMove为可移动时有效。格式为moveRect=\"minH,minV,maxH,maxV\"，分别表示：最小水平移动，最小垂直移动，最大水平移动，最大垂直移动。四个参数类型为数值，单位为像素，不支持表达式。例如：移动目标的原坐标为(x,y)，则该目标水平方向的移动范围是：(x+minH)~(x+maxH)，垂直方向的移动范围是：(y+minV)~(y+maxV)。"
     },
     "active": {
       "type": "number",
@@ -209,7 +228,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "激活状态，0代表不激活，视图不显示，所有的动画和可见性均失效，默认值1。"
     },
     "play": {
       "type": "string",
@@ -220,7 +240,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "true"
+      "defaultValue": "true",
+      "description": "是否加载之后自动开始播放，true/false，默认值为true。"
     },
     "looping": {
       "type": "string",
@@ -231,7 +252,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "视频是否循环播放，true/false，默认值为false不循环播放。"
     },
     "sound": {
       "type": "number",
@@ -241,7 +263,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "视频播放声音控制，值为0~1之间的值，值越大声音越大。"
     },
     "scaleType": {
       "type": "string",
@@ -252,7 +275,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "fill"
+      "defaultValue": "fill",
+      "description": "支持fill、fit_width、center_crop三种模式，默认为fill模式。fill表示填充满width和height宽高，若视频比例与屏幕不匹配会导致视频拉伸。fit_width表示宽匹配功能，视频缩放到设置的width那么宽，按照视频比例调整height，若视频宽高比例大于屏幕，则填充不满屏幕，若视频宽高比小于屏幕，则会有部分视频不在显示区域中。center_crop表示将视频文件宽高显示效果均不小于控件宽高。如果视频宽或者高小于控件宽或者高，则等比放大直到铺满控件，有超出屏幕部分的则截取视频中间部分铺满控件播放；如果视频资源文件的宽高均大于控件宽高，则等比缩小视频，当视频的宽高任意一值等于控件的宽高时停止缩放，截取中间部分视频显示播放。使用center_crop模式时建议搭配image来设置视频第一帧（参照示例2），不建议搭配defaultbitmap设置第一帧（效果不太协调）。"
     },
     "defaultBitmap": {
       "type": "string",
@@ -262,7 +286,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "选填，默认图片，即视频未加载时或者停止时默认显示的图片。普通手机/折叠屏手机折叠态/平板竖屏态时使用。图片需要和普通手机/折叠屏手机折叠态/平板竖屏态原本的视频保持一致的宽高，推荐使用视频首帧图片。因为视频加载需要时间，先显示一张首帧图，让视频显示有个平滑的过渡效果。"
     },
     "isTransparent": {
       "type": "string",
@@ -273,7 +298,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "1. 当设置该参数为true的时候，设计师必须保证资源本身是异形视频资源（原图 + 蒙版），否则会出现显示失常 2.当设置了该参数为true的时候无法动态控制sound声音为0，视频正常的声音会随着视频的播放而播放, 跟随手机音量调节。 3. 由于和AvPlayer的实现方式不同，无法获取关键帧，配置该参数为true的情况下不支持isFullScreenNode连用。 4. 只支持mp4格式的使用 5. 透明视频只有在播放完成的时候才能换源src.state == 'COMPLETED' 6. 透明视频由于无法获取到首帧，不支持只加载不播放的场景，playing=false的场景下屏幕上什么都不会显示，建议设计师通过Image和Video的组合完成功能替代 7. 设计师设计的资源要求裁剪不必要的空白区域来降低内存的峰值数据 8. 透明视频不配置宽高的情况下默认是父容器的宽高，即全屏 9. 视频分辨率不能超过4096 x 4096。 10.异形视屏切换不同的视频时要添加兜底图。 <Group visibility=\"ne(#turbo_status,2)\"> <Image src=\"bg.png\" scaleType=\"center_crop\" h=\"#screen_height\" w=\"#screen_width\" x=\"0\" y=\"0\" visibility=\"le(#video.mp4.state,2)\"/> <Video name=\"video1\" src=\"video.mp4\" scaleType=\"center_crop\" play=\"true\" sound=\"0\" looping=\"true\" h=\"#screen_height\" w=\"#screen_width\" x=\"0\" y=\"0\" isTransparent=\"true\"/> </Group> <Group visibility=\"eq(#turbo_status,2)\"> <Image src=\"bg.png\" scaleType=\"center_crop\" h=\"#screen_height\" w=\"#screen_width\" x=\"0\" y=\"0\" visibility=\"le(#turbo_video.mp4.state,2)\"/> <Video name=\"video2\" src=\"turbo_video.mp4\" scaleType=\"center_crop\" play=\"true\" sound=\"0\" looping=\"true\" h=\"#screen_height\" w=\"#screen_width\" x=\"0\" y=\"0\" isTransparent=\"true\"/> </Group>"
     },
     "isFullScreenNode": {
       "type": "string",
@@ -284,7 +310,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "平板、折叠屏的展开态及涉及旋转的场景，需要添加该字段，值为true可以防止旋转时出现黑边。 注意： fullscreennode设置为true时标识组件宽高与屏幕宽高一致，width height w h 设置内容不再生效，如果是全屏效果无需设置x、y偏移。"
     },
     "scalingType": {
       "type": "string",
@@ -294,7 +321,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "视频缩放模式。"
     },
     "transit": {
       "type": "string",
@@ -305,7 +333,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "视频过渡效果设置。"
     }
   },
   "allowedParents": [

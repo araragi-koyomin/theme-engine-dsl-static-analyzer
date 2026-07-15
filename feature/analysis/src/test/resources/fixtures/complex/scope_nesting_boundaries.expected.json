@@ -1,0 +1,21 @@
+{
+  "fixture": "scope_nesting_boundaries.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 5, "warnings": 0, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
+    { "ruleId": "SEM-SCOPE-001", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
+    { "ruleId": "SEM-SCOPE-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 10, "lineTolerance": 2 },
+    { "ruleId": "SEM-SCOPE-001", "severity": "error", "approxLine": 13, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": [
+    { "approxLine": 16, "reason": "widget_var valid Var in Widget scope" },
+    { "approxLine": 18, "reason": "valid_group valid Group in Widget" },
+    { "approxLine": 19, "reason": "valid_img valid nested Image" },
+    { "approxLine": 21, "reason": "valid_text valid nested Text" },
+    { "approxLine": 23, "reason": "valid_btn valid Button in Widget" },
+    { "approxLine": 24, "reason": "Trigger action=click valid action" },
+    { "approxLine": 28, "reason": "valid_icon valid standalone Image in Widget" }
+  ]
+}

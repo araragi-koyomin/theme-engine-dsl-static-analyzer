@@ -1,6 +1,7 @@
 ﻿{
   "element": "Swiper",
   "category": "view",
+  "description": "Swiper为Lockscreen的子节点且唯一，Swiper的子节点为Group，每个Group为一个屏幕，Group的顺序即为屏幕顺序，该组件仅用于全屏翻页。",
   "requiredAttrs": [
     "currentIndex", "animationTime"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "当前显示屏幕的索引"
     },
     "animationTime": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "动画播放时间单位ms"
     },
     "animationType": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "动画类型 当前留空 仅支持滑动动画"
     }
   },
   "allowedParents": [

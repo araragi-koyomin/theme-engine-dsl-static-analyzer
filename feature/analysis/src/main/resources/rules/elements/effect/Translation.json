@@ -1,6 +1,7 @@
 ﻿{
   "element": "Translation",
   "category": "effect_sub",
+  "description": "网格化-位移标签，实现局部区域抖动效果。",
   "requiredAttrs": [
     "values"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "2000"
+      "defaultValue": "2000",
+      "description": "单次动画持续时间（毫秒），取值正整数，默认为2000，支持表达式。最小值为1000。"
     },
     "repeat": {
       "type": "number",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "动画重复次数，-1表示无限循环，0表示不重复，n表示重复n+1次，默认为0，支持表达式。最小值为-1。"
     },
     "delay": {
       "type": "number",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "动画延迟执行的毫秒数，即触发动画后需要delay毫秒才开始执行动画，取值正整数，默认为0，支持表达式。"
     },
     "factor": {
       "type": "number",
@@ -47,7 +51,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0.2"
+      "defaultValue": "0.2",
+      "description": "动画回弹因子，取值（0~1]之间，值越大回弹幅度越小，默认为0.2，支持表达式。"
     },
     "values": {
       "type": "string",
@@ -57,7 +62,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "由多个0-1之间的实数构成的运动参数列表，实数个数最少2个，最多5个。示例：“1.0,0,1.0”表示从当前位置运动到初始位置，然后又运动到当前位置，实数值越大移动距离越大，但受限于max_distance_x和max_distance_y。"
     },
     "max_distance_x": {
       "type": "number",
@@ -67,7 +73,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "x轴最大运动距离，单位为像素，取值为(0，每个网格宽度)，默认为一个网格宽度，支持表达式。"
     },
     "max_distance_y": {
       "type": "number",
@@ -77,7 +84,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "y轴最大运动距离，单位为像素，取值为(0，每个网格高度)，默认为一个网格高度，支持表达式。"
     },
     "no_move_distance_x": {
       "type": "number",
@@ -87,7 +95,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "x轴方向不动的点，离中心点大于no_move_distance_x距离的点不动。设置的值需大于0，如果为0值则被认为是图片宽度，默认为图片宽度，单位为像素，支持表达式。"
     },
     "no_move_distance_y": {
       "type": "number",
@@ -97,7 +106,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "y轴方向不动的点，离中心点大于no_move_distance_y距离的点不动。设置的值需大于0，如果为0值则被认为是图片高度，默认为图片高度，单位为像素，支持表达式。"
     }
   },
   "allowedParents": [

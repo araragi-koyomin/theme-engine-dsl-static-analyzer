@@ -1,6 +1,7 @@
 ﻿{
   "element": "GroupClock",
   "category": "longtake",
+  "description": "GroupClock定义一镜到底的时间样式和位置，包含AodClock和LockClock，分别定义全屏熄屏显示的时间样式和位置、锁屏的时间样式和位置。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "设备类型为PuraX时，该值必须设置为1才可显示时钟，其他设备类型不需要设置。"
     }
   },
   "allowedParents": [

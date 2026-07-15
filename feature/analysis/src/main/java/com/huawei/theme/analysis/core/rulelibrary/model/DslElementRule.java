@@ -26,6 +26,8 @@ public class DslElementRule {
     String elementName;
     /** 元素分类标签，已知分类：root/view/layout/variable/control/command/animation/effect/three_d/trigger。开放式字符串，不硬编码为枚举 */
     String category;
+    /** 元素描述，从JSON description字段加载。用于IDEA文档悬浮提示 */
+    String description;
     /** 必填属性名列表，如Var的["name"]。M4 SEM-REQ-001必填缺失检测使用 */
     @Builder.Default List<String> requiredAttrs = Collections.emptyList();
     /** 选填属性名列表，如Var的["expression","type","threshold",...]。与requiredAttrs合并为全部合法属性名集合，M3 SYN-004未知属性检测使用 */

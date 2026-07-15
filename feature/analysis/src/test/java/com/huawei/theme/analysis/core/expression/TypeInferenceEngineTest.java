@@ -90,10 +90,10 @@ class TypeInferenceEngineTest {
     }
 
     @Test
-    void functionNotInContextReturnsNull() {
+    void functionNotInContextFallsBackToAvailableSignature() {
         ExpressionNode node = ExpressionNode.functionCall("sin", List.of(), "sin()", 1, 0);
         DslType result = engine.inferType(node, new DslStringType(), emptyTable());
-        assertNull(result);
+        assertEquals("number", result.getName());
     }
 
     @Test

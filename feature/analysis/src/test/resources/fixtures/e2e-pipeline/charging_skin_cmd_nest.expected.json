@@ -1,0 +1,16 @@
+{
+  "fixture": "charging_skin_cmd_nest.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 8, "warnings": 0, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 4, "lineTolerance": 2 },
+    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 7, "lineTolerance": 2 },
+    { "ruleId": "SEM-CMD-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
+    { "ruleId": "SEM-TRIG-002", "severity": "error", "approxLine": 11, "lineTolerance": 2 },
+    { "ruleId": "SEM-SCOPE-001", "severity": "error", "approxLine": 11, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": []
+}

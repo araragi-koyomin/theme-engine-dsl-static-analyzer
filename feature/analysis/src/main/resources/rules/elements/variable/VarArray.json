@@ -1,6 +1,7 @@
 ﻿{
   "element": "VarArray",
   "category": "variable",
+  "description": "以数组的方式保存变量；根据index值能够取相应索引的值并显示。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "number"
+      "defaultValue": "number",
+      "description": "定义数值变量number或字符串变量string，默认为number；"
     }
   },
   "allowedParents": [

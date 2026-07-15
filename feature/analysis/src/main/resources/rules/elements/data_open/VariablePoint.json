@@ -1,6 +1,7 @@
 ﻿{
   "element": "VariablePoint",
   "category": "data_open",
+  "description": "可变帧率时间点，用于指定在某个时间点切换到的屏幕刷新帧率，作为VariableFramerate的子节点使用。",
   "requiredAttrs": [
     "frameRate", "time"
   ],
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "60"
+      "defaultValue": "60",
+      "description": "全局帧率设置，单位为(帧/秒)，控制动画等动效刷新速率，默认值为60。LongTake节点本身属性仅需要设置帧率，若需要实现一镜到底效果，需将StoryBoard节点和EventTrigger节点挂载至LongTake节点下。"
     },
     "time": {
       "type": "number",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "表示振动波形的时间间隔，取值范围[0，1800000]，单位为ms，不支持表达式。 考虑到用户友好性，建议取值在1000以内。当前slice的time要大于等于上个slice的time+duration的值且time的值必须唯一。"
     }
   },
   "allowedParents": [

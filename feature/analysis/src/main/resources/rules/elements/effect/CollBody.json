@@ -1,6 +1,7 @@
 ﻿{
   "element": "CollBody",
   "category": "effect_sub",
+  "description": "刚体定义标签，设置刚体的形状、物理属性、初始受力、速度和碰撞响应等参数。",
   "requiredAttrs": [
     "id"
   ],
@@ -18,7 +19,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "区分不同刚体的身份id，该值的唯一要求是不能重复，即不同的CollBody不能用同一个id值。"
     },
     "type": {
       "type": "number",
@@ -28,7 +30,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "表示MIME type类型描述，打开文件的类型，主要用于文管打开文件。比如：'text/xml' 、 'image/*'等。 起始规范版本为HarmonyOS 6.0"
     },
     "shape": {
       "type": "number",
@@ -38,7 +41,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "刚体的形状，1是圆形，其他值或者默认值为方形。"
     },
     "imgsrc": {
       "type": "string",
@@ -48,7 +52,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "刚体的背景图。"
     },
     "x": {
       "type": "number",
@@ -58,7 +63,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "相对于屏幕左上角的x坐标，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），默认为0，支持表达式。"
     },
     "y": {
       "type": "number",
@@ -68,7 +74,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "相对于屏幕左上角的y坐标，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），默认为0，支持表达式。"
     },
     "width": {
       "type": "number",
@@ -78,7 +85,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "显示在屏幕上的宽，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），支持表达式，w和width写法都可以。"
     },
     "height": {
       "type": "number",
@@ -88,7 +96,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "显示在屏幕上的高，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），支持表达式，h和height写法都可以。"
     },
     "radius": {
       "type": "number",
@@ -98,7 +107,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "圆形流体的半径，与xPosition取值的映射关系保持一致，决定圆形流体的范围大小"
     },
     "friction": {
       "type": "number",
@@ -108,7 +118,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0.5"
+      "defaultValue": "0.5",
+      "description": "刚体的摩擦力系数，默认0.5。"
     },
     "restitution": {
       "type": "number",
@@ -118,7 +129,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0.5"
+      "defaultValue": "0.5",
+      "description": "刚体的恢复系数（碰撞后反弹系数），默认0.5。"
     },
     "density": {
       "type": "number",
@@ -128,7 +140,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0.5"
+      "defaultValue": "0.5",
+      "description": "刚体的密度，默认0.5。"
     },
     "forceX": {
       "type": "number",
@@ -138,7 +151,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体创建时x方向的初始受力值，默认0，建议取值范围【-10000000——10000000】，正负值表示方向相反。"
     },
     "forceY": {
       "type": "number",
@@ -148,7 +162,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体创建时y方向的初始受力值，默认0，建议取值范围【-10000000——10000000】，正负值表示方向相反。"
     },
     "vx": {
       "type": "number",
@@ -158,7 +173,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体创建时x方向的初始速度，默认0，建议取值范围【-10000000——10000000】，正负值表示方向相反。"
     },
     "vy": {
       "type": "number",
@@ -168,7 +184,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体创建时y方向的初始速度，默认0，建议取值范围【-10000000——10000000】，正负值表示方向相反。"
     },
     "isActive": {
       "type": "number",
@@ -178,7 +195,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "刚体属性，0为非刚体，其他值及默认值1为刚体。说明刚体不能被穿过，碰撞时反弹。非刚体可被穿过。"
     },
     "musicSrc": {
       "type": "string",
@@ -188,7 +206,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "被碰撞后播放音乐的资源路径，mp3资源，建议资源不大于2M。"
     },
     "musicloop": {
       "type": "number",
@@ -198,7 +217,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "是否循环播放音乐，默认0播放一次，-1为无限循环，其他值为播放musicloop+1次。"
     },
     "vibrateTime": {
       "type": "string",
@@ -208,7 +228,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "被碰撞后产生振动效果时长，单位毫秒。"
     },
     "statevar": {
       "type": "string",
@@ -218,7 +239,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "刚体碰撞状态监听变量，该刚体碰撞时此变量取值为1，碰撞前和碰撞后取值为0。给statevar设置任意且唯一的变量名，如statevar=\"body_5_state\"，则通过#body_5_state即可获取该刚体的碰撞状态值。"
     },
     "clickable": {
       "type": "number",
@@ -228,7 +250,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "true：滚动显示文本可以响应单击和双击，单击和双击文本回到初始状态；false：滚动显示文本可以不响应单击和双击。默认为false，不响应单击和双击，和scrollDisplay配合使用。"
     },
     "gesture": {
       "type": "string",
@@ -238,7 +261,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "是否支持按照手指滑动方向受力移动，默认值为0表示不支持，其他值为支持。刚体受力为 f*gesture，f为对应刚体世界的gscr手势力。手指滑动范围越长，施加给刚体的力越大。支持按照手指滑动方向受力时，受力大小和方向可以通过图标可视化显示出来：手指滑动的力越大，图标长度越长；图标的方向为手指滑动的方向。此图标的初始宽度、初始高度和图片资源分别通过刚体世界中的gwidth、gheight和gsrc设置。"
     },
     "opx": {
       "type": "string",
@@ -248,7 +272,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "获取刚体实时的x坐标。给opx设置任意且唯一的变量名，如opx=\"body_1_x\"，则通过#body_1_x即可获取该刚体实时的x坐标。"
     },
     "opy": {
       "type": "string",
@@ -258,7 +283,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "获取刚体实时的y坐标。给opx设置任意且唯一的变量名，如opy=\"body_1_y\"，则通过#body_1_y即可获取该刚体实时的y坐标。"
     }
   },
   "allowedParents": [

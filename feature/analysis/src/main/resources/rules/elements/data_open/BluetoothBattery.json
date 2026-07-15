@@ -1,6 +1,7 @@
 ﻿{
   "element": "BluetoothBattery",
   "category": "data_open",
+  "description": "开放蓝牙耳机数据，包括：蓝牙耳机连接状态、名称和电量。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [

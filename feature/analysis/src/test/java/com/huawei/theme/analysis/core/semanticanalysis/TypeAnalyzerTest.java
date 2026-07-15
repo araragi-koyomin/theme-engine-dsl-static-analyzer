@@ -169,19 +169,18 @@ class TypeAnalyzerTest {
         assertTrue(diagnostics.isEmpty());
     }
 
-    // --- SEM-TYPE-001: 函数不适用上下文 ---
+    // --- 跨上下文函数签名回退 ---
 
     @Test
-    void functionNotApplicableToContextProducesSEM_TYPE_001() {
-        ExpressionNode expr = ExpressionNode.functionCall("sin", List.of(), "sin()", 1, 0);
-        DslElementNode text = element("Text", 10, 5, exprAttr("textExp", expr, "sin()"));
+    void crossContextFunctionWithValidParamsProducesNoViolation() {
+        ExpressionNode arg = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode expr = ExpressionNode.functionCall("sin", List.of(arg), "sin(1)", 1, 0);
+        DslElementNode text = element("Text", 10, 5, exprAttr("textExp", expr, "sin(1)"));
 
         List<Diagnostic> diagnostics = analyzer.analyze(text,
                 context(repoWithAttrs(), emptyTable()));
 
-        assertEquals(1, diagnostics.size());
-        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
-        assertEquals("函数 sin 不适用于 string 表达式", diagnostics.get(0).getMessage());
+        assertTrue(diagnostics.isEmpty());
     }
 
     // --- SEM-TYPE-002: 函数参数类型不匹配 ---

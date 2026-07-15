@@ -1,6 +1,7 @@
 ﻿{
   "element": "RefreshWeatherCommand",
   "category": "command",
+  "description": "RefreshWeatherCommand主要在需要手动刷新天气变量的值时使用。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [

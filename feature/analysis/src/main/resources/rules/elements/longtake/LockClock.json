@@ -1,6 +1,7 @@
 ﻿{
   "element": "LockClock",
   "category": "longtake_sub",
+  "description": "LockClock为GroupClock子标签，可自由定义锁屏的时间样式和位置，仅用于全屏AOD一镜到底场景。",
   "requiredAttrs": [
     "baseRect", "hourHighRect", "hourLowRect", "minHighRect", "minLowRect", "numSrcPath"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "数字[0-9]资源地址 ，代码中实际取：xxx/time_[0-9].png"
     },
     "baseRect": {
       "type": "string",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "时钟占位图尺寸"
     },
     "dotRect": {
       "type": "string",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "冒号占位图尺寸"
     },
     "hourHighRect": {
       "type": "string",
@@ -46,7 +50,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "小时高位数字尺寸"
     },
     "hourLowRect": {
       "type": "string",
@@ -56,7 +61,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "小时低位数字尺寸"
     },
     "minHighRect": {
       "type": "string",
@@ -66,7 +72,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "分钟高位数字尺寸"
     },
     "minLowRect": {
       "type": "string",
@@ -76,7 +83,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "分钟低位数字尺寸"
     }
   },
   "allowedParents": [

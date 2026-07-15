@@ -1,6 +1,7 @@
 ﻿{
   "element": "Group",
   "category": "layout",
+  "description": "Group作为一个若干子控件元素的视图组，可以包住他元素，子控件元素比如图片Image、按钮Button、文字Text、时间DateTime等元素。视图组内可以调整坐标以及宽与高，亦可以调整多个元素的位置和大小；此外Group可以添加各种基础动效动画，比如位移PositionAnimation、旋转RotationAnimation、透明度AlphaAnimation、缩放SizeAnimation等。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "组控件的名称"
     },
     "x": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的x坐标"
     },
     "y": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的y坐标"
     },
     "width": {
       "type": "number",
@@ -47,7 +51,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "显示在屏幕上的宽，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），支持表达式，w和width写法都可以。"
     },
     "height": {
       "type": "number",
@@ -58,7 +63,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "显示在屏幕上的高，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），支持表达式，h和height写法都可以。"
     },
     "pivotX": {
       "type": "number",
@@ -69,7 +75,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转的点的X坐标，相对于View的左上角位置，单位为像素，支持表达式，pivotX和centerX写法都可以。"
     },
     "pivotY": {
       "type": "number",
@@ -80,7 +87,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转的点的Y坐标，相对于View的左上角位置，单位为像素，支持表达式，pivotY和centerY写法都可以。"
     },
     "rotation": {
       "type": "number",
@@ -91,7 +99,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转角度，一周360度，围绕(pivotX,pivotY)点旋转（若无pivotX和pivotY，则默认(0,0)点旋转），支持表达式。正数表示顺时针，负数表示逆时针，rotation和angle写法都可以。"
     },
     "rotationX": {
       "type": "number",
@@ -102,7 +111,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "以X轴为旋转中心旋转，一周360度，支持表达式。正数表示顺时针，负数表示逆时针，rotationX和angleX写法都可以。"
     },
     "rotationY": {
       "type": "number",
@@ -113,7 +123,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "以Y轴为旋转中心旋转，一周360度，支持表达式。正数表示顺时针，负数表示逆时针，rotationY和angleY写法都可以。"
     },
     "alpha": {
       "type": "number",
@@ -123,7 +134,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "255"
+      "defaultValue": "255",
+      "description": "透明度，0-255,小于等于0不显示"
     },
     "visibility": {
       "type": "number",
@@ -133,7 +145,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "元素可见性，支持表达式<=0 不可见， >0可见，true为可见，false为不可见。"
     },
     "category": {
       "type": "string",
@@ -144,7 +157,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "取值\"Normal\", \"Charging\", \"BatteryLow\", \"BatteryFull\"，表示当手机处于指定充电状态时显示该元素。"
     },
     "align": {
       "type": "string",
@@ -155,7 +169,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "水平方向对齐方式，默认为left，可选参数为left,center,right；使用时如果子view有自身的x坐标，则不会受Group设置的align参数影响，即子view的x坐标优先级大于Group的align参数。"
     },
     "alignV": {
       "type": "string",
@@ -166,7 +181,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "垂直方向对齐方式，默认为top，可选参数为top,center,bottom；使用时如果子view有自身的Y坐标，则不会受Group设置的alignV参数影响，即子view的y坐标优先级大于Group的alignV参数。"
     },
     "enableMove": {
       "type": "string",
@@ -177,7 +193,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "元素是否支持移动，当值为false或者0时表示不可移动，当值为true或者非0值表示可移动，默认为0。"
     },
     "moveRect": {
       "type": "string",
@@ -187,7 +204,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "移动区域，当enableMove为可移动时有效。格式为moveRect=\"minH,minV,maxH,maxV\"，分别表示：最小水平移动，最小垂直移动，最大水平移动，最大垂直移动。四个参数类型为数值，单位为像素，不支持表达式。例如：移动目标的原坐标为(x,y)，则该目标水平方向的移动范围是：(x+minH)~(x+maxH)，垂直方向的移动范围是：(y+minV)~(y+maxV)。"
     },
     "active": {
       "type": "number",
@@ -197,7 +215,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "激活状态，0代表不激活，视图不显示，所有的动画和可见性均失效，默认值1。"
     },
     "clip": {
       "type": "string",
@@ -208,7 +227,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "缺省为false；裁剪设置true则是测量整个Group长宽而不是测量元素的长宽，会裁剪掉超出w h标注范围的内容，不给予显示；设置为false测量元素的大小。"
     },
     "layered": {
       "type": "string",
@@ -219,7 +239,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "分层，设为true时，如可以对多图片进行混合处理，这个时候group中的最后一个Image需要具有hybridMode属性，前面的view都不能有hybridMode属性。"
     }
   },
   "allowedParents": [

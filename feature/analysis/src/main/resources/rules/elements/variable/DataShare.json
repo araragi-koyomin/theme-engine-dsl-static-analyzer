@@ -1,6 +1,7 @@
 ﻿{
   "element": "DataShare",
   "category": "variable",
+  "description": "数据分享能力节点，用于在碰一碰互动或长连接场景下将当前设备的数据同步到对端主题设备，设计师可基于DataShare中定义的变量获取对端设备的数据状态。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "元素变量名，在支持表达式的情况中使用@name的格式来取当前变量的值。"
     }
   },
   "allowedParents": [

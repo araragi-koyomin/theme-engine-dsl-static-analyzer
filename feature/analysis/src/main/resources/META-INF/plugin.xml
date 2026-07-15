@@ -27,10 +27,12 @@
                                implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslParserDefinition"/>
 
         <completion.contributor language="ThemeDSL"
-                                implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslElementNameCompletionContributor"/>
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslElementNameCompletionContributor"
+                                order="first"/>
 
         <completion.contributor language="ThemeDSL"
-                                implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslAttributeCompletionContributor"/>
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslAttributeCompletionContributor"
+                                order="first"/>
 
         <fileType name="DslExpression"
                   implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionFileType"

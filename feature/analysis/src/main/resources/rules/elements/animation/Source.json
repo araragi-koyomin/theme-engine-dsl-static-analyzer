@@ -1,6 +1,7 @@
 ﻿{
   "element": "Source",
   "category": "animation_frame",
+  "description": "帧动画的关键帧，定义某一帧的图片资源。",
   "requiredAttrs": [
     "src", "time"
   ],
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "图片文件名，如：image.gif，也可在前加文件夹，如wenjianjia/image.gif。当图片名称中包含.gif，循环播放Gif图片;图片的大小、位置等参数与Image设置相同，只需要在src参数中填入gif图片名称即可。小于5.0MB动态显示，大于或等于5.0MB静态显示，设计师应提供大小合适图片资源。"
     },
     "time": {
       "type": "number",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "表示振动波形的时间间隔，取值范围[0，1800000]，单位为ms，不支持表达式。 考虑到用户友好性，建议取值在1000以内。当前slice的time要大于等于上个slice的time+duration的值且time的值必须唯一。"
     }
   },
   "allowedParents": [

@@ -1,6 +1,7 @@
 ﻿{
   "element": "VibrateCommand",
   "category": "command",
+  "description": "与震动设置Vibrate相比，线性振动命令VibrateCommand支持触发振动的组件更多，支持实现的振动效果更丰富，搭配酷炫动效或音乐，给用户带来无限“振”撼。",
   "requiredAttrs": [
     "define"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "define为是否启用自定义模式，false为执行系统预置，true为自定义模式，默认为false。当define=\"true\"时，自定义振动标签<Vibrate>及其子标签<Wave>、<Slice> 为必填。"
     },
     "vibrateType": {
       "type": "string",
@@ -37,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "当define=\"true\"时，可不填。当define=\"false\"时，为必填，表示启用系统预置模式下的振动类型，其为固定的枚举值： haptic.grade.strength1 haptic.grade.strength2 haptic.grade.strength3 haptic.grade.strength4 haptic.grade.strength5 haptic.camera.focus haptic.camera.gear_slip haptic.camera.portrait_switch haptic.camera.mode_switch haptic.camera.long_press haptic.common.button haptic.common.charging haptic.common.delete_long_press haptic.common.fail_pattern1 haptic.common.fail_pattern2 haptic.common.long_press haptic.common.long_press1 haptic.common.long_press2 haptic.common.notice haptic.common.pinch haptic.common.success haptic.common.switch haptic.common.threshold haptic.common.upglide haptic.mode.change haptic.poweroff haptic.slide.type1 haptic.slide.type2 haptic.slide.type3 haptic.slide.type4 haptic.slide.type5 haptic.slide.type6 haptic.common.long_press3 haptic.common.click_up haptic.common.tick haptic.common.double_click haptic.common.click haptic.volume.max haptic.volume.min haptic.notice.Arrow haptic.clock.stopwatch"
     }
   },
   "allowedParents": [

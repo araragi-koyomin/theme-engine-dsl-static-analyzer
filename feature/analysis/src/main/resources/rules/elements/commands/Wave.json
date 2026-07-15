@@ -1,6 +1,7 @@
 ﻿{
   "element": "Wave",
   "category": "command_sub",
+  "description": "自定义振动波形标签，为Vibrate的子标签，表示自定义振动模式下的振动波形。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [

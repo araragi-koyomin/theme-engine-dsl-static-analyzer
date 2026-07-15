@@ -1,6 +1,7 @@
 ﻿{
   "element": "AngleVelocity",
   "category": "effect_sub",
+  "description": "AngleVelocity表示物体的旋转角速度，控制物体旋转速度的快慢，能够显示的设置物体随机旋转速度的大小。如果不写此标签则旋转速度的范围为0-30度。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "是否随机缩放粒子，true/false，默认false。"
     },
     "angleVelocity": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "物体旋转角速度，范围为-360-360，默认为0，支持表达式。不随机则物体的旋转角度为该值，如果随机则物体旋转角度为lowestAngleVelocity+[(0,angleVelocity)间随机值]。"
     },
     "lowestAngleVelocity": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "物体最低旋转角速度，范围为-360-360，默认为0，支持表达式。仅当isRandom等于true时生效，为随机速度的最小值。"
     }
   },
   "allowedParents": [

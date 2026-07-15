@@ -1,6 +1,7 @@
 ﻿{
   "element": "VariableBinders",
   "category": "data_open",
+  "description": "传感器绑定容器，用于包裹SensorBinder节点，作为传感器数据绑定的统一声明入口。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [

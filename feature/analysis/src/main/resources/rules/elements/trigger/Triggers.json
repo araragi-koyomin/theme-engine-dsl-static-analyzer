@@ -1,6 +1,7 @@
 {
   "element": "Triggers",
   "category": "trigger",
+  "description": "Triggers为Trigger的容器标签，用于包含多个Trigger子元素，组织和管理一组触发器动作。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [

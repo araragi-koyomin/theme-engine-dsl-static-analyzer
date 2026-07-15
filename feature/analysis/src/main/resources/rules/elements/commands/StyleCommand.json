@@ -1,6 +1,7 @@
 ﻿{
   "element": "StyleCommand",
   "category": "command",
+  "description": "使用StyleCommand命令可以实现同一主题不同aod、skin样式的切换。触发方式包括但不限于：通过数据变化驱动（比如天气数据、步数数据、音量数据等）、通过单击/滑动/双击等驱动变化、通过时间范围驱动变化。",
   "requiredAttrs": [
     "index"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "对应style文件路径的索 0:代表默认，1：style1， 2： style2， x: style*x* （不支持表达式）"
     },
     "name": {
       "type": "string",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "元素变量名，在支持表达式的情况中使用@name的格式来取当前变量的值。"
     },
     "contentTypes": {
       "type": "string",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "aod|skin"
+      "defaultValue": "aod|skin",
+      "description": "需要刷新的模块。模块包括：aod、skin，写法为：模块名\\"
     },
     "condition": {
       "type": "expression",
@@ -46,7 +50,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "条件判断，支持表达式。当condition里的条件判断为非0或者为true时，该命令执行，为false或者0则不执行。支持输入表达式"
     }
   },
   "allowedParents": [

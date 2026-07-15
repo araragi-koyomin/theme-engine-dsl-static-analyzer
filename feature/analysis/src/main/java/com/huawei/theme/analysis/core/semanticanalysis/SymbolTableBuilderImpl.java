@@ -35,15 +35,17 @@ public class SymbolTableBuilderImpl implements SymbolTableBuilder {
     public SymbolTable buildGlobal(DslFileNode fileNode, RuleRepository ruleRepository) {
         Map<String, VarDeclaration> declarations = new HashMap<>();
         Set<String> elementNames = new HashSet<>();
+        Set<String> duplicateVarNames = new HashSet<>();
         addPresetGlobalVars(ruleRepository, declarations);
         if (fileNode != null && fileNode.getRootElement() != null) {
-            collectVarDeclarations(fileNode.getRootElement(), declarations);
+            collectVarDeclarations(fileNode.getRootElement(), declarations, duplicateVarNames);
             collectElementNames(fileNode.getRootElement(), elementNames);
         }
         return SymbolTable.builder()
                 .parent(null)
                 .declarations(declarations)
                 .elementNames(elementNames)
+                .duplicateVarNames(duplicateVarNames)
                 .build();
     }
 
@@ -68,17 +70,18 @@ public class SymbolTableBuilderImpl implements SymbolTableBuilder {
      * 无论 Var 出现在树中哪个位置，均作为全局变量处理（见 themes-engine Var 文档）。
      */
     private static void collectVarDeclarations(DslElementNode elementNode,
-                                               Map<String, VarDeclaration> declarations) {
+                                               Map<String, VarDeclaration> declarations,
+                                               Set<String> duplicateVarNames) {
         if (elementNode == null) {
             return;
         }
         if (VAR_TAG.equals(elementNode.getTagName())) {
-            addVarDeclaration(elementNode, declarations);
+            addVarDeclaration(elementNode, declarations, duplicateVarNames);
         }
         List<DslElementNode> children = elementNode.getChildElements();
         if (children != null) {
             for (DslElementNode child : children) {
-                collectVarDeclarations(child, declarations);
+                collectVarDeclarations(child, declarations, duplicateVarNames);
             }
         }
     }
@@ -106,10 +109,15 @@ public class SymbolTableBuilderImpl implements SymbolTableBuilder {
     }
 
     private static void addVarDeclaration(DslElementNode varNode,
-                                          Map<String, VarDeclaration> declarations) {
+                                          Map<String, VarDeclaration> declarations,
+                                          Set<String> duplicateVarNames) {
         String name = getAttrValue(varNode, NAME_ATTR);
         if (name == null || name.isEmpty()) {
             return;
+        }
+        VarDeclaration existing = declarations.get(name);
+        if (existing != null && existing.getAstNode() != null) {
+            duplicateVarNames.add(name);
         }
         String type = getAttrValue(varNode, TYPE_ATTR);
         if (type == null || type.isEmpty()) {
