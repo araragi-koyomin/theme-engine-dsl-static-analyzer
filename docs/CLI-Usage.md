@@ -47,14 +47,14 @@ java -jar dsl-analyzer.jar [options] <file-or-directory>
 |------|------|--------|
 | `<file-or-directory>` | 目标文件或目录路径（必填） | — |
 | `--rule-dir <path>` | 自定义规则库目录 | 内置规则库 |
-| `--no-type-check` | 禁用类型推断检查 | 类型推断默认启用 |
-| `--syntax-only` | 仅执行语法分析，跳过语义和修复建议 | 全量分析 |
-| `--semantic-only` | 仅执行语义分析，跳过语法诊断和修复建议 | 全量分析 |
+| `--no-type-check` | 禁用 TypeAnalyzer 类型推断检查 | 类型推断默认启用 |
+| `--syntax-only` | 只跑 M3 层（SyntaxChecker + ExpressionSyntaxChecker），不跑 M4 语义 analyzer | 全量分析 |
+| `--semantic-only` | 只跑 M4 语义 analyzer（不含 TypeAnalyzer），不跑 M3 语法 | 全量分析 |
 | `--format <format>` | 输出格式：`terminal`、`json`、`markdown` | `terminal` |
 | `--output <path>` | 将报告写入文件（适用于 json/markdown 格式） | 输出到终端 |
 | `--no-color` | 禁用终端 ANSI 彩色输出 | 彩色输出 |
-| `--verbose` | 启用详细输出模式 | 禁用 |
-| `--quiet` | 仅输出 error 级别诊断（与 `--verbose` 互斥） | 输出所有级别 |
+| `--verbose` | 启用详细输出模式：输出 AST 统计、符号表摘要、管线阶段耗时、每 analyzer 诊断计数、类型推断链 | 禁用 |
+| `--quiet` | 过滤 WARNING 和 INFO 级别诊断，只输出 ERROR（与 `--verbose` 互斥） | 输出所有级别 |
 | `--config <path>` | 检查配置文件（JSON 格式） | — |
 | `--version` | 显示版本号并退出 | — |
 | `--help` / `-h` | 显示帮助信息并退出 | — |
@@ -73,7 +73,7 @@ java -jar dsl-analyzer.jar /path/to/theme.xml
 
 ### 仅语法分析（`--syntax-only`）
 
-只执行语法分析阶段，快速检查 XML 结构和元素属性是否符合规则定义。跳过语义分析和修复建议。
+只跑 M3 层语法检查（SyntaxChecker + ExpressionSyntaxChecker），不跑 M4 语义 analyzer。快速检查 XML 结构和元素属性是否符合规则定义。
 
 适用场景：快速排查 XML 语法问题，或在语义分析耗时较长时先做一轮语法筛查。
 
@@ -83,7 +83,7 @@ java -jar dsl-analyzer.jar --syntax-only /path/to/theme.xml
 
 ### 仅语义分析（`--semantic-only`）
 
-只执行语义分析阶段（符号引用、约束检查等），跳过语法诊断输出和修复建议生成。AST 构建仍会执行（语义分析需要 AST 作为输入）。
+只跑 M4 语义 analyzer（不含 TypeAnalyzer），不跑 M3 语法诊断。AST 构建仍会执行（语义分析需要 AST 作为输入）。
 
 适用场景：确认 XML 语法无误后，聚焦语义层面的问题。
 
@@ -349,8 +349,8 @@ Error: Rule directory not found: /nonexistent/rules
 
 | 功能 | CLI 参数 | 当前状态 | 跟踪 Issue |
 |------|----------|----------|------------|
-| 详细输出（AST统计、耗时、符号表摘要） | `--verbose` | 参数已解析，详细内容待实现 | #76 |
-| 仅输出 ERROR 级别诊断 | `--quiet` | 参数已解析，过滤逻辑待实现 | #77 |
+| 详细输出（AST 统计、符号表摘要、管线阶段耗时、每 analyzer 诊断计数、类型推断链） | `--verbose` | 已实现 | #76 |
+| 过滤 WARNING/INFO 级别诊断，只输出 ERROR | `--quiet` | 已实现 | #77 |
 
 ## 打包内容
 
