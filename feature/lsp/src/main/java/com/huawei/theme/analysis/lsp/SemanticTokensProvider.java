@@ -42,12 +42,13 @@ final class SemanticTokensProvider {
 
     /**
      * Legend indices must match the emission sites below. Expression types
-     * (0–3) come first; structural types (4+) are appended so the IntelliJ
-     * client can ignore them.
+     * (0–3) come first; tag types (4–7) distinguish categories; structural
+     * types (8–10) are appended so the IntelliJ client can ignore them.
      */
     static final List<String> TOKEN_TYPES = List.of(
             "variable", "function", "number", "string",
-            "type", "property", "comment", "keyword");
+            "tag", "tagRoot", "tagVariable", "tagCommand",
+            "property", "comment", "keyword");
     static final List<String> TOKEN_MODIFIERS = List.of();
 
     private static final int TYPE_VARIABLE = 0;
@@ -55,11 +56,15 @@ final class SemanticTokensProvider {
     private static final int TYPE_NUMBER = 2;
     private static final int TYPE_STRING = 3;
     private static final int TYPE_TAG = 4;
-    private static final int TYPE_ATTRIBUTE = 5;
-    private static final int TYPE_COMMENT = 6;
-    private static final int TYPE_KEYWORD = 7;
+    private static final int TYPE_TAG_ROOT = 5;
+    private static final int TYPE_TAG_VARIABLE = 6;
+    private static final int TYPE_TAG_COMMAND = 7;
+    private static final int TYPE_ATTRIBUTE = 8;
+    private static final int TYPE_COMMENT = 9;
+    private static final int TYPE_KEYWORD = 10;
 
     private static final Pattern COMMENT_PATTERN = Pattern.compile("<!--[\\s\\S]*?-->");
+    private static final Pattern NUMERIC_PATTERN = Pattern.compile("-?\\d+(?:\\.\\d+)?");
 
     private final RuleRepository ruleRepository;
 
@@ -104,7 +109,7 @@ final class SemanticTokensProvider {
             int line = element.getLine() - 1;
             int col = element.getColumn() + 1;
             if (line >= 0) {
-                tokens.add(new int[]{line, col, tagName.length(), TYPE_TAG});
+                tokens.add(new int[]{line, col, tagName.length(), tagTypeOf(tagName)});
             }
         }
         List<DslAttributeNode> attrs = element.getAttributes();
@@ -116,10 +121,21 @@ final class SemanticTokensProvider {
                     tokens.add(new int[]{line, attr.getColumn(), name.length(), TYPE_ATTRIBUTE});
                 }
                 DslAttributeValueNode value = attr.getValue();
-                if (value != null && value.getExpression().isPresent()) {
-                    ExpressionAstNode expr = value.getExpression().get();
-                    if (expr instanceof ExpressionNode) {
-                        emit((ExpressionNode) expr, tokens);
+                if (value != null) {
+                    if (value.getExpression().isPresent()) {
+                        ExpressionAstNode expr = value.getExpression().get();
+                        if (expr instanceof ExpressionNode) {
+                            emit((ExpressionNode) expr, tokens);
+                        }
+                    } else if (value.getLine() > 0 && value.getRawValue() != null) {
+                        // Literal attribute value — emit a value token so it
+                        // gets colored (numeric=number, boolean=keyword, else=string).
+                        int vLine = value.getLine() - 1;
+                        int vCol = value.getColumn();
+                        int vLen = value.getRawValue().length();
+                        if (vLen > 0) {
+                            tokens.add(new int[]{vLine, vCol, vLen, attrValueTypeOf(value.getRawValue())});
+                        }
                     }
                 }
             }
@@ -166,6 +182,56 @@ final class SemanticTokensProvider {
             default:
                 return -1; // skip BINARY/UNARY/CONDITIONAL/UNKNOWN
         }
+    }
+
+    /**
+     * Maps a tag name to a category-specific token type by looking up its
+     * {@link DslElementRule} category in the rule library:
+     * <ul>
+     *   <li>root → {@code tagRoot} (Lockscreen/Widget/Wallpaper/ChargingSkin)</li>
+     *   <li>variable → {@code tagVariable} (Var/VarArray/Vars/Array/Items/…)</li>
+     *   <li>command → {@code tagCommand} (Command/SoundCommand/…)</li>
+     *   <li>everything else → {@code tag} (view/layout/animation/effect/…)</li>
+     * </ul>
+     * This gives different tag categories distinct colors in any LSP client.
+     */
+    private int tagTypeOf(String tagName) {
+        var rule = ruleRepository.getElementRule(tagName);
+        if (rule.isEmpty()) {
+            return TYPE_TAG;
+        }
+        String category = rule.get().getCategory();
+        if (category == null || category.isEmpty()) {
+            return TYPE_TAG;
+        }
+        switch (category) {
+            case "root":
+                return TYPE_TAG_ROOT;
+            case "variable":
+                return TYPE_TAG_VARIABLE;
+            case "command":
+                return TYPE_TAG_COMMAND;
+            default:
+                return TYPE_TAG;
+        }
+    }
+
+    /**
+     * Classifies a literal attribute value for highlighting: numeric values
+     * → {@code number}, boolean literals ({@code true}/{@code false}) →
+     * {@code keyword}, everything else (strings, enum values) → {@code string}.
+     */
+    private static int attrValueTypeOf(String rawValue) {
+        if (rawValue == null || rawValue.isEmpty()) {
+            return TYPE_STRING;
+        }
+        if ("true".equalsIgnoreCase(rawValue) || "false".equalsIgnoreCase(rawValue)) {
+            return TYPE_KEYWORD;
+        }
+        if (NUMERIC_PATTERN.matcher(rawValue).matches()) {
+            return TYPE_NUMBER;
+        }
+        return TYPE_STRING;
     }
 
     private static int lengthOf(ExpressionAstNode node) {

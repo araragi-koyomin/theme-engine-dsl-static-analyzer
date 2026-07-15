@@ -50,7 +50,24 @@
           }
         }
       }
-    }
+    },
+    "semanticTokenScopes": [
+      {
+        "scopes": {
+          "variable": ["variable.other.readwrite"],
+          "function": ["entity.name.function"],
+          "number": ["constant.numeric"],
+          "string": ["string.quoted"],
+          "tag": ["entity.name.tag"],
+          "tagRoot": ["entity.name.tag.structure", "keyword"],
+          "tagVariable": ["entity.name.tag.variable", "variable"],
+          "tagCommand": ["entity.name.tag.command", "entity.name.function"],
+          "property": ["entity.other.attribute-name"],
+          "comment": ["comment.block.xml"],
+          "keyword": ["keyword.other"]
+        }
+      }
+    ]
   },
   "scripts": {
     "compile": "tsc -p ./ && esbuild src/extension.ts --bundle --platform=node --external:vscode --format=cjs --sourcemap --outfile=out/extension.js",

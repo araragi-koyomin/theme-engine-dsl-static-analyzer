@@ -214,14 +214,21 @@ final class DslLspDocumentSync implements Disposable {
     }
 
     private static final int SEMANTIC_LAYER = 7000;
-    // Theme-aware keys for expression token types (variable/function/number/
-    // string). Resolved against the current editor color scheme at apply time
-    // so colors follow the user's theme; the JBColor fallbacks below are used
-    // only when a scheme lacks attributes for a key.
+    // Theme-aware keys for semantic token types. Resolved against the current
+    // editor color scheme at apply time so colors follow the user's theme;
+    // the JBColor fallbacks below are used only when a scheme lacks
+    // attributes for a key.
+    // Expression (0-3) + tag categories (4-7) + keyword (10) are rendered;
+    // property (8) and comment (9) are null (native XML handles them).
     private static final TextAttributesKey VARIABLE_KEY = DefaultLanguageHighlighterColors.IDENTIFIER;
     private static final TextAttributesKey FUNCTION_KEY = DefaultLanguageHighlighterColors.FUNCTION_CALL;
     private static final TextAttributesKey NUMBER_KEY = DefaultLanguageHighlighterColors.NUMBER;
     private static final TextAttributesKey STRING_KEY = DefaultLanguageHighlighterColors.STRING;
+    private static final TextAttributesKey TAG_KEY = TextAttributesKey.createTextAttributesKey("DSL_TAG");
+    private static final TextAttributesKey TAG_ROOT_KEY = TextAttributesKey.createTextAttributesKey("DSL_TAG_ROOT");
+    private static final TextAttributesKey TAG_VARIABLE_KEY = TextAttributesKey.createTextAttributesKey("DSL_TAG_VARIABLE");
+    private static final TextAttributesKey TAG_COMMAND_KEY = TextAttributesKey.createTextAttributesKey("DSL_TAG_COMMAND");
+    private static final TextAttributesKey KEYWORD_KEY = DefaultLanguageHighlighterColors.KEYWORD;
     private static final TextAttributes VARIABLE_FALLBACK =
             new TextAttributes(JBColor.BLUE, null, null, null, Font.PLAIN);
     private static final TextAttributes FUNCTION_FALLBACK =
@@ -230,6 +237,16 @@ final class DslLspDocumentSync implements Disposable {
             new TextAttributes(JBColor.CYAN, null, null, null, Font.BOLD);
     private static final TextAttributes STRING_FALLBACK =
             new TextAttributes(JBColor.GREEN, null, null, null, Font.PLAIN);
+    private static final TextAttributes TAG_FALLBACK =
+            new TextAttributes(JBColor.ORANGE, null, null, null, Font.BOLD);
+    private static final TextAttributes TAG_ROOT_FALLBACK =
+            new TextAttributes(JBColor.RED, null, null, null, Font.BOLD);
+    private static final TextAttributes TAG_VARIABLE_FALLBACK =
+            new TextAttributes(JBColor.MAGENTA, null, null, null, Font.PLAIN);
+    private static final TextAttributes TAG_COMMAND_FALLBACK =
+            new TextAttributes(new JBColor(0x0099AA, 0x0000FF), null, null, null, Font.ITALIC);
+    private static final TextAttributes KEYWORD_FALLBACK =
+            new TextAttributes(JBColor.GRAY, null, null, null, Font.BOLD);
 
     private void applySemanticTokensToEditor(String uri, List<Integer> data) {
         VirtualFile vf = VirtualFileManager.getInstance().findFileByUrl(uri);
@@ -246,9 +263,9 @@ final class DslLspDocumentSync implements Disposable {
                 mm.removeHighlighter(h);
             }
         }
-        // Resolve once per apply so colors track the active theme; structural
-        // token types (tag/attribute/comment/keyword, index >= 4) return null
-        // and are skipped — IntelliJ's native XML highlighter handles them.
+        // Resolve once per apply so colors track the active theme. Expression
+        // (0-3), tag categories (4-7) and keyword (10) are rendered; property
+        // (8) and comment (9) return null — IntelliJ's native XML handles them.
         TextAttributes[] resolved = resolveThemeAttrs();
         int line = 0;
         int col = 0;
@@ -276,18 +293,25 @@ final class DslLspDocumentSync implements Disposable {
     }
 
     /**
-     * Resolves the four expression {@link TextAttributesKey}s against the
-     * current global editor color scheme, falling back to the hardcoded
-     * {@link JBColor} attributes when the scheme defines no attributes for a
-     * key. Index 0–3 hold the resolved expression attributes; index 4+ are
-     * null (structural types are skipped — see {@link #applySemanticTokensToEditor}).
+     * Resolves semantic token {@link TextAttributesKey}s against the current
+     * global editor color scheme, falling back to hardcoded {@link JBColor}
+     * attributes when the scheme defines no attributes for a key. Indices 0–3
+     * = expression types (variable/function/number/string); 4–7 = tag
+     * categories (tag/tagRoot/tagVariable/tagCommand); 8–9 = property/comment
+     * (null — native XML handles); 10 = keyword (XML declaration + boolean).
      */
     private static TextAttributes[] resolveThemeAttrs() {
-        TextAttributes[] out = new TextAttributes[4];
+        TextAttributes[] out = new TextAttributes[11];
         out[0] = resolveAttr(VARIABLE_KEY, VARIABLE_FALLBACK);
         out[1] = resolveAttr(FUNCTION_KEY, FUNCTION_FALLBACK);
         out[2] = resolveAttr(NUMBER_KEY, NUMBER_FALLBACK);
         out[3] = resolveAttr(STRING_KEY, STRING_FALLBACK);
+        out[4] = resolveAttr(TAG_KEY, TAG_FALLBACK);
+        out[5] = resolveAttr(TAG_ROOT_KEY, TAG_ROOT_FALLBACK);
+        out[6] = resolveAttr(TAG_VARIABLE_KEY, TAG_VARIABLE_FALLBACK);
+        out[7] = resolveAttr(TAG_COMMAND_KEY, TAG_COMMAND_FALLBACK);
+        // 8 (property) and 9 (comment) — null: IntelliJ native XML handles.
+        out[10] = resolveAttr(KEYWORD_KEY, KEYWORD_FALLBACK);
         return out;
     }
 
@@ -295,7 +319,11 @@ final class DslLspDocumentSync implements Disposable {
         try {
             TextAttributes attrs = EditorColorsManager.getInstance()
                     .getGlobalScheme().getAttributes(key);
-            if (attrs != null) {
+            // Only use the scheme's attrs if they actually define a foreground
+            // color — custom keys (DSL_TAG etc.) may return an empty
+            // TextAttributes (non-null but no foreground) which would render
+            // invisible; fall back to the JBColor default in that case.
+            if (attrs != null && attrs.getForegroundColor() != null) {
                 return attrs;
             }
         } catch (Exception ignored) {
