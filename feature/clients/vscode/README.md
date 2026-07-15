@@ -1,57 +1,74 @@
-﻿# DSL Analyzer 鈥?VS Code 瀹㈡埛绔?
-> 妯″潡璺緞锛歚feature/clients/vscode`
-> 瀵瑰簲 server 妯″潡锛歚:feature:lsp`锛坒at jar `dsl-analyzer-lsp.jar`锛?
-鏈枃妗ｈ鏄庡浣曟瀯寤恒€佸畨瑁呫€侀厤缃?VS Code 鎵╁睍锛屼娇鍏堕€氳繃 LSP 鎺ュ叆 Theme Engine DSL 闈欐€佸垎鏋?server銆傛墿灞曞熀浜?[`vscode-languageclient`](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide) 瀹炵幇锛屽惎鍔?`java -jar dsl-analyzer-lsp.jar --stdio` 骞舵妸璇婃柇/琛ュ叏/hover/codeAction/璇箟楂樹寒妗ユ帴鍒?VS Code銆?
+﻿# DSL Analyzer — VS Code 客户端
+
+> 模块路径：`feature/clients/vscode`
+> 对应 server 模块：`:feature:lsp`（fat jar `dsl-analyzer-lsp.jar`）
+
+本文档说明如何构建、安装、配置 VS Code 扩展，使其通过 LSP 接入 Theme Engine DSL 静态分析 server。扩展基于 [`vscode-languageclient`](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide) 实现，启动 `java -jar dsl-analyzer-lsp.jar --stdio` 并把诊断/补全/hover/codeAction/语义高亮桥接到 VS Code。
+
 ---
 
-## 1. 鍓嶇疆瑕佹眰
+## 1. 前置要求
 
-- **Node.js 鈮?18** 涓?**npm**锛堢敤浜庣紪璇?鎵撳寘鎵╁睍锛涙瀯寤?host 闇€鍦?PATH 涓彲鎵ц `npm`锛夈€?- **JDK 17+**锛堣繍琛?server jar锛涙墿灞曢粯璁ょ敤 `java`锛屽彲鍦ㄨ缃腑瑕嗙洊锛夈€?- **Gradle 8.2**锛堥」鐩瀯寤猴紝瑙佹牴 `AGENTS.md`锛夈€?
+- **Node.js ≥ 18** 与 **npm**（用于编译/打包扩展；构建 host 需在 PATH 中可执行 `npm`）。
+- **JDK 17+**（运行 server jar；扩展默认用 `java`，可在设置中覆盖）。
+- **Gradle 8.2**（项目构建，见根 `AGENTS.md`）。
+
 ---
 
-## 2. 涓€閿瀯寤猴紙鎺ㄨ崘锛?
-鏋勫缓浼氾細鈶?缂栬瘧 LSP server fat jar锛涒憽 鎶?jar 澶嶅埗鍒版墿灞曠殑 `server/` 鐩綍锛涒憿 `npm ci` 瀹夎渚濊禆锛涒懀 `tsc` + `esbuild` + `vsce package` 浜у嚭 `.vsix`銆?
+## 2. 一键构建（推荐）
+
+构建会：① 编译 LSP server fat jar；② 把 jar 复制到扩展的 `server/` 目录；③ `npm ci` 安装依赖；④ `tsc` + `esbuild` + `vsce package` 产出 `.vsix`。
+
 ```bash
 gradle :feature:lsp:buildVscodeExtension
 ```
 
-浜х墿锛?
+产物：
+
 ```
 feature/clients/vscode/dsl-analyzer-lsp-<version>.vsix
 ```
 
-`.vsix` 鑷寘鍚?server jar锛坄server/dsl-analyzer-lsp.jar`锛夛紝瀹夎鍚庢棤闇€鍐嶉厤缃?`server.path` 鍗冲彲浣跨敤銆?
-> 璇ヤ换鍔?*涓?*鎺ュ叆榛樿 `build`锛堥伩鍏嶆瘡娆℃瀯寤洪兘瑕佹眰 Node/npm锛夈€傞渶瑕佹椂鏄惧紡鎵ц銆?
-### 浠呯紪璇戯紙涓嶆墦鍖?.vsix锛?
-寮€鍙戞湡澧為噺缂栬瘧 + watch锛?
+`.vsix` 自包含 server jar（`server/dsl-analyzer-lsp.jar`），安装后无需再配置 `server.path` 即可使用。
+
+> 该任务**不**接入默认 `build`（避免每次构建都要求 Node/npm）。需要时显式执行。
+
+### 仅编译（不打包 .vsix）
+
+开发期增量编译 + watch：
+
 ```bash
 cd feature/clients/vscode
 npm install
-npm run compile     # 涓€娆℃€э細tsc 绫诲瀷妫€鏌?+ esbuild 鎵撳寘鍒?out/extension.js
+npm run compile     # 一次性：tsc 类型检查 + esbuild 打包到 out/extension.js
 npm run watch       # esbuild watch
 ```
 
-鎸?F5 鍦?`clients/vscode` 鐩綍鎵撳紑鐨?VS Code 瀹炰緥閲岃皟璇曪紙闇€ `.vscode/launch.json`锛屽彲鎸?vscode-languageclient 鏂囨。鑷娣诲姞锛夈€?
+按 F5 在 `feature/clients/vscode` 目录打开的 VS Code 实例里调试（需 `.vscode/launch.json`，可按 vscode-languageclient 文档自行添加）。
+
 ---
 
-## 3. 瀹夎 .vsix
+## 3. 安装 .vsix
 
-**鍛戒护琛屽畨瑁咃細**
+**命令行安装：**
 
 ```bash
 code --install-extension feature/clients/vscode/dsl-analyzer-lsp-<version>.vsix
 ```
 
-**GUI 瀹夎锛?* VS Code 鈫?鎵╁睍闈㈡澘 鈫?鈰?鈫?"浠?VSIX 瀹夎鈥? 鈫?閫夋嫨 `.vsix`銆?
-瀹夎鍚?reload 绐楀彛锛坄Ctrl+Shift+P` 鈫?`Developer: Reload Window`锛夈€?
+**GUI 安装：** VS Code → 扩展面板 → ⋯ → "从 VSIX 安装…" → 选择 `.vsix`。
+
+安装后 reload 窗口（`Ctrl+Shift+P` → `Developer: Reload Window`）。
+
 ---
 
-## 4. 閰嶇疆
+## 4. 配置
 
-鎵撳紑 `settings.json`锛坄Ctrl+Shift+P` 鈫?`Preferences: Open Settings (JSON)`锛夈€?
-### 4.1 server 璺緞
+打开 `settings.json`（`Ctrl+Shift+P` → `Preferences: Open Settings (JSON)`）。
 
-`.vsix` 宸插唴缃?server jar锛?*榛樿鏃犻渶閰嶇疆**銆傚闇€鎸囧悜鑷鏋勫缓/鐗堟湰鐨?jar锛岃鐩栵細
+### 4.1 server 路径
+
+`.vsix` 已内置 server jar，**默认无需配置**。如需指向自行构建/版本的 jar，覆盖：
 
 ```json
 {
@@ -60,20 +77,24 @@ code --install-extension feature/clients/vscode/dsl-analyzer-lsp-<version>.vsix
 }
 ```
 
-| 璁剧疆 | 榛樿 | 璇存槑 |
+| 设置 | 默认 | 说明 |
 |---|---|---|
-| `dsl-analyzer-lsp.server.path` | `""` | server jar 缁濆璺緞銆傜暀绌烘椂鍥為€€鍒版墿灞曞唴缃?`server/dsl-analyzer-lsp.jar`锛涢兘涓嶅瓨鍦ㄥ垯鎵╁睍涓嶆縺娲诲苟鍛婅銆?|
-| `dsl-analyzer-lsp.server.javaPath` | `"java"` | 鍚姩 server 鐢ㄧ殑 Java 17+ 鍙墽琛屾枃浠躲€?|
+| `dsl-analyzer-lsp.server.path` | `""` | server jar 绝对路径。留空时回退到扩展内置 `server/dsl-analyzer-lsp.jar`；都不存在则扩展不激活并告警。 |
+| `dsl-analyzer-lsp.server.javaPath` | `"java"` | 启动 server 用的 Java 17+ 可执行文件。 |
 
-### 4.2 鏂囦欢鍖归厤
+### 4.2 文件匹配
 
-鎵╁睍鍙负 DSL 鏂囦欢婵€娲伙紙涓?IntelliJ 鎻掍欢鏂囦欢绫诲瀷涓€鑷达級锛?
+扩展只为 DSL 文件激活（与 IntelliJ 插件文件类型一致）：
+
 - `**/script.xml`
 - `**/script_*.xml`
 
-涓?`language` 涓?`xml`锛圴S Code 鍐呯疆 XML TextMate 璇硶鎻愪緵缁撴瀯楂樹寒锛泂erver 鍐嶅彔鍔?`textDocument/semanticTokens` 楂樹寒宓屽叆琛ㄨ揪寮忥紝瑙?`feature/lsp/docs/IMPLEMENTATION.md`锛夈€?
-### 4.3 妫€鏌ラ厤缃紙InspectionConfig锛?
-`dsl-analyzer.config` 瀵硅薄鍦?`initialize` 鏃朵綔涓?`initializationOptions` 浼犵粰 server锛屽苟鍦?`workspace/didChangeConfiguration` 鏃剁儹閲嶈浇锛坰erver 绔嬪嵆閲嶅寘瑁呰鍒欏簱骞堕噸鍒嗘瀽鎵€鏈夋墦寮€鐨勬枃妗ｏ級銆?
+且 `language` 为 `xml`（VS Code 内置 XML TextMate 语法提供结构高亮；server 再叠加 `textDocument/semanticTokens` 高亮嵌入表达式，见 `feature/lsp/docs/IMPLEMENTATION.md`）。
+
+### 4.3 检查配置（InspectionConfig）
+
+`dsl-analyzer.config` 对象在 `initialize` 时作为 `initializationOptions` 传给 server，并在 `workspace/didChangeConfiguration` 时热重载（server 立即重包装规则库并重分析所有打开的文档）。
+
 ```json
 {
   "dsl-analyzer.config": {
@@ -85,51 +106,63 @@ code --install-extension feature/clients/vscode/dsl-analyzer-lsp-<version>.vsix
 }
 ```
 
-| 瀛楁 | 璇存槑 |
+| 字段 | 说明 |
 |---|---|
-| `rootElementNames` | 瑕嗙洊琚涓?DSL 鏍瑰厓绱犵殑鏍囩闆嗗悎锛堝奖鍝嶆枃浠惰瘑鍒級銆?|
-| `enabledRuleIds` | 闈炵┖鏃朵粎杩欎簺瑙勫垯鐢熸晥銆備笌 `disabledRuleIds` 浜掓枼銆?|
-| `disabledRuleIds` | 鎶戝埗杩欎簺瑙勫垯銆?|
-| `severityOverrides` | `ruleId -> "error" \| "warning" \| "info"`锛岃鐩栬鍒欓粯璁や弗閲嶇骇銆?|
+| `rootElementNames` | 覆盖被视为 DSL 根元素的标签集合（影响文件识别）。 |
+| `enabledRuleIds` | 非空时仅这些规则生效。与 `disabledRuleIds` 互斥。 |
+| `disabledRuleIds` | 抑制这些规则。 |
+| `severityOverrides` | `ruleId -> "error" | "warning" | "info"`，覆盖规则默认严重级。 |
 
-淇敼鍚庝繚瀛?`settings.json` 鍗宠Е鍙戠儹閲嶈浇锛屾棤闇€閲嶅惎銆?
-> 涔熷彲鐢?`--config <path>` 鏂囦欢鏂瑰紡鍚姩 server锛圕LI 鍦烘櫙锛夛紝JSON 褰㈢姸鐩稿悓锛岃 `feature/lsp/README.md`銆?
+修改后保存 `settings.json` 即触发热重载，无需重启。
+
+> 也可用 `--config <path>` 文件方式启动 server（CLI 场景），JSON 形状相同，见 `feature/lsp/README.md`。
+
 ---
 
-## 5. 鎻愪緵鐨勮瑷€鐗规€?
-| LSP 鏂规硶 | VS Code 琛ㄧ幇 |
+## 5. 提供的语言特性
+
+| LSP 方法 | VS Code 表现 |
 |---|---|
-| `textDocument/publishDiagnostics` | "闂"闈㈡澘涓庣紪杈戝櫒鍐呮尝娴嚎銆?|
-| `textDocument/completion` | 琛ュ叏鍒楄〃锛氬厓绱犲悕锛坄Class` 鍥炬爣锛宒etail=category锛夈€佸睘鎬у悕锛坄Field`/`Property`锛岄€変腑鎻掑叆 `attr=""` 骞舵妸鍏夋爣鏀惧紩鍙峰唴锛夈€乪num 灞炴€у€硷紙`EnumMember`锛夈€傝ˉ鍏ㄩ」鎼哄甫 `documentation`锛坢arkdown锛夛紝閫変腑鏃跺彸渚ф枃妗ｉ潰鏉挎樉绀恒€?|
-| `textDocument/hover` | hover 鍏冪礌鍚?灞炴€у悕/灞炴€у€兼椂鏄剧ず markdown 鏂囨。锛坈ategory / required / optional / allowed parents / inherits锛屾垨灞炴€?type / default / enum / aliases / expression锛夈€?|
-| `textDocument/codeAction` | 鍏夋爣鍦ㄨ瘖鏂笂鏃舵彁渚?QuickFix锛堥渶 server 绔敞鍐?`FixActionGenerator`锛岃 `feature/lsp/docs/IMPLEMENTATION.md` 搂codeAction锛夈€?|
-| `textDocument/semanticTokens` | 鍏ㄦ枃妗ｈ涔夐珮浜細鏍囩鍚?灞炴€у悕/娉ㄩ噴/澹版槑 + 宓屽叆琛ㄨ揪寮忓彉閲?鍑芥暟/瀛楅潰閲忋€傛爣鍑?token 绫诲瀷锛孷S Code 鑷姩鏄犲皠涓婚鑹层€?|
+| `textDocument/publishDiagnostics` | "问题"面板与编辑器内波浪线。 |
+| `textDocument/completion` | 补全列表：元素名（`Class` 图标，detail=category）、属性名（`Field`/`Property`，选中插入 `attr=""` 并把光标放引号内）、enum 属性值（`EnumMember`）。补全项携带 `documentation`（markdown），选中时右侧文档面板显示。 |
+| `textDocument/hover` | hover 元素名/属性名/属性值时显示 markdown 文档（category / required / optional / allowed parents / inherits，或属性 type / default / enum / aliases / expression）。 |
+| `textDocument/codeAction` | 光标在诊断上时提供 QuickFix（需 server 端注册 `FixActionGenerator`，见 `feature/lsp/docs/IMPLEMENTATION.md` §codeAction）。 |
+| `textDocument/semanticTokens` | 全文档语义高亮：标签名/属性名/注释/声明 + 嵌入表达式变量/函数/字面量。标准 token 类型，VS Code 自动映射主题色。 |
 
-> server 绔兘鍔涘０鏄庤 `DslLanguageServer.initialize`锛坄feature/lsp/src/main/java/.../DslLanguageServer.java`锛夈€?
+> server 端能力声明见 `DslLanguageServer.initialize`（`feature/lsp/src/main/java/.../DslLanguageServer.java`）。
+
 ---
 
-## 6. 鎺掗敊
+## 6. 排错
 
-- **鎵╁睍鏈縺娲?/ 鎻愮ず "no bundled server jar"**锛氱敤 `gradle :feature:lsp:buildVscodeExtension` 閲嶆柊鏋勫缓锛堝惈鍐呯疆 jar锛夛紝鎴栬缃?`dsl-analyzer-lsp.server.path` 鎸囧悜鏈夋晥 jar銆?- **璇婃柇涓嶅嚭鐜?*锛氱‘璁ゆ枃浠跺悕涓?`script.xml`/`script_*.xml` 涓旀牴鏍囩鏄?DSL 鏍瑰厓绱狅紙`Lockscreen`/`Widget`/`Wallpaper`/`LongTake`/`ChargingSkin`锛夈€俿erver 瀵归潪 DSL 鏂囦欢娓呯┖璇婃柇銆?- **hover/琛ュ叏鏂囨。鏃犳牸寮?*锛歴erver 浜у嚭 markdown锛沄S Code 鍘熺敓娓叉煋銆傝嫢鏄剧ず鍘熷 `###`/`**`锛岀‘璁?server jar 鏄渶鏂版瀯寤猴紙`buildLspFatJar` / `buildVscodeExtension` 宸查噸璺戯級銆?- **server 鏃ュ織**锛氭墿灞曠敤 `java -jar ... --stdio` 鍚姩 server 瀛愯繘绋嬶紱server stderr 涓嶇洿鎺ュ彲瑙併€傚彲鍦?`DslLspServerService`锛圛ntelliJ 绔級绛変环璺緞鍔犳棩蹇楋紝鎴栦复鏃剁敤 `--inspect` 璋冭瘯銆?- **杈撳嚭闈㈡澘**锛歏S Code "杈撳嚭" 鈫?閫?"DSL Analyzer" 鏌ョ湅瀹㈡埛绔晶鏃ュ織锛堝鏈厤缃彲鎸?`vscode-languageclient` 鏂囨。寮€鍚級銆?
+- **扩展未激活 / 提示 "no bundled server jar"**：用 `gradle :feature:lsp:buildVscodeExtension` 重新构建（含内置 jar），或设置 `dsl-analyzer-lsp.server.path` 指向有效 jar。
+- **诊断不出现**：确认文件名为 `script.xml`/`script_*.xml` 且根标签是 DSL 根元素（`Lockscreen`/`Widget`/`Wallpaper`/`LongTake`/`ChargingSkin`）。server 对非 DSL 文件清空诊断。
+- **hover/补全文档无格式**：server 产出 markdown；VS Code 原生渲染。若显示原始 `###`/`**`，确认 server jar 是最新构建（`buildLspFatJar` / `buildVscodeExtension` 已重跑）。
+- **server 日志**：扩展用 `java -jar ... --stdio` 启动 server 子进程；server stderr 不直接可见。可在 `DslLspServerService`（IntelliJ 端）等价路径加日志，或临时用 `--inspect` 调试。
+- **输出面板**：VS Code "输出" → 选 "DSL Analyzer" 查看客户端侧日志（如未配置可按 `vscode-languageclient` 文档开启）。
+
 ---
 
-## 7. 鐩綍缁撴瀯
+## 7. 目录结构
 
 ```
 feature/clients/vscode/
-鈹溾攢鈹€ .gitignore              # 蹇界暐 node_modules/ out/ server/ *.vsix
-鈹溾攢鈹€ .vscodeignore           # vsce 鎵撳寘鎺掗櫎椤癸紙src/銆?.ts銆乻ourcemap 绛夛級
-鈹溾攢鈹€ package.json            # 鎵╁睍娓呭崟銆佷緷璧栥€乶pm scripts銆乧ontributes.configuration
-鈹溾攢鈹€ package-lock.json       # 閿佸畾渚濊禆
-鈹溾攢鈹€ tsconfig.json
-鈹溾攢鈹€ src/extension.ts        # 瀹㈡埛绔細鍚姩 server銆佽浆鍙戦厤缃€乨ocumentSelector
-鈹斺攢鈹€ server/                 # 锛堟瀯寤轰骇鐗╋紝gitignored锛塨uildVscodeExtension 澶嶅埗鐨?fat jar
+├── .gitignore              # 忽略 node_modules/ out/ server/ *.vsix
+├── .vscodeignore           # vsce 打包排除项（src/、*.ts、sourcemap 等）
+├── package.json            # 扩展清单、依赖、npm scripts、contributes.configuration
+├── package-lock.json       # 锁定依赖
+├── tsconfig.json
+├── src/extension.ts        # 客户端：启动 server、转发配置、documentSelector
+└── server/                 # （构建产物，gitignored）buildVscodeExtension 复制的 fat jar
 ```
 
-鏋勫缓浜х墿锛?
-- `out/extension.js` 鈥?esbuild 鎵撳寘鐨勫鎴风鍏ュ彛銆?- `dsl-analyzer-lsp-<version>.vsix` 鈥?鍙畨瑁呯殑鎵╁睍鍖呫€?
+构建产物：
+
+- `out/extension.js` — esbuild 打包的客户端入口。
+- `dsl-analyzer-lsp-<version>.vsix` — 可安装的扩展包。
+
 ---
 
-## 8. 涓庡叾瀹冪紪杈戝櫒
+## 8. 与其它编辑器
 
-server 鏄€氱敤 LSP锛屽叾瀹冪紪杈戝櫒閰嶇疆瑙?`feature/lsp/README.md`锛圢eovim / coc.nvim / Helix锛夈€?
+server 是通用 LSP，其它编辑器配置见 `feature/lsp/README.md`（Neovim / coc.nvim / Helix）。
