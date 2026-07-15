@@ -37,4 +37,46 @@ prepareSandbox.doLast {
         from project(':feature:lsp').tasks.named('buildLspFatJar')
         into libDir
     }
+    // :feature:analysis is a dependency for the core engine, but it is ALSO
+    // main's native IntelliJ plugin module, so its jar carries a
+    // META-INF/plugin.xml (the native plugin descriptor) with the same id as
+    // this LSP client. IntelliJ scans lib/*.jar for plugin descriptors and
+    // would load the native one, shadowing this LSP client's plugin.xml.
+    // Repack analysis-*.jar without its own plugin descriptor / icon /
+    // color scheme so only this module's plugin.xml describes the plugin.
+    stripPluginDescriptor(libDir)
+}
+
+private void stripPluginDescriptor(File libDir) {
+    if (libDir == null || !libDir.isDirectory()) {
+        return
+    }
+    libDir.listFiles()?.findAll { it.name.startsWith('analysis-') && it.name.endsWith('.jar') }?.each { File jarFile ->
+        def tmp = new File(jarFile.parentFile, jarFile.name + '.tmp')
+        def zin = new java.util.zip.ZipFile(jarFile)
+        def zout = new java.util.zip.ZipOutputStream(tmp.newOutputStream())
+        try {
+            def entry = zin.entries()
+            while (entry.hasMoreElements()) {
+                def e = entry.nextElement()
+                def n = e.name
+                if (n == 'META-INF/plugin.xml'
+                        || n == 'META-INF/pluginIcon.svg'
+                        || n.startsWith('META-INF/pluginIcon.svg.')
+                        || n.startsWith('colorSchemes/')) {
+                    continue
+                }
+                zout.putNextEntry(new java.util.zip.ZipEntry(e.name))
+                if (!e.directory) {
+                    zout.write(zin.getInputStream(e).bytes)
+                }
+                zout.closeEntry()
+            }
+        } finally {
+            zout.close()
+            zin.close()
+        }
+        jarFile.delete()
+        tmp.renameTo(jarFile)
+    }
 }
