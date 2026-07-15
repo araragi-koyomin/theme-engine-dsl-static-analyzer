@@ -53,7 +53,8 @@ L4 子进程   → src/test/java/.../core/e2e/FatJarSubprocessE2ETest.java
 
 ```
 main (稳定,全量门禁绿)
-  ├── feature/<name> (开发分支,基于 main)
+  ├── fix/<name> (缺陷修复分支,基于 main)
+  ├── feature/<name> (功能开发分支,基于 main)
   │   └── PR → reviewer → merge to main
   └── feature/doc-restructure (文档专用分支)
 ```

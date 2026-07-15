@@ -1,6 +1,6 @@
 ---
 name: doc-management
-description: Use when creating, moving, archiving, or adding frontmatter to documentation files under docs/. Not for source code or build configuration.
+description: Use when creating, moving, archiving, or adding frontmatter to documentation files under docs/, or when updating BACKLOG.md to reflect new work items, bugs, branches, or module status changes. Not for source code or build configuration.
 ---
 
 # Document Management
@@ -35,14 +35,32 @@ created: 2026-07-15
 - 设计被采纳并实现 → 归档（活文档如 Architecture.md 保留）
 - **归档 ≠ 删除**
 
+## BACKLOG 维护规则
+
+BACKLOG.md 是项目状态热层索引。以下事件**必须同步更新 BACKLOG**，不可遗漏：
+
+| 触发事件 | 更新动作 |
+|---|---|
+| 新建 `FIX00N`/`FEAT00N` spec 目录 | 缺陷修复追踪/开发阶段表加条目（编号、名称、status=in-progress、分支、入口链接） |
+| 发现新 bug/缺陷（即使尚未开始修） | 缺陷修复追踪表加条目（status=pending），标注来源（审计报告/用户报告/代码 review） |
+| 创建开发分支 | 活跃分支表加条目 |
+| 模块状态变化（done→in-progress 等） | 模块状态表更新 status + evidence |
+| FIX/FEAT 完成并 merge to main | 条目 status 改 done → spec 目录归档 → 条目移除（热层只放活跃项） |
+| SDD 阶段切换（PHASE 1→2→…→6） | 条目 status 标注当前 PHASE（如 `in-progress (PHASE 5)`） |
+
+> **session 启动检查**：每次开发 session 开始时，先读 BACKLOG.md 了解当前项目状态（模块/阶段/活跃分支/缺陷追踪），再开始工作。
+
 ## 命名规范
 
 | 类型 | 格式 | 示例 |
 |---|---|---|
 | 模块文档 | `MX-Name.md` | `M3-SyntaxAnalysis.md` |
 | 计划 | `YYYY-MM-DD-slug.md` | `2026-07-14-p0-bugfix-plan.md` |
-| SDD Phase | `phaseN-title.md` | `phase2-spec.md` |
+| SDD 规格目录 | `FIX00N-slug`（缺陷修复）/ `FEAT00N-slug`（功能开发） | `FIX002-undefined-str-ref`、`FEAT003-custom-rule` |
+| SDD Phase | `phaseN-title.md`（置于规格目录内） | `phase2-spec.md` |
 | 报告 | `slug.md` | `dev-summary-2026-07-14.md` |
+
+> **SDD 规格目录编号规则**：`FIX`/`FEAT` 后接三位顺序号（001, 002, …），全仓库递增、不回收。既有的 `p0-bugfix` 目录视为 FIX001（早于本约定）。目录名即 SDD 一组六阶段工作的命名空间，其下放 `phase1-requirements.md` … `phase6-validation.md`。
 
 ## 自动化守护
 
