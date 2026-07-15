@@ -1,0 +1,11 @@
+{
+  "fixture": "syntax_only_test.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 2, "warnings": 1, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SYN-003", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SYN-004", "severity": "warning", "approxLine": 7, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-001", "severity": "error", "approxLine": 4, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": []
+}

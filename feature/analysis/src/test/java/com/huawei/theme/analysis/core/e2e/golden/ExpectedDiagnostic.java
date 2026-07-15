@@ -1,5 +1,7 @@
 package com.huawei.theme.analysis.core.e2e.golden;
 
+import java.util.List;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -15,4 +17,5 @@ public class ExpectedDiagnostic {
     private int approxLine;
     private int lineTolerance;
     private String description;
+    private List<String> expectedFixes;
 }

@@ -119,10 +119,6 @@ public class ExpressionSyntaxChecker {
                 if (countChar(rawValue, '\'') > 2 && rawValue.indexOf('+') < 0) {
                     diagnostics.add(diag("SYN-EXPR-004", DiagnosticSeverity.ERROR,
                             "嵌套单引号未转义: " + rawValue, filePath, attr));
-                } else if ("number".equals(expressionKind)) {
-                    diagnostics.add(diag("SEM-TYPE-003", DiagnosticSeverity.ERROR,
-                            "属性值类型错误: " + attr.getName() + " 期望 number, 实际包含字符串字面量 "
-                                    + rawValue, filePath, attr));
                 } else {
                     diagnostics.add(diag("SYN-EXPR-ANTLR", DiagnosticSeverity.ERROR,
                             "表达式语法错误: " + rawValue, filePath, attr));

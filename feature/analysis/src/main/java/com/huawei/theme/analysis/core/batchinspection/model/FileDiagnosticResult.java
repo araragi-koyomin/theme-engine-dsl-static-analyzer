@@ -14,4 +14,6 @@ public class FileDiagnosticResult {
     String filePath;
     List<Diagnostic> diagnostics;
     List<FixAction> fixActions;
+    @Builder.Default
+    boolean hasInternalError = false;
 }

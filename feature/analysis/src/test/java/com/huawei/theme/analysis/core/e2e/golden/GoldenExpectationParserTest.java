@@ -117,4 +117,49 @@ class GoldenExpectationParserTest {
 
         assertEquals(2, exp.getExpectedDiagnostics().get(0).getLineTolerance());
     }
+
+    @Test
+    void parse_expectedFixes_populatesField() throws Exception {
+        String json = """
+                {
+                  "fixture": "x.xml",
+                  "expectedExitCode": 1,
+                  "expectedCounts": { "errors": 1, "warnings": 0, "info": 0 },
+                  "expectedDiagnostics": [
+                    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 5, "lineTolerance": 2,
+                      "expectedFixes": ["replace alpha=300 with alpha=255", "remove attribute"] }
+                  ]
+                }
+                """;
+        Path goldenFile = writeGolden(json);
+        GoldenExpectationParser parser = new GoldenExpectationParser();
+
+        GoldenExpectation exp = parser.parse(goldenFile);
+
+        List<String> fixes = exp.getExpectedDiagnostics().get(0).getExpectedFixes();
+        assertNotNull(fixes);
+        assertEquals(2, fixes.size());
+        assertEquals("replace alpha=300 with alpha=255", fixes.get(0));
+        assertEquals("remove attribute", fixes.get(1));
+    }
+
+    @Test
+    void parse_missingExpectedFixes_staysNull() throws Exception {
+        String json = """
+                {
+                  "fixture": "x.xml",
+                  "expectedExitCode": 1,
+                  "expectedCounts": { "errors": 1, "warnings": 0, "info": 0 },
+                  "expectedDiagnostics": [
+                    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 }
+                  ]
+                }
+                """;
+        Path goldenFile = writeGolden(json);
+        GoldenExpectationParser parser = new GoldenExpectationParser();
+
+        GoldenExpectation exp = parser.parse(goldenFile);
+
+        assertNull(exp.getExpectedDiagnostics().get(0).getExpectedFixes());
+    }
 }

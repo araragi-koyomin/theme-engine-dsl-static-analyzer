@@ -97,6 +97,13 @@ public class TypeAnalyzer implements DslAnalyzer {
         }
         SymbolTable symbolTable = context.getSymbolTable();
         DslType inferred = engine.inferType(exprNode, expectedType, symbolTable);
+        if (context.getVerboseCollector() != null) {
+            context.getVerboseCollector().recordTypeInference(
+                    elementNode.getTagName() + "." + attr.getName(),
+                    inferred != null ? inferred.getName() : "unknown",
+                    expectedType.getName(),
+                    inferred != null && TypeInferenceEngine.typeEquals(inferred, expectedType));
+        }
         if (inferred != null && !TypeInferenceEngine.typeEquals(inferred, expectedType)) {
             if (expectedType instanceof DslStringType && inferred instanceof DslNumberType) {
             } else {
@@ -263,6 +270,14 @@ public class TypeAnalyzer implements DslAnalyzer {
         checkVarConstRefs(elementNode, exprNode, symbolTable, context, diagnostics);
 
         DslType exprType = inferExpressionType(exprNode, symbolTable, functionLibrary);
+        if (context.getVerboseCollector() != null) {
+            String varName = getAttrValue(elementNode, "name");
+            context.getVerboseCollector().recordTypeInference(
+                    "Var." + (varName != null ? varName : "?") + ".expression",
+                    exprType != null ? exprType.getName() : "unknown",
+                    varType.getName(),
+                    exprType != null && TypeInferenceEngine.typeEquals(exprType, varType));
+        }
         if (exprType != null && !TypeInferenceEngine.typeEquals(exprType, varType)) {
             if (isSimpleLiteralExpression(exprNode)) {
                 diagnostics.add(buildSimpleLiteralTypeMismatchDiagnostic(

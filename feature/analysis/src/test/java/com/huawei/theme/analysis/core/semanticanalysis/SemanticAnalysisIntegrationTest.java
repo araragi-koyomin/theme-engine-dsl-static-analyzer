@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import com.huawei.theme.analysis.core.cli.InspectionConfig;
+import com.huawei.theme.analysis.core.cli.PipelineMode;
 import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.function.JsonFunctionSignatureLoader;
 import com.huawei.theme.analysis.core.rulelibrary.JsonRuleLoader;
@@ -44,7 +46,8 @@ class SemanticAnalysisIntegrationTest {
 
     private List<Diagnostic> analyze(String xml) {
         DslFileNode ast = astProvider.getDslAst("test.xml", xml);
-        return provider.analyze(ast, ruleRepo, symbolTableBuilder);
+        return provider.analyze(ast, ruleRepo, symbolTableBuilder,
+                PipelineMode.FULL, InspectionConfig.builder().build(), null);
     }
 
     private List<Diagnostic> analyzeResource(String resourcePath) throws Exception {
