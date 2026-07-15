@@ -2,7 +2,7 @@
 module_ids: [M4]
 phase: P0
 doc_kind: report
-status: active
+status: archived
 created: 2026-07-15
 ---
 # FIX002 — PHASE 6 一致性验证

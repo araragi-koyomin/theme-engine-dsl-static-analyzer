@@ -92,3 +92,12 @@ created: 2026-07-15
 - 修复：逐项修正——影响表改"声明 Var"、`@ishour12` 标注预制全局、endColumn 16→19
 - 防护：PHASE 切换前自检产出物内部一致性；检索引用时必须对照 `global_vars.json`；字符串长度用 `len()` 而非心算；subagent 冷启动 review 兜底
 - 来源锚点：FIX002 phase1 §3, phase4 Task 2, 用户指出 `@ishour12` 是预制全局
+
+### LL-010: squash merge 规约未在 GitHub 强制
+- 状态：validated
+- 坑：SOP §2.3 写了 squash merge 规约，但 GitHub PR 默认 "Create a merge commit" 按钮（绿按钮），用户点绿按钮直接 merge 了 9 个 commit 而非 1 个 squash commit
+- 根因：规约写在文档但未在 GitHub 仓库设置中强制（branch protection / merge strategy）
+- 触发条件：SDD 规约定义了合入策略但未在工具层面强制
+- 修复：main 已 merge（不回退历史改写风险大），后续 PR 需用户手动选 "Squash and merge" 下拉
+- 防护：GitHub 仓库 Settings → General → Pull Request merges 关闭 "Allow merge commits" 只留 "Allow squash merging"；或 branch protection rule 要求 squash
+- 来源锚点：FIX002 PR #88, SOP §2.3 step 5

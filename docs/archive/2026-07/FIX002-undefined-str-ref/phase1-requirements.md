@@ -2,7 +2,7 @@
 module_ids: [M4]
 phase: P0
 doc_kind: spec
-status: active
+status: archived
 created: 2026-07-15
 ---
 # 未定义 String 变量引用不报错 + main 编译断裂 — PHASE 1 需求澄清
