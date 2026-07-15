@@ -92,225 +92,34 @@
 
 ---
 
-## 文档管理
+## 关键约束（必须遵守）
 
-### 三层记忆架构
+### Gradle Daemon 约束
 
-| 层 | 位置 | 内容 | 规则 |
-|---|---|---|---|
-| **热层** | `docs/BACKLOG.md` | 模块状态(M0-M8) + 阶段状态(P0-P3) + 文档待办 | 只放活跃项,完成后移除 |
-| **温层** | `docs/architecture/` + `docs/development/` | 模块深度文档 + SDD 文档 + 开发报告 | 活跃文档,有 frontmatter |
-| **冷层** | `docs/archive/YYYY-MM/` | 已完成的计划/规格/设计文档 | 归档≠删除,镜像源目录结构 |
+- **所有 `./gradlew` 命令必须加 `--no-daemon` 参数**。Daemon 不退出会导致进程卡死。
+- **所有 Bash 命令必须设置时限**：普通任务 30 秒上限；构建/打包 120 秒上限。
+- 上述规则同样适用于 subagent 内执行的命令。
 
-### Frontmatter 规范
+### Bash 管道禁令
 
-所有 `docs/**/*.md` 文件（`archive/` 和 `themes_engine_next/` 豁免）必须有 YAML frontmatter：
+- **禁止在 Bash 命令中使用 PowerShell 管道过滤**（如 `| Select-String`、`| Where-Object`、`2>&1 | ...`）。会导致进程结束检测失败。
+- 如需搜索文件内容，使用 Grep 工具而非 Bash 管道。
 
-```yaml
+### 文档 Frontmatter
+
+- 所有 `docs/**/*.md` 文件（`archive/` 和 `themes_engine_next/` 豁免）必须有 YAML frontmatter（`module_ids` + `doc_kind` + `status` + `created`）。
+- 详见 `.opencode/skills/doc-management/SKILL.md`。
+
 ---
-module_ids: [M3, M4]        # 关联模块：M0-M8, PSI, CLI, CORE, E2E
-phase: P0                  # 关联阶段：P0/P1/P2/P3（无关联则省略）
-doc_kind: architecture     # architecture|spec|plan|report|guide|decision|note|template
-status: active             # active|stale|superseded|archived
-created: 2026-07-15
----
-```
 
-### 归档规则
+## 按需技能（Skills）
 
-- 计划执行完 → `docs/archive/YYYY-MM/`
-- 讨论收敛 → 归档
-- Bug 修好 → 归档
-- 设计被采纳并实现 → 归档（活文档如 Architecture.md 保留）
-- **归档 ≠ 删除**
+以下内容已提炼为 Skills，按需触发加载，不常驻上下文：
 
-### 命名规范
-
-| 类型 | 格式 | 示例 |
+| Skill | 触发场景 | 位置 |
 |---|---|---|
-| 模块文档 | `MX-Name.md` | `M3-SyntaxAnalysis.md` |
-| 计划 | `YYYY-MM-DD-slug.md` | `2026-07-14-p0-bugfix-plan.md` |
-| SDD Phase | `phaseN-title.md` | `phase2-spec.md` |
-| 报告 | `slug.md` | `dev-summary-2026-07-14.md` |
+| `java-code-style` | 写/改/审 Java 代码时 | `.opencode/skills/java-code-style/SKILL.md` |
+| `gradle-build-test` | 跑 Gradle 构建/测试/E2E 门禁时 | `.opencode/skills/gradle-build-test/SKILL.md` |
+| `doc-management` | 创建/移动/归档/加 frontmatter 文档时 | `.opencode/skills/doc-management/SKILL.md` |
 
-### 自动化守护
-
-```bash
-bash scripts/check-frontmatter.sh      # 检查所有 .md 有 frontmatter
-bash scripts/check-doc-dir-size.sh      # 活跃目录 >15 文件 warn, >25 error
-```
-
-### 文档模板
-
-新建文档时参考 `docs/knowledge/doc-templates.md`。
-
----
-
-## 环境要求
-
-- Java 17
-- Gradle 8.2
-- gradle-intellij-plugin 1.13.3
-
-## 基本构建
-
-```bash
-./gradlew clean build          # 构建整个项目（跳过测试）
-./gradlew :modulename:build    # 构建特定模块
-./gradlew clean                # 清理构建产物
-./gradlew :feature:lsp:buildLspFatJar        # 仅构建 LSP server fat jar
-./gradlew :feature:clients:intellij:buildPlugin  # 构建 IntelliJ LSP 客户端插件 zip（:feature:analysis 为纯 core 引擎）
-./gradlew :feature:lsp:buildVscodeExtension  # 构建 VS Code 客户端 .vsix（含 server jar，需 Node/npm）
-```
-
-> `:feature:lsp:buildVscodeExtension` 不在默认 `build` 内（依赖 Node/npm）；构建、安装、配置见 `feature/clients/vscode/README.md`。
-
-## 测试命令
-
-```bash
-./gradlew --no-daemon test                                          # 运行所有测试
-./gradlew --no-daemon :modulename:test                              # 运行特定模块测试
-./gradlew --no-daemon :modulename:test --tests "ClassName"          # 运行单个测试类
-./gradlew --no-daemon :modulename:test --tests "ClassName.method"   # 运行单个测试方法
-```
-
-## E2E 分层测试与 CI 门禁
-
-### 分层测试体系
-
-| 层 | 命令 | 用途 | 门禁 |
-|---|---|---|---|
-| L1-L3 单元/管线/In-Process Golden | `./gradlew --no-daemon :feature:analysis:test` | 单元测试 + L3 golden 匹配（ruleId+severity+count 严格，行号 ±2 近似） | 本地/CI 阻断 |
-| Core 隔离检查 | `./gradlew --no-daemon :feature:analysis:checkCoreIntellijDependency` | core 无 com.intellij import | CI 阻断 |
-| Fat jar 装配 | `./gradlew --no-daemon :feature:analysis:buildFatJar` | 打包 core+GSON+ANTLR fat jar | CI 阻断 |
-| L4 真实子进程 E2E | `./gradlew --no-daemon :feature:analysis:e2e` | `java -jar` 子进程 + golden 匹配（positionAgnostic 模式：仅校验 ruleId+severity+count） | CI 阻断 |
-
-### CI 门禁总和命令
-
-```bash
-./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e
-```
-
-全绿方可合并。
-
-**本地快速开发**可只跑 `./gradlew --no-daemon :feature:analysis:test`——此命令仅跑 L1-L3 单元/golden 测试,**不含 L4 fat jar 子进程测试**(L4 需 `:feature:analysis:e2e` 单独触发,L4 测试在 `test` task 中被 Assumption 跳过)。
-
-### Golden 文件维护
-
-- 每个 `fixtures/**/*.xml` 和 `dsl/**/*.xml` 必须有同名 `.expected.json`（由 `FixtureCoverageTest` 强制）
-- 新增 fixture：同时写 `.xml` 与 `.expected.json`
-- 策略变更导致诊断变化：同步更新对应 `.expected.json`，commit message 说明变更原因
-- golden 匹配策略：L3 = ruleId+severity+count 严格 + 行号 ±2 近似 + mustNotTrigger；L4 = positionAgnostic（仅 ruleId+severity+count，因 fat jar JRE StAX 与 in-process IntelliJ StAX 行号语义不同）
-- Golden 文件格式与 CLI `--format json` 输出同构，可用 `GoldenDumper` 工具生成草稿后人工复核
-
-## Bash 命令约束
-
-- **禁止在 Bash 命令中使用 PowerShell 管道过滤**（如 `| Select-String`、`| Where-Object`、`2>&1 | ...`）。这类管道会导致进程结束检测失败，造成无限等待。
-- 如需搜索文件内容，使用 Grep 工具而非 Bash 管道；如需过滤输出，使用 Grep 工具的 include/path 参数。
-
-### Gradle Daemon 约束（关键）
-
-- **所有 `./gradlew` 命令必须加 `--no-daemon` 参数**。Gradle 默认启用 Daemon 守护进程，构建结束后 Daemon 不退出，`gradlew` 进程会一直等待它关闭，导致永远收不到结束信号、进程卡死。
-- 示例：`./gradlew --no-daemon :feature:analysis:test --tests "ClassName"`
-- **所有 Bash 命令必须设置时限**：普通任务（不涉及 plugin 层、antlr-intellij-adaptor、jar 构建）设 30 秒上限；构建/打包任务设 120 秒上限。一旦超时自动终止进程，避免卡死。
-- 上述规则同样适用于 subagent 内执行的命令——subagent 无法自主判断 Gradle 是否卡死，必须靠 timeout 兜底。
-
-## 代码风格指南
-
-### 4.1 命名约定
-
-- 类名：大驼峰（`DslElementRule`）
-- 方法名：小驼峰（`getElementRule`）
-- 常量：UPPER_SNAKE_CASE（`MAX_RETRY_COUNT`）
-- 变量：小驼峰（`elementName`）
-- 包名：全小写（`com.example.dsl.rule`）
-
-### 4.2 导入顺序
-
-1. `java.*` 标准库
-2. `javax.*` 扩展库
-3. 第三方库（如 `com.google.gson.*`）
-4. IntelliJ Platform API（如 `com.intellij.openapi.*`）
-5. 项目内部包
-
-每组之间用空行分隔，组内按字母顺序排列。
-
-### 4.3 类型使用
-
-- 优先使用接口类型（`List<>` 而非 `ArrayList<>`）
-- 使用 `Optional<T>` 处理可能为 null 的值
-- 使用 `CompletableFuture<T>` 进行异步操作
-- 使用 `@Data` 或 `@Builder` 注解简化 POJO（Lombok）
-
-### 4.4 错误处理
-
-- 使用 try-catch 捕获异常，并通过 `LogUtil` 记录错误
-- 工具类方法在异常时返回默认值或 null（如 `StringUtils.parseInt`）
-- 不抛出受检异常，使用运行时异常
-- 在 catch 块中记录完整的异常信息
-
-### 4.5 日志规范
-
-使用 `LogUtil` 记录日志，日志级别：`d()` 调试信息、`i()` 一般信息、`w()` 警告信息、`e()` 错误信息。要求日志格式简洁描述、包含关键参数。
-
-```java
-private static final LogUtil LOGGER = LogUtil.getInstance(InstallThemeTask.class);
-LOGGER.d("安装结构: " + e.getMessage());
-```
-
-### 4.6 代码组织
-
-- 工具类：静态方法，私有构造函数
-- 任务类：继承 `CompletableFuture<T, U>`，实现 `run()` 方法
-- 常量类：所有字段为 `public static final`
-- 内部类：使用 `private static class` 封装相关逻辑
-
-### 4.7 格式规范
-
-- 缩进：4 空格
-- 大括号：左括号不换行
-- 行宽：不超过 120 字符
-- 方法之间、逻辑块之间使用空行分隔
-
-### 4.8 异步任务模式
-
-所有异步任务继承 `CompletableFuture<T, U>`：
-
-```java
-public class MyTask extends CompletableFuture<Integer, TaskArgs<MyData>> {
-    private static final LogUtil LOGGER = LogUtil.getInstance(MyTask.class);
-
-    @Override
-    protected CompletableFuture<Integer> run(TaskArgs<MyData> taskArgs) {
-        // 实现任务逻辑
-        return CompletableFuture.completedFuture(result);
-    }
-}
-```
-
-### 4.9 事件驱动模式
-
-使用 `Dispatcher` 进行组件间通信：
-
-```java
-// 发送事件
-Dispatcher.instance().send(EventId.MY_EVENT, data);
-
-// 注册事件处理器
-Dispatcher.instance().register(EventId.MY_EVENT, (event) -> {
-    // 处理事件
-});
-```
-
-### 4.10 文件操作
-
-- 使用 `FileUtil` 进行文件操作
-- 路径使用 `\\` 或 `Paths.get()`
-- 始终使用 UTF-8 编码
-- 使用 try-with-resources 管理流
-
-### 4.11 字符串处理
-
-- 使用 `StringUtils` 进行字符串操作
-- 使用 `isEmpty()` 检查空字符串
-- 使用 `equals()` 进行安全比较
+**环境要求**: Java 17, Gradle 8.2, gradle-intellij-plugin 1.13.3。
