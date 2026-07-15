@@ -1,0 +1,42 @@
+<idea-plugin>
+    <id>com.huawei.theme.analysis</id>
+    <name>ThemeDevStudio Analysis</name>
+    <vendor email="support@huawei.com" url="https://www.huawei.com">Huawei</vendor>
+
+    <description><![CDATA[
+    DSL static analysis tool for Huawei Theme Engine.<br>
+    IntelliJ-side LSP client: launches the standalone DSL analyzer LSP server
+    (feature:lsp) and renders diagnostics / completion / hover from the
+    server, replacing the previous native PSI implementation.
+  ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.xml</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType name="ThemeDSL"
+                  implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslFileType"
+                  fieldName="INSTANCE"
+                  language="ThemeDSL"
+                  fileNames="script.xml"
+                  patterns="script_*.xml"/>
+
+        <lang.parserDefinition language="ThemeDSL"
+                               implementationClass="com.huawei.theme.analysis.plugin.editor.ThemeDslParserDefinition"/>
+
+        <completion.contributor language="ThemeDSL"
+                                implementationClass="com.huawei.theme.analysis.plugin.lsp.ThemeDslLspCompletionContributor"/>
+
+        <annotator language="ThemeDSL"
+                   implementationClass="com.huawei.theme.analysis.plugin.lsp.ThemeDslLspAnnotator"/>
+
+        <lang.documentationProvider language="ThemeDSL"
+                                     implementationClass="com.huawei.theme.analysis.plugin.lsp.ThemeDslLspHoverProvider"/>
+
+        <projectService serviceImplementation="com.huawei.theme.analysis.plugin.lsp.DslLspServerService"/>
+
+        <psi.referenceContributor implementation="com.huawei.theme.analysis.plugin.lsp.ThemeDslVarReferenceContributor"/>
+
+        <postStartupActivity implementation="com.huawei.theme.analysis.plugin.lsp.DslLspStartupActivity"/>
+    </extensions>
+</idea-plugin>

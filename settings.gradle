@@ -1,4 +1,6 @@
 rootProject.name = 'ThemeDevStudioForIntellij'
 include "common:base"
 include "feature:analysis"
+include "feature:lsp"
+include "feature:clients:intellij"
 include 'antlr4-intellij-adaptor'

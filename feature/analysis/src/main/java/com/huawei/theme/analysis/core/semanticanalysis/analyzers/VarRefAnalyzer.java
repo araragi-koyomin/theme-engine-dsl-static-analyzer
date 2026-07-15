@@ -307,13 +307,21 @@ public class VarRefAnalyzer implements DslAnalyzer {
         String refText = ref.getPrefix() != null ? ref.getPrefix() + ref.getVariableName() : ref.getVariableName();
         int line = ref.getLine();
         int column = ref.getColumn();
-        int endLine = ref.getEndLine();
-        int endColumn = ref.getEndColumn();
+        int endLine;
+        int endColumn;
         if (line == 0 && column == 0) {
             line = hostNode.getLine();
             column = hostNode.getColumn();
             endLine = hostNode.getEndLine();
             endColumn = hostNode.getEndColumn();
+        } else {
+            // ExpressionNode ranges are point ranges (SourceRange.point);
+            // extend the end by the reference text length so the diagnostic
+            // highlights the actual reference (e.g. "#nonexistent") instead of
+            // collapsing to zero-width, which LSP clients cannot underline and
+            // the IntelliJ annotator would drop.
+            endLine = line;
+            endColumn = column + refText.length();
         }
         return Diagnostic.builder()
                 .severity(DiagnosticSeverity.ERROR)
@@ -330,17 +338,21 @@ public class VarRefAnalyzer implements DslAnalyzer {
     }
 
     private Diagnostic buildUndefinedElementRefDiagnostic(ExpressionNode ref, String elementName,
-                                                          DslElementNode hostNode, DslContext context) {
-        String docUrl = resolveDocUrl(context, RULE_REF_001);
+                                                           DslElementNode hostNode, DslContext context) {
+        String docUrl = resolveDocUrl(context, RULE_REF_002);
+        String refText = ref.getPrefix() != null ? ref.getPrefix() + ref.getVariableName() : ref.getVariableName();
         int line = ref.getLine();
         int column = ref.getColumn();
-        int endLine = ref.getEndLine();
-        int endColumn = ref.getEndColumn();
+        int endLine;
+        int endColumn;
         if (line == 0 && column == 0) {
             line = hostNode.getLine();
             column = hostNode.getColumn();
             endLine = hostNode.getEndLine();
             endColumn = hostNode.getEndColumn();
+        } else {
+            endLine = line;
+            endColumn = column + refText.length();
         }
         String refText = ref.getPrefix() != null ? ref.getPrefix() + elementName : elementName;
         return Diagnostic.builder()
