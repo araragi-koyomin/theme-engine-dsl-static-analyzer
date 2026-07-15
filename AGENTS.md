@@ -191,7 +191,9 @@ bash scripts/check-doc-dir-size.sh      # 活跃目录 >15 文件 warn, >25 erro
 ./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e
 ```
 
-全绿方可合并。本地快速开发可只跑 `./gradlew --no-daemon :feature:analysis:test`（不含 fat jar 子进程）。
+全绿方可合并。
+
+**本地快速开发**可只跑 `./gradlew --no-daemon :feature:analysis:test`——此命令仅跑 L1-L3 单元/golden 测试,**不含 L4 fat jar 子进程测试**(L4 需 `:feature:analysis:e2e` 单独触发,L4 测试在 `test` task 中被 Assumption 跳过)。
 
 ### Golden 文件维护
 
