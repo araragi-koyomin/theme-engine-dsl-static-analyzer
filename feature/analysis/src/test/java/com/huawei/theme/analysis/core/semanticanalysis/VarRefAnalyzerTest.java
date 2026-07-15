@@ -322,6 +322,8 @@ class VarRefAnalyzerTest {
         assertEquals("test.xml", diag.getFilePath());
         assertEquals(15, diag.getLine());
         assertEquals(3, diag.getColumn());
+        assertEquals(15, diag.getEndLine());
+        assertEquals(19, diag.getEndColumn());
         assertEquals(1, diag.getSuggestedFixes().size());
         assertEquals("声明带 name=\"unlocker\" 的元素", diag.getSuggestedFixes().get(0).getText());
     }
