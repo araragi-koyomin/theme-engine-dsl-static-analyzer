@@ -3,27 +3,27 @@
   "expectedExitCode": 1,
   "expectedCounts": { "errors": 16, "warnings": 3, "info": 0 },
   "expectedDiagnostics": [
-    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 5, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
-    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
-    { "ruleId": "SEM-PERSIST-001", "severity": "error", "approxLine": 9, "lineTolerance": 2, "expectedFixes": ["移除persist/globalPersist/styleGlobalPersist属性"] },
-    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 11, "lineTolerance": 2 },
-    { "ruleId": "SEM-ATTR-005", "severity": "error", "approxLine": 12, "lineTolerance": 2, "expectedFixes": ["设置scaleType=center_crop"] },
-    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 12, "lineTolerance": 2, "expectedFixes": ["移除srcExp属性", "移除src属性"] },
-    { "ruleId": "SEM-IMG-003", "severity": "warning", "approxLine": 12, "lineTolerance": 2, "expectedFixes": ["移除align属性", "移除isBackground属性"] },
-    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 12, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
-    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 16, "lineTolerance": 2 },
-    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 19, "lineTolerance": 2 },
-    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 14, "lineTolerance": 2, "expectedFixes": ["声明 Var name=\"undefined_var\""] },
-    { "ruleId": "SEM-SWIPER-001", "severity": "error", "approxLine": 23, "lineTolerance": 2, "expectedFixes": ["将Swiper移至根标签下"] },
-    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 24, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 6, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 9, "lineTolerance": 2 },
+    { "ruleId": "SEM-PERSIST-001", "severity": "error", "approxLine": 10, "lineTolerance": 2, "expectedFixes": ["移除persist/globalPersist/styleGlobalPersist属性"] },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 12, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-005", "severity": "error", "approxLine": 13, "lineTolerance": 2, "expectedFixes": ["设置scaleType=center_crop"] },
+    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 13, "lineTolerance": 2, "expectedFixes": ["移除srcExp属性", "移除src属性"] },
+    { "ruleId": "SEM-IMG-003", "severity": "warning", "approxLine": 13, "lineTolerance": 2, "expectedFixes": ["移除align属性", "移除isBackground属性"] },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 13, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 17, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 20, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 15, "lineTolerance": 2, "expectedFixes": ["声明 Var name=\"undefined_var\""] },
+    { "ruleId": "SEM-SWIPER-001", "severity": "error", "approxLine": 24, "lineTolerance": 2, "expectedFixes": ["将Swiper移至根标签下"] },
     { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 25, "lineTolerance": 2 },
-    { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 26, "lineTolerance": 2, "expectedFixes": ["修改action值为合法枚举值"] },
-    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 35, "lineTolerance": 2 },
-    { "ruleId": "SYN-EXPR-ANTLR", "severity": "error", "approxLine": 13, "lineTolerance": 2 },
-    { "ruleId": "SYN-004", "severity": "warning", "approxLine": 23, "lineTolerance": 2 },
-    { "ruleId": "SYN-004", "severity": "warning", "approxLine": 35, "lineTolerance": 2 }
+    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 26, "lineTolerance": 2 },
+    { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 27, "lineTolerance": 2, "expectedFixes": ["修改action值为合法枚举值"] },
+    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 36, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-ANTLR", "severity": "error", "approxLine": 14, "lineTolerance": 2 },
+    { "ruleId": "SYN-004", "severity": "warning", "approxLine": 24, "lineTolerance": 2 },
+    { "ruleId": "SYN-004", "severity": "warning", "approxLine": 36, "lineTolerance": 2 }
   ],
   "mustNotTrigger": [
-    { "approxLine": 29, "reason": "level2_img valid Image with scaleType=fill" }
+    { "approxLine": 30, "reason": "level2_img valid Image with scaleType=fill" }
   ]
 }

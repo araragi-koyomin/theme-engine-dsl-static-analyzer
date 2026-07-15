@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wallpaper screenWidth="1080">
+    <Var name="dynamic_src" type="string"/>
+    <Var name="only_srcexp" type="string"/>
     <Image name="alpha_zero" x="0" y="0" width="1080" height="1920"
            alpha="0" src="zero_alpha.png"/>
 

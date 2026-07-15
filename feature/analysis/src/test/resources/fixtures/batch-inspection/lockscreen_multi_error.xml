@@ -3,6 +3,7 @@
     <Var name="dup_var" type="number" const="true" expression="1"/>
     <Var name="dup_var" type="number" const="true" expression="2"/>
     <Var name="hour" type="number" persist="true"/>
+    <Var name="weather_icon" type="string"/>
     <Image name="bg" x="#undefined_var" y="0" width="1080" height="1920" alpha="300" src="bg.png"/>
     <Image name="conflict" src="icon.png" srcExp="@weather_icon" scaleType="invalid_type"/>
     <Button name="btn">

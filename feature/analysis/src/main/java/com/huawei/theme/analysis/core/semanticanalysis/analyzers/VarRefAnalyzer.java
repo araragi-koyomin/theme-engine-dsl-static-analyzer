@@ -80,9 +80,6 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 if (varName == null || varName.isEmpty()) {
                     continue;
                 }
-                if ("@".equals(ref.getPrefix())) {
-                    continue;
-                }
                 String elementName = matchTemplate(varName, elementTemplates);
                 if (elementName != null) {
                     if (!elementNames.contains(elementName)) {
