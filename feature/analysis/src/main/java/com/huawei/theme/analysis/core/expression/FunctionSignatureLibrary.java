@@ -9,4 +9,5 @@ public interface FunctionSignatureLibrary {
     Optional<FunctionSignature> getSignature(String name, String expressionKind);
     List<FunctionSignature> getSignatures(String name);
     boolean hasFunction(String name);
+    List<FunctionSignature> getAllSignatures();
 }

@@ -1,7 +1,5 @@
 package com.huawei.theme.analysis.plugin.editor.expr;
 
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +10,6 @@ import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.icons.AllIcons;
 import com.intellij.lang.injection.InjectedLanguageManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiLanguageInjectionHost;
@@ -22,8 +19,8 @@ import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 
+import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.expression.model.FunctionSignature;
-import com.huawei.theme.analysis.core.function.JsonFunctionSignatureLoader;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
@@ -44,15 +41,6 @@ import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
  */
 public class DslExpressionCompletionContributor extends CompletionContributor {
 
-    private static final Logger LOG = Logger.getInstance(DslExpressionCompletionContributor.class);
-
-    private static volatile JsonFunctionSignatureLoader functionLibrary;
-
-    /**
-     * Trigger the completion auto-popup when the user types {@code #} or {@code @}
-     * (the variable access sigils), so they immediately see numeric/string variable
-     * candidates without pressing Ctrl+Space.
-     */
     @Override
     public boolean invokeAutoPopup(@NotNull PsiElement position, char typeChar) {
         return typeChar == '#' || typeChar == '@';
@@ -128,7 +116,7 @@ public class DslExpressionCompletionContributor extends CompletionContributor {
         }
 
         // 4. Global functions
-        JsonFunctionSignatureLoader lib = getFunctionLibrary();
+        FunctionSignatureLibrary lib = repo.getFunctionSignatureLibrary();
         if (lib != null) {
             for (FunctionSignature sig : lib.getAllSignatures()) {
                 String params = sig.getParams().stream()
@@ -179,26 +167,5 @@ public class DslExpressionCompletionContributor extends CompletionContributor {
             return "@";
         }
         return "#";
-    }
-
-    private static JsonFunctionSignatureLoader getFunctionLibrary() {
-        JsonFunctionSignatureLoader cached = functionLibrary;
-        if (cached != null) {
-            return cached;
-        }
-        synchronized (DslExpressionCompletionContributor.class) {
-            if (functionLibrary != null) {
-                return functionLibrary;
-            }
-            try (InputStreamReader reader = new InputStreamReader(
-                    DslExpressionCompletionContributor.class.getResourceAsStream("/functions/dsl_functions.json"),
-                    StandardCharsets.UTF_8)) {
-                functionLibrary = new JsonFunctionSignatureLoader().loadFromReader(reader);
-            } catch (Exception e) {
-                LOG.warn("Failed to load DE function library", e);
-                return null;
-            }
-            return functionLibrary;
-        }
     }
 }
