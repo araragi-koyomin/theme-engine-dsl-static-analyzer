@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: spec
+status: superseded
+created: 2026-07-13
+---
 # Option A: P0 + False Positive Fix Design
 
 Date: 2026-07-13

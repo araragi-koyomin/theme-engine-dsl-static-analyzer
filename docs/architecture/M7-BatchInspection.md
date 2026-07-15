@@ -1,3 +1,9 @@
+---
+module_ids: [M7]
+doc_kind: architecture
+status: stale
+created: 2026-06-17
+---
 # M7 批量检查与报告模块 - 架构设计
 
 ## 1. 模块职责

@@ -1,3 +1,9 @@
+---
+module_ids: [CLI]
+doc_kind: guide
+status: stale
+created: 2026-07-06
+---
 # DSL 静态分析器 — 命令行使用指南
 
 dsl-analyzer 是华为主题引擎 DSL 的静态分析工具，能对 XML 格式的主题文件进行语法、语义和类型推断检查，并输出结构化诊断报告。

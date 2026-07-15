@@ -1,3 +1,9 @@
+---
+module_ids: [M2]
+doc_kind: architecture
+status: active
+created: 2026-06-17
+---
 # M2 规则库模块 - 架构设计
 
 ## 1. 模块职责

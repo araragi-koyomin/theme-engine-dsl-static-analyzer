@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: spec
+status: superseded
+created: 2026-07-06
+---
 # ReportExporter 报告导出设计文档
 
 ## 1. 概述

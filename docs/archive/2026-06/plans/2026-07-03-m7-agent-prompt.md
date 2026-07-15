@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: plan
+status: archived
+created: 2026-07-03
+---
 # M7 批量检查功能 - Agent 实现 Prompt
 
 ## 约束规则（必须严格遵守）

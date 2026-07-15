@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: guide
+status: stale
+created: 2026-06-15
+---
 # 主题引擎DSL静态分析工具 - 产品需求文档
 
 ## 1. 产品概述

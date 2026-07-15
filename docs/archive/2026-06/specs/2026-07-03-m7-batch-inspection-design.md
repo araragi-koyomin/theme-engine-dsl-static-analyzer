@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: spec
+status: superseded
+created: 2026-07-03
+---
 # M7 批量检查功能 - 设计规格文档
 
 ## 1. 实现范围

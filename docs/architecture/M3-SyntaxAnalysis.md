@@ -1,3 +1,9 @@
+---
+module_ids: [M3]
+doc_kind: architecture
+status: stale
+created: 2026-06-17
+---
 # M3 语法分析模块 - 架构设计
 
 ## 1. 模块职责

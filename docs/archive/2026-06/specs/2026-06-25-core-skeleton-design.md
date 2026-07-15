@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: spec
+status: superseded
+created: 2026-06-25
+---
 # dsl-analyzer-core 代码骨架设计 — 跨模块接口与数据模型
 
 ## 设计方案：方案B — 共享数据模型子包 + 接口隔离

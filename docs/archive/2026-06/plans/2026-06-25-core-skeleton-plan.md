@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: plan
+status: archived
+created: 2026-06-25
+---
 # Core Skeleton Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

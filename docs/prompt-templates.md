@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: template
+status: active
+created: 2026-07-14
+---
 # 任务执行 Prompt 模板
 
 本文件提供不同类型任务的 prompt 模板，用于在新会话中向 agent 提供足够的上下文。

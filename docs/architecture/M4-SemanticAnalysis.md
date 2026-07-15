@@ -1,3 +1,9 @@
+---
+module_ids: [M4]
+doc_kind: architecture
+status: stale
+created: 2026-06-17
+---
 # M4 语义分析与类型系统模块 - 架构设计
 
 ## 1. 模块职责

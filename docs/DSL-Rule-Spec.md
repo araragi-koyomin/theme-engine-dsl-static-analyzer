@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: guide
+status: active
+created: 2026-06-15
+---
 # HarmonyOS Theme Engine DSL - 规则规范文档
 
 ## 1. DSL语言概述

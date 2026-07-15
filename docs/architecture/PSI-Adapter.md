@@ -1,3 +1,9 @@
+---
+module_ids: [PSI]
+doc_kind: architecture
+status: active
+created: 2026-06-17
+---
 # PSI Adapter模块 - 架构设计
 
 ## 1. 模块职责

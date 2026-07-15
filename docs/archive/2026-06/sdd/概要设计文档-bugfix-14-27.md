@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: spec
+status: archived
+created: 2026-06-25
+---
 # 概要设计文档 (HLD)：Bug 14-27 修复
 
 > **版本**: v1.0  

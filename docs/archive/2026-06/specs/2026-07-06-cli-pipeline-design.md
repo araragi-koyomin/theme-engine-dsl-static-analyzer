@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: spec
+status: superseded
+created: 2026-07-06
+---
 # CLI管线集成与输出格式设计文档
 
 ## 概述

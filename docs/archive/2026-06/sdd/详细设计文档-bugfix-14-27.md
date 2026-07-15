@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: spec
+status: archived
+created: 2026-06-25
+---
 # 详细设计文档 (DDD)：Bug 14-27 修复
 
 > **版本**: v1.0  

@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: spec
+status: superseded
+created: 2026-06-17
+---
 # 架构重构设计文档
 
 ## 1. 设计决策记录

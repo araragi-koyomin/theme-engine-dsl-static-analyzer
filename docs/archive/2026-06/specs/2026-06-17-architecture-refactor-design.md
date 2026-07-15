@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: spec
+status: superseded
+created: 2026-06-17
+---
 # 主题引擎DSL静态分析工具 - 架构重构设计文档
 
 **日期**: 2026-06-17

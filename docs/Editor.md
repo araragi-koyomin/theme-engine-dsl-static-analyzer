@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: guide
+status: active
+created: 2026-07-14
+---
 # Editor 基础
 DSL名： ThemeDSL
 

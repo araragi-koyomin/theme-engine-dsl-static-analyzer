@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: spec
+status: superseded
+created: 2026-06-18
+---
 # Architecture.md 重构设计文档
 
 **日期**: 2026-06-18
