@@ -1,3 +1,10 @@
+---
+module_ids: [M3, M4, M5, M7, CLI]
+phase: P0
+doc_kind: note
+status: active
+created: 2026-07-14
+---
 # P0 已知问题(非阻塞)
 
 > 以下问题经 reviewer 审查确认为 pre-existing 或基础设施问题,不在 P0 范围内,留作后续处理。

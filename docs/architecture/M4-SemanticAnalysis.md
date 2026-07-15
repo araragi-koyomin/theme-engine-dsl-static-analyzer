@@ -1,3 +1,9 @@
+---
+module_ids: [M4]
+doc_kind: architecture
+status: active
+created: 2026-06-17
+---
 # M4 语义分析与类型系统模块 - 架构设计
 
 ## 1. 模块职责
@@ -45,11 +51,14 @@ public class Diagnostic {
 
 ```java
 public interface DiagnosticProvider {
-    List<Diagnostic> analyzeFile(String filePath, String content);
+    List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo,
+                              SymbolTableBuilder symbolTableBuilder,
+                              PipelineMode mode, InspectionConfig config,
+                              VerboseCollector collector);
 }
 ```
 
-**纯字符串参数**：Core层接口使用(filePath, content)参数。
+**模式感知派发（P0 调整后）**：接口由原 2 参 `(filePath, content)` 升级为 6 参模式感知派发。`PipelineMode mode` 取 `SYNTAX_ONLY` / `SEMANTIC_ONLY` / `FULL`：`FULL` 顺序执行 M3 语法（SyntaxChecker + ExpressionSyntaxChecker）+ M4 语义；`SYNTAX_ONLY` 只跑 M3；`SEMANTIC_ONLY` 只跑 M4（并过滤 TypeAnalyzer + SyntaxErrorAnalyzer）。`InspectionConfig config` 携带 `typeCheck`/`quiet`/`verbose` 等开关；`VerboseCollector collector` 在 `--verbose` 时收集统计，否则传 null。
 
 ### 3.3 Analyzer注册机制
 
@@ -57,11 +66,11 @@ public interface DiagnosticProvider {
 
 ```java
 public interface DslAnalyzer {
-    List<Diagnostic> analyze(DslAstNode element, RuleRepository ruleRepo);
+    List<Diagnostic> analyze(DslAstNode element, DslContext context);
 }
 ```
 
-**关键变更**：analyze参数从PsiElement改为DslAstNode。
+**关键变更**：analyze参数从PsiElement改为DslAstNode；第二参由 RuleRepository 改为 DslContext（聚合 RuleRepository + SymbolTable + filePath + rootNode + VerboseCollector）。
 
 ```java
 public class AnalyzerRegistry {
@@ -123,6 +132,8 @@ DslType (抽象基类, abstract getName())
 5. 函数参数类型不匹配 → 产出SEM-TYPE-002诊断
 
 **重要边界**：不做常量折叠（不对表达式求值），不做符号执行。isConstAttr仅反映Var的const="true"属性声明。
+
+> **过滤与追踪（P0 调整后）**：`DiagnosticProviderImpl.filterAnalyzers` 在 `config.typeCheck=false`（`--no-type-check`）或 `PipelineMode=SEMANTIC_ONLY` 时将 TypeAnalyzer 移除，类型推断与函数签名验证整体跳过。`--verbose` 时，TypeAnalyzer 通过 `DslContext.getVerboseCollector().recordTypeInference(attrDesc, inferred, expected, match)` 记录类型推断链（attr→推断类型→期望类型→是否匹配），由 `VerboseCollector.render()` 统一输出。
 
 #### 3.4.2 规则驱动类 — ConstraintAnalyzer
 
@@ -235,9 +246,9 @@ public interface SimilarityMatcher {
 | 下游消费 | 提供接口 | 说明 |
 |---|---|---|
 | M5 修复逻辑 | DiagnosticProvider + SymbolTable + SimilarityMatcher | 诊断定位+变量信息+修复候选 |
-| M7 批量检查 | DiagnosticProvider.analyzeFile() | 批量扫描管线 |
+| M7 批量检查 | DiagnosticProvider.analyze() | 批量扫描管线（6 参模式感知派发） |
 | PSI Adapter | Diagnostic列表 + SymbolTable | Diagnostic→Annotation映射 + 引用定位 |
-| CLI入口 | DiagnosticProvider.analyzeFile() | CLI管线语义分析 |
+| CLI入口 | DiagnosticProvider.analyze() | CLI管线语义分析（6 参模式感知派发） |
 
 ## 5. CLI相关
 
@@ -259,9 +270,9 @@ M4在CLI管线中的位置：
 
 | 参数 | 影响范围 | M4相关说明 |
 |---|---|---|
-| `--semantic-only` | 只做语义检查 | 仅执行M4语义分析（不含类型推断），跳过TypeAnalyzer |
-| `--type-check` | 启用类型推断检查 | 全量检查时默认启用；关闭时跳过TypeAnalyzer和函数签名验证 |
-| `--syntax-only` | 只做语法检查 | 不进入M4阶段，CLI直接输出M3语法诊断 |
+| `--semantic-only` | 只做语义检查 | 只跑 M4 analyzer（不含 TypeAnalyzer + SyntaxErrorAnalyzer），以 SEMANTIC_ONLY 模式派发 |
+| `--no-type-check` | 关闭类型推断检查 | 默认启用类型推断；传入 `--no-type-check` 时 `config.typeCheck=false`，DiagnosticProvider 过滤 TypeAnalyzer（函数签名验证随之跳过） |
+| `--syntax-only` | 只做语法检查 | 以 SYNTAX_ONLY 模式派发，只跑 SyntaxChecker + ExpressionSyntaxChecker，不进入M4阶段 |
 | `--rule-dir <path>` | M2规则库目录 | 影响M2提供的RuleConstraint和AttrTypeSpec，间接影响M4约束检查和类型推断 |
 | `--verbose` | 详细输出 | 开启时CLI输出包含类型推断过程（推断类型链、函数签名匹配详情、符号表内容摘要） |
 | `--quiet` | 只输出error级别 | 过滤WARNING/INFO级别诊断，M4 ScopeAnalyzer部分诊断可能被过滤 |

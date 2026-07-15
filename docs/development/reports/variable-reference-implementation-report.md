@@ -1,3 +1,9 @@
+---
+module_ids: [M8]
+doc_kind: report
+status: active
+created: 2026-07-14
+---
 # ThemeDSL 变量引用（PsiReference）实现报告
 
 ## 问题概述

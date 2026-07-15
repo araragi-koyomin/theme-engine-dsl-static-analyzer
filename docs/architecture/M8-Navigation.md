@@ -1,3 +1,9 @@
+---
+module_ids: [M8]
+doc_kind: architecture
+status: active
+created: 2026-06-17
+---
 # M8 导航与重构模块 - 架构设计
 
 ## 1. 模块职责

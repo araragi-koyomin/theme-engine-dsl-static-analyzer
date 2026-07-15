@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: plan
+status: archived
+created: 2026-07-14
+---
 # P0 Beta 闭环修复实施计划 + Prompt 模板
 
 > **用途**：本文件供当前会话后续或其他团队成员/会话使用，按 SDD 流程逐项实施 P0 修复。每个 P0 项包含：现状证据、修复方案（含代码片段）、涉及文件、golden 测试影响、验证命令。配套的 implementer prompt 模板可直接用于分派 subagent。

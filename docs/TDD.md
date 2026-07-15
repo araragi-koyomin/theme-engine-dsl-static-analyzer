@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: architecture
+status: active
+created: 2026-06-15
+---
 # 主题引擎DSL静态分析工具 - 技术设计文档
 
 ## 1. 技术架构
@@ -18,7 +24,7 @@
 │         ↓ 无IDEA依赖，可独立运行                  │
 ├─────────────────────────────────────────────────┤
 │                  外部依赖                        │
-│  JDK SAX(XML解析) │ ANTLR4(表达式+规则DSL) │ GSON   │
+│  JDK StAX(XML解析) │ ANTLR4(表达式+规则DSL) │ GSON   │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -32,7 +38,7 @@
 |---|---|---|
 | 语言 | Java 17 | 全项目开发语言 |
 | 构建工具 | Gradle 8.2 + gradle-intellij-plugin 1.13.3 | 插件构建 + CLI fat jar |
-| XML结构解析 | JDK SAX (javax.xml.parsers) | DSL文件XML结构解析（不使用ANTLR4） |
+| XML结构解析 | JDK StAX (javax.xml.stream) | DSL文件XML结构解析（不使用ANTLR4） |
 | 表达式解析 | ANTLR4 | DSL表达式 + 规则DSL条件解析（.g4 grammar自动生成） |
 | 规则库数据格式 | GSON 2.9.0 | 规则JSON反序列化 |
 | 数据模型简化 | Lombok 1.18.22 | @Data/@Builder注解 |
@@ -43,7 +49,7 @@
 
 - **实时检测**：Plugin层Annotator实现，编辑即触发（依赖PSI Adapter桥接core诊断）
 - **批量检测**：Plugin层LocalInspectionTool + CLI入口双重通道
-- **异步与增量**：Plugin层任务提交至DumbService后台线程；CLI单线程顺序执行
+- **异步与增量**：（Plugin层DumbService后台线程/PSI增量解析为目标设计,未实现）CLI单线程顺序执行
 - **Core层纯分析**：所有分析逻辑在core层完成，产出Diagnostic列表；Plugin层只负责展示与交互
 - **规则来源**：每个诊断引用DSL规范具体章节/条款，提供可追溯规则依据
 
@@ -51,13 +57,13 @@
 
 | 解析层级 | 工具 | 职责 | 输出 |
 |---|---|---|---|
-| XML结构解析 | JDK SAX | XML文件→ContentHandler事件流，捕获XML格式错误 | SAXParseException直接报出，不做额外包装映射 |
-| DSL AST构建 | M3 AstBuilder | SAX事件流→DslAstNode独立AST（Locator捕获行列号） | DslFileNode（含DslElementNode、DslAttributeNode） |
+| XML结构解析 | JDK StAX | XML文件→XMLStreamReader事件流，捕获XML格式错误 | XMLStreamException直接报出，不做额外包装映射 |
+| DSL AST构建 | M3 AstBuilder | StAX事件流→DslAstNode独立AST（XMLStreamReader.getLocation()捕获行列号） | DslFileNode（含DslElementNode、DslAttributeNode） |
 | DSL表达式解析 | ANTLR4 (DslExpression.g4) | 仅expression/reference类型属性值解析 | ExpressionNode子树 |
 | 规则DSL条件解析 | ANTLR4 (DslRuleCondition.g4) | 声明式约束条件字符串解析 | ConditionNode |
 | 纯字面量验证 | 直接比对 | 非expression类型属性值直接验证 | 不走解析器 |
 
-**重要边界**：ANTLR4仅用于表达式和规则DSL条件解析，不用于XML结构解析（JDK SAX保留）。
+**重要边界**：ANTLR4仅用于表达式和规则DSL条件解析，不用于XML结构解析（JDK StAX保留）。
 
 ## 2. 模块设计（10个模块）
 
@@ -219,7 +225,7 @@ public interface DslAstProvider {
 
 | 错误层级 | 检测机制 | 规则ID | 说明 |
 |---|---|---|---|
-| XML结构语法 | SAX SAXParseException直接报出 | — | 标签未闭合、属性引号缺失、缺少XML声明等XML格式错误，不做额外包装映射 |
+| XML结构语法 | StAX XMLStreamException直接报出 | — | 标签未闭合、属性引号缺失、缺少XML声明等XML格式错误，不做额外包装映射 |
 | DSL结构语法 | M3 AST构建+M2规则库比对 | SYN-002, SYN-004, SYN-005, SYN-006, SYN-010 | 嵌套约束、未知元素/属性、必填缺失、根元素错误 |
 | DSL表达式语法 | ANTLR4 DslExpressionParser | SEM-EXPR-001~006 | `-#var`模式、单引号缺失、花括号嵌套等 |
 
@@ -468,7 +474,7 @@ public class DslPsiBridge {
 public class DslAnalyzerCli {
     public static void main(String[] args) {
         // 1. 解析参数
-        // 2. 加载规则库（内置 or --rule-dir）
+        // 2. 加载规则库（内置 or --rule-dir；--rule-dir 仅控制规则库,不含函数签名库）
         // 3. 识别DSL文件（M1）
         // 4. 构建AST（M3）
         // 5. 语义分析+类型推断（M4）
@@ -553,7 +559,7 @@ Diagnostic使用filePath+line+column定位，不依赖PsiElement，core与plugin
 - 在元素规则的constraints数组中追加RuleConstraint条目
 - condition字段使用规则DSL语法：`element.attrs['play'] != null AND element.attrs['sound'] != null`
 - ConstraintAnalyzer自动执行，无需手动注册
-- CLI可通过`--rule-dir`指定外部规则库目录
+- CLI可通过`--rule-dir`指定外部规则库目录（仅控制规则库,不含函数签名库；函数签名库仍从内置 resources/functions/ 加载）
 
 ### 6.2 规则库扩展
 
@@ -589,8 +595,8 @@ Diagnostic使用filePath+line+column定位，不依赖PsiElement，core与plugin
 
 ### 7.2 性能保障措施
 
-- **异步执行**：Plugin层任务提交至DumbService后台线程；CLI单线程顺序执行
-- **增量分析**：Plugin层基于PSI增量解析，仅分析变更节点；CLI无增量能力
+- **异步执行**：（Plugin层DumbService后台线程为目标设计,未实现）CLI单线程顺序执行
+- **增量分析**：（Plugin层PSI增量解析为目标设计,未实现；当前全量分析）CLI无增量能力
 - **规则库缓存**：RuleRepository预加载并缓存，避免重复IO
 - **表达式解析缓存**：同一属性值未变更时跳过重复解析
 - **全局变量目录常驻内存**：预置全局变量目录作为不可变数据常驻

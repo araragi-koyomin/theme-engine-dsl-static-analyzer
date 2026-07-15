@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: plan
+status: active
+created: 2026-07-15
+---
 # 文档管理体系重构计划
 
 > 目标：对 docs/ 进行分类、打标、归档，使其可检索、有层次；建立未来的文档模板和规范，防止再次失控。

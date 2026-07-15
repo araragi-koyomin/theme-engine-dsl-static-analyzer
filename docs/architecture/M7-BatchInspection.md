@@ -1,3 +1,9 @@
+---
+module_ids: [M7]
+doc_kind: architecture
+status: active
+created: 2026-06-17
+---
 # M7 批量检查与报告模块 - 架构设计
 
 ## 1. 模块职责
@@ -41,7 +47,7 @@ flowchart TD
     Filter --> |非DSL文件跳过| Queue[DSL文件加入扫描队列]
     Queue --> PerFile[对每个DSL文件]
     PerFile --> M3Run[M3语法分析<br/>DslAstProvider.getDslAst]
-    PerFile --> M4Run[M4语义分析<br/>DiagnosticProvider.analyzeFile]
+    PerFile --> M4Run[M4语义分析<br/>DiagnosticProvider.analyze]
     M3Run --> MergePer[合并诊断结果]
     M4Run --> MergePer
     MergePer --> MergeAll[合并所有文件<br/>BatchInspectionResult]
@@ -194,7 +200,7 @@ Dispatcher.instance().register(EventId.BATCH_INSPECTION_COMPLETED, (event) -> {
 | M1 文件识别 | `DslFileMatcher.isDslFile()` 过滤扫描范围 |
 | M2 规则库 | `RuleRepository` 全量规则用于批量分析 |
 | M3 语法分析 | `DslAstProvider.getDslAst()` AST构建 |
-| M4 语义分析 | `DiagnosticProvider.analyzeFile()` 语义诊断 |
+| M4 语义分析 | `DiagnosticProvider.analyze()` 语义诊断 |
 
 | 下游消费 | 提供接口 | 说明 |
 |---|---|---|
@@ -230,16 +236,16 @@ CLI入口 → 参数解析 → 加载规则库(M2) → 加载函数签名库(M0)
 | 参数 | 影响范围 | M7相关说明 |
 |---|---|---|
 | `<file-or-directory>` | 输入目标 | M7扫描范围的入口参数 |
-| `--syntax-only` | 只做语法检查 | M7跳过M4/M5阶段，直接输出M3语法诊断 |
-| `--semantic-only` | 只做语义检查 | M7跳过M3语法阶段，仅执行M4语义分析 |
-| `--type-check` | 启用类型推断 | M7决定是否在M4中启用TypeAnalyzer |
+| `--syntax-only` | 只做语法检查 | DiagnosticProvider 以 SYNTAX_ONLY 模式派发，只跑 M3（SyntaxChecker + ExpressionSyntaxChecker），跳过 M4/M5 |
+| `--semantic-only` | 只做语义检查 | DiagnosticProvider 以 SEMANTIC_ONLY 模式派发，只跑 M4 analyzer（不含 TypeAnalyzer + SyntaxErrorAnalyzer） |
+| `--no-type-check` | 关闭类型推断 | config.typeCheck=false 时 M4 过滤 TypeAnalyzer |
 | `--rule-dir <path>` | M2规则库目录 | M7加载自定义规则库替代内置规则 |
 | `--format <format>` | 输出格式 | M7调用ReportExporter的对应格式导出 |
 | `--output <path>` | 报告文件输出路径 | M7导出报告到指定文件（仅md/json格式） |
 | `--no-color` | 禁止终端彩色 | Terminal输出时不使用ANSI颜色 |
-| `--quiet` | 只输出error级别 | M7过滤WARNING/INFO级别Diagnostic |
+| `--quiet` | 只输出error级别 | 过滤 WARNING/INFO 级别诊断，仅保留 ERROR |
 | `--config <path>` | 检查配置文件 | 配置中可指定规则子集、severity覆盖、启用/禁用特定ruleId |
-| `--verbose` | 详细输出 | M7输出包含AST节点数、推断过程、扫描耗时等信息 |
+| `--verbose` | 详细输出 | 输出 5 类信息（AST统计/符号表/耗时/analyzer计数/类型推断链） |
 
 ### 5.3 退出码语义
 
@@ -247,7 +253,9 @@ CLI入口 → 参数解析 → 加载规则库(M2) → 加载函数签名库(M0)
 |---|---|---|
 | 0 | 无error级诊断 | 所有诊断均为warning/info级别 |
 | 1 | 有error级诊断 | 至少一条error级诊断 |
-| 2 | 执行异常 | 文件不存在、规则库加载失败、函数签名库JSON错误 |
+| 2 | 执行异常 | 文件不存在、规则库加载失败、函数签名库JSON错误、参数互斥冲突 |
+
+> **内部异常诊断（P0 调整后）**：文件级内部异常（AST 构建失败、DiagnosticProvider 整体抛出）产出 `INTERNAL-AST-ERROR` / `INTERNAL-ANALYZER-ERROR`（ERROR 级），并标记 `hasInternalErrors=true`，`ExitCodeCalculator` 据此返回退出码 2；分析过程中单 analyzer/符号表构建失败产出 `INTERNAL-ANALYZER-ERROR` / `INTERNAL-SYMBOLTABLE-ERROR`（WARNING 级），不改变退出码。
 
 ### 5.4 CLI输出示例
 

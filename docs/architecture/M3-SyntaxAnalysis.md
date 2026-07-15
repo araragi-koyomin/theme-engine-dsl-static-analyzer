@@ -1,10 +1,16 @@
+---
+module_ids: [M3]
+doc_kind: architecture
+status: active
+created: 2026-06-17
+---
 # M3 语法分析模块 - 架构设计
 
 ## 1. 模块职责
 
 将DSL XML文件解析为独立AST，并检测语法错误。产出DslFileNode供后续模块消费，产出语法诊断供M4/M5/M7使用。
 
-**单一职责**：XML结构解析（JDK SAX） + DSL AST构建 + 表达式嵌入（ANTLR4） + 语法错误检测。
+**单一职责**：XML结构解析（JDK StAX，基于 XMLStreamReader） + DSL AST构建 + 表达式嵌入（ANTLR4） + 语法错误检测。
 
 **完全重构**：自有独立AST替代PSI依赖。Core层无IDEA PSI API依赖。
 
@@ -12,7 +18,7 @@
 
 | 层级 | 功能 | 说明 |
 |---|---|---|
-| **Core** | SAX解析→DslAstNode + 语法错误检测 + ANTLR4表达式嵌入 | MVP必交 |
+| **Core** | StAX解析→DslAstNode + 语法错误检测 + ANTLR4表达式嵌入 | MVP必交 |
 | **Extension** | 精细化Token类型 + 表达式解析缓存 | 增强语法分析精度与性能 |
 | **Optional** | 自定义格式语法诊断输出 | 后续迭代 |
 
@@ -102,9 +108,9 @@ graph TD
 
 ### 3.2 AstBuilder — AST构建器
 
-使用JDK SAXParser解析XML结构，构建DslAstNode树。
+使用JDK StAX（XMLStreamReader）解析XML结构，构建DslAstNode树。
 
-> **设计决策（dom4j→SAX）**：原设计拟用 dom4j，但 dom4j 的 `Node` 不提供 per-node 行列号 API，而下游诊断（SYN-003 未知元素等）需要节点级定位。JDK 内置 `SAXParser` 通过 `Locator` 可在每个 `startElement` 事件捕获行列号，故改用 SAX 直接在事件回调中构建 AST。
+> **设计决策（dom4j→StAX）**：原设计拟用 dom4j，但 dom4j 的 `Node` 不提供 per-node 行列号 API，而下游诊断（SYN-003 未知元素等）需要节点级定位。JDK 内置 `XMLStreamReader`（StAX）通过 `Location` 可在每个 `START_ELEMENT` 事件捕获行列号，故改用 StAX 的 pull 事件直接构建 AST。
 
 **构造器**：
 - `AstBuilder()` — 无 RuleRepository，所有属性值按字面量处理（降级模式，供无规则场景/单元测试）
@@ -112,10 +118,10 @@ graph TD
 
 **构建流程**：
 
-1. JDK SAXParser解析XML → ContentHandler事件流（携带Locator）
-2. startElement/endElement事件中直接构建DslElementNode/DslAttributeNode/DslAttributeValueNode，从Locator取行列号
+1. JDK StAX（XMLStreamReader）解析XML → XMLStreamReader事件流（携带Location）
+2. START_ELEMENT/END_ELEMENT事件中直接构建DslElementNode/DslAttributeNode/DslAttributeValueNode，从Location取行列号
 3. 对每个属性值，按"表达式嵌入判断"决定是否调用M0 DslExpressionParser
-4. XML格式错误（SAXParseException）写入 rootElement.hasError/errorMessage/line/column（转 Diagnostic 由 #15 负责）
+4. XML格式错误（XMLStreamException）写入 rootElement.hasError/errorMessage/line/column（转 Diagnostic 由 #15 负责）
 
 **表达式嵌入判断**（启发式，非"supportsExpression=true 即解析"）：
 
@@ -146,7 +152,7 @@ graph TD
 
 **`-#var` 语法检测（SYN-EXPR-001）**：解析后用 `containsInvalidUnaryMinusVar` 递归检查 AST——任何 `UNARY_EXPR("-")` 其直接子节点为 `#` 前缀的 `VARIABLE_REF`/`ARRAY_ACCESS`（即 `-#w`、`-#arr[0]`）即判失败。`-#w` 须改写为 `-1*#w` 或 `0-#w`。`-5`（负数值）、`-sin(#x)`（负号函数）合法。命中时同样 `isLiteral=false, expression=empty`，#22 据原始值报 SYN-EXPR-001。
 
-**调用链**：AstBuilder → SAXParser.parse(content, ContentHandler) → 事件流构建DslAstNode →（supportsExpression=true 且含指示符的属性）按 expressionKind 选 M0 DslExpressionParser 入口 → DslFileNode
+**调用链**：AstBuilder → XMLStreamReader（pull 事件流）构建DslAstNode →（supportsExpression=true 且含指示符的属性）按 expressionKind 选 M0 DslExpressionParser 入口 → DslFileNode
 
 ### 3.3 DslAstProvider（接口）
 
@@ -168,27 +174,25 @@ M3产出的语法诊断分三层：
 
 | 错误层级 | 检测机制 | 规则ID | 说明 |
 |---|---|---|---|
-| XML结构语法 | SAX SAXParseException直接报出 | — | 标签未闭合、属性引号缺失、缺少XML声明等XML格式错误，不做额外包装映射 |
-| DSL结构语法 | M3 AST构建 + M2规则库比对 | SYN-001, SYN-002, SYN-003, SYN-004, SYN-005, SYN-006, SYN-007 | 嵌套约束、未知元素/属性、必填缺失、根元素错误 |
+| XML结构语法 | StAX XMLStreamException直接报出 | — | 标签未闭合、属性引号缺失、缺少XML声明等XML格式错误，不做额外包装映射 |
+| DSL结构语法 | M3 SyntaxChecker（AST + M2规则库比对） | SYN-001, SYN-003, SYN-004 | 根元素、未知元素/属性检测；嵌套/必填/类型/枚举已迁移至 M4（见下方说明） |
 | DSL表达式语法 | ANTLR4 DslExpressionParser | SYN-EXPR-001~006, SYN-EXPR-ANTLR | `-#var`模式、单引号缺失、花括号嵌套等 |
 
-**XML格式错误处理**：SAX解析XML遇格式错误直接抛出SAXParseException，AstBuilder捕获后写入 `rootElement.hasError/errorMessage/line/column`（保留SAXParseException的行列号和错误消息），不包装映射为自定义SYN-xxx规则ID。SyntaxChecker 遇 `rootElement==null || hasError` 时返回空诊断列表（XML 格式错误转换留给上层 DiagnosticProvider 包装）。原SYN-001(标签未闭合)、SYN-003(属性引号缺失)、SYN-009(缺少XML声明头)不再作为自定义规则ID使用，编号已重新排列为连续序号SYN-001~007。
+**XML格式错误处理**：StAX解析XML遇格式错误直接抛出XMLStreamException，AstBuilder捕获后写入 `rootElement.hasError/errorMessage/line/column`（保留XMLStreamException的行列号和错误消息），不包装映射为自定义SYN-xxx规则ID。SyntaxChecker 遇 `rootElement==null || hasError` 时返回空诊断列表（XML 格式错误转换留给上层 DiagnosticProvider 包装）。M3 SyntaxChecker 实际产出 SYN-001 / SYN-003 / SYN-004；嵌套/必填/类型/枚举检测归 M4 以 SEM-* 规则产出。
 
 **DSL结构语法检测详情**：
 
 | 规则ID | 检测内容 | 检测机制 | 严重级别 |
 |---|---|---|---|
-| SYN-001 | 根元素标签错误 | M1文件识别+M3 AST根节点检测 | error |
-| SYN-002 | 标签嵌套违反父子约束 | M3 AST遍历 + M2 allowedParents比对（allowedChildren由反向索引推导） | error |
+| SYN-001 | 根元素标签错误 | M1文件识别 + M3 SyntaxChecker根节点检测 | error |
 | SYN-003 | 未知元素标签 | M3 AST tagName + M2 DslElementRule名称集合比对 | error |
 | SYN-004 | 未知属性名 | M3属性名 + M2 optionalAttrs+requiredAttrs比对 | warning |
-| SYN-005 | 缺失必填属性 | M3属性存在性 + M2 requiredAttrs比对 | error |
-| SYN-006 | 属性值类型错误（纯字面量） | 直接类型比对 | error |
-| SYN-007 | 枚举值错误 | M2 enumValues比对 | error |
 
-**SyntaxChecker 实现**（`syntaxanalysis/SyntaxChecker`）：注入 `RuleRepository`，`check(filePath, DslFileNode) → List<Diagnostic>`。遇 `rootElement==null || hasError` 返回空（XML 错误另作）。否则 SYN-001 检 root，递归遍历所有元素做 SYN-002~007。
+> **规则归属说明（P0 调整后）**：M3 `SyntaxChecker` 实际只产出 SYN-001 / SYN-003 / SYN-004。原 SYN-002（嵌套）、SYN-005（必填）、SYN-006（字面量类型）、SYN-007（枚举）的检测已迁移至 M4 analyzer，分别以 SEM-NEST-001、SEM-REQ-001、SEM-TYPE-003、SEM-ENUM-001 产出，详见 M4 文档 §3.4.3。
 
-防噪声跳过：SYN-002 在 child/parent 任一未知时跳过（SYN-003 已覆盖未知元素）；SYN-004/005/006/007 在元素未知时跳过；root 不查 SYN-003（SYN-001 已覆盖）；SYN-006 仅查 `type="number"` 的字面量值（`Double.parseDouble` 失败），表达式值（`isLiteral=false`）跳过归 M4 SEM-TYPE；SYN-007 仅查 `enumValues` 非空的字面量值。Diagnostic 的 line/column 取自对应 AST 节点，`ruleDocUrl` 从 `getRuleSource(ruleId)` 查填。
+**SyntaxChecker 实现**（`syntaxanalysis/SyntaxChecker`）：注入 `RuleRepository`，`check(filePath, DslFileNode) → List<Diagnostic>`。遇 `rootElement==null || hasError` 返回空（XML 错误另作）。否则 SYN-001 检 root，递归遍历所有元素做 SYN-003（未知元素）/ SYN-004（未知属性）；SYN-002/005/006/007 已迁移至 M4（见上说明）。
+
+防噪声跳过：SYN-004 在元素未知时跳过（SYN-003 已覆盖未知元素）；root 不查 SYN-003（SYN-001 已覆盖）。Diagnostic 的 line/column 取自对应 AST 节点，`ruleDocUrl` 从 `getRuleSource(ruleId)` 查填。
 
 **DSL表达式语法检测详情**：
 
@@ -250,14 +254,14 @@ java -jar dsl-analyzer.jar [options] <file-or-directory>
 M3在CLI管线中的位置：
 
 ```
-文件输入 → M1识别 → M3语法分析(SAX→AST+ANTLR4表达式) → M4语义分析 → 输出
+文件输入 → M1识别 → M3语法分析(StAX→AST+ANTLR4表达式) → M4语义分析 → 输出
 ```
 
 ### 5.2 CLI参数与M3的关系
 
 | 参数 | 影响范围 | M3相关说明 |
 |---|---|---|
-| `--syntax-only` | 只做语法检查 | 仅执行M3语法分析，不进入M4语义分析阶段；CLI直接输出语法诊断 |
+| `--syntax-only` | 只做语法检查 | 只跑 SyntaxChecker + ExpressionSyntaxChecker（M3），不跑 M4 analyzer；CLI直接输出语法诊断 |
 | `--rule-dir <path>` | M2规则库目录 | 影响M2提供的元素名称集合和AttrTypeSpec，间接影响M3语法比对和表达式嵌入判断 |
 | `--verbose` | 详细输出 | 开启时CLI输出包含AST构建过程信息（如：解析耗时、AST节点数量、表达式属性列表） |
 
@@ -265,8 +269,8 @@ M3在CLI管线中的位置：
 
 | CLI输出字段 | 来源路径 | M3贡献 |
 |---|---|---|
-| XML格式错误诊断 | M3 → SAX SAXParseException | 标签未闭合、属性引号缺失等XML格式错误 |
-| `ruleId: SYN-001/002/003/004/005/006/007` | M3语法比对 → M2规则库 | DSL结构语法错误 |
+| XML格式错误诊断 | M3 → StAX XMLStreamException | 标签未闭合、属性引号缺失等XML格式错误 |
+| `ruleId: SYN-001/003/004` | M3 SyntaxChecker → M2规则库 | DSL结构语法错误（SYN-002/005/006/007 见 M4 SEM-* 规则） |
 | `ruleId: SYN-EXPR-001~006/ANTLR` | M3表达式解析 → M0 ANTLR4 | DSL表达式语法错误 |
 | `summary.skippedFiles`（非DSL XML） | M1 → M3跳过 | M1识别为非DSL，M3不处理 |
 
@@ -274,8 +278,8 @@ M3在CLI管线中的位置：
 
 | 异常场景 | 退出码 | 说明 |
 |---|---|---|
-| XML格式严重错误（SAX无法解析） | 1 | SAXParser抛出SAXParseException，M3产出XML格式错误诊断 |
-| 文件编码非UTF-8 | 1 | SAX解析时编码问题，产出编码相关诊断 |
+| XML格式严重错误（StAX无法解析） | 1 | XMLStreamReader抛出XMLStreamException，M3产出XML格式错误诊断 |
+| 文件编码非UTF-8 | 1 | StAX解析时编码问题，产出编码相关诊断 |
 | ANTLR4表达式解析失败 | 1 | 产出SYN-EXPR-ANTLR诊断，AST中对应属性值expression=null |
 
 ### 5.5 CLI输出示例
@@ -287,9 +291,8 @@ $ java -jar dsl-analyzer.jar --syntax-only theme.xml
 
 theme.xml:3:5: error: 未知元素标签 'UnknownTag' [SYN-003]
 theme.xml:5:10: warning: 未知属性 'unknownAttr' [SYN-004]
-theme.xml:8:1: error: 标签嵌套违反父子约束 [SYN-002]
 
-2 errors, 1 warning, 0 info
+1 error, 1 warning, 0 info
 ```
 
 **全量检查模式**（M3诊断+M4诊断合并输出）：
@@ -307,8 +310,8 @@ theme.xml:20:8: error: 类型不匹配，期望number实际string [SEM-TYPE-001]
 ## 6. 设计要点
 
 - **独立AST替代PSI**：自有DslAstNode体系替代IDEA PSI依赖，Core层无com.intellij import
-- **JDK SAX解析XML结构**：不使用ANTLR4解析XML；SAX SAXParseException直接报出XML格式错误，不包装映射为自定义SYN-xxx规则ID
+- **JDK StAX解析XML结构**：不使用ANTLR4解析XML；StAX XMLStreamException直接报出XML格式错误，不包装映射为自定义SYN-xxx规则ID
 - **ANTLR4仅用于表达式**：仅expression/reference类型属性值调用M0 DslExpressionParser；纯字面量属性直接验证不走解析器
 - **表达式嵌入判断**：从M2 AttrTypeSpec.supportsExpression字段决定是否调用解析器
 - **DslAstProvider纯字符串接口**：使用(filePath, content)参数，不依赖IDEA类型
-- **语法错误三层分层**：XML结构语法（JDK SAX） → DSL结构语法（AST+规则库比对） → DSL表达式语法（ANTLR4），各层独立检测
+- **语法错误三层分层**：XML结构语法（JDK StAX） → DSL结构语法（AST+规则库比对） → DSL表达式语法（ANTLR4），各层独立检测
