@@ -41,15 +41,9 @@ L4 子进程   → src/test/java/.../core/e2e/FatJarSubprocessE2ETest.java
 ./gradlew --no-daemon :feature:analysis:buildFatJar :feature:analysis:e2e
 ```
 
-### 1.3 常见陷阱（详见 `docs/knowledge/lessons-learned.md`）
+### 1.3 常见陷阱
 
-| 陷阱 | 症状 | 防护 |
-|---|---|---|
-| Gradle Daemon 卡死 | gradlew 命令永不返回 | `--no-daemon` + timeout |
-| PowerShell 管道 | 进程结束检测失败 | 用 Grep 工具替代 |
-| fat jar StAX 位置分歧 | L4 行列号与 L3 不同 | L4 positionAgnostic 模式 + findTagStart backward-first |
-| verbose 方法未接线 | --verbose 输出全 0 | PHASE 6 验证所有 record 方法有调用点 |
-| UTF-8 BOM | Java 编译失败 | 用 Write 工具或 `[System.IO.File]::WriteAllBytes` |
+常见陷阱和防护措施详见 `docs/knowledge/lessons-learned.md`（7-slot 模板，每条有可追溯来源锚点和可执行防护机制）。
 
 ---
 
