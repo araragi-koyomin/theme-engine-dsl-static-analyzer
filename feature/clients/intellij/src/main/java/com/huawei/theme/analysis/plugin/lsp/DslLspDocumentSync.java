@@ -229,6 +229,7 @@ final class DslLspDocumentSync implements Disposable {
     private static final TextAttributesKey TAG_VARIABLE_KEY = TextAttributesKey.createTextAttributesKey("DSL_TAG_VARIABLE");
     private static final TextAttributesKey TAG_COMMAND_KEY = TextAttributesKey.createTextAttributesKey("DSL_TAG_COMMAND");
     private static final TextAttributesKey KEYWORD_KEY = DefaultLanguageHighlighterColors.KEYWORD;
+    private static final TextAttributesKey VARIABLE_DEF_KEY = TextAttributesKey.createTextAttributesKey("DSL_VARIABLE_DEF");
     private static final TextAttributes VARIABLE_FALLBACK =
             new TextAttributes(JBColor.BLUE, null, null, null, Font.PLAIN);
     private static final TextAttributes FUNCTION_FALLBACK =
@@ -247,6 +248,8 @@ final class DslLspDocumentSync implements Disposable {
             new TextAttributes(new JBColor(0x0099AA, 0x0000FF), null, null, null, Font.ITALIC);
     private static final TextAttributes KEYWORD_FALLBACK =
             new TextAttributes(JBColor.GRAY, null, null, null, Font.BOLD);
+    private static final TextAttributes VARIABLE_DEF_FALLBACK =
+            new TextAttributes(new JBColor(0x6A9955, 0x4D7A3D), null, null, null, Font.BOLD);
 
     private void applySemanticTokensToEditor(String uri, List<Integer> data) {
         VirtualFile vf = VirtualFileManager.getInstance().findFileByUrl(uri);
@@ -301,7 +304,7 @@ final class DslLspDocumentSync implements Disposable {
      * (null — native XML handles); 10 = keyword (XML declaration + boolean).
      */
     private static TextAttributes[] resolveThemeAttrs() {
-        TextAttributes[] out = new TextAttributes[11];
+        TextAttributes[] out = new TextAttributes[12];
         out[0] = resolveAttr(VARIABLE_KEY, VARIABLE_FALLBACK);
         out[1] = resolveAttr(FUNCTION_KEY, FUNCTION_FALLBACK);
         out[2] = resolveAttr(NUMBER_KEY, NUMBER_FALLBACK);
@@ -312,6 +315,7 @@ final class DslLspDocumentSync implements Disposable {
         out[7] = resolveAttr(TAG_COMMAND_KEY, TAG_COMMAND_FALLBACK);
         // 8 (property) and 9 (comment) — null: IntelliJ native XML handles.
         out[10] = resolveAttr(KEYWORD_KEY, KEYWORD_FALLBACK);
+        out[11] = resolveAttr(VARIABLE_DEF_KEY, VARIABLE_DEF_FALLBACK);
         return out;
     }
 

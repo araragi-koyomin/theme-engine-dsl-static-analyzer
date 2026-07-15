@@ -48,7 +48,8 @@ final class SemanticTokensProvider {
     static final List<String> TOKEN_TYPES = List.of(
             "variable", "function", "number", "string",
             "tag", "tagRoot", "tagVariable", "tagCommand",
-            "property", "comment", "keyword");
+            "property", "comment", "keyword",
+            "variableDef");
     static final List<String> TOKEN_MODIFIERS = List.of();
 
     private static final int TYPE_VARIABLE = 0;
@@ -62,6 +63,7 @@ final class SemanticTokensProvider {
     private static final int TYPE_ATTRIBUTE = 8;
     private static final int TYPE_COMMENT = 9;
     private static final int TYPE_KEYWORD = 10;
+    private static final int TYPE_VARIABLE_DEF = 11;
 
     private static final Pattern COMMENT_PATTERN = Pattern.compile("<!--[\\s\\S]*?-->");
     private static final Pattern NUMERIC_PATTERN = Pattern.compile("-?\\d+(?:\\.\\d+)?");
@@ -129,12 +131,18 @@ final class SemanticTokensProvider {
                         }
                     } else if (value.getLine() > 0 && value.getRawValue() != null) {
                         // Literal attribute value — emit a value token so it
-                        // gets colored (numeric=number, boolean=keyword, else=string).
+                        // gets colored. The "name" attribute declares a
+                        // variable/element identifier → variableDef (distinct
+                        // from #var references which are "variable").
+                        // Numeric → number, boolean → keyword, else → string.
                         int vLine = value.getLine() - 1;
                         int vCol = value.getColumn();
                         int vLen = value.getRawValue().length();
                         if (vLen > 0) {
-                            tokens.add(new int[]{vLine, vCol, vLen, attrValueTypeOf(value.getRawValue())});
+                            int vType = "name".equals(name)
+                                    ? TYPE_VARIABLE_DEF
+                                    : attrValueTypeOf(value.getRawValue());
+                            tokens.add(new int[]{vLine, vCol, vLen, vType});
                         }
                     }
                 }

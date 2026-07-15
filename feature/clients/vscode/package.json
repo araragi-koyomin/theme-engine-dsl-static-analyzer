@@ -64,7 +64,8 @@
           "tagCommand": ["entity.name.tag.command", "entity.name.function"],
           "property": ["entity.other.attribute-name"],
           "comment": ["comment.block.xml"],
-          "keyword": ["keyword.other"]
+          "keyword": ["keyword.other"],
+          "variableDef": ["entity.name.variable", "variable.other.constant"]
         }
       }
     ]

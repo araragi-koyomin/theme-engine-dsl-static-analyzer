@@ -32,6 +32,7 @@ class SemanticTokensProviderTest {
     private static final int TYPE_ATTRIBUTE = 8;
     private static final int TYPE_COMMENT = 9;
     private static final int TYPE_KEYWORD = 10;
+    private static final int TYPE_VARIABLE_DEF = 11;
 
     @Test
     void legendUsesStandardTypesWithExpressionsFirst() {
@@ -46,6 +47,7 @@ class SemanticTokensProviderTest {
         assertEquals("property", SemanticTokensProvider.TOKEN_TYPES.get(8));
         assertEquals("comment", SemanticTokensProvider.TOKEN_TYPES.get(9));
         assertEquals("keyword", SemanticTokensProvider.TOKEN_TYPES.get(10));
+        assertEquals("variableDef", SemanticTokensProvider.TOKEN_TYPES.get(11));
         assertTrue(SemanticTokensProvider.TOKEN_MODIFIERS.isEmpty());
     }
 
@@ -75,13 +77,14 @@ class SemanticTokensProviderTest {
 
     @Test
     void emitsLiteralAttrValueTokens() {
-        // <Widget screenWidth="1080" align="center" enableMove="true"/>
-        // "1080" → number, "center" → string, "true" → keyword
-        String text = "<Widget screenWidth=\"1080\" align=\"center\" enableMove=\"true\"/>";
+        // <Widget screenWidth="1080" align="center" enableMove="true" name="img"/>
+        // "1080" → number, "center" → string, "true" → keyword, "img" → variableDef
+        String text = "<Widget screenWidth=\"1080\" align=\"center\" enableMove=\"true\" name=\"img\"/>";
         List<int[]> tokens = decode(provider.collect("test.xml", text));
         assertTrue(hasToken(tokens, TYPE_NUMBER), "numeric attr value should emit number");
         assertTrue(hasToken(tokens, TYPE_STRING), "string attr value should emit string");
         assertTrue(hasToken(tokens, TYPE_KEYWORD), "boolean attr value should emit keyword");
+        assertTrue(hasToken(tokens, TYPE_VARIABLE_DEF), "name attr value should emit variableDef");
     }
 
     @Test
