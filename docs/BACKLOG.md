@@ -38,9 +38,10 @@ created: 2026-07-15
 | 编号 | 名称 | 状态 | 分支 | 入口 |
 |---|---|---|---|---|
 | FIX001 | P0 Beta 闭环修复 | done | — | [→](development/specs/p0-bugfix/) |
-| FIX002 | 未定义 string 变量引用不报错 + main 编译断裂 | in-progress (PHASE 4→5) | fix/FIX002-undefined-str-ref | [→](development/specs/FIX002-undefined-str-ref/) |
+| FIX002 | 未定义 string 变量引用不报错 + main 编译断裂 | done (PHASE 5, 8/8 AC 绿) | fix/FIX002-undefined-str-ref | [→](development/specs/FIX002-undefined-str-ref/) |
 | FIX003 | TypeAnalyzer null 函数库静默吞 SEM-TYPE-* | pending | — | [审计 C2](development/reports/test-theater-audit-2026-07-15.md) |
 | FIX004 | 测试剧场治理（15 CRITICAL + 34 HIGH） | pending | — | [审计报告](development/reports/test-theater-audit-2026-07-15.md) |
+| FIX005 | LSP 模块编译断裂（AnalysisService 用旧 analyze() 3 参数签名） | done | fix/FIX002-undefined-str-ref | FIX002 Task 4 发现, 折入 FIX002 修复 |
 
 ## 活跃分支
 
@@ -53,7 +54,7 @@ created: 2026-07-15
 
 **CI 门禁(必须全绿)**:
 ```bash
-./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e
+./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e :feature:lsp:test
 ```
 包含 L4 fat jar 子进程测试(33/33 绿)。
 

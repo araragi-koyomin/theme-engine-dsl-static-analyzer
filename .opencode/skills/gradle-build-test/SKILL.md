@@ -34,7 +34,7 @@ description: Use when running Gradle builds, tests, or E2E gate commands in this
 ## CI 门禁总和命令
 
 ```bash
-./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e
+./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e :feature:lsp:test
 ```
 
 全绿方可合并。

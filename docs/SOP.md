@@ -72,7 +72,7 @@ main (稳定,全量门禁绿)
 
 ### 2.3 合入流程
 
-1. 全量门禁全绿: `./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e`
+1. 全量门禁全绿: `./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e :feature:lsp:test`
 2. 调 reviewer agent 审查
 3. 审查通过 → push → 创建 PR
 4. 用户确认 → merge to main
