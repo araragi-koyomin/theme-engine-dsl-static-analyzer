@@ -339,8 +339,8 @@ public class VarRefAnalyzer implements DslAnalyzer {
 
     private Diagnostic buildUndefinedElementRefDiagnostic(ExpressionNode ref, String elementName,
                                                            DslElementNode hostNode, DslContext context) {
-        String docUrl = resolveDocUrl(context, RULE_REF_002);
-        String refText = ref.getPrefix() != null ? ref.getPrefix() + ref.getVariableName() : ref.getVariableName();
+        String docUrl = resolveDocUrl(context, RULE_REF_001);
+        String highlightText = ref.getPrefix() != null ? ref.getPrefix() + ref.getVariableName() : ref.getVariableName();
         int line = ref.getLine();
         int column = ref.getColumn();
         int endLine;
@@ -352,7 +352,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
             endColumn = hostNode.getEndColumn();
         } else {
             endLine = line;
-            endColumn = column + refText.length();
+            endColumn = column + highlightText.length();
         }
         String refText = ref.getPrefix() != null ? ref.getPrefix() + elementName : elementName;
         return Diagnostic.builder()
