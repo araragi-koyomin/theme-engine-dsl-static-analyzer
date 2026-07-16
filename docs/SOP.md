@@ -53,7 +53,8 @@ L4 子进程   → src/test/java/.../core/e2e/FatJarSubprocessE2ETest.java
 
 ```
 main (稳定,全量门禁绿)
-  ├── feature/<name> (开发分支,基于 main)
+  ├── fix/<name> (缺陷修复分支,基于 main)
+  ├── feature/<name> (功能开发分支,基于 main)
   │   └── PR → reviewer → merge to main
   └── feature/doc-restructure (文档专用分支)
 ```
@@ -71,10 +72,11 @@ main (稳定,全量门禁绿)
 
 ### 2.3 合入流程
 
-1. 全量门禁全绿: `./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e`
+1. 全量门禁全绿: `./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e :feature:lsp:test`
 2. 调 reviewer agent 审查
 3. 审查通过 → push → 创建 PR
 4. 用户确认 → merge to main
+5. 独立的 fix/feat 分支采用 **squash merge**，保证 main commit 干净（1 个 fix/feat = 1 个 main commit）。squash 后将 SDD spec 目录归档至 `docs/archive/YYYY-MM/`，BACKLOG 热层条目移除
 
 ---
 

@@ -3,11 +3,14 @@ package com.huawei.theme.analysis.lsp;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 
+import com.huawei.theme.analysis.core.cli.InspectionConfig;
+import com.huawei.theme.analysis.core.cli.PipelineMode;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProvider;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderImpl;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilder;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilderImpl;
+import com.huawei.theme.analysis.core.semanticanalysis.VerboseCollector;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 import com.huawei.theme.analysis.core.syntaxanalysis.AstBuilder;
@@ -48,7 +51,8 @@ final class AnalysisService {
             return List.of();
         }
         try {
-            return diagnosticProvider.analyze(ast, ruleRepository, symbolTableBuilder);
+            return diagnosticProvider.analyze(ast, ruleRepository, symbolTableBuilder,
+                    PipelineMode.FULL, InspectionConfig.builder().build(), null);
         } catch (CancellationException e) {
             throw e;
         } catch (RuntimeException e) {
