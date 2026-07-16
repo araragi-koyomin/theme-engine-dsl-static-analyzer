@@ -268,6 +268,8 @@ class TypeAnalyzerTest {
         DslAttributeNode a = new DslAttributeNode();
         a.setName(name);
         a.setText(rawValue);
+        a.setLine(10);
+        a.setColumn(5);
         DslAttributeValueNode v = new DslAttributeValueNode();
         v.setRawValue(rawValue);
         v.setText(rawValue);
