@@ -25,8 +25,11 @@ import org.antlr.intellij.adaptor.lexer.PSIElementTypeFactory;
 import org.antlr.intellij.adaptor.lexer.RuleIElementType;
 import org.antlr.intellij.adaptor.lexer.TokenIElementType;
 
+import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.expression.generated.DslExpressionLexer;
 import com.huawei.theme.analysis.core.expression.generated.DslExpressionParser;
+import com.huawei.theme.analysis.core.expression.model.FunctionParam;
+import com.huawei.theme.analysis.core.expression.model.FunctionSignature;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
@@ -180,7 +183,44 @@ public class DslExpressionDocumentationProvider extends AbstractDocumentationPro
         if (funcName == null) {
             return null;
         }
-        return doc("Function", funcName + "(...)", "", "Documentation not yet available.");
+        RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
+        FunctionSignatureLibrary lib = repo.getFunctionSignatureLibrary();
+        if (lib == null) {
+            return doc("Function", funcName + "(...)", "", "Function library not loaded.");
+        }
+        List<FunctionSignature> sigs = lib.getSignatures(funcName);
+        if (sigs.isEmpty()) {
+            return doc("Function", funcName + "(...)", "", "Unknown function.");
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (FunctionSignature sig : sigs) {
+            if (sb.length() > 0) {
+                sb.append("<hr>");
+            }
+            sb.append(DocumentationMarkup.DEFINITION_START);
+            sb.append("<b>").append(sig.getName()).append("(");
+            List<FunctionParam> params = sig.getParams();
+            for (int i = 0; i < params.size(); i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                FunctionParam p = params.get(i);
+                sb.append(p.getName());
+                if (p.isVariadic()) {
+                    sb.append("...");
+                }
+                sb.append(": ").append(p.getType() != null ? p.getType().getName() : "number");
+            }
+            sb.append(")</b>");
+            sb.append(" <code>").append(sig.getExpressionKind()).append("</code>");
+            sb.append(DocumentationMarkup.DEFINITION_END);
+            sb.append(DocumentationMarkup.CONTENT_START);
+            String desc = sig.getDescription();
+            sb.append(desc != null ? desc : "No description available.");
+            sb.append(DocumentationMarkup.CONTENT_END);
+        }
+        return sb.toString();
     }
 
     private String doc(String kind, String signature, String type, String content) {

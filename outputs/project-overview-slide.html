@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theme Engine DSL 静态分析器</title>
+<style>
+  :root{
+    --bg:#0e1322; --panel:#171f38; --panel2:#1d2745; --line:#2b3658;
+    --txt:#e8ecf6; --mut:#93a0c0; --dim:#5b6685;
+    --c1:#4fc3f7; --c2:#ffb74d; --c3:#7e57c2; --c4:#66bb6a; --c5:#ef5350; --c6:#26c6da;
+    --W:1280px; --H:720px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--txt);
+    font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center}
+
+  #stage{width:var(--W);height:var(--H);position:relative;transform-origin:center center}
+  .deck{width:var(--W);height:var(--H);position:relative}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;
+    padding:44px 60px 38px;background:linear-gradient(160deg,#0e1322 0%,#131a30 100%)}
+  .slide.active{display:flex}
+
+  .title{justify-content:center;align-items:center;text-align:center}
+  .title h1{font-size:62px;line-height:1.12;letter-spacing:1px}
+  .title h1 .accent{background:linear-gradient(90deg,var(--c1),var(--c3));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .title .tagline{color:var(--mut);font-size:19px;margin-top:22px;max-width:860px;line-height:1.6}
+  .title .badges{margin-top:30px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .badge{font-size:13px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);padding:6px 14px;border-radius:20px}
+
+  .shead{display:flex;align-items:baseline;gap:14px;border-bottom:2px solid var(--line);padding-bottom:11px;margin-bottom:16px}
+  .shead .no{font-size:15px;font-weight:800;color:var(--c1);letter-spacing:1px}
+  .shead h2{font-size:26px;flex:1}
+  .shead .chip{font-size:12px;color:var(--mut);border:1px solid var(--line);padding:3px 10px;border-radius:20px}
+  .sbody{flex:1;display:flex;flex-direction:column;gap:13px;min-height:0}
+
+  p.lead{color:var(--mut);font-size:14px;line-height:1.6}
+  code{font-family:"JetBrains Mono","Consolas",monospace;font-size:12px;background:#0a0f1e;border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:#cfd8f5}
+
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:13px;flex:1;min-height:0}
+  .cols3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;flex:1;min-height:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;display:flex;flex-direction:column;min-height:0}
+  .card h3{font-size:14.5px;margin-bottom:7px;display:flex;align-items:center;gap:8px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+  .card ul{list-style:none;font-size:12.5px;color:var(--mut);line-height:1.85}
+  .card ul li{padding-left:14px;position:relative}
+  .card ul li::before{content:"›";position:absolute;left:0;color:var(--c1)}
+  .card ul li b{color:var(--txt)}
+  .card .sub{color:var(--mut);font-size:12px;line-height:1.55;margin:2px 0 7px}
+
+  .ex{background:#0a0f1e;border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+    font-family:"JetBrains Mono","Consolas",monospace;font-size:12px;line-height:1.6;
+    color:#a8b4d6;overflow:auto;white-space:pre;flex:1}
+  .ex .k{color:var(--c1)} .ex .s{color:var(--c2)} .ex .c{color:var(--dim)} .ex .n{color:var(--c4)} .ex .e{color:var(--c5)}
+
+  .flow{display:flex;align-items:stretch;gap:0;flex:1}
+  .flow .step{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:15px 13px;display:flex;flex-direction:column;gap:7px}
+  .flow .step .sn{font-size:13px;font-weight:800;width:28px;height:28px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;color:#fff}
+  .flow .step h4{font-size:15px}
+  .flow .step p{font-size:11.5px;color:var(--mut);line-height:1.5}
+  .flow .arrow{display:flex;align-items:center;justify-content:center;width:32px;color:var(--line);font-size:20px;flex:none}
+  .f1 .sn{background:var(--c1)} .f2 .sn{background:var(--c2)} .f3 .sn{background:var(--c3)} .f4 .sn{background:var(--c4)} .f5 .sn{background:var(--c5)} .f6 .sn{background:var(--c6)}
+
+  .pills{display:flex;flex-wrap:wrap;gap:7px}
+  .pill{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:4px 11px;font-size:12px}
+  .feat{display:flex;flex-direction:column;gap:6px}
+  .feat .row{display:flex;gap:10px;align-items:flex-start}
+  .feat .ic{width:22px;height:22px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:700}
+  .feat .rt{flex:1}
+  .feat .rt b{font-size:13px;color:var(--txt)}
+  .feat .rt span{display:block;font-size:11.5px;color:var(--mut);line-height:1.5}
+
+  .footer{position:absolute;left:60px;right:60px;bottom:16px;display:flex;justify-content:space-between;
+    color:var(--dim);font-size:11px;border-top:1px solid var(--line);padding-top:7px}
+
+  #nav{position:fixed;bottom:14px;right:18px;display:flex;align-items:center;gap:10px;
+    background:rgba(23,31,56,.85);border:1px solid var(--line);border-radius:24px;padding:6px 12px;
+    backdrop-filter:blur(6px);z-index:50}
+  #nav button{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+  #nav button:hover{background:var(--c1);color:#000;border-color:var(--c1)}
+  #counter{font-size:13px;color:var(--mut);min-width:48px;text-align:center}
+  .hint{position:fixed;bottom:18px;left:18px;color:var(--dim);font-size:11px;z-index:50}
+</style>
+</head>
+<body>
+<div id="stage">
+<div class="deck" id="deck">
+
+  <!-- 1: TITLE -->
+  <section class="slide title active">
+    <h1>主题引擎 DSL <span class="accent">静态分析器</span></h1>
+    <p class="tagline">把开发者 Markdown 文档变成机器可读规则，经语法 / 语义分析管线产出诊断与修复建议，以 CLI 与 IDE 插件双形态交付。</p>
+    <div class="badges">
+      <span class="badge">HarmonyOS Theme Engine DSL</span>
+      <span class="badge">Java 17 · ANTLR4 · SAX · GSON</span>
+      <span class="badge">Core–Plugin 隔离</span>
+    </div>
+  </section>
+
+  <!-- 2: WHAT WE BUILD -->
+  <section class="slide">
+    <div class="shead"><span class="no">我们在做什么</span><h2>两个产出 · 同一套规则与分析能力</h2><span class="chip">面向开发者 · 面向自动化 · 面向 AI</span></div>
+    <div class="sbody">
+      <p class="lead">我们为"写主题"这件事做了一套<strong>能自动发现并修复错误</strong>的基础设施：规则直接从开发文档提炼，写主题文件时哪里不对立刻告诉你、还能教你怎么改——最终落地为<strong>一个命令行检查工具</strong>和<strong>一个智能编辑器插件</strong>，两者背后是同一套规则和分析能力。</p>
+      <div class="cols2">
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c5)"></span>① 命令行检查工具</h3>
+          <p class="sub">一条命令检查一个文件或整个文件夹，列出所有问题（错在哪一行、为什么错、怎么改），输出报告并给出"通过/不通过"的结论。能嵌入自动化流程，也能给 AI 助手当工具用。</p>
+          <div class="ex"><span class="c"># 检查整个文件夹，生成报告</span>
+$ java -jar dsl-analyzer.jar <span class="s">themes/</span> \
+    --format <span class="n">json</span> --output report.json
+
+<span class="c"># AI 助手调用：拿到问题清单自动改</span>
+$ java -jar dsl-analyzer.jar <span class="s">lock.xml</span> --format <span class="n">json</span>
+<span class="c">{"问题":[{"说明":"src与srcExp无法共存",</span>
+<span class="c">  "严重程度":"错误","行号":8}]}</span>
+<span class="c">→ 结论：未通过</span></div>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c1)"></span>② 智能编辑器插件</h3>
+          <p class="sub">让写主题文件像写普通程序一样顺手：边写边提示错误、光标停住看说明、点一下就能修、还能在变量之间跳来跳去。装在 IntelliJ 里即可用。</p>
+          <div class="ex"><span class="c">// 编辑器里写错了，立刻提示</span>
+&lt;Image src="i.png" <span class="e">srcExp="#pic"</span> <span class="e">alpha="999"</span>/&gt;
+     <span class="e">└─ src 与 srcExp 不能同时填</span>
+     <span class="e">└─ alpha 应在 0–255 之间</span>
+
+<span class="c">💡 点一下修复：移除 srcExp</span>
+<span class="c">💡 点一下修复：把 alpha 改成 255</span>
+
+<span class="c">// 点变量名 → 跳到定义处 / 改名自动同步</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>命令行工具与编辑器插件共享同一套规则，规则一改两边都生效</span><span>一次配置，处处可用</span></div>
+  </section>
+
+  <!-- 3: OVERVIEW -->
+  <section class="slide">
+    <div class="shead"><span class="no">管线总览</span><h2>五段式静态分析链路</h2><span class="chip">同一 Core 引擎 · 双形态交付</span></div>
+    <div class="sbody">
+      <div class="flow">
+        <div class="step f1"><div class="sn">1</div><h4>Markdown → JSON</h4><p>md-to-rule skill 抽取标签 / 属性 / scope / 声明式约束</p></div>
+        <div class="arrow">▶</div>
+        <div class="step f2"><div class="sn">2</div><h4>RuleRepository</h4><p>JSON 加载为 Map 查询接口，纯数据层无依赖</p></div>
+        <div class="arrow">▶</div>
+        <div class="step f3"><div class="sn">3</div><h4>语法 / 语义分析</h4><p>SAX→AST + 10 个 Analyzer 对照规则做约束判定</p></div>
+        <div class="arrow">▶</div>
+        <div class="step f4"><div class="sn">4</div><h4>诊断 + 修复</h4><p>Diagnostic + FixAction → JSON / MD / 终端报告</p></div>
+        <div class="arrow">▶</div>
+        <div class="step f5"><div class="sn">5</div><h4>CLI + 插件</h4><p>fat jar 检查 / agent 调用；IntelliJ 实时标注</p></div>
+      </div>
+      <p class="lead" style="text-align:center">端到端示例：<code>widget_multi_violation.xml</code> → 7 errors (SEM-REQ / NEST / SCOPE / ATTR / TRIG) · exit 1</p>
+    </div>
+  </section>
+
+  <!-- 4: STAGE 01 -->
+  <section class="slide">
+    <div class="shead"><span class="no">① STAGE 01</span><h2>Markdown 文档 → 规格化 JSON</h2><span class="chip">opencode skill · md-to-rule</span></div>
+    <div class="sbody">
+      <p class="lead">原始开发者文档（功能概述 / 参数说明表 / 应用示例）经 <code>md-to-rule</code> skill 转换为机器可读元素规则 JSON：抽取标签名、属性类型 / 别名 / 枚举 / 表达式支持、scope 矩阵、设备支持，并把"X 与 Y 无法共存""取值 0–24"等注释提炼为声明式 constraint。</p>
+      <div class="cols2">
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c1)"></span>输入 · raw_markdown</h3>
+          <div class="ex"><span class="c"># 视图：图片&lt;Image&gt;</span>
+
+<span class="c">| 参数 | 类型 | 选项 | 注释 |</span>
+| src     | 字符串 | 选填 | src与srcExp必须填一个 |
+| blur    | 字符串 | 选填 | <span class="n">值为0到24</span> |
+| scaleType|字符串 | 选填 | fill/center_crop… |
+| isBackground|字符串|选填| 必须配scaleType=center_crop |</div>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c1)"></span>输出 · Image.json</h3>
+          <div class="ex">{ <span class="k">"element"</span>:<span class="s">"Image"</span>, <span class="k">"category"</span>:<span class="s">"view"</span>,
+  <span class="k">"attrTypes"</span>:{ <span class="k">"scaleType"</span>:{<span class="k">"enumValues"</span>:[<span class="s">"fill"</span>,<span class="s">"center_crop"</span>]} },
+  <span class="k">"scope"</span>:{<span class="s">"Lockscreen"</span>:true,<span class="s">"Widget"</span>:true},
+  <span class="k">"constraints"</span>:[
+    {<span class="k">"ruleId"</span>:<span class="s">"SEM-IMG-002"</span>,
+     <span class="k">"condition"</span>:<span class="s">"src!=null AND srcExp!=null"</span>}
+  ] }</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>docs/themes_engine_next/raw_markdown/*.md</span><span>→ rules/elements/**/*.json</span></div>
+  </section>
+
+  <!-- 5: STAGE 02 -->
+  <section class="slide">
+    <div class="shead"><span class="no">② STAGE 02</span><h2>JSON → RuleRepository</h2><span class="chip">M2 · 纯数据层 · 无上游依赖</span></div>
+    <div class="sbody">
+      <p class="lead"><code>JsonRuleLoader</code> 加载所有元素 JSON + 全局变量 + 规则来源，构建 <code>DefaultRuleRepository</code>（Map 存储，O(1) 查询）。它是对<strong>唯一查询契约</strong>——消费方依赖接口而非实现，支持 <code>--rule-dir</code> 外部规则库替换与测试 Mock 注入。</p>
+      <div class="cols2">
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c2)"></span>装配</h3>
+          <div class="ex">JsonRuleLoader
+  .loadFromClasspath(functionLibrary)
+  → DefaultRuleRepository
+      elementRules  : Map&lt;String,DslElementRule&gt;
+      globalVars    : Map&lt;String,DslGlobalVar&gt;
+      ruleSources   : Map&lt;String,RuleSource&gt;
+      aliasMap      : 别名→规范名
+      childrenMap   : 反向推导子元素</div>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c2)"></span>核心查询</h3>
+          <div class="ex"><span class="k">getElementRule</span>(<span class="s">"Image"</span>)        <span class="c">// → 规则条目</span>
+<span class="k">getConstraints</span>(<span class="s">"Image"</span>)       <span class="c">// → 声明式约束</span>
+<span class="k">getAllowedParents</span>(<span class="s">"Button"</span>)    <span class="c">// → 合法父元素</span>
+<span class="k">getAllowedChildren</span>(<span class="s">"Group"</span>)    <span class="c">// → 反向子元素</span>
+<span class="k">resolveAttrAlias</span>(<span class="s">"Image"</span>,<span class="s">"w"</span>) <span class="c">// → "width"</span>
+<span class="k">getRootElementNames</span>()           <span class="c">// → M1 文件识别</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>消费方：M1 · M3 · M4 · M5 · M7</span><span>RuleRepository.java</span></div>
+  </section>
+
+  <!-- 6: STAGE 03a SYNTAX -->
+  <section class="slide">
+    <div class="shead"><span class="no">③ STAGE 03a</span><h2>语法分析 · M3 SyntaxChecker</h2><span class="chip">编译器前端</span></div>
+    <div class="sbody">
+      <p class="lead"><strong>语法分析</strong>回答"文件结构对不对"——标签有没有闭合、引号有没有配对、是不是一份合法的 XML。这是最基础的一层：连结构都不对，后面的规则检查无从谈起。JDK SAX 解析 XML → 独立 AST（带行列号）+ 嵌入 ANTLR4 表达式。</p>
+      <div class="cols2">
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c3)"></span>检测规则</h3>
+          <ul>
+            <li><code>SYN-SAX-001</code> XML 结构错误（标签未闭合 / 引号缺失 / 标签不匹配）</li>
+            <li><code>SYN-001</code> 根元素标签错误</li>
+            <li><code>SYN-003</code> 未知元素标签（标签名不在规格中）</li>
+            <li><code>SYN-004</code> 未知属性名（warning）</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c3)"></span>示例</h3>
+          <div class="ex"><span class="c">// 属性值漏了右引号 → 结构错误</span>
+&lt;Image <span class="e">src="i.png /></span>&gt;
+
+<span class="c">// 标签没有闭合 → 结构错误</span>
+&lt;Group name="bg"&gt;
+  &lt;Image src="i.png"/&gt;
+<span class="c">（缺少 &lt;/Group&gt;）</span>
+
+<span class="c">// 开闭标签不匹配 → 结构错误</span>
+&lt;<span class="e">Lockscreen</span>&gt; ... &lt;/<span class="e">Wallpaper</span>&gt;</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>syntaxanalysis/SyntaxChecker.java · AstBuilder.java</span><span>产出 → DslFileNode (AST)</span></div>
+  </section>
+
+  <!-- 7: STAGE 03b SEMANTIC -->
+  <section class="slide">
+    <div class="shead"><span class="no">③ STAGE 03b</span><h2>语义分析 · M4 Analyzers</h2><span class="chip">编译器后端 · 声明式约束</span></div>
+    <div class="sbody">
+      <p class="lead"><strong>语义分析</strong>回答"是否符合规则"——必填缺失、嵌套违反、取值越界、属性冲突。<code>AnalyzerRegistry</code> 调度 10 个 Analyzer 对照规则库做约束判定；声明式 constraint 经 ANTLR4 文法求值，<code>condition==true</code> 即违反，<strong>新增规则无需写 Analyzer 代码</strong>。</p>
+      <div class="cols2">
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c3)"></span>检测规则（部分）</h3>
+          <ul>
+            <li><code>SEM-REQ-001</code> 必填属性缺失</li>
+            <li><code>SEM-NEST-001</code> 父子嵌套违反</li>
+            <li><code>SEM-SCOPE-001</code> 不支持当前应用位置</li>
+            <li><code>SEM-ATTR-001</code> alpha 越界 (0–255)</li>
+            <li><code>SEM-IMG-002</code> src / srcExp 共存冲突</li>
+          </ul>
+          <div class="ex" style="margin-top:6px"><span class="c">// alpha=999 越界 → SEM-ATTR-001</span>
+&lt;Image <span class="e">alpha="999"</span> src="i.png"/&gt;</div>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c3)"></span>声明式约束求值</h3>
+          <div class="ex"><span class="c">// Image.json 中声明</span>
+{ <span class="k">"ruleId"</span>:<span class="s">"SEM-IMG-002"</span>,
+  <span class="k">"condition"</span>:
+    <span class="s">"element.attrs['src']!=null</span>
+<span class="s">     AND element.attrs['srcExp']!=null"</span>,
+  <span class="k">"severity"</span>:<span class="s">"error"</span>,
+  <span class="k">"suggestedFixes"</span>:[{"text":"移除srcExp",
+     "type":"REMOVE_ATTR","target":"srcExp"}] }
+
+<span class="c">// ConstraintAnalyzer 用</span>
+<span class="c">// DefaultRuleDslEvaluator 求值</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>semanticanalysis/analyzers/*.java · ruledsl/DefaultRuleDslEvaluator.java</span><span>10 Analyzers → List&lt;Diagnostic&gt;</span></div>
+  </section>
+
+  <!-- 8: STAGE 04 -->
+  <section class="slide">
+    <div class="shead"><span class="no">④ STAGE 04</span><h2>Diagnostic 合成报告 + 修复建议</h2><span class="chip">M5 修复 · M7 批量报告</span></div>
+    <div class="sbody">
+      <p class="lead">每条诊断携带 <code>ruleId / severity / message / 行列位置 / suggestedFixes</code>。<code>FixActionGenerator</code> 把 JSON 里的修复建议转成结构化 <code>FixAction</code>（纯文本操作，无 UI 依赖）；<code>BatchInspectionRunner</code> 汇总诊断按 <code>--format</code> 导出报告与退出码。</p>
+      <div class="cols2">
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c4)"></span>FixAction 类型</h3>
+          <div class="ex"><span class="n">SET_VALUE</span>   scaleType = "center_crop"
+<span class="n">REMOVE_ATTR</span> 删除 srcExp
+<span class="n">ADD_ATTR</span>    补 src
+<span class="n">CLAMP_VALUE</span> alpha 钳制到 0-255</div>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c4)"></span>报告产物 + 退出码</h3>
+          <div class="ex"><span class="s">terminal</span>  彩色表格，人读
+<span class="s">json</span>      机器读，同构 golden
+<span class="s">markdown</span>  文档化
+
+<span class="c">exit 0  无 error</span>
+<span class="c">exit 1  存在 error</span>
+<span class="c">exit 2  致命错误</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>quickfix/FixActionGenerator.java · batchinspection/ReportExporterImpl.java</span><span>Diagnostic + FixAction</span></div>
+  </section>
+
+  <!-- 9: STAGE 05 CLI + INTELLIJ (STABLE) -->
+  <section class="slide">
+    <div class="shead"><span class="no">⑤ STAGE 05</span><h2>产物：命令行工具 + IntelliJ 插件</h2><span class="chip">稳定版</span></div>
+    <div class="sbody">
+      <div class="cols2">
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c5)"></span>命令行检查工具</h3>
+          <p class="sub">一条命令检查主题文件，列出全部问题并给出修改建议，输出报告和"通过/不通过"结论。适合批量检查整个项目、嵌入自动构建流程，或交给 AI 助手自动修复。</p>
+          <div class="ex"><span class="c"># 检查一个文件或整个文件夹</span>
+$ java -jar dsl-analyzer.jar <span class="s">themes/</span> \
+  --format <span class="n">表格</span>            <span class="c"># 也可选 json / markdown</span>
+  --output 报告.json          <span class="c"># 存成文件</span>
+
+<span class="c"># 检查结果（示例）</span>
+  lock.xml  第 8 行  错误  src 与 srcExp 不能同时填
+  lock.xml  第 12 行 警告  alpha 超出 0–255
+→ 未通过（2 个问题）</div>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c1)"></span>IntelliJ 插件 · 给你哪些能力</h3>
+          <div class="feat">
+            <div class="row"><div class="ic" style="background:var(--c5)">1</div><div class="rt"><b>边写边提示错误</b><span>写到哪行立刻标红，鼠标停住就看得到问题说明和出错原因</span></div></div>
+            <div class="row"><div class="ic" style="background:var(--c2)">2</div><div class="rt"><b>输入时自动补全</b><span>打字时弹出合法的标签名、属性名和可选值，必填的排在前面</span></div></div>
+            <div class="row"><div class="ic" style="background:var(--c4)">3</div><div class="rt"><b>悬浮看文档</b><span>光标停在标签或属性上，直接看到用法说明，不用翻文档</span></div></div>
+            <div class="row"><div class="ic" style="background:var(--c3)">4</div><div class="rt"><b>不同内容不同颜色</b><span>标签、属性、表达式各自配色，一眼看清结构，颜色还能自己调</span></div></div>
+            <div class="row"><div class="ic" style="background:var(--c1)">5</div><div class="rt"><b>点变量跳到定义、改名自动同步</b><span>按住 Ctrl 点变量名跳到声明处，改名时所有引用一起更新</span></div></div>
+            <div class="row"><div class="ic" style="background:var(--c6)">6</div><div class="rt"><b>表达式单独智能处理</b><span>属性值里的表达式被单独识别，有自己的高亮、补全和检查</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>命令行与插件共用同一套规则，规则更新两边同时生效</span><span>装上插件即可在 IntelliJ 中使用</span></div>
+  </section>
+
+  <!-- 10: STAGE 06 EXPERIMENTAL LSP -->
+  <section class="slide">
+    <div class="shead"><span class="no">⑥ STAGE 06</span><h2>实验性：让其他编辑器也能用</h2><span class="chip">同一套能力，不挑编辑器</span></div>
+    <div class="sbody">
+      <div class="cols2">
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c6)"></span>LSP 是什么</h3>
+          <p class="sub">LSP（语言服务器协议）是一种<strong>通用标准</strong>：把"检查、补全、提示"这些能力做成一个独立的后台服务，任何遵循标准的编辑器都能接上去。好处是——<strong>写一次，到处能用</strong>，不用为每个编辑器单独开发。</p>
+          <div class="ex"><span class="c">      编辑器                  后台服务</span>
+  ┌──────────────┐        ┌──────────────────┐
+  │  你在用的      │ ◀────▶ │  主题检查服务      │
+  │  编辑器        │  通话   │（和插件同一套规则）│
+  │ VSCode/Neovim │        │                  │
+  │ Helix 等      │        │                  │
+  └──────────────┘        └──────────────────┘
+
+<span class="c"># 只要编辑器支持 LSP，就能获得：</span>
+  · 写错立刻提示
+  · 输入时补全
+  · 悬浮看说明
+  · 规则随时更新</div>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:var(--c6)"></span>目前的支持情况</h3>
+          <ul>
+            <li><b>独立后台服务</b>：一个可独立运行的检查服务，和插件用同一套规则</li>
+            <li><b>IntelliJ（LSP 版）</b>：通过后台服务接入，获得提示 / 补全 / 悬浮</li>
+            <li><b>VS Code</b>：装扩展即可用，配置项写在设置里</li>
+            <li><b>其他编辑器</b>：Neovim、Helix、coc.nvim 等均可按标准接入</li>
+            <li><b>规则可随时切换</b>：不用重启，改了配置立刻生效</li>
+          </ul>
+          <p class="sub" style="margin-top:4px"><strong>状态：实验性</strong>。目前提示、补全、悬浮已可用；一键修复和更多能力仍在完善中。稳定版推荐用上一页的 IntelliJ 插件。</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>目标：让开发者用自己顺手的编辑器，都能获得同样的检查体验</span><span>后续：一键修复、更多编辑器适配</span></div>
+  </section>
+
+</div>
+</div>
+
+<div class="hint">← → 翻页 · F 全屏</div>
+<div id="nav">
+  <button id="prev">‹</button>
+  <span id="counter">1 / 10</span>
+  <button id="next">›</button>
+</div>
+
+<script>
+(function(){
+  var slides = document.querySelectorAll('.slide');
+  var total = slides.length;
+  var cur = 0;
+  var stage = document.getElementById('stage');
+  var counter = document.getElementById('counter');
+
+  function show(i){
+    slides[cur].classList.remove('active');
+    cur = (i + total) % total;
+    slides[cur].classList.add('active');
+    counter.textContent = (cur+1) + ' / ' + total;
+  }
+  function next(){ show(cur+1); }
+  function prev(){ show(cur-1); }
+
+  document.getElementById('next').onclick = next;
+  document.getElementById('prev').onclick = prev;
+  document.addEventListener('keydown', function(e){
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' ') next();
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp') prev();
+    else if(e.key==='Home') show(0);
+    else if(e.key==='End') show(total-1);
+    else if(e.key==='f'||e.key==='F'){
+      if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  function fit(){
+    var W = 1280, H = 720;
+    var s = Math.min(window.innerWidth/W, window.innerHeight/H);
+    stage.style.transform = 'scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+})();
+</script>
+</body>
+</html>

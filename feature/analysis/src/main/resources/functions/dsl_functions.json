@@ -4,241 +4,281 @@
       "name": "sin",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "三角函数正弦值，x为弧度值，返回sin(x)的值"
     },
     {
       "name": "cos",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "三角函数余弦值，x为弧度值，返回cos(x)的值"
     },
     {
       "name": "tan",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "正切值，返回x的正切值，当x的绝对值趋近pi/2的倍数可能因为精度问题导致不正常值"
     },
     {
       "name": "asin",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "反三角函数，当x为[-1, 1]时返回区间为[-pi/2, pi/2]的值，如果输入的绝对值超过1，返回的是0"
     },
     {
       "name": "acos",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "反三角函数，当x为[-1, 1]时返回区间为[-pi/2, pi/2]的值，如果输入的绝对值超过1，返回的是0"
     },
     {
       "name": "atan",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "反正切值，返回x的反正切值"
     },
     {
       "name": "sqrt",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "开平方函数，x为正数，如果输入x为负数则返回结果是0"
     },
     {
       "name": "abs",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "返回一个数的绝对值"
     },
     {
       "name": "min",
       "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "返回x和y中的最小值"
     },
     {
       "name": "max",
       "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "返回x和y中的最大值"
     },
     {
       "name": "digit",
       "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "pos", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "取给定数字的第几位，顺序为倒序从右往左，并且索引从1开始。例如digit(12345, 2) = 4，digit(12345, 1) = 5"
     },
     {
       "name": "round",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "对输入的值四舍五入取整。负数时，小数点后<=0.5时向右取整，小数部分>0.5则向左取整，例如round(4.5)=5, round(-4.5)=-4"
     },
     {
       "name": "int",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "舍弃掉小数部分，例如int(4.5)=4, int(-4.5)=-4"
     },
     {
       "name": "int",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "舍弃掉小数部分，例如int(4.5)=4, int(-4.5)=-4"
     },
     {
       "name": "rand",
       "params": [],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "取0到1之间的随机数，返回值为float。例如int(rand()*a+b)得到的是b到b+a之间的随机整数"
     },
     {
       "name": "eq",
       "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "条件判断，x是否与y相等，当x、y相等时，此表达式值为1，否则为0"
     },
     {
       "name": "ne",
       "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "条件判断，x是否与y不相等，当x、y不相等时，此表达式值为1，否则为0"
     },
     {
       "name": "ge",
       "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "条件判断，x是否大于等于y，当x大于等于y时，此表达式值为1，否则为0"
     },
     {
       "name": "gt",
       "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "条件判断，x是否大于y，当x大于y时，此表达式值为1，否则为0"
     },
     {
       "name": "le",
       "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "条件判断，x是否小于等于y，当x小于等于y时，此表达式值为1，否则为0"
     },
     {
       "name": "lt",
       "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "条件判断，x是否小于y，当x小于y时，此表达式值为1，否则为0"
     },
     {
       "name": "isnull",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "条件判断，是否变量没有值，如果没有值返回1，有值返回0。x为全局变量，用于判断绑定的变量是否查到数据，例如：isnull(#var)或者isnull(@var)"
     },
     {
       "name": "not",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "条件判断，x是否等于0，若等于0则返回1，如果不等于0则返回0"
     },
     {
       "name": "ifelse",
       "params": [{"name": "cond", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}, {"name": "z", "type": "number", "isVariadic": true}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "条件判断，如果x大于0则返回y，否则返回z。支持循环条件判断：ifelse(x1,y1,x2,y2,...,z) — 如果x1大于零则返回y1，否则判断x2是否大于零...如果都不满足则返回z"
     },
     {
       "name": "pow",
       "params": [{"name": "x", "type": "number", "isVariadic": false}, {"name": "y", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "幂方函数，表示x的y次方的值，例如pow(2,3)=8"
     },
     {
       "name": "len",
       "params": [{"name": "x", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "给定数字的数字的个数，例如len(1234)=4，len(-123.123)=6"
     },
     {
       "name": "preciseeval",
-      "params": [{"name": "x", "type": "string", "isVariadic": false}, {"name": "precision", "type": "number", "isVariadic": false}],
+      "params": [{"name": "str", "type": "string", "isVariadic": false}, {"name": "precision", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "number"
+      "expressionKind": "number",
+      "description": "计算str的值，第一位是字符串/字符串变量/数字表达式函数的计算公式，第二位为保留的小数位数。例如：preciseeval({1/3},3)=0.333。注意使用preciseeval后不能使用其他运算符和+连接符"
     },
     {
       "name": "preciseeval",
-      "params": [{"name": "x", "type": "string", "isVariadic": false}, {"name": "precision", "type": "number", "isVariadic": false}],
+      "params": [{"name": "str", "type": "string", "isVariadic": false}, {"name": "precision", "type": "number", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "计算str的值，第一位是字符串/字符串变量/数字表达式函数的计算公式，第二位为保留的小数位数。例如：preciseeval({1/3},3)=0.333。注意使用preciseeval后不能使用其他运算符和+连接符"
     },
     {
       "name": "substr",
       "params": [{"name": "str", "type": "string", "isVariadic": false}, {"name": "pos", "type": "number", "isVariadic": false}, {"name": "len", "type": "number", "isVariadic": false}],
       "returnType": "string",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "返回字符串的子串，substr('你好呀',1,2) = '好呀'（字符位置从左至右，索引从0开始）"
     },
     {
       "name": "strIsEmpty",
       "params": [{"name": "str", "type": "string", "isVariadic": false}],
       "returnType": "string",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "字符串是否为空，为空返回'true'，否则返回'false'"
     },
     {
       "name": "strIndexOf",
       "params": [{"name": "str1", "type": "string", "isVariadic": false}, {"name": "str2", "type": "string", "isVariadic": false}],
       "returnType": "string",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "字符串str2在字符串str1中首次出现的位置，索引从0开始。如果未找到返回'-1'"
     },
     {
       "name": "strLastIndexOf",
       "params": [{"name": "str1", "type": "string", "isVariadic": false}, {"name": "str2", "type": "string", "isVariadic": false}],
       "returnType": "string",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "字符串str2在字符串str1中最后出现的位置，索引从0开始。如果未找到返回'-1'"
     },
     {
       "name": "strContains",
       "params": [{"name": "str1", "type": "string", "isVariadic": false}, {"name": "str2", "type": "string", "isVariadic": false}],
       "returnType": "string",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "字符串str1中是否包含字符串str2，包含则返回'true'，否则返回'false'"
     },
     {
       "name": "strReplaceAll",
       "params": [{"name": "str1", "type": "string", "isVariadic": false}, {"name": "str2", "type": "string", "isVariadic": false}, {"name": "str3", "type": "string", "isVariadic": false}],
       "returnType": "string",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "将str1中所有的str2替换为str3，例如strReplaceAll('hello','e','i')='hillo'"
     },
     {
       "name": "formatDate",
       "params": [{"name": "format", "type": "string", "isVariadic": false}, {"name": "timeVar", "type": "string", "isVariadic": false}],
       "returnType": "string",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "返回指定格式的时间字符串，如：formatDate('yyyy-MM-dd hh:mm:ss',@time_sys)"
     },
     {
       "name": "plus",
       "params": [{"name": "a", "type": "number", "isVariadic": false}, {"name": "b", "type": "number", "isVariadic": false}],
       "returnType": "string",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "返回a和b的和的整数值，a和b可以为字符串/字符串变量或者数值/数值变量，例如：plus(3,3)=6"
     },
     {
       "name": "strEqual",
       "params": [{"name": "str1", "type": "string", "isVariadic": false}, {"name": "str2", "type": "string", "isVariadic": false}],
       "returnType": "string",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "判断两个字符串是否相等，相等返回'true'，否则返回'false'"
     },
     {
       "name": "argb",
       "params": [{"name": "a", "type": "number", "isVariadic": false}, {"name": "r", "type": "number", "isVariadic": false}, {"name": "g", "type": "number", "isVariadic": false}, {"name": "b", "type": "number", "isVariadic": false}],
       "returnType": "string",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "解析透明度和红绿蓝三原色的值，返回8位16进制颜色表示字符串"
     },
     {
       "name": "ifelse",
       "params": [{"name": "cond", "type": "number", "isVariadic": false}, {"name": "y", "type": "string", "isVariadic": false}, {"name": "z", "type": "string", "isVariadic": true}],
       "returnType": "string",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "从x1开始判断，若xi不等于0则返回yi，否则一直往后判断，都不满足条件则最终返回z。xi为数字表达式，yi、z为返回的字符串结果"
     },
     {
       "name": "isnull",
       "params": [{"name": "x", "type": "string", "isVariadic": false}],
       "returnType": "number",
-      "expressionKind": "string"
+      "expressionKind": "string",
+      "description": "条件判断，是否变量没有值，如果没有值返回1，有值返回0。x为全局变量，用于判断绑定的变量是否查到数据，例如：isnull(#var)或者isnull(@var)"
     }
   ]
 }

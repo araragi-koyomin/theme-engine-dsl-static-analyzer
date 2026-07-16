@@ -15,4 +15,5 @@ public class FunctionSignature {
     @Builder.Default List<FunctionParam> params = Collections.emptyList();
     DslType returnType;
     String expressionKind;
+    String description;
 }

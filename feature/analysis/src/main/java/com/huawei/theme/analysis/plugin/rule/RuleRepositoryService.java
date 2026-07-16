@@ -15,6 +15,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 
+import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
+import com.huawei.theme.analysis.core.function.JsonFunctionSignatureLoader;
 import com.huawei.theme.analysis.core.rulelibrary.JsonRuleLoader;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
@@ -75,7 +77,8 @@ public class RuleRepositoryService {
         collectElementRules(loader, rulesDir, elementRules);
         Map<String, DslGlobalVar> globalVars = loadGlobalVars(loader, rulesDir);
         Map<String, RuleSource> ruleSources = loadRuleSources(loader, rulesDir);
-        return loader.buildRuleRepository(elementRules, globalVars, ruleSources);
+        FunctionSignatureLibrary functionLib = loadFunctionLibrary();
+        return loader.buildRuleRepository(elementRules, globalVars, ruleSources, functionLib);
     }
 
     private static VirtualFile findRulesDir() {
@@ -144,6 +147,15 @@ public class RuleRepositoryService {
         } catch (Exception e) {
             LOG.warn("Failed to load rule sources: " + file.getUrl(), e);
             return Collections.emptyMap();
+        }
+    }
+
+    private static FunctionSignatureLibrary loadFunctionLibrary() {
+        try {
+            return new JsonFunctionSignatureLoader().loadFromClasspath();
+        } catch (Exception e) {
+            LOG.warn("Failed to load function signatures from classpath", e);
+            return null;
         }
     }
 }
