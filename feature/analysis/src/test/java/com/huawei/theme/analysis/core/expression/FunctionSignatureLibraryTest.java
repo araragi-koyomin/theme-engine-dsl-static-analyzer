@@ -86,5 +86,10 @@ class FunctionSignatureLibraryTest {
         public boolean hasFunction(String name) {
             return signatures.containsKey(name);
         }
+
+        @Override
+        public List<FunctionSignature> getAllSignatures() {
+            return List.copyOf(signatures.values());
+        }
     }
 }

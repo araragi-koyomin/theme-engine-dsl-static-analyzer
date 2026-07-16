@@ -174,5 +174,10 @@ class TypeInferenceEngineTest {
         public boolean hasFunction(String name) {
             return false;
         }
+
+        @Override
+        public List<FunctionSignature> getAllSignatures() {
+            return List.of();
+        }
     }
 }
