@@ -11,6 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.huawei.theme.analysis.core.expression.ExpressionNode;
+import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
@@ -49,6 +50,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
         List<Diagnostic> diagnostics = new ArrayList<>();
         Map<String, Pattern> elementTemplates = compileElementTemplates(context.getRuleRepository());
         collectUndefinedReferences(elementNode, context, elementTemplates, diagnostics);
+        detectUnknownFunctions(elementNode, context, diagnostics);
         detectCommandTargetRef(elementNode, context, diagnostics);
         detectDuplicateVarDeclaration(elementNode, context, diagnostics);
         return diagnostics;
@@ -90,8 +92,6 @@ public class VarRefAnalyzer implements DslAnalyzer {
                     Optional<VarDeclaration> declOpt = symbolTable.lookup(varName);
                     if (declOpt.isEmpty()) {
                         diagnostics.add(buildUndefinedReferenceDiagnostic(ref, elementNode, context));
-                    } else if (isForwardReference(ref, declOpt.get(), elementNode)) {
-                        diagnostics.add(buildForwardReferenceDiagnostic(ref, elementNode, context));
                     }
                 }
             }
@@ -143,11 +143,7 @@ public class VarRefAnalyzer implements DslAnalyzer {
             return;
         }
         SymbolTable globalTable = symbolTable.getGlobalTable();
-        VarDeclaration effective = globalTable.getDeclarations().get(varName);
-        if (effective == null) {
-            return;
-        }
-        if (effective.getAstNode() != elementNode) {
+        if (globalTable.getDuplicateVarNames().contains(varName)) {
             diagnostics.add(buildDuplicateVarDiagnostic(elementNode, varName, context));
         }
     }
@@ -172,6 +168,83 @@ public class VarRefAnalyzer implements DslAnalyzer {
         if (node.getIndexExpression() != null) {
             collectVarReferences(node.getIndexExpression(), references);
         }
+    }
+
+    private void detectUnknownFunctions(DslElementNode elementNode, DslContext context,
+                                         List<Diagnostic> diagnostics) {
+        RuleRepository ruleRepo = context.getRuleRepository();
+        if (ruleRepo == null) {
+            return;
+        }
+        FunctionSignatureLibrary funcLib = ruleRepo.getFunctionSignatureLibrary();
+        if (funcLib == null) {
+            return;
+        }
+        for (DslAttributeNode attr : elementNode.getAttributes()) {
+            DslAttributeValueNode value = attr.getValue();
+            if (value == null) {
+                continue;
+            }
+            Optional<ExpressionAstNode> exprOpt = value.getExpression();
+            if (exprOpt.isEmpty() || !(exprOpt.get() instanceof ExpressionNode exprNode)) {
+                continue;
+            }
+            List<ExpressionNode> calls = new ArrayList<>();
+            collectFunctionCalls(exprNode, calls);
+            for (ExpressionNode call : calls) {
+                String funcName = call.getFunctionName();
+                if (funcName == null || "ifelse".equals(funcName)) {
+                    continue;
+                }
+                if (funcLib.getSignature(funcName, "number").isEmpty()
+                        && funcLib.getSignature(funcName, "string").isEmpty()) {
+                    diagnostics.add(buildUndefinedFunctionDiagnostic(call, elementNode, context));
+                }
+            }
+        }
+    }
+
+    private void collectFunctionCalls(ExpressionNode node, List<ExpressionNode> calls) {
+        if (node == null) {
+            return;
+        }
+        if (node.getKind() == ExpressionKind.FUNCTION_CALL) {
+            calls.add(node);
+        }
+        if (node.getChildren() != null) {
+            for (ExpressionNode child : node.getChildren()) {
+                collectFunctionCalls(child, calls);
+            }
+        }
+        if (node.getIndexExpression() != null) {
+            collectFunctionCalls(node.getIndexExpression(), calls);
+        }
+    }
+
+    private Diagnostic buildUndefinedFunctionDiagnostic(ExpressionNode call,
+                                                         DslElementNode hostNode, DslContext context) {
+        String docUrl = resolveDocUrl(context, RULE_REF_001);
+        int line = call.getLine();
+        int column = call.getColumn();
+        int endLine = call.getEndLine();
+        int endColumn = call.getEndColumn();
+        if (line == 0 && column == 0) {
+            line = hostNode.getLine();
+            column = hostNode.getColumn();
+            endLine = hostNode.getEndLine();
+            endColumn = hostNode.getEndColumn();
+        }
+        return Diagnostic.builder()
+                .severity(DiagnosticSeverity.ERROR)
+                .ruleId(RULE_REF_001)
+                .message("引用未定义函数 " + call.getFunctionName())
+                .filePath(context.getFilePath())
+                .line(line)
+                .column(column)
+                .endLine(endLine)
+                .endColumn(endColumn)
+                .ruleDocUrl(docUrl)
+                .build();
     }
 
     private static Map<String, Pattern> compileElementTemplates(RuleRepository ruleRepo) {
@@ -228,18 +301,6 @@ public class VarRefAnalyzer implements DslAnalyzer {
         return null;
     }
 
-    private boolean isForwardReference(ExpressionNode ref, VarDeclaration decl, DslElementNode hostNode) {
-        if (decl.isGlobal() || decl.getAstNode() == null) {
-            return false;
-        }
-        int refLine = ref.getLine();
-        if (refLine <= 0) {
-            refLine = hostNode.getLine();
-        }
-        int declLine = decl.getAstNode().getLine();
-        return declLine > 0 && refLine > 0 && declLine > refLine;
-    }
-
     private Diagnostic buildUndefinedReferenceDiagnostic(ExpressionNode ref, DslElementNode hostNode,
                                                           DslContext context) {
         String docUrl = resolveDocUrl(context, RULE_REF_001);
@@ -276,33 +337,6 @@ public class VarRefAnalyzer implements DslAnalyzer {
                 .build();
     }
 
-    private Diagnostic buildForwardReferenceDiagnostic(ExpressionNode ref, DslElementNode hostNode,
-                                                        DslContext context) {
-        String docUrl = resolveDocUrl(context, RULE_REF_001);
-        String refText = ref.getPrefix() != null ? ref.getPrefix() + ref.getVariableName() : ref.getVariableName();
-        int line = ref.getLine();
-        int column = ref.getColumn();
-        int endLine = ref.getEndLine();
-        int endColumn = ref.getEndColumn();
-        if (line == 0 && column == 0) {
-            line = hostNode.getLine();
-            column = hostNode.getColumn();
-            endLine = hostNode.getEndLine();
-            endColumn = hostNode.getEndColumn();
-        }
-        return Diagnostic.builder()
-                .severity(DiagnosticSeverity.ERROR)
-                .ruleId(RULE_REF_001)
-                .message("前向引用变量 " + refText + "（变量定义在使用之后）")
-                .filePath(context.getFilePath())
-                .line(line)
-                .column(column)
-                .endLine(endLine)
-                .endColumn(endColumn)
-                .ruleDocUrl(docUrl)
-                .build();
-    }
-
     private Diagnostic buildUndefinedElementRefDiagnostic(ExpressionNode ref, String elementName,
                                                            DslElementNode hostNode, DslContext context) {
         String docUrl = resolveDocUrl(context, RULE_REF_002);
@@ -320,10 +354,11 @@ public class VarRefAnalyzer implements DslAnalyzer {
             endLine = line;
             endColumn = column + refText.length();
         }
+        String refText = ref.getPrefix() != null ? ref.getPrefix() + elementName : elementName;
         return Diagnostic.builder()
                 .severity(DiagnosticSeverity.ERROR)
-                .ruleId(RULE_REF_002)
-                .message("引用未定义元素 " + elementName)
+                .ruleId(RULE_REF_001)
+                .message("引用未定义元素属性 " + refText)
                 .filePath(context.getFilePath())
                 .line(line)
                 .column(column)

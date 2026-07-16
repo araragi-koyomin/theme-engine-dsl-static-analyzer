@@ -1,6 +1,7 @@
 ﻿{
   "element": "ScenarioIntentCommand",
   "category": "command",
+  "description": "场景感知跳转命令，配合Scenarios.ID.jumpable使用实现跳转功能。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [

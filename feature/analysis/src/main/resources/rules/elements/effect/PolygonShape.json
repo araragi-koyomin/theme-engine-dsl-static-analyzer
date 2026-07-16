@@ -1,6 +1,7 @@
 ﻿{
   "element": "PolygonShape",
   "category": "effect_sub",
+  "description": "流体的方形形状定义，可设置为流体或固体。",
   "requiredAttrs": [
     "hx", "hy", "xPosition", "yPosition", "angle"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "water"
+      "defaultValue": "water",
+      "description": "设置该形状是流体（water）或固体（solid），默认为流体（water）"
     },
     "hx": {
       "type": "number",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "方形流体的半宽，与xPosition取值的映射关系保持一致，决定方形流体的范围大小"
     },
     "hy": {
       "type": "number",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "方形流体的半高，与xPosition取值的映射关系保持一致，决定方形流体的范围大小"
     },
     "xPosition": {
       "type": "number",
@@ -47,7 +51,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "中心点的x轴坐标，取值范围为（0-3），固定将实际屏幕的宽映射为3，故xPosition取值范围为（0-3）。中心点为对角线的交点"
     },
     "yPosition": {
       "type": "number",
@@ -57,7 +62,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "中心点的Y轴坐标，与xPosition取值的映射关系保持一致，同时与实际屏幕的宽高比保持一致"
     },
     "angle": {
       "type": "number",
@@ -67,7 +73,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "方形流体旋转的角度（0-360），围绕中心点进行旋转，顺时针计算角度"
     }
   },
   "allowedParents": [

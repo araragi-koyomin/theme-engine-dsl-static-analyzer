@@ -1,6 +1,7 @@
 {
   "element": "Items",
   "category": "variable",
+  "description": "变量数组的取值容器，用于定义数组中各索引对应的值，作为VarArray的子节点使用。",
   "requiredAttrs": [],
   "optionalAttrs": [],
   "attrTypes": {},

@@ -92,6 +92,12 @@ public class TypeInferenceEngine {
         }
         String expressionKind = expectedContext != null ? expectedContext.getName() : "number";
         FunctionSignature sig = functionLibrary.getSignature(node.getFunctionName(), expressionKind).orElse(null);
+        if (sig == null) {
+            sig = functionLibrary.getSignature(node.getFunctionName(), "string").orElse(null);
+            if (sig == null) {
+                sig = functionLibrary.getSignature(node.getFunctionName(), "number").orElse(null);
+            }
+        }
         return sig != null ? sig.getReturnType() : null;
     }
 

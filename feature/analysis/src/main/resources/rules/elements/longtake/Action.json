@@ -1,6 +1,7 @@
 ﻿{
   "element": "Action",
   "category": "longtake_sub",
+  "description": "Action为EventTrigger子标签，通过name和storyBoard属性定义转场动作名称及对应的StoryBoard，实现不同场景间的转场触发。",
   "requiredAttrs": [
     "name", "storyBoard"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "元素变量名，在支持表达式的情况中使用@name的格式来取当前变量的值。"
     },
     "storyBoard": {
       "type": "string",
@@ -28,7 +30,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "关联的故事板名称。"
     }
   },
   "allowedParents": [

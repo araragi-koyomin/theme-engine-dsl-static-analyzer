@@ -1,6 +1,7 @@
 ﻿{
   "element": "CollisionWorld",
   "category": "effect",
+  "description": "2D物理碰撞通过为平面刚性物体赋予真实的物理属性的方式，来计算刚体运动、碰撞情况，进而制作各类趣味交互主题。设计师可以创造一个刚体世界，设置刚体世界的大小、重力等参数，并给需要运动的素材赋予刚体属性（重力、密度、初始力、初始速度等），模拟真实世界的运动和碰撞效果。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体世界x方向的重力数值，支持表达式，默认值为0。该值大于0物体向右移动，小于0物体向左移动，为0时无x轴位移效果。"
     },
     "vecY": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体世界y方向的重力数值，支持表达式，默认值为0。该值大于0物体向下移动，小于0物体向上移动，为0时无y轴位移效果。"
     },
     "x": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体世界左上角的x坐标，默认值为0。"
     },
     "y": {
       "type": "number",
@@ -46,7 +50,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体世界左上角的y坐标，默认值为0。"
     },
     "width": {
       "type": "number",
@@ -56,7 +61,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "刚体世界的宽度，默认取虚拟屏幕宽高。"
     },
     "height": {
       "type": "number",
@@ -66,7 +72,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "刚体世界的高度，默认取虚拟屏幕宽高。"
     },
     "worldImgSrc": {
       "type": "string",
@@ -76,7 +83,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "刚体世界的背景图。"
     },
     "worldImgType": {
       "type": "string",
@@ -87,7 +95,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "fit_xy"
+      "defaultValue": "fit_xy",
+      "description": "刚体世界背景图的适配方式，默认填满view的为fit_xy，居中截取为center_crop。"
     },
     "defBourderLine": {
       "type": "number",
@@ -97,7 +106,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体世界四周是否添加不可见边界刚体线，默认为0不添加，非零则添加。"
     },
     "minShake": {
       "type": "number",
@@ -107,7 +117,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "触发摇一摇感应力的最小值，值越大越难触发摇一摇，默认无限大即不触发摇一摇，取值范围18-50之间。当手机摇一摇的幅度达到该值后，刚体会受到手机摇动方向的力。"
     },
     "shakeCoef": {
       "type": "number",
@@ -117,7 +128,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "摇一摇感应力系数，默认为1。刚体受力为minShake与shakeCoef的乘积， 建议取值范围【-10000000——10000000】，负值表示受力方向相反。"
     },
     "accCoef": {
       "type": "number",
@@ -127,7 +139,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "手机重力感应力系数，默认为0不受重力感应。刚体受力为重力感应力与accCoef的乘积，建议取值范围【-10000000——10000000】，负值表示受力方向相反。"
     },
     "gwidth": {
       "type": "number",
@@ -137,7 +150,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "支持按照手指滑动方向受力时，受力大小和方向的可视化图标的初始宽度。 说明： 刚体设置了gesture属性且值为非0时，此刚体支持按照手指滑动方向受力移动。"
     },
     "gheight": {
       "type": "number",
@@ -147,7 +161,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "支持按照手指滑动方向受力时，受力大小和方向的可视化图标的初始高度。 说明： 刚体设置了gesture属性且值为非0时，此刚体支持按照手指滑动方向受力移动。"
     },
     "gsrc": {
       "type": "string",
@@ -157,7 +172,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "支持按照手指滑动方向受力时，受力大小和方向的可视化图标的图片资源。 说明： 刚体设置了gesture属性且值为非0时，此刚体支持按照手指滑动方向受力移动。手指滑动范围越长，图标显示的高度越长，因此存在图标拉升变形的情况，设计时需注意这一点。"
     },
     "visibility": {
       "type": "number",
@@ -167,7 +183,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "大于0表示可见，小于等于0表示不可见。"
     },
     "isFullScreenNode": {
       "type": "string",
@@ -178,7 +195,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "平板、折叠屏的展开态及涉及旋转的场景，需要添加该字段，值为true可以防止旋转时出现黑边。 注意： fullscreennode设置为true时标识组件宽高与屏幕宽高一致，width height w h 设置内容不再生效，如果是全屏效果无需设置x、y偏移。"
     }
   },
   "allowedParents": [

@@ -1,6 +1,7 @@
 ﻿{
   "element": "Widget",
   "category": "root",
+  "description": "百变卡片，是创作者基于主题引擎能力编写出各式各样动态效果的卡片，最终用户应用时可根据自己的想法自由组合百变卡片，打造个性化桌面。",
   "requiredAttrs": [
     "screenWidth", "screenHeight"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "描述文件的虚拟的屏幕宽度，其中： 12卡片为1372 22卡片为1384 24卡片为1372 44卡片为1384"
     },
     "screenHeight": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "描述文件的虚拟的屏幕宽度，其中： 12卡片为530 22卡片为1384 24卡片为640 44卡片为1440"
     },
     "frameRate": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "60"
+      "defaultValue": "60",
+      "description": "屏幕刷新的帧率，数值越大，效果越好，功耗相对较高。默认60，推荐使用30"
     }
   },
   "allowedParents": [

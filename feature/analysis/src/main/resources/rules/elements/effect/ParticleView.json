@@ -1,6 +1,7 @@
 ﻿{
   "element": "ParticleView",
   "category": "effect",
+  "description": "当手指在锁屏上滑动时，在滑动轨迹处会生成跟手粒子。粒子形状、颜色由输入的粒子图片控制，粒子数量和大小等可通过参数进行设置。此外，还可以通过Range子标签来设置跟手粒子响应区域，即当手指滑动处于Range区域内滑动时，才生成跟手粒子。",
   "requiredAttrs": [
     "src"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "30"
+      "defaultValue": "30",
+      "description": "粒子宽度，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     },
     "h": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "30"
+      "defaultValue": "30",
+      "description": "粒子高度，宽高比例建议1:1，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     },
     "count": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "6"
+      "defaultValue": "6",
+      "description": "每次滑动产生的粒子数量，取值为正整数，建议范围[1,30]，默认为6；数值太大会造成卡顿现象。"
     },
     "move_radius": {
       "type": "number",
@@ -46,7 +50,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "32"
+      "defaultValue": "32",
+      "description": "粒子在手指运动轨迹的基础上随机运动半径的反比例系数；数值越大，粒子随机运动半径越小；取值范围为(1，屏幕宽度)，默认为32，支持数值表达式。"
     },
     "speek_sec": {
       "type": "number",
@@ -56,7 +61,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "2.5"
+      "defaultValue": "2.5",
+      "description": "单位时间粒子运动的距离，该值越大粒子消失越快。取值正实数，默认为2.5，支持数值表达式。"
     },
     "reduce_size": {
       "type": "number",
@@ -66,7 +72,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1.5"
+      "defaultValue": "1.5",
+      "description": "每次运动时粒子宽高缩小的尺寸，取值正实数（设置过大会导致粒子消失太快），取值范围[0.1,5]，默认为1.5，支持数值表达式。"
     },
     "set_path": {
       "type": "string",
@@ -77,7 +84,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "是否设置跟手粒子响应区域，true/false；true表示设置，false表示不设置，默认false；如果为true，需要在PathData标签中设置矩形区域。"
     },
     "src": {
       "type": "string",
@@ -87,7 +95,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "粒子图片资源名称，生成跟手粒子时使用。支持以间隔符的形式引入多个粒子图片，多粒子图片数不超过10个。"
     }
   },
   "allowedParents": [

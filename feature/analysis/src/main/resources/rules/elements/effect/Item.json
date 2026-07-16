@@ -1,6 +1,7 @@
 ﻿{
   "element": "Item",
   "category": "effect_sub",
+  "description": "Item定义了实际显示和运行的物体的参数和效果，能够通过不同的标签对物体进行修饰，影响物体的运行轨迹。",
   "requiredAttrs": [
     "src"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "图片文件名，如：image.gif，也可在前加文件夹，如wenjianjia/image.gif。当图片名称中包含.gif，循环播放Gif图片;图片的大小、位置等参数与Image设置相同，只需要在src参数中填入gif图片名称即可。小于5.0MB动态显示，大于或等于5.0MB静态显示，设计师应提供大小合适图片资源。"
     },
     "count": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "每次滑动产生的粒子数量，取值为正整数，建议范围[1,30]，默认为6；数值太大会造成卡顿现象。"
     }
   },
   "allowedParents": [

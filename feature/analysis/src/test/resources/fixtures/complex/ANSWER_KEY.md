@@ -99,12 +99,12 @@
 | 7 | SEM-TYPE-003 | 13 | ERROR | `Var name="type_mismatch" type="string" expression="100 + 50"` — number expression assigned to string-typed Var |
 | 8 | SEM-VAR-004 | 15 | WARNING | `Var name="arr_no_size" type="number[]" expression="[1, 2, 3]"` — array type declared but no `size` attribute |
 | 9 | SEM-VAR-003 | 17 | WARNING | `Var name="arr_with_values"` — both `values` and `size` present simultaneously |
-| 10 | SEM-REF-001 | 19 | ERROR | `Image name="early_ref" x="#later_declared"` — variable `later_declared` referenced before its declaration |
-| 11 | SEM-REF-003 | 26 | ERROR | `Var name="dup_name"` inside `Group` — third occurrence of duplicate name `dup_name` |
+| 10 | ~~SEM-REF-001~~ | ~~19~~ | ~~ERROR~~ | ~~`Image name="early_ref" x="#later_declared"` — variable `later_declared` referenced before its declaration~~ **[已移除：策略变更 — 不检测前向引用，变量统一按全局处理]** |
+| 11 | SEM-REF-003 | 27 | ERROR | `Var name="dup_name"` inside `Group` — third occurrence of duplicate name `dup_name` (Bug 24: 待修复) |
 | 12 | SEM-REF-001 / SEM-ARR-001 | 28 | ERROR | `Image name="inner" x="#arr_no_size[0]"` — array `arr_no_size` has no valid values/size defined |
 
 ### Valid Elements (no violations expected)
-- `Var name="later_declared"` (line 23) — valid const number Var
+- `Var name="later_declared"` (line 22) — valid const number Var (前向引用不再报告)
 - `Image name="valid_ref"` (line 31) — valid reference to already-declared variable
 - `Var name="system.time.ampm"` (line 24) — may or may not trigger name conflict with global var (depends on analyzer strictness)
 

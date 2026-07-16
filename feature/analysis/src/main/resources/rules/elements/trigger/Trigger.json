@@ -1,6 +1,7 @@
 ﻿{
   "element": "Trigger",
   "category": "trigger",
+  "description": "Trigger能够在标签Item中添加Trigger标签，同一个Item组的粒子在被点击时能够产生响应，并且执行Item中设置的所有命令。",
   "requiredAttrs": [
     "action"
   ],
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "按钮动作： down (按下), up (抬起), double (双击)，resume（亮屏触发）,pause（熄屏触发），long（长按），click（点击）"
     }
   },
   "allowedParents": [

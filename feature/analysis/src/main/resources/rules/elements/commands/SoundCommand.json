@@ -1,6 +1,7 @@
 ﻿{
   "element": "SoundCommand",
   "category": "command",
+  "description": "声音命令，用来控制播放音频文件。",
   "requiredAttrs": [
     "sound", "volume"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "声音文件路径名"
     },
     "volume": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "正浮点数，声音大小，0~1的一个浮点数。数值越大，音量越大"
     },
     "loop": {
       "type": "string",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "是否循环播放，true/false，默认是false"
     },
     "keepCur": {
       "type": "string",
@@ -48,7 +52,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "播放此音频时，是否保持当前正在播放的声音，true/false，默认false。只有当同时播放的音频数量大于系统最大值时才暂停优先级低的音频数据"
     },
     "play": {
       "type": "expression",
@@ -58,7 +63,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "播放或暂停声音，支持数字表达式，true或非0播放声音，false或0暂停指定声音播放，false或0不传sound时停止所有声音播放，默认为1"
     },
     "condition": {
       "type": "string",
@@ -68,7 +74,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "条件判断，支持表达式。当condition里的条件判断为非0或者为true时，该命令执行，为false或者0则不执行。支持输入表达式"
     },
     "delay": {
       "type": "number",
@@ -78,7 +85,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "动画延迟执行的毫秒数，即触发动画后需要delay毫秒才开始执行动画，取值正整数，默认为0，支持表达式。"
     },
     "delayCondition": {
       "type": "string",
@@ -88,7 +96,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "延迟判断，为真则delay命令生效，否则失效。默认为true或者1时，表示可以延迟启动命令，如果false或者非1则不延迟执行。支持输入表达式"
     }
   },
   "allowedParents": [

@@ -1,6 +1,7 @@
 ﻿{
   "element": "Weather",
   "category": "data_open",
+  "description": "开放天气App中天气相关数据：配置Weather标签后，在标签内声明Var变量并使用指定变量名，即可声明气象、空气质量指数、温度、湿度、风向、日出日落时间、月出月落时间、穿衣指数、运动指数、感冒指数、洗车指数等天气数据对应的变量。变量支持默认值，获取到实际天气情况会更新该值。昨天和明天的数据只需将today改成yesterday和tomorrow即可。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [

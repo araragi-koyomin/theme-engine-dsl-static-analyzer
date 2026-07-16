@@ -1,6 +1,7 @@
 ﻿{
   "element": "Healthy",
   "category": "data_open",
+  "description": "开放运动健康App的步数、距离、卡路里、实时心率和静息心率数据，设计师可基于这些数据制作创意主题。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "轮询开关，true为开启轮询，false为关闭轮询。默认是false。"
     },
     "time": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "5"
+      "defaultValue": "5",
+      "description": "轮询时间间隔，单位（秒），最小值为1，仅在polling为true的时候有效。默认是5秒。"
     }
   },
   "allowedParents": [

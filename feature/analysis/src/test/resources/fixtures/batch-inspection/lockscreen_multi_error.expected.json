@@ -1,0 +1,18 @@
+{
+  "fixture": "lockscreen_multi_error.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 10, "warnings": 0, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 3, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-003", "severity": "error", "approxLine": 4, "lineTolerance": 2 },
+    { "ruleId": "SEM-PERSIST-001", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 6, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 6, "lineTolerance": 2 },
+    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 7, "lineTolerance": 2 },
+    { "ruleId": "SEM-ENUM-001", "severity": "error", "approxLine": 7, "lineTolerance": 2 },
+    { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 9, "lineTolerance": 2 },
+    { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 14, "lineTolerance": 2 },
+    { "ruleId": "SEM-TYPE-003", "severity": "error", "approxLine": 12, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": []
+}

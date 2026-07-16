@@ -37,10 +37,17 @@ public class ThemeDslTagDocumentationProvider extends AbstractDocumentationProvi
         }
 
         String name = tag.getName();
-        var rules = RuleRepositoryService.getInstance().getRuleRepository().getElementRule(name);
+        var ruleOpt = RuleRepositoryService.getInstance().getRuleRepository().getElementRule(name);
 
-        return rules.map(dslElementRule -> placeholderDoc(dslElementRule.getCategory(), getSignature(dslElementRule)))
-                .orElseGet(() -> placeholderDoc("Unknown Tag", name));
+        if (ruleOpt.isPresent()) {
+            DslElementRule rule = ruleOpt.get();
+            String desc = rule.getDescription();
+            if (desc == null || desc.isEmpty()) {
+                desc = "No description available.";
+            }
+            return doc(rule.getCategory(), getSignature(rule), desc);
+        }
+        return doc("Unknown Tag", name, "No description available.");
     }
 
     private String getSignature(DslElementRule rule) {
@@ -97,12 +104,12 @@ public class ThemeDslTagDocumentationProvider extends AbstractDocumentationProvi
         return null;
     }
 
-    private static String placeholderDoc(String kind, String signature) {
+    private static String doc(String kind, String signature, String description) {
         return DocumentationMarkup.DEFINITION_START
                 + "<b>" + kind + "</b> <code>" + signature + "</code>"
                 + DocumentationMarkup.DEFINITION_END
                 + DocumentationMarkup.CONTENT_START
-                + "Documentation is not yet available."
+                + description
                 + DocumentationMarkup.CONTENT_END;
     }
 }

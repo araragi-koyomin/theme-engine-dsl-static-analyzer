@@ -1,6 +1,7 @@
 ﻿{
   "element": "GroupCommands",
   "category": "command",
+  "description": "支持常用自定义一组命令组复用，方便与简化重复定义。",
   "requiredAttrs": [
     "method", "params"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "perform"
+      "defaultValue": "perform",
+      "description": "执行动作，缺省值\"perform\"，目前暂无其他选项。"
     },
     "paramTypes": {
       "type": "string",
@@ -28,7 +30,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "string",
-      "defaultValue": "String"
+      "defaultValue": "String",
+      "description": "传入执行动作参数的类型，缺省值\"String\"，目前暂无其他选项。"
     },
     "params": {
       "type": "string",
@@ -38,7 +41,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "传入命令组中具体Trigger action名称。"
     }
   },
   "allowedParents": [

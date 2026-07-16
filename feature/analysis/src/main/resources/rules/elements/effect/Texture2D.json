@@ -1,6 +1,7 @@
 ﻿{
   "element": "Texture2D",
   "category": "effect_sub",
+  "description": "刚体世界的背景图片标签，也可用于调整刚体的属性和受力。",
   "requiredAttrs": [
     "collbodyid"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的x坐标，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），默认为0，支持表达式。"
     },
     "y": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的y坐标，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），默认为0，支持表达式。"
     },
     "w": {
       "type": "number",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "粒子宽度，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     },
     "h": {
       "type": "number",
@@ -48,7 +52,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "粒子高度，宽高比例建议1:1，取值正实数，最大值为120 px，超过最大值则按120处理，默认值30，支持数值表达式。"
     },
     "src": {
       "type": "string",
@@ -58,7 +63,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "图片文件名，如：image.gif，也可在前加文件夹，如wenjianjia/image.gif。当图片名称中包含.gif，循环播放Gif图片;图片的大小、位置等参数与Image设置相同，只需要在src参数中填入gif图片名称即可。小于5.0MB动态显示，大于或等于5.0MB静态显示，设计师应提供大小合适图片资源。"
     },
     "srcid": {
       "type": "number",
@@ -68,7 +74,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "图片序列后缀数字，一般用变量表示，可以根据变量显示不同的图片，如果src=\"pic.png\" srcid=\"1\" 则最后会显示图片 \"pic_1.png\"，大于0， 正整数，支持数字表达式。"
     },
     "scaleType": {
       "type": "string",
@@ -79,7 +86,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "center_crop"
+      "defaultValue": "center_crop",
+      "description": "支持fill、fit_width、center_crop三种模式，默认为fill模式。fill表示填充满width和height宽高，若视频比例与屏幕不匹配会导致视频拉伸。fit_width表示宽匹配功能，视频缩放到设置的width那么宽，按照视频比例调整height，若视频宽高比例大于屏幕，则填充不满屏幕，若视频宽高比小于屏幕，则会有部分视频不在显示区域中。center_crop表示将视频文件宽高显示效果均不小于控件宽高。如果视频宽或者高小于控件宽或者高，则等比放大直到铺满控件，有超出屏幕部分的则截取视频中间部分铺满控件播放；如果视频资源文件的宽高均大于控件宽高，则等比缩小视频，当视频的宽高任意一值等于控件的宽高时停止缩放，截取中间部分视频显示播放。使用center_crop模式时建议搭配image来设置视频第一帧（参照示例2），不建议搭配defaultbitmap设置第一帧（效果不太协调）。"
     },
     "collbodyid": {
       "type": "string",
@@ -89,7 +97,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "要调整的刚体的id。"
     },
     "forceX": {
       "type": "number",
@@ -99,7 +108,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体创建时x方向的初始受力值，默认0，建议取值范围【-10000000——10000000】，正负值表示方向相反。"
     },
     "forceY": {
       "type": "number",
@@ -109,7 +119,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体创建时y方向的初始受力值，默认0，建议取值范围【-10000000——10000000】，正负值表示方向相反。"
     },
     "vx": {
       "type": "number",
@@ -119,7 +130,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体创建时x方向的初始速度，默认0，建议取值范围【-10000000——10000000】，正负值表示方向相反。"
     },
     "vy": {
       "type": "number",
@@ -129,7 +141,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "刚体创建时y方向的初始速度，默认0，建议取值范围【-10000000——10000000】，正负值表示方向相反。"
     },
     "isActive": {
       "type": "number",
@@ -139,7 +152,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "刚体属性，0为非刚体，其他值及默认值1为刚体。说明刚体不能被穿过，碰撞时反弹。非刚体可被穿过。"
     },
     "type": {
       "type": "number",
@@ -149,7 +163,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "表示MIME type类型描述，打开文件的类型，主要用于文管打开文件。比如：'text/xml' 、 'image/*'等。 起始规范版本为HarmonyOS 6.0"
     }
   },
   "allowedParents": [

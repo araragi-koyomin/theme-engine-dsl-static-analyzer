@@ -1,6 +1,7 @@
 {
   "element": "Vars",
   "category": "variable",
+  "description": "变量数组的变量定义容器，用于声明变量名与索引的绑定关系，作为VarArray的子节点使用。",
   "requiredAttrs": [],
   "optionalAttrs": [],
   "attrTypes": {},

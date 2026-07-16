@@ -1,6 +1,7 @@
 ﻿{
   "element": "SensorBinder",
   "category": "data_open",
+  "description": "支持获取四种类型的传感器数据：加速传感器（accelerometer）、重力传感器（gravity）、线性加速传感器（linearAccelerometer）和陀螺仪（gyroscope）。加速传感器获取的值为线性加速度与重力加速度之和。基于传感器功能可实现重力感应和摇一摇等效果。",
   "requiredAttrs": [
     "type"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "支持：accelerometer,gravity,linearAccelerometer,gyroscope四种类型"
     },
     "vibrate": {
       "type": "number",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "摇一摇是否触发震动，取值0/1。0表示不触发震动，1表示触发震动。默认为0，支持表达式"
     },
     "shakeTime": {
       "type": "number",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "摇一摇触发震动的震动时长，单位为ms，默认为0，支持表达式"
     },
     "delay": {
       "type": "number",
@@ -47,7 +51,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "摇一摇触发震动的延时时间，单位为ms，默认为0，支持表达式"
     }
   },
   "allowedParents": [

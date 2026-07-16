@@ -1,6 +1,7 @@
 ﻿{
   "element": "PathUtil",
   "category": "view",
+  "description": "路径解析工具是对一段命令描述的路径字符串进行解析，实际是解析SVG路径。需要与跑马灯配合使用，跑马灯动效可以通过pathname调用该路径，实现按照路径跑马灯的效果，注意跑马灯标签应该在该标签之后。路径指令中大写字母表示绝对位置，小写字母表示相对位置。",
   "requiredAttrs": [
     "name", "path"
   ],
@@ -15,7 +16,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "路径名称"
     },
     "path": {
       "type": "string",
@@ -25,7 +27,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "路径的SVG指令描述，其中Path中以命令标志开头后接命令规定数量的参数。命令与参数之间可以用空格、逗号也可以没有任何字符分割，参数与参数之间用空格、逗号或者换行来分割。"
     }
   },
   "allowedParents": [

@@ -1,6 +1,7 @@
 ﻿{
   "element": "Angle",
   "category": "effect_sub",
+  "description": "Angle为物体的初始旋转角度，不设置则随机角度，如禁止随机角度需设置isRandom为false。",
   "requiredAttrs": [
     "isRandom"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "是否随机缩放粒子，true/false，默认false。"
     },
     "angle": {
       "type": "number",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "-360-360整数，不随机时生效，给每个粒子统一赋予同一个角度的旋转，默认为0。"
     }
   },
   "allowedParents": [

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.intellij.psi.xml.XmlTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -86,8 +87,8 @@ public class ThemeDslTagCategoryAnnotator implements Annotator {
         if (tagNameNode == null) {
             return;
         }
-        var closingMode = element.getLastChild();
-        var closingTagNameNode = closingMode.getNode().getElementType() == XmlElementType.XML_EMPTY_ELEMENT_END
+        
+        var closingTagNameNode = ((XmlTag) element.getNode()).isEmpty()
                 ? null : element.getLastChild().getPrevSibling();
 
         String tagNameText = tagNameNode.getText();

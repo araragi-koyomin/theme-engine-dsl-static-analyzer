@@ -1,6 +1,7 @@
 ﻿{
   "element": "Array",
   "category": "variable",
+  "description": "能够同样重复多条目的生成图片Image、文字Text等界面控件。注意：在该控件中使用Text控件时，需使用textExp的方式获取数组中文本数据。",
   "requiredAttrs": [
     "indexFlag", "frequency"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "代表索引的名称，能够在下方的元素中引用"
     },
     "frequency": {
       "type": "number",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "表示重复生成元素的次数"
     },
     "x": {
       "type": "number",
@@ -36,7 +39,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的x坐标，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），默认为0，支持表达式。"
     },
     "y": {
       "type": "number",
@@ -46,7 +50,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的y坐标，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），默认为0，支持表达式。"
     }
   },
   "allowedParents": [

@@ -1,6 +1,7 @@
 ﻿{
   "element": "CircleShape",
   "category": "effect_sub",
+  "description": "流体的圆形形状定义，可设置为流体或固体。",
   "requiredAttrs": [
     "radius", "xPosition", "yPosition"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "water"
+      "defaultValue": "water",
+      "description": "设置该形状是流体（water）或固体（solid），默认为流体（water）"
     },
     "radius": {
       "type": "number",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "圆形流体的半径，与xPosition取值的映射关系保持一致，决定圆形流体的范围大小"
     },
     "xPosition": {
       "type": "number",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "圆心的x轴坐标，取值范围为（0-3）。固定将实际屏幕的宽映射为3，故xPosition取值范围为（0-3）"
     },
     "yPosition": {
       "type": "number",
@@ -47,7 +51,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "圆心的Y轴坐标，与xPosition取值的映射关系保持一致，同时与实际屏幕的宽高比保持一致"
     }
   },
   "allowedParents": [

@@ -1,6 +1,7 @@
 ﻿{
   "element": "StoryBoard",
   "category": "longtake",
+  "description": "StoryBoard定义一镜到底的转场效果，通过包含的Setter设置目标元素属性值实现场景转场，每个StoryBoard对应一段转场视频或壁纸切换效果。",
   "requiredAttrs": [
     "name"
   ],
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "元素变量名，在支持表达式的情况中使用@name的格式来取当前变量的值。"
     }
   },
   "allowedParents": [

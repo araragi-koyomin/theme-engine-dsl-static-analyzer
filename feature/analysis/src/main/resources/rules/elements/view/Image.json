@@ -1,6 +1,7 @@
 ﻿{
   "element": "Image",
   "category": "view",
+  "description": "用于在界面上展示一张图片，可以指定图片路径，模糊程度等属性，支持通用属性来设置图片的位置、大小以及旋转等等。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [
@@ -17,7 +18,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "元素变量名，在支持表达式的情况中使用@name的格式来取当前变量的值。"
     },
     "x": {
       "type": "number",
@@ -27,7 +29,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的x坐标，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），默认为0，支持表达式。"
     },
     "y": {
       "type": "number",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "0"
+      "defaultValue": "0",
+      "description": "相对于屏幕左上角的y坐标，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），默认为0，支持表达式。"
     },
     "width": {
       "type": "number",
@@ -48,7 +52,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "显示在屏幕上的宽，单位为像素，显示范围为屏幕的宽（1920*1080的屏幕，显示的宽的范围为0~1080），支持表达式，w和width写法都可以。"
     },
     "height": {
       "type": "number",
@@ -59,7 +64,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "显示在屏幕上的高，单位为像素，显示范围为屏幕的高（1920*1080的屏幕，显示的高的范围为0~1920），支持表达式，h和height写法都可以。"
     },
     "pivotX": {
       "type": "number",
@@ -70,7 +76,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转的点的X坐标，相对于View的左上角位置，单位为像素，支持表达式，pivotX和centerX写法都可以。"
     },
     "pivotY": {
       "type": "number",
@@ -81,7 +88,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转的点的Y坐标，相对于View的左上角位置，单位为像素，支持表达式，pivotY和centerY写法都可以。"
     },
     "rotation": {
       "type": "number",
@@ -92,7 +100,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "旋转角度，一周360度，围绕(pivotX,pivotY)点旋转（若无pivotX和pivotY，则默认(0,0)点旋转），支持表达式。正数表示顺时针，负数表示逆时针，rotation和angle写法都可以。"
     },
     "rotationX": {
       "type": "number",
@@ -103,7 +112,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "以X轴为旋转中心旋转，一周360度，支持表达式。正数表示顺时针，负数表示逆时针，rotationX和angleX写法都可以。"
     },
     "rotationY": {
       "type": "number",
@@ -114,7 +124,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "以Y轴为旋转中心旋转，一周360度，支持表达式。正数表示顺时针，负数表示逆时针，rotationY和angleY写法都可以。"
     },
     "alpha": {
       "type": "number",
@@ -124,7 +135,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "255"
+      "defaultValue": "255",
+      "description": "透明度，0-255，默认为255，当值小于0时则该值取0，当值大于255时，该值取255，支持表达式。"
     },
     "visibility": {
       "type": "number",
@@ -134,7 +146,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "元素可见性，<=0 不可见 >0可见，true为可见，false为不可见，默认为1，支持表达式。"
     },
     "category": {
       "type": "string",
@@ -145,7 +158,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "取值\"Normal\", \"Charging\", \"BatteryLow\", \"BatteryFull\"，表示当手机处于指定充电状态时显示该元素。"
     },
     "align": {
       "type": "string",
@@ -156,7 +170,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "坐标点水平对齐方式left, center, right，对齐的效果为view的左上角x坐标分别表示该view的左、中、右位置。"
     },
     "alignV": {
       "type": "string",
@@ -167,7 +182,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "坐标点垂直对齐方式top, center, bottom，对齐的效果为view的左上角y坐标分别表示该view的上、中、下位置。"
     },
     "enableMove": {
       "type": "string",
@@ -178,7 +194,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "元素是否支持移动，当值为false或者0时表示不可移动，当值为true或者非0值表示可移动，默认为0。"
     },
     "moveRect": {
       "type": "string",
@@ -188,7 +205,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "移动区域，当enableMove为可移动时有效。格式为moveRect=\"minH,minV,maxH,maxV\"，分别表示：最小水平移动，最小垂直移动，最大水平移动，最大垂直移动。四个参数类型为数值，单位为像素，不支持表达式。例如：移动目标的原坐标为(x,y)，则该目标水平方向的移动范围是：(x+minH)~(x+maxH)，垂直方向的移动范围是：(y+minV)~(y+maxV)。"
     },
     "active": {
       "type": "number",
@@ -198,7 +216,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "1"
+      "defaultValue": "1",
+      "description": "激活状态，0代表不激活，视图不显示，所有的动画和可见性均失效，默认值1。"
     },
     "src": {
       "type": "string",
@@ -208,7 +227,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "**图片名称的相对路径，图片文件名**image.png，可在前加文件夹，如**wenjianjia/image.png**。**src**与**srcExp**两个参数必须填写一个，以指定显示的图片内容。图片必须为**png/jpg**格式。图片大小须小于**10M**。"
     },
     "srcid": {
       "type": "number",
@@ -218,7 +238,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "图片序列后缀数字，一般用变量表示，可以根据变量显示不同的图片，如果src=\"pic.png\" srcid=\"1\" 则最后会显示图片 \"pic_1.png\"，大于0， 正整数，支持数字表达式。"
     },
     "srcExp": {
       "type": "string",
@@ -228,7 +249,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "string",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "图片源表达式，解析字符串表达式指定图片的源地址。无法与src共存，当存在src值时，图片使用src作为地址。"
     },
     "blur": {
       "type": "string",
@@ -238,7 +260,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "模糊半径值的设置，其值为0到24，设置值越大则图片模糊程度越高。"
     },
     "scaleType": {
       "type": "string",
@@ -249,7 +272,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "center_crop"
+      "defaultValue": "center_crop",
+      "description": "**图片的缩放模式，目前支持三种模式：**fill**、**center_crop**和**hold_center_crop**，默认为**center_crop**模式。**fill **表示填充满控件的宽高，若图片比例与控件不匹配会导致图片拉伸。**center_crop **表示图片等比缩放并居中充满整个控件的宽高，多余部分裁剪。**hold_center_crop **表示图片不进行缩放处理，居中裁剪至控件的宽高。**"
     },
     "isBackground": {
       "type": "string",
@@ -260,7 +284,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "**允许设置为****“**true”**或****“**false”**，默认为**false**。设置为**true**表示该图片作为背景图使用，必须与**scaleType=\"center_crop\"****配合使用。说明****isBackground**与**align**同时使用时，**isBackground**不生效。**"
     },
     "useVirtualScreen": {
       "type": "string",
@@ -271,7 +296,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "是否支持虚拟屏幕，true/false，默认false，若为true支持虚拟屏幕则src参数必须为虚拟屏幕的名称。"
     },
     "antiAlias": {
       "type": "string",
@@ -282,7 +308,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "抗锯齿设置，true/false。"
     },
     "hybridMode": {
       "type": "string",
@@ -294,7 +321,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "设置两张图片之间的混合模式，共有12种混合模式供选择： clear(0)ori(1)tgt(2)oriOver(3)tgtOver(4)oriIn(5)tgtIn(6)oriOut(7)tgtOut(8)oriATop(9)tgtATop(10)xor(11) 可以通过输入字符串或者对应的数字编号来选择混合模式，默认为6"
     },
     "loop": {
       "type": "string",
@@ -305,7 +333,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "该参数不配置或空，默认循环播放gif动画；若显式配置该参数true循环播放或false只播放一次。"
     },
     "IsFullScreenNode": {
       "type": "string",
@@ -316,7 +345,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "false"
+      "defaultValue": "false",
+      "description": "全屏节点标识，设置为true时组件宽高与屏幕宽高一致，width/height设置不再生效。折叠屏和平板中全屏的Image或Video标签需要添加此参数。"
     }
   },
   "allowedParents": [

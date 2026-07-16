@@ -1,6 +1,7 @@
 ﻿{
   "element": "ExternalCommands",
   "category": "control",
+  "description": "用来接收外部命令的命令，直接写在Lockscreen标签之下，作为监测开关屏的命令，在开屏时执行resume命令，关屏时执行pause命令。",
   "requiredAttrs": [
   ],
   "optionalAttrs": [

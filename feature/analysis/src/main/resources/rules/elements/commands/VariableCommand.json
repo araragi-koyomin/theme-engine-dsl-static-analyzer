@@ -1,6 +1,7 @@
 ﻿{
   "element": "VariableCommand",
   "category": "command",
+  "description": "变量命令，用来控制变量（Var）的值。包括name、expression和type三个特殊属性（用expression中的数据对name中的变量进行赋值），condition、delay、delayCondition的用法与Command一致。",
   "requiredAttrs": [
     "name", "expression"
   ],
@@ -16,7 +17,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "变量名"
     },
     "expression": {
       "type": "string",
@@ -26,7 +28,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "auto",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "对变量进行赋值时使用的表达式，支持常量赋值；变量定义的时候不能用表达式（如#countNum+5）"
     },
     "type": {
       "type": "string",
@@ -37,7 +40,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": "number"
+      "defaultValue": "number",
+      "description": "标识是string类型变量还是number类型变量，默认为number类型"
     },
     "condition": {
       "type": "string",
@@ -47,7 +51,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "条件判断，支持表达式。当condition里的条件判断为非0或者为true时，该命令执行，为false或者0则不执行。支持输入表达式"
     },
     "delay": {
       "type": "number",
@@ -57,7 +62,8 @@
       ],
       "supportsExpression": false,
       "expressionKind": null,
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "延迟，以毫秒记。延迟delay毫秒后执行该命令"
     },
     "delayCondition": {
       "type": "string",
@@ -67,7 +73,8 @@
       ],
       "supportsExpression": true,
       "expressionKind": "number",
-      "defaultValue": null
+      "defaultValue": null,
+      "description": "延迟判断，为真则delay命令生效，否则失效。默认为true或者1时，表示可以延迟启动命令，如果false或者非1则不延迟执行。支持输入表达式"
     }
   },
   "allowedParents": [

@@ -1,0 +1,23 @@
+{
+  "fixture": "expression_syntax_errors.xml",
+  "expectedExitCode": 1,
+  "expectedCounts": { "errors": 9, "warnings": 2, "info": 0 },
+  "expectedDiagnostics": [
+    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 7, "lineTolerance": 2 },
+    { "ruleId": "SEM-TYPE-002", "severity": "error", "approxLine": 8, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-001", "severity": "error", "approxLine": 4, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-002", "severity": "warning", "approxLine": 5, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-004", "severity": "error", "approxLine": 6, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-ANTLR", "severity": "error", "approxLine": 9, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-001", "severity": "error", "approxLine": 11, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-001", "severity": "error", "approxLine": 15, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-002", "severity": "warning", "approxLine": 19, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-005", "severity": "error", "approxLine": 23, "lineTolerance": 2 },
+    { "ruleId": "SYN-EXPR-004", "severity": "error", "approxLine": 26, "lineTolerance": 2 }
+  ],
+  "mustNotTrigger": [
+    { "approxLine": 31, "reason": "argb_text valid hex color" },
+    { "approxLine": 34, "reason": "chained_valid valid chained expression" },
+    { "approxLine": 37, "reason": "valid_img valid Image with literal alpha" }
+  ]
+}
