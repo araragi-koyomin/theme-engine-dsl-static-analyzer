@@ -18,6 +18,9 @@ import com.huawei.theme.analysis.core.quickfix.QuickFixProvider;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProvider;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilder;
+import com.huawei.theme.analysis.core.semanticanalysis.VerboseCollector;
+import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
+import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
@@ -32,6 +35,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
     private final SymbolTableBuilder symbolTableBuilder;
     private final RuleRepository ruleRepository;
     private final InspectionConfig inspectionConfig;
+    private final VerboseCollector verboseCollector;
 
     public BatchInspectionRunnerImpl(
             DslFileMatcher fileMatcher,
@@ -41,6 +45,19 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
             SymbolTableBuilder symbolTableBuilder,
             RuleRepository ruleRepository,
             InspectionConfig inspectionConfig) {
+        this(fileMatcher, astProvider, diagnosticProvider, quickFixProvider,
+                symbolTableBuilder, ruleRepository, inspectionConfig, null);
+    }
+
+    public BatchInspectionRunnerImpl(
+            DslFileMatcher fileMatcher,
+            DslAstProvider astProvider,
+            DiagnosticProvider diagnosticProvider,
+            QuickFixProvider quickFixProvider,
+            SymbolTableBuilder symbolTableBuilder,
+            RuleRepository ruleRepository,
+            InspectionConfig inspectionConfig,
+            VerboseCollector verboseCollector) {
         this.fileMatcher = Objects.requireNonNull(fileMatcher, "fileMatcher must not be null");
         this.astProvider = Objects.requireNonNull(astProvider, "astProvider must not be null");
         this.diagnosticProvider = Objects.requireNonNull(diagnosticProvider, "diagnosticProvider must not be null");
@@ -48,6 +65,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         this.symbolTableBuilder = Objects.requireNonNull(symbolTableBuilder, "symbolTableBuilder must not be null");
         this.ruleRepository = Objects.requireNonNull(ruleRepository, "ruleRepository must not be null");
         this.inspectionConfig = Objects.requireNonNull(inspectionConfig, "inspectionConfig must not be null");
+        this.verboseCollector = verboseCollector;
     }
 
     @Override
@@ -76,6 +94,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         int errorCount = 0;
         int warningCount = 0;
         int infoCount = 0;
+        boolean hasInternalErrors = false;
 
         for (Path path : xmlFiles) {
             String filePath = path.toString();
@@ -93,6 +112,9 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
             FileDiagnosticResult fileResult = analyzeFile(filePath, content);
             fileResults.add(fileResult);
             totalFiles++;
+            if (fileResult.isHasInternalError()) {
+                hasInternalErrors = true;
+            }
             errorCount += countBySeverity(fileResult.getDiagnostics(), DiagnosticSeverity.ERROR);
             warningCount += countBySeverity(fileResult.getDiagnostics(), DiagnosticSeverity.WARNING);
             infoCount += countBySeverity(fileResult.getDiagnostics(), DiagnosticSeverity.INFO);
@@ -101,7 +123,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         return BatchInspectionResult.builder()
                 .totalFiles(totalFiles).skippedFiles(skippedFiles)
                 .errorCount(errorCount).warningCount(warningCount).infoCount(infoCount)
-                .fileResults(fileResults).build();
+                .fileResults(fileResults).hasInternalErrors(hasInternalErrors).build();
     }
 
     private FileDiagnosticResult analyzeFile(String filePath, String content) {
@@ -110,32 +132,74 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
 
         DslFileNode ast;
         try {
+            long astStart = verboseCollector != null ? System.currentTimeMillis() : 0;
             ast = astProvider.getDslAst(filePath, content);
+            if (verboseCollector != null) {
+                verboseCollector.recordStageTime("AST build", System.currentTimeMillis() - astStart);
+                int[] stats = countAstNodes(ast);
+                verboseCollector.recordAstStats(stats[0], stats[1], stats[2]);
+            }
         } catch (Exception e) {
+            Diagnostic internalError = Diagnostic.builder()
+                    .severity(DiagnosticSeverity.ERROR)
+                    .ruleId("INTERNAL-AST-ERROR")
+                    .message("AST build failed: " + e.getMessage())
+                    .filePath(filePath)
+                    .line(0)
+                    .column(0)
+                    .build();
             return FileDiagnosticResult.builder()
-                    .filePath(filePath).diagnostics(List.of()).fixActions(List.of()).build();
+                    .filePath(filePath)
+                    .diagnostics(List.of(internalError))
+                    .fixActions(List.of())
+                    .hasInternalError(true)
+                    .build();
         }
 
-        List<Diagnostic> diagnostics = List.of();
-        if (mode != PipelineMode.SYNTAX_ONLY) {
-            try {
-                diagnostics = diagnosticProvider.analyze(ast, ruleRepository, symbolTableBuilder);
-            } catch (Exception e) {
-                diagnostics = List.of();
-            }
+        List<Diagnostic> diagnostics;
+        try {
+            diagnostics = diagnosticProvider.analyze(ast, ruleRepository, symbolTableBuilder,
+                    mode, inspectionConfig, verboseCollector);
+        } catch (Exception e) {
+            Diagnostic internalError = Diagnostic.builder()
+                    .severity(DiagnosticSeverity.ERROR)
+                    .ruleId("INTERNAL-ANALYZER-ERROR")
+                    .message("Diagnostic analysis failed: " + e.getMessage())
+                    .filePath(filePath)
+                    .line(0)
+                    .column(0)
+                    .build();
+            return FileDiagnosticResult.builder()
+                    .filePath(filePath)
+                    .diagnostics(List.of(internalError))
+                    .fixActions(List.of())
+                    .hasInternalError(true)
+                    .build();
+        }
+
+        if (inspectionConfig.isQuiet()) {
+            diagnostics = new ArrayList<>(diagnostics.stream()
+                    .filter(d -> d.getSeverity() == DiagnosticSeverity.ERROR)
+                    .toList());
         }
 
         List<FixAction> fixActions = List.of();
+        boolean hasInternalError = false;
         if (mode == PipelineMode.FULL && !diagnostics.isEmpty()) {
             try {
                 fixActions = quickFixProvider.getFixActions(diagnostics);
             } catch (Exception e) {
                 fixActions = List.of();
+                hasInternalError = true;
             }
         }
 
         return FileDiagnosticResult.builder()
-                .filePath(filePath).diagnostics(diagnostics).fixActions(fixActions).build();
+                .filePath(filePath)
+                .diagnostics(diagnostics)
+                .fixActions(fixActions)
+                .hasInternalError(hasInternalError)
+                .build();
     }
 
     private BatchInspectionResult buildSingleFileResult(FileDiagnosticResult fileResult) {
@@ -145,7 +209,9 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         return BatchInspectionResult.builder()
                 .totalFiles(1).skippedFiles(0)
                 .errorCount(errorCount).warningCount(warningCount).infoCount(infoCount)
-                .fileResults(List.of(fileResult)).build();
+                .fileResults(List.of(fileResult))
+                .hasInternalErrors(fileResult.isHasInternalError())
+                .build();
     }
 
     private String readFileContent(String filePath) {
@@ -175,5 +241,41 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         return (int) diagnostics.stream()
                 .filter(d -> d.getSeverity() == severity)
                 .count();
+    }
+
+    private int[] countAstNodes(DslFileNode ast) {
+        int elements = 0;
+        int attributes = 0;
+        int expressions = 0;
+        if (ast != null && ast.getRootElement() != null) {
+            int[] counts = countElement(ast.getRootElement());
+            elements = counts[0];
+            attributes = counts[1];
+            expressions = counts[2];
+        }
+        return new int[]{elements, attributes, expressions};
+    }
+
+    private int[] countElement(DslElementNode element) {
+        int elements = 1;
+        int attributes = 0;
+        int expressions = 0;
+        if (element.getAttributes() != null) {
+            attributes += element.getAttributes().size();
+            for (DslAttributeNode attr : element.getAttributes()) {
+                if (attr.getValue() != null && !attr.getValue().isLiteral()) {
+                    expressions++;
+                }
+            }
+        }
+        if (element.getChildElements() != null) {
+            for (DslElementNode child : element.getChildElements()) {
+                int[] childCounts = countElement(child);
+                elements += childCounts[0];
+                attributes += childCounts[1];
+                expressions += childCounts[2];
+            }
+        }
+        return new int[]{elements, attributes, expressions};
     }
 }

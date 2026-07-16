@@ -3,18 +3,18 @@
   "expectedExitCode": 1,
   "expectedCounts": { "errors": 5, "warnings": 1, "info": 0 },
   "expectedDiagnostics": [
-    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 9, "lineTolerance": 2 },
-    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 12, "lineTolerance": 2 },
-    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 15, "lineTolerance": 2 },
-    { "ruleId": "SEM-IMG-003", "severity": "warning", "approxLine": 18, "lineTolerance": 2 },
-    { "ruleId": "SEM-IMG-SRC", "severity": "error", "approxLine": 27, "lineTolerance": 2 },
-    { "ruleId": "SEM-ATTR-005", "severity": "error", "approxLine": 29, "lineTolerance": 2 }
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 11, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 14, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
+    { "ruleId": "SEM-IMG-002", "severity": "error", "approxLine": 17, "lineTolerance": 2, "expectedFixes": ["移除srcExp属性", "移除src属性"] },
+    { "ruleId": "SEM-IMG-003", "severity": "warning", "approxLine": 20, "lineTolerance": 2, "expectedFixes": ["移除align属性", "移除isBackground属性"] },
+    { "ruleId": "SEM-IMG-SRC", "severity": "error", "approxLine": 29, "lineTolerance": 2, "expectedFixes": ["添加src属性指定图片路径", "添加srcExp属性指定图片源表达式"] },
+    { "ruleId": "SEM-ATTR-005", "severity": "error", "approxLine": 31, "lineTolerance": 2, "expectedFixes": ["设置scaleType=center_crop"] }
   ],
   "mustNotTrigger": [
-    { "approxLine": 3, "reason": "alpha_zero alpha=0 boundary valid" },
-    { "approxLine": 6, "reason": "alpha_max alpha=255 boundary valid" },
-    { "approxLine": 21, "reason": "src_only_valid src only, no srcExp" },
-    { "approxLine": 24, "reason": "srcExp_only_valid srcExp only, no src" },
-    { "approxLine": 32, "reason": "valid_full fully valid Image" }
+    { "approxLine": 5, "reason": "alpha_zero alpha=0 boundary valid" },
+    { "approxLine": 8, "reason": "alpha_max alpha=255 boundary valid" },
+    { "approxLine": 23, "reason": "src_only_valid src only, no srcExp" },
+    { "approxLine": 26, "reason": "srcExp_only_valid srcExp only, no src" },
+    { "approxLine": 34, "reason": "valid_full fully valid Image" }
   ]
 }

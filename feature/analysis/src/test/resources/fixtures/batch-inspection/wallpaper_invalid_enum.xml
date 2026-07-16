@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wallpaper screenWidth="1080">
+    <Var name="icon" type="string"/>
     <Image name="wall_bg" x="0" y="0" width="1080" height="1920"
            alpha="300" src="wall.png" srcExp="@icon" scaleType="invalid_scale"
            isBackground="true" align="center"/>

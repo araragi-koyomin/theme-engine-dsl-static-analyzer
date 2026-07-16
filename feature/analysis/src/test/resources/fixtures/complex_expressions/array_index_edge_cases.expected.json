@@ -3,7 +3,7 @@
   "expectedExitCode": 1,
   "expectedCounts": { "errors": 1, "warnings": 0, "info": 0 },
   "expectedDiagnostics": [
-    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 15, "lineTolerance": 2 }
+    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 15, "lineTolerance": 2, "expectedFixes": ["声明带 name=\"ghost_img\" 的元素"] }
   ],
   "mustNotTrigger": [
     { "approxLine": 3, "reason": "arr_val_0/1/2 valid const number declarations" },

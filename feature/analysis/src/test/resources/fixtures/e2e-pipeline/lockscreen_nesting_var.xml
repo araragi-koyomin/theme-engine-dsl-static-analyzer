@@ -2,6 +2,7 @@
 <Lockscreen frameRate="60" screenWidth="1080">
     <Var name="hour" type="number" persist="true"/>
     <Var name="my_alpha" type="number" expression="#undefined_elem.alpha"/>
+    <Var name="dynamic_overlay" type="string"/>
     <Image name="bg" x="0" y="0" width="1080" height="1920"
            alpha="-50" src="bg.png"/>
     <Image name="overlay" src="overlay.png" srcExp="@dynamic_overlay"/>

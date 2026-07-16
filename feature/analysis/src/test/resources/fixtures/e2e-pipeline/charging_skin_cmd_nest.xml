@@ -2,6 +2,7 @@
 <ChargingSkin screenWidth="1080">
     <Var name="charge_pct" type="number" expression="#battery_level"/>
     <Var name="charge_pct" type="string" expression="'full'"/>
+    <Var name="charge_icon" type="string"/>
     <Image name="bolt" x="0" y="0" width="100" height="100"
            alpha="500" src="bolt.png" srcExp="@charge_icon"/>
     <Trigger action="click">

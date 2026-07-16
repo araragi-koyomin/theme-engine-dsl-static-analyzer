@@ -1,3 +1,9 @@
+---
+module_ids: [M5]
+doc_kind: architecture
+status: active
+created: 2026-06-17
+---
 # M5 修复逻辑模块 - 架构设计
 
 ## 1. 模块职责

@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: architecture
+status: active
+created: 2026-06-15
+---
 # 主题引擎DSL静态分析工具 - 软件架构总览
 
 ## 1. 架构设计原则
@@ -8,7 +14,7 @@
 | 2 | 单一职责 | 每个模块只负责一个功能领域，变更原因唯一 | 全局 |
 | 3 | 数据驱动+声明式规则 | 规则库为纯数据层，检测引擎通过规则数据驱动；新增检测逻辑通过constraints声明式条件实现，无需编写Analyzer代码 | 全局 |
 | 4 | Core-Plugin隔离 | Core层无IDEA SDK依赖，CLI jar只打包core包；Plugin层依赖IDEA SDK+core层；编译期扫描core包内无com.intellij import | 全局 |
-| 5 | 解析工具分层 | XML结构解析使用JDK SAX（不使用ANTLR4；dom4j的Node无行列号API，诊断需节点定位，故从Locator捕获行列号）；DSL表达式和规则DSL条件解析使用ANTLR4；纯字面量属性不走解析器 | Core层 |
+| 5 | 解析工具分层 | XML结构解析使用JDK StAX (XMLStreamReader)（不使用ANTLR4；dom4j的Node无行列号API，诊断需节点定位，故从XMLStreamReader.getLocation()捕获行列号）；DSL表达式和规则DSL条件解析使用ANTLR4；纯字面量属性不走解析器 | Core层 |
 | 6 | 原生集成 | UI模块复用IDEA原生交互模式与API（Annotator、DocumentationProvider、ToolWindow等） | Plugin层 |
 | 7 | Core同步+Plugin事件 | Core层为同步分析管线，模块间通过接口方法调用；Plugin层保留Dispatcher事件机制用于UI刷新通知（M7→M6、M5-UI→M6） | 分层适用 |
 
@@ -26,17 +32,17 @@ feature/analysis/src/main/java/com/huawei/theme/analysis/
 │   ├── function/               ← M0: 函数签名库实现（JSON加载 + 索引构建，骨架阶段占位）
 │   ├── fileidentification/     ← M1: DSL文件识别
 │   ├── rulelibrary/            ← M2: 规则数据模型 + JSON加载 + RuleRepository
-│   ├── syntaxanalysis/         ← M3: SAX XML解析 + AST构建 + 语法错误
+│   ├── syntaxanalysis/         ← M3: StAX XML解析 + AST构建 + 语法错误
 │   ├── semanticanalysis/       ← M4: 语义分析引擎 + 符号表 + DiagnosticProvider接口
 │   ├── quickfix/               ← M5: 修复逻辑（纯文本操作描述）
 │   ├── batchinspection/        ← M7: 批量扫描 + 报告导出
 │   └── cli/                    ← CLI入口（不在模块总览中展示）
 │
-├── plugin/                     ← 依赖IDEA SDK + 依赖core层
-│   ├── psiadapter/             ← PSI Adapter: DslAst ↔ PsiElement 双向桥接
-│   ├── navigation/             ← M8: PsiReference + 跳转 + 查找引用 + 重命名
-│   ├── ui/                     ← M6: Annotator + DocumentationProvider + ToolWindow + 右键菜单
-│   ├── quickfixui/             ← M5-UI: IntentionAction桥接 + 候选对话框 + diff预览
+├── plugin/                     ← 依赖IDEA SDK + 依赖core层（实际包: editor/ + rule/；下列 psiadapter/navigation/ui/quickfixui 为目标设计,当前合并于 editor/）
+│   ├── psiadapter/             ← 目标设计(未实现,当前合并于editor/): PSI Adapter DslAst↔PsiElement 双向桥接 — 当前为 ThemeDslDiagnosticAnnotator 直接映射,DslPsiBridge 为设计目标
+│   ├── navigation/             ← 目标设计(未实现,当前合并于editor/): M8 PsiReference + 跳转 + 查找引用 + 重命名
+│   ├── ui/                     ← 目标设计(未实现,当前合并于editor/): M6 Annotator + DocumentationProvider + ToolWindow + 右键菜单
+│   ├── quickfixui/             ← 目标设计(未实现,当前合并于editor/): M5-UI IntentionAction桥接 + 候选对话框 + diff预览
 │   └── language/               ← DslLanguage + DslParserDefinition注册
 │
 feature/analysis/src/main/resources/
@@ -46,7 +52,7 @@ feature/analysis/src/main/resources/
 ```
 
 **构建策略**：
-- CLI jar：自定义Gradle task，只打包core/**，排除plugin/**，不含IDEA SDK依赖。依赖GSON+ANTLR4 runtime打包为fat jar（XML解析用JDK内置SAX，无需外部依赖）。
+- CLI jar：自定义Gradle task，只打包core/**，排除plugin/**，不含IDEA SDK依赖。依赖GSON+ANTLR4 runtime打包为fat jar（XML解析用JDK内置StAX，无需外部依赖）。
 - IDEA插件：标准intellij plugin build，包含全部代码（core+plugin）。
 - 隔离保障：Gradle task扫描core包内无com.intellij import，编译期验证。
 
@@ -82,7 +88,7 @@ graph TD
         M0[M0 解析器基础设施<br/>ANTLR4 grammar]
         M1[M1 文件识别]
         M2[M2 规则库<br/>纯数据层]
-        M3[M3 语法分析<br/>SAX+AST]
+        M3[M3 语法分析<br/>StAX+AST]
         M4[M4 语义分析+类型系统]
         M5[M5 修复逻辑<br/>FixAction]
         M7[M7 批量检查+报告]
@@ -157,7 +163,7 @@ graph TD
 | M0 | DslExpression.g4 + DslRuleCondition.g4 + 自动生成代码 + 函数签名库JSON加载 | 函数签名库热更新 | 自定义运算符扩展 |
 | M1 | 双重识别（扩展名+根元素标签） | FileType注册+自定义图标 | 用户可配置识别策略 |
 | M2 | 数据模型+JSON加载+RuleRepository查询接口 | 缓存管理+热更新机制 | 规则编辑器UI接口（Plugin层实现） |
-| M3 | SAX解析→DslAstNode+语法错误检测+ANTLR4表达式嵌入 | 精细化Token类型+表达式缓存 | 自定义格式语法诊断输出 |
+| M3 | StAX (XMLStreamReader) 解析→DslAstNode+语法错误检测+ANTLR4表达式嵌入 | 精细化Token类型+表达式缓存 | 自定义格式语法诊断输出 |
 | M4 | 7个模式匹配Analyzer+Diagnostic模型+AnalyzerRegistry | TypeAnalyzer+SymbolTableBuilder+ConstraintAnalyzer | 继承链分析+重复ID检测+完整引用完整性 |
 | M5 | 无需确认类FixAction | 需确认类FixAction（候选列表+diff预览描述） | 批量修复描述（同类型问题一键修复） |
 | M7 | 批量扫描+Markdown报告导出 | JSON报告+Terminal输出 | 自定义报告模板+定时自动检查 |
@@ -237,8 +243,8 @@ Plugin层保留Dispatcher事件机制（基于IDEA SDK），用于UI刷新通知
 flowchart TD
     Input[DSL文件/目录] --> M1[M1 文件识别<br/>filePath+content]
     M1 -->|否| Skip[跳过非DSL文件]
-    M1 -->|是| M3[M3 语法分析<br/>SAX→AST+ANTLR4表达式]
-    M3 --> AST[完整DslFileNode<br/>XML格式错误由SAX直接报出]
+    M1 -->|是| M3[M3 语法分析<br/>StAX→AST+ANTLR4表达式]
+    M3 --> AST[完整DslFileNode<br/>XML格式错误由StAX直接报出]
     AST --> M4[M4 语义分析+类型推断<br/>Analyzer引擎]
     M2[M2 规则库] --> M3
     M2 --> M4
@@ -260,7 +266,7 @@ flowchart TD
 flowchart TD
     Input[DSL文件] --> M1[M1 文件识别]
     M1 -->|否| Skip[跳过]
-    M1 -->|是| M3[M3 语法分析<br/>SAX→AST]
+    M1 -->|是| M3[M3 语法分析<br/>StAX→AST]
     M3 --> AST[DslFileNode]
     AST --> M4[M4 语义分析+类型推断]
     M2[M2 规则库] --> M3
@@ -307,7 +313,7 @@ flowchart TD
 |---|---|---|---|
 | Java 17 | 开发语言 | ✓ | ✓ |
 | Gradle 8.2 + gradle-intellij-plugin 1.13.3 | 构建工具 | ✓ | ✓ |
-| JDK SAX (javax.xml.parsers) | XML结构解析 | ✓ | ✗ |
+| JDK StAX (javax.xml.stream) | XML结构解析 | ✓ | ✗ |
 | ANTLR4 runtime | 表达式+规则DSL词法/语法分析 | ✓ | ✗ |
 | GSON 2.9.0 | 规则库/函数签名库JSON反序列化 | ✓ | ✗ |
 | Lombok 1.18.22 | @Data/@Builder数据模型简化 | ✓ | ✓ |
@@ -320,7 +326,7 @@ flowchart TD
 | PsiReference API | 导航与引用解析 | ✗ | ✓ |
 | DocumentationProvider | 悬浮提示 | ✗ | ✓ |
 
-ANTLR4/GSON/Lombok打包进CLI fat jar（XML解析用JDK内置SAX，无外部依赖），不依赖IDEA环境。IntelliJ SDK仅Plugin层使用，Core层编译期禁止import com.intellij.*
+ANTLR4/GSON/Lombok打包进CLI fat jar（XML解析用JDK内置StAX，无外部依赖），不依赖IDEA环境。IntelliJ SDK仅Plugin层使用，Core层编译期禁止import com.intellij.*
 
 ## 10. 相关文档
 
@@ -330,14 +336,13 @@ ANTLR4/GSON/Lombok打包进CLI fat jar（XML解析用JDK内置SAX，无外部依
 | [TDD.md](TDD.md) | 技术设计文档（10模块详细设计、接口签名、数据模型） |
 | [DSL-Rule-Spec.md](DSL-Rule-Spec.md) | DSL规则规范、错误检测类型定义、规则库数据结构、声明式约束 |
 | [UX-Design.md](UX-Design.md) | UX交互设计文档 |
-| [Development-Plan.md](Development-Plan.md) | 开发计划与Phase划分 |
-| [M0-ParserInfrastructure.md](architecture/M0-ParserInfrastructure.md) | M0解析器基础设施（待创建） |
-| [M1-FileIdentification.md](architecture/M1-FileIdentification.md) | M1文件识别模块（待重构） |
-| [M2-RuleLibrary.md](architecture/M2-RuleLibrary.md) | M2规则库模块（待重构） |
-| [M3-SyntaxAnalysis.md](architecture/M3-SyntaxAnalysis.md) | M3语法分析模块（待重构） |
-| [M4-SemanticAnalysis.md](architecture/M4-SemanticAnalysis.md) | M4语义分析与类型系统模块（待重构） |
-| [M5-QuickFix.md](architecture/M5-QuickFix.md) | M5修复逻辑模块（待重构） |
-| [M6-UIInteraction.md](architecture/M6-UIInteraction.md) | M6 UI交互模块（待重构） |
-| [M7-BatchInspection.md](architecture/M7-BatchInspection.md) | M7批量检查与报告模块（待重构） |
-| [M8-Navigation.md](architecture/M8-Navigation.md) | M8导航与重构模块（待创建） |
-| [PSI-Adapter.md](architecture/PSI-Adapter.md) | PSI Adapter模块（待创建） |
+| [M0-ParserInfrastructure.md](architecture/M0-ParserInfrastructure.md) | M0解析器基础设施（已创建,维护中） |
+| [M1-FileIdentification.md](architecture/M1-FileIdentification.md) | M1文件识别模块（已创建,维护中） |
+| [M2-RuleLibrary.md](architecture/M2-RuleLibrary.md) | M2规则库模块（已创建,维护中） |
+| [M3-SyntaxAnalysis.md](architecture/M3-SyntaxAnalysis.md) | M3语法分析模块（已创建,滞后待更新：SAX→StAX等） |
+| [M4-SemanticAnalysis.md](architecture/M4-SemanticAnalysis.md) | M4语义分析与类型系统模块（已创建,滞后待更新） |
+| [M5-QuickFix.md](architecture/M5-QuickFix.md) | M5修复逻辑模块（已创建,维护中） |
+| [M6-UIInteraction.md](architecture/M6-UIInteraction.md) | M6 UI交互模块（已创建,维护中） |
+| [M7-BatchInspection.md](architecture/M7-BatchInspection.md) | M7批量检查与报告模块（已创建,滞后待更新） |
+| [M8-Navigation.md](architecture/M8-Navigation.md) | M8导航与重构模块（已创建,维护中） |
+| [PSI-Adapter.md](architecture/PSI-Adapter.md) | PSI Adapter模块（已创建,维护中；实际为ThemeDslDiagnosticAnnotator直接映射） |

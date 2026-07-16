@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Lockscreen frameRate="60" screenWidth="1080">
     <Var name="valid_var" type="number" const="true" expression="42"/>
+    <Var name="deep_dynamic" type="string"/>
 
     <Group name="level1" x="0" y="0" width="1080" height="1920" alpha="300">
         <Var name="nested_var" type="string" expression="'hello'"/>

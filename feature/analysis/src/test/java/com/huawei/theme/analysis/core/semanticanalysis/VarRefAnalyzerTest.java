@@ -69,7 +69,37 @@ class VarRefAnalyzerTest {
 
         List<Diagnostic> diagnostics = analyzer.analyze(text, context(stubRepo(), globalTable()));
 
-        assertTrue(diagnostics.isEmpty(), "@-prefixed variable refs should not be flagged as undefined");
+        assertEquals(1, diagnostics.size());
+        Diagnostic diag = diagnostics.get(0);
+        assertEquals("SEM-REF-001", diag.getRuleId());
+        assertEquals(DiagnosticSeverity.ERROR, diag.getSeverity());
+        assertEquals("引用未定义变量 @str", diag.getMessage());
+        assertEquals("test.xml", diag.getFilePath());
+        assertEquals(15, diag.getLine());
+        assertEquals(3, diag.getColumn());
+        assertEquals(15, diag.getEndLine());
+        assertEquals(7, diag.getEndColumn());
+        assertEquals(1, diag.getSuggestedFixes().size());
+        assertEquals("声明 Var name=\"str\"", diag.getSuggestedFixes().get(0).getText());
+    }
+
+    @Test
+    void undefinedStringElementPropertyRef() {
+        ExpressionNode ref = ExpressionNode.variableRef("@", "missingElem.currentTime", "@missingElem.currentTime", 15, 3);
+        DslElementNode text = element("Text", 10, 5, exprAttr("textExp", ref, "@missingElem.currentTime"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(text,
+                context(repoWithTemplates(), globalTable(elementNames())));
+
+        assertEquals(1, diagnostics.size());
+        Diagnostic diag = diagnostics.get(0);
+        assertEquals("SEM-REF-001", diag.getRuleId());
+        assertEquals(DiagnosticSeverity.ERROR, diag.getSeverity());
+        assertEquals("引用未定义元素属性 @missingElem", diag.getMessage());
+        assertEquals(15, diag.getLine());
+        assertEquals(3, diag.getColumn());
+        assertEquals(1, diag.getSuggestedFixes().size());
+        assertEquals("声明带 name=\"missingElem\" 的元素", diag.getSuggestedFixes().get(0).getText());
     }
 
     @Test
@@ -322,6 +352,8 @@ class VarRefAnalyzerTest {
         assertEquals("test.xml", diag.getFilePath());
         assertEquals(15, diag.getLine());
         assertEquals(3, diag.getColumn());
+        assertEquals(15, diag.getEndLine());
+        assertEquals(19, diag.getEndColumn());
         assertEquals(1, diag.getSuggestedFixes().size());
         assertEquals("声明带 name=\"unlocker\" 的元素", diag.getSuggestedFixes().get(0).getText());
     }

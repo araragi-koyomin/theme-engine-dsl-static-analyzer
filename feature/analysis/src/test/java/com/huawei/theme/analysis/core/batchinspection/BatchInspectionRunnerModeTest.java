@@ -25,6 +25,7 @@ import com.huawei.theme.analysis.core.rulelibrary.model.RuleSource;
 import com.huawei.theme.analysis.core.rulelibrary.model.SuggestedFix;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProvider;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilder;
+import com.huawei.theme.analysis.core.semanticanalysis.VerboseCollector;
 import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
@@ -140,13 +141,14 @@ class BatchInspectionRunnerModeTest {
     }
 
     @Test
-    void syntaxOnlyModeDoesNotInvokeDiagnosticProvider() throws Exception {
+    void syntaxOnlyModeInvokesDiagnosticProvider() throws Exception {
         AtomicInteger diagCount = new AtomicInteger(0);
         StubDiagnosticProvider trackingDiag = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb,
+                                           PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 diagCount.incrementAndGet();
-                return super.analyze(ast, ruleRepo, stb);
+                return super.analyze(ast, ruleRepo, stb, mode, config, collector);
             }
         };
         InspectionConfig config = InspectionConfig.builder()
@@ -158,7 +160,7 @@ class BatchInspectionRunnerModeTest {
                 stubQuickFixProvider, stubSymbolTableBuilder, stubRuleRepository,
                 config);
         runner.runOnFile(tempFile.toString());
-        assertEquals(0, diagCount.get());
+        assertEquals(1, diagCount.get());
     }
 
     @Test
@@ -211,9 +213,10 @@ class BatchInspectionRunnerModeTest {
         AtomicInteger fixCount = new AtomicInteger(0);
         StubDiagnosticProvider trackingDiag = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb,
+                                           PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 diagCount.incrementAndGet();
-                return super.analyze(ast, ruleRepo, stb);
+                return super.analyze(ast, ruleRepo, stb, mode, config, collector);
             }
         };
         StubQuickFixProvider trackingFix = new StubQuickFixProvider() {
@@ -262,7 +265,7 @@ class BatchInspectionRunnerModeTest {
     }
 
     @Test
-    void astFailureGracefullyDegraded() throws Exception {
+    void astFailureProducesInternalAstError() throws Exception {
         StubAstProvider failingAst = new StubAstProvider() {
             @Override
             public DslFileNode getDslAst(String filePath, String content) {
@@ -279,15 +282,19 @@ class BatchInspectionRunnerModeTest {
                 config);
         BatchInspectionResult result = runner.runOnFile(tempFile.toString());
         assertEquals(1, result.getTotalFiles());
-        assertEquals(0, result.getErrorCount());
-        assertEquals(0, result.getFileResults().get(0).getDiagnostics().size());
+        assertEquals(1, result.getErrorCount());
+        assertEquals(1, result.getFileResults().get(0).getDiagnostics().size());
+        assertEquals("INTERNAL-AST-ERROR",
+                result.getFileResults().get(0).getDiagnostics().get(0).getRuleId());
+        assertTrue(result.getFileResults().get(0).isHasInternalError());
     }
 
     @Test
-    void diagnosticFailureGracefullyDegraded() throws Exception {
+    void diagnosticFailureProducesInternalAnalyzerError() throws Exception {
         StubDiagnosticProvider failingDiag = new StubDiagnosticProvider() {
             @Override
-            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb) {
+            public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder stb,
+                                           PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
                 throw new RuntimeException("Diagnostic analysis failed");
             }
         };
@@ -301,8 +308,11 @@ class BatchInspectionRunnerModeTest {
                 config);
         BatchInspectionResult result = runner.runOnFile(tempFile.toString());
         assertEquals(1, result.getTotalFiles());
-        assertEquals(0, result.getErrorCount());
-        assertEquals(0, result.getFileResults().get(0).getDiagnostics().size());
+        assertEquals(1, result.getErrorCount());
+        assertEquals(1, result.getFileResults().get(0).getDiagnostics().size());
+        assertEquals("INTERNAL-ANALYZER-ERROR",
+                result.getFileResults().get(0).getDiagnostics().get(0).getRuleId());
+        assertTrue(result.getFileResults().get(0).isHasInternalError());
     }
 
     @Test
@@ -325,6 +335,7 @@ class BatchInspectionRunnerModeTest {
         assertEquals(1, result.getTotalFiles());
         assertTrue(result.getFileResults().get(0).getDiagnostics().size() > 0);
         assertEquals(0, result.getFileResults().get(0).getFixActions().size());
+        assertTrue(result.getFileResults().get(0).isHasInternalError());
     }
 
     private static class StubDslFileMatcher implements DslFileMatcher {
@@ -352,7 +363,11 @@ class BatchInspectionRunnerModeTest {
 
     private static class StubDiagnosticProvider implements DiagnosticProvider {
         @Override
-        public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder symbolTableBuilder) {
+        public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder symbolTableBuilder,
+                                        PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
+            if (mode == PipelineMode.SYNTAX_ONLY) {
+                return List.of();
+            }
             return List.of(Diagnostic.builder()
                     .severity(DiagnosticSeverity.ERROR)
                     .ruleId("SEM-REF-001")

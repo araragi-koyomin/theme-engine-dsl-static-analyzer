@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: report
+status: active
+created: 2026-07-13
+---
 # Bug Fix Summary
 
 Comprehensive catalog of all bugs discovered and tested, organized by category.

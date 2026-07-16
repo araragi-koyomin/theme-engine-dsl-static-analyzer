@@ -95,4 +95,43 @@ class AnalysisServiceTest {
         assertTrue(hasNonZeroWidthRefDiag,
                 "SEM-REF-001 LSP diagnostic must have a non-zero-width range so it renders");
     }
+
+    @Test
+    void undefinedStringRefNonZeroWidthRange() {
+        RuleRepository repo = new RuleRepositoryFactory(null).create();
+        AnalysisService svc = new AnalysisService(repo);
+        AnalyzerRegistry.init();
+        String content = "<Lockscreen><Text name=\"t\" textExp=\"@undefinedStr\"/></Lockscreen>";
+        List<Diagnostic> core = svc.analyze("script.xml", content);
+        assertFalse(core.isEmpty(), "expected at least one diagnostic for @undefinedStr");
+        boolean foundRef = false;
+        for (Diagnostic d : core) {
+            if ("SEM-REF-001".equals(d.getRuleId())) {
+                foundRef = true;
+                assertTrue(d.getEndLine() > 0 || d.getEndColumn() > d.getColumn(),
+                        "SEM-REF-001 must carry a non-zero-width end position; got line="
+                                + d.getLine() + " col=" + d.getColumn()
+                                + " endLine=" + d.getEndLine() + " endCol=" + d.getEndColumn());
+            }
+        }
+        assertTrue(foundRef, "expected SEM-REF-001 for @undefinedStr; got: "
+                + core.stream().map(Diagnostic::getRuleId).reduce((a, b) -> a + "," + b).orElse("(none)"));
+        DiagnosticPublisher publisher = new DiagnosticPublisher();
+        PositionMapper mapper = new PositionMapper(content);
+        List<org.eclipse.lsp4j.Diagnostic> lsp = publisher.toLspDiagnostics(core, mapper);
+        boolean hasNonZeroWidthRefDiag = false;
+        for (org.eclipse.lsp4j.Diagnostic d : lsp) {
+            if (!"SEM-REF-001".equals(d.getCode().getLeft())) {
+                continue;
+            }
+            Range r = d.getRange();
+            if (r.getEnd().getLine() > r.getStart().getLine()
+                    || r.getEnd().getCharacter() > r.getStart().getCharacter()) {
+                hasNonZeroWidthRefDiag = true;
+                break;
+            }
+        }
+        assertTrue(hasNonZeroWidthRefDiag,
+                "SEM-REF-001 LSP diagnostic must have a non-zero-width range so it renders");
+    }
 }

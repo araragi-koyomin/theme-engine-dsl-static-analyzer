@@ -1,3 +1,9 @@
+---
+module_ids: [M0]
+doc_kind: architecture
+status: active
+created: 2026-06-17
+---
 # M0 解析器基础设施模块 - 架构设计
 
 ## 1. 模块职责

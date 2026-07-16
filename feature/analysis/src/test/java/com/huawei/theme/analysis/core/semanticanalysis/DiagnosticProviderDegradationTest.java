@@ -10,6 +10,8 @@ import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.function.JsonFunctionSignatureLoader;
 import com.huawei.theme.analysis.core.rulelibrary.JsonRuleLoader;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
+import com.huawei.theme.analysis.core.cli.InspectionConfig;
+import com.huawei.theme.analysis.core.cli.PipelineMode;
 import com.huawei.theme.analysis.core.semanticanalysis.analyzers.ConstraintAnalyzer;
 import com.huawei.theme.analysis.core.semanticanalysis.analyzers.RequiredAttrAnalyzer;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
@@ -45,7 +47,8 @@ class DiagnosticProviderDegradationTest {
     void analyzeWithNormalAnalyzersProducesDiagnostics() {
         AnalyzerRegistry.init();
         DslFileNode ast = astBuilder.getDslAst("test.xml", "<Lockscreen><Var/></Lockscreen>");
-        List<Diagnostic> diagnostics = provider.analyze(ast, ruleRepo, symbolTableBuilder);
+        List<Diagnostic> diagnostics = provider.analyze(ast, ruleRepo, symbolTableBuilder,
+                PipelineMode.FULL, InspectionConfig.builder().build(), null);
         assertTrue(diagnostics != null);
     }
 
@@ -57,7 +60,8 @@ class DiagnosticProviderDegradationTest {
         AnalyzerRegistry.register(new ConstraintAnalyzer());
 
         DslFileNode ast = astBuilder.getDslAst("test.xml", "<Lockscreen><Var/></Lockscreen>");
-        List<Diagnostic> diagnostics = provider.analyze(ast, ruleRepo, symbolTableBuilder);
+        List<Diagnostic> diagnostics = provider.analyze(ast, ruleRepo, symbolTableBuilder,
+                PipelineMode.FULL, InspectionConfig.builder().build(), null);
 
         assertTrue(diagnostics != null);
         boolean hasAnalyzerError = diagnostics.stream()

@@ -100,8 +100,22 @@ task checkCoreIntellijDependency {
 
 check.dependsOn checkCoreIntellijDependency
 
+apply plugin: 'jacoco'
+
+jacoco {
+    toolVersion = '0.8.11'
+}
+
 test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
 }
 
 task buildFatJar(type: Jar) {

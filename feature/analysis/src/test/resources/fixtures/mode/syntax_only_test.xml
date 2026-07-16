@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Lockscreen frameRate="60" screenWidth="1080">
+    <Var name="base_val" type="number" const="true" expression="100"/>
+    <Var name="neg_syntax" type="number" expression="-#base_val"/>
+    <UnknownTag name="unknown_element" x="0" y="0"/>
+    <Image name="bg" x="0" y="0" width="1080" height="1920"
+           unknownAttr="bad" src="bg.png"/>
+    <Group name="valid_group" x="0" y="0" width="500" height="500">
+        <Image name="inner" x="0" y="10" width="200" height="200"
+               src="inner.png"/>
+    </Group>
+</Lockscreen>
