@@ -42,6 +42,11 @@ public class TypeInferenceEngine {
                 return inferUnaryExpr(node, expectedContext, symbolTable);
             case CONDITIONAL:
                 return inferIfelseType(node, expectedContext, symbolTable);
+            case BRACED:
+                if (node.getChildren() == null || node.getChildren().isEmpty()) {
+                    return new DslUnknownType();
+                }
+                return inferType(node.getChildren().get(0), expectedContext, symbolTable);
             default:
                 return new DslUnknownType();
         }

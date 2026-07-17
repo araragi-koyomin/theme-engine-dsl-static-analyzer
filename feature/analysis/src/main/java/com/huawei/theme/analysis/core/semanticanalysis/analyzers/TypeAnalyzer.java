@@ -106,7 +106,8 @@ public class TypeAnalyzer implements DslAnalyzer {
                     expectedType.getName(),
                     inferred != null && isTypeMatch(expectedType, inferred));
         }
-        if (inferred != null && !isTypeMatch(expectedType, inferred)) {
+        if (inferred != null && !isTypeMatch(expectedType, inferred)
+                && !isStringContextNumberAllowed(expectedType, inferred, exprNode, engine, symbolTable)) {
             diagnostics.add(buildTypeMismatchDiagnostic(attr, expectedType, inferred, context));
         }
         checkFunctionCalls(exprNode, expectedType, engine, context, attr, diagnostics);
@@ -118,6 +119,44 @@ public class TypeAnalyzer implements DslAnalyzer {
             return true;
         }
         return inferred instanceof DslUnknownType || TypeInferenceEngine.typeEquals(expected, inferred);
+    }
+
+    private static boolean isStringContextNumberAllowed(DslType expected, DslType inferred, ExpressionNode expr,
+                                                          TypeInferenceEngine engine, SymbolTable symbolTable) {
+        if (!(expected instanceof DslStringType) || !(inferred instanceof DslNumberType)) {
+            return false;
+        }
+        return !containsUnbracedNumberFunctionCall(expr, expected, engine, symbolTable);
+    }
+
+    private static boolean containsUnbracedNumberFunctionCall(ExpressionNode node, DslType expectedContext,
+                                                                TypeInferenceEngine engine, SymbolTable symbolTable) {
+        if (node == null) {
+            return false;
+        }
+        ExpressionKind kind = node.getKind();
+        if (kind == ExpressionKind.BRACED) {
+            return false;
+        }
+        if (kind == ExpressionKind.FUNCTION_CALL) {
+            if ("ifelse".equals(node.getFunctionName())) {
+                return false;
+            }
+            DslType t = engine.inferType(node, expectedContext, symbolTable);
+            return t instanceof DslNumberType;
+        }
+        if (node.getChildren() != null) {
+            for (ExpressionNode child : node.getChildren()) {
+                if (containsUnbracedNumberFunctionCall(child, expectedContext, engine, symbolTable)) {
+                    return true;
+                }
+            }
+        }
+        if (node.getIndexExpression() != null
+                && containsUnbracedNumberFunctionCall(node.getIndexExpression(), expectedContext, engine, symbolTable)) {
+            return true;
+        }
+        return false;
     }
 
     private void checkFunctionCalls(ExpressionNode node, DslType expectedType, TypeInferenceEngine engine,
@@ -275,7 +314,8 @@ public class TypeAnalyzer implements DslAnalyzer {
                     varType.getName(),
                     exprType != null && isTypeMatch(varType, exprType));
         }
-        if (exprType != null && !isTypeMatch(varType, exprType)) {
+        if (exprType != null && !isTypeMatch(varType, exprType)
+                && !isStringContextNumberAllowed(varType, exprType, exprNode, engine, symbolTable)) {
             diagnostics.add(buildVarTypeMismatchDiagnostic(elementNode, exprAttr, varType, exprType, context));
         }
 

@@ -138,10 +138,10 @@ class SemanticAnalysisIntegrationTest {
     // --- SEM-TYPE-001: 类型不匹配 ---
 
     @Test
-    void varStringTypeWithNumericGlobalProducesSEM_TYPE_001() {
+    void varStringTypeWithNumericGlobalNoViolation() {
         List<Diagnostic> refType = refAndTypeDiagnostics(analyze(
                 "<Lockscreen><Var name=\"v\" expression=\"#battery_level\" type=\"string\"/></Lockscreen>"));
-        assertHasRule(refType, "SEM-TYPE-001");
+        assertTrue(refType.stream().noneMatch(d -> "SEM-TYPE-001".equals(d.getRuleId())));
     }
 
     @Test

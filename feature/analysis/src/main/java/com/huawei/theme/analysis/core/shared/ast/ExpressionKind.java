@@ -8,5 +8,6 @@ public enum ExpressionKind {
     UNARY_EXPR,
     CONDITIONAL,
     ARRAY_ACCESS,
+    BRACED,
     UNKNOWN
 }

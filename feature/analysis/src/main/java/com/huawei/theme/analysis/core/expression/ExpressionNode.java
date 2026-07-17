@@ -155,4 +155,20 @@ public class ExpressionNode implements ExpressionAstNode {
                 .endColumn(range.getEndColumn())
                 .build();
     }
+
+    public static ExpressionNode bracedExpr(ExpressionNode operand, String text, int line, int column) {
+        return bracedExpr(operand, text, SourceRange.point(line, column));
+    }
+
+    public static ExpressionNode bracedExpr(ExpressionNode operand, String text, SourceRange range) {
+        return ExpressionNode.builder()
+                .kind(ExpressionKind.BRACED)
+                .children(List.of(operand))
+                .text(text)
+                .line(range.getStartLine())
+                .column(range.getStartColumn())
+                .endLine(range.getEndLine())
+                .endColumn(range.getEndColumn())
+                .build();
+    }
 }

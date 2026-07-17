@@ -208,6 +208,32 @@ class TypeAnalyzerTest {
     }
 
     @Test
+    void stringPureLiteralArithmeticNoViolation() {
+        ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode right = ExpressionNode.literal("2", "2", 1, 0);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", left, right, "1+2", 1, 0);
+        DslElementNode text = element("Text", 10, 5, exprAttr("textExp", expr, "1+2"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(text,
+                context(repoWithAttrs(), emptyTable()));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void stringBracedNumberFunctionNoViolation() {
+        ExpressionNode call = ExpressionNode.functionCall("sin",
+                List.of(ExpressionNode.literal("1", "1", 1, 0)), "sin(1)", 15, 3);
+        ExpressionNode expr = ExpressionNode.bracedExpr(call, "{sin(1)}", 1, 0);
+        DslElementNode text = element("Text", 10, 5, exprAttr("textExp", expr, "{sin(1)}"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(text,
+                context(repoWithAttrs(), emptyTable()));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
     void literalStringInBinaryProducesSEM_TYPE_001() {
         ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
         ExpressionNode right = ExpressionNode.literal("str", "'str'", 15, 3);
@@ -323,7 +349,7 @@ class TypeAnalyzerTest {
     }
 
     @Test
-    void varAutoStringMismatchProducesSEM_TYPE_001() {
+    void varAutoStringNumberVarNoViolation() {
         ExpressionNode expr = ExpressionNode.variableRef("#", "n", "#n", 1, 0);
         DslElementNode var = element("Var", 10, 5,
                 exprAttr("expression", expr, "#n"),
@@ -333,8 +359,7 @@ class TypeAnalyzerTest {
         List<Diagnostic> diagnostics = analyzer.analyze(var,
                 context(repoWithAttrs(), table(n)));
 
-        assertEquals(1, diagnostics.size());
-        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
+        assertTrue(diagnostics.isEmpty());
     }
 
     @Test

@@ -71,7 +71,7 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
                     ctx.NUMBER().getText(), ctx.getText(), rangeOf(ctx));
         }
         if (ctx.numericExpression() != null) {
-            return visit(ctx.numericExpression());
+            return ExpressionNode.bracedExpr(visit(ctx.numericExpression()), ctx.getText(), rangeOf(ctx));
         }
         return unknown(ctx.getText(), rangeOf(ctx));
     }
