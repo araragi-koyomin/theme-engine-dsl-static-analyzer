@@ -18,10 +18,12 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import com.intellij.codeInsight.completion.CompletionContributor;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.CompletionSorter;
 import com.intellij.codeInsight.completion.InsertHandler;
 import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.codeInsight.lookup.LookupElementWeigher;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -105,13 +107,37 @@ public final class ThemeDslLspCompletionContributor extends CompletionContributo
         if (items == null) {
             return;
         }
+        // Build a sorter that puts the server's type-priority (from sortText)
+        // before IntelliJ's default alphabetical sorting, so the client
+        // preserves: required/default > optional > user-var > global-var > function.
+        CompletionSorter sorter = CompletionSorter.defaultSorter(parameters, result.getPrefixMatcher())
+                .weighBefore("priority", DSL_WEIGHER);
+        CompletionResultSet sortedResult = result.withRelevanceSorter(sorter);
+
         for (CompletionItem item : items) {
             LookupElement lookup = toLookup(item);
             if (lookup != null) {
-                result.addElement(lookup);
+                sortedResult.addElement(lookup);
             }
         }
     }
+
+    /**
+     * Weigher that reads the sort-priority (0=highest, 4=lowest) from the
+     * {@link DslLookupDoc} object carried by each lookup element. IntelliJ
+     * sorts by this comparable first (lower = higher in list), then by the
+     * default alphabetical/statistical ordering as tiebreaker.
+     */
+    private static final LookupElementWeigher DSL_WEIGHER = new LookupElementWeigher("dslSortPriority") {
+        @Override
+        public Comparable weigh(LookupElement element) {
+            Object obj = element.getObject();
+            if (obj instanceof DslLookupDoc doc) {
+                return doc.sortPriority;
+            }
+            return 99; // no priority info → sort last
+        }
+    };
 
     private static LookupElement toLookup(CompletionItem item) {
         String label = item.getLabel();
@@ -119,18 +145,15 @@ public final class ThemeDslLspCompletionContributor extends CompletionContributo
             return null;
         }
         String docMarkup = documentationOf(item);
-        // Carry the server-supplied documentation as the lookup's object so the
-        // ThemeDslLspHoverProvider can show it in the completion documentation
-        // panel via getDocumentationElementForLookupItem.
-        LookupElementBuilder lookup = (docMarkup != null)
-                ? LookupElementBuilder.create(new DslLookupDoc(label, docMarkup), label)
-                : LookupElementBuilder.create(label);
+        // Parse the server's sortText to get the type priority (0-4).
+        int sortPriority = parseSortPriority(item.getSortText());
+        // Always use DslLookupDoc as the object so the weigher can read
+        // sortPriority; markup may be null (items without documentation).
+        LookupElementBuilder lookup = LookupElementBuilder
+                .create(new DslLookupDoc(label, docMarkup, sortPriority), label);
         if (item.getDetail() != null && !item.getDetail().isEmpty()) {
             lookup = lookup.withTypeText(item.getDetail());
         }
-        // Attribute-name items: insert as name="" with the caret between the
-        // quotes so the user can type the value immediately. Element names and
-        // enum values insert as the bare label.
         CompletionItemKind kind = item.getKind();
         if (kind == CompletionItemKind.Field || kind == CompletionItemKind.Property) {
             lookup = lookup.withInsertHandler(ATTR_INSERT_HANDLER);
@@ -139,11 +162,24 @@ public final class ThemeDslLspCompletionContributor extends CompletionContributo
         if (icon != null) {
             lookup = lookup.withIcon(icon);
         }
-        // The server's sortText ("0_"/"1_") is intentionally NOT used as a
-        // lookup string: that would let digits/underscores match unrelated
-        // items (the prior chaos). IntelliJ orders by label; the detail text
-        // ("required"/"optional") conveys priority visually.
         return lookup;
+    }
+
+    /**
+     * Parses the server's sortText ("0_label", "1_label", ..., "4_label")
+     * to extract the type priority digit. Returns 5 (sort last) if parsing
+     * fails.
+     */
+    private static int parseSortPriority(String sortText) {
+        if (sortText == null || sortText.isEmpty() || sortText.length() < 2
+                || sortText.charAt(1) != '_') {
+            return 5;
+        }
+        char digit = sortText.charAt(0);
+        if (digit >= '0' && digit <= '9') {
+            return digit - '0';
+        }
+        return 5;
     }
 
     /** Extracts the markup string from the LSP CompletionItem.documentation. */

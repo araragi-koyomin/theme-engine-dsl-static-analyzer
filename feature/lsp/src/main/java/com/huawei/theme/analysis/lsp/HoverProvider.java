@@ -7,9 +7,12 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 
+import com.huawei.theme.analysis.core.expression.ExpressionNode;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
+import com.huawei.theme.analysis.core.shared.ast.ExpressionAstNode;
+import com.huawei.theme.analysis.core.shared.ast.ExpressionKind;
 
 /**
  * Provides hover documentation for DSL tags and attributes, derived from the
@@ -39,6 +42,21 @@ final class HoverProvider {
     }
 
     Hover hover(ContextResolver.Context ctx) {
+        // Per-token hover inside expressions (variable ref / function / literal)
+        if (ctx.exprNode != null) {
+            String markup = hoverExpressionToken(ctx.exprNode);
+            if (markup != null) {
+                return new Hover(new MarkupContent(MarkupKind.MARKDOWN, markup));
+            }
+        }
+        // Variable definition hover: cursor on name="..." value of a Var element
+        if (ctx.attrName != null && ctx.tagName != null && ctx.elementNode != null
+                && "name".equals(ctx.attrName) && isVariableTag(ctx.tagName)) {
+            String markup = hoverVariableDef(ctx.elementNode);
+            if (markup != null) {
+                return new Hover(new MarkupContent(MarkupKind.MARKDOWN, markup));
+            }
+        }
         if (ctx.attrName != null && ctx.tagName != null) {
             String attrMarkup = attributeMarkup(ctx.tagName, ctx.attrName);
             if (attrMarkup != null) {
@@ -50,6 +68,130 @@ final class HoverProvider {
             return null;
         }
         return new Hover(new MarkupContent(MarkupKind.MARKDOWN, tagMarkup));
+    }
+
+    private String hoverExpressionToken(ExpressionAstNode node) {
+        ExpressionKind kind = node.getKind();
+        switch (kind) {
+            case VARIABLE_REF:
+            case ARRAY_ACCESS:
+                return hoverVariableRef((ExpressionNode) node);
+            case FUNCTION_CALL:
+                return hoverFunctionCall((ExpressionNode) node);
+            case LITERAL:
+                return hoverLiteral(node);
+            default:
+                return null;
+        }
+    }
+
+    private String hoverVariableRef(ExpressionNode node) {
+        String varName = node.getVariableName();
+        String prefix = node.getPrefix();
+        String refText = (prefix != null ? prefix : "") + (varName != null ? varName : "");
+        StringBuilder sb = new StringBuilder();
+        sb.append("### `").append(esc(refText)).append("` — 变量引用\n\n");
+        // Check if it's a known global variable
+        if (varName != null && !varName.isEmpty()) {
+            var globalVar = ruleRepository.getGlobalVar(varName);
+            if (globalVar.isPresent()) {
+                var gv = globalVar.get();
+                sb.append("**类型:** `").append(esc(gv.getType())).append("`  \n");
+                if (gv.getScope() != null && !gv.getScope().isEmpty()) {
+                    sb.append("**作用域:** `").append(esc(gv.getScope())).append("`  \n");
+                }
+                if (gv.getDescription() != null && !gv.getDescription().isEmpty()) {
+                    sb.append("**描述:** ").append(esc(gv.getDescription())).append("  \n");
+                }
+            } else {
+                sb.append("用户定义变量（需在文件中声明 `").append(esc(varName))
+                        .append("`）  \n");
+            }
+        }
+        return sb.toString();
+    }
+
+    private String hoverFunctionCall(ExpressionNode node) {
+        String fnName = node.getFunctionName();
+        if (fnName == null || fnName.isEmpty()) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("### `").append(esc(fnName)).append("()` — 函数调用\n\n");
+        var fnLib = ruleRepository.getFunctionSignatureLibrary();
+        if (fnLib != null) {
+            var sigs = fnLib.getSignatures(fnName);
+            if (!sigs.isEmpty()) {
+                var sig = sigs.get(0);
+                var returnType = sig.getReturnType();
+                if (returnType != null && returnType.getName() != null && !returnType.getName().isEmpty()) {
+                    sb.append("**返回类型:** `").append(esc(returnType.getName())).append("`  \n");
+                }
+                var params = sig.getParams();
+                if (params != null && !params.isEmpty()) {
+                    sb.append("**参数:**\n");
+                    for (var p : params) {
+                        sb.append("- `").append(esc(p.getName())).append("`");
+                        var pType = p.getType();
+                        if (pType != null && pType.getName() != null && !pType.getName().isEmpty()) {
+                            sb.append(" (").append(esc(pType.getName())).append(")");
+                        }
+                        if (p.isVariadic()) {
+                            sb.append(" — 可变参数");
+                        }
+                        sb.append("  \n");
+                    }
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    private String hoverLiteral(ExpressionAstNode node) {
+        String t = node.getText();
+        if (t == null || t.isEmpty()) {
+            return null;
+        }
+        boolean isString = t.charAt(0) == '\'';
+        return "### `" + esc(t) + "` — " + (isString ? "字符串字面量" : "数字字面量") + "\n";
+    }
+
+    private String hoverVariableDef(com.huawei.theme.analysis.core.shared.ast.DslElementNode element) {
+        String varName = null;
+        String varType = null;
+        String varExpr = null;
+        var attrs = element.getAttributes();
+        if (attrs != null) {
+            for (var attr : attrs) {
+                String name = attr.getName();
+                var value = attr.getValue();
+                String raw = value != null ? value.getRawValue() : null;
+                if ("name".equals(name)) {
+                    varName = raw;
+                } else if ("type".equals(name)) {
+                    varType = raw;
+                } else if ("expression".equals(name)) {
+                    varExpr = raw;
+                }
+            }
+        }
+        if (varName == null || varName.isEmpty()) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("### `").append(esc(varName)).append("` — 变量定义\n\n");
+        if (varType != null && !varType.isEmpty()) {
+            sb.append("**类型:** `").append(esc(varType)).append("`  \n");
+        }
+        if (varExpr != null && !varExpr.isEmpty()) {
+            sb.append("**表达式:** `").append(esc(varExpr)).append("`  \n");
+        }
+        return sb.toString();
+    }
+
+    private boolean isVariableTag(String tagName) {
+        var rule = ruleRepository.getElementRule(tagName);
+        return rule.isPresent() && "variable".equals(rule.get().getCategory());
     }
 
     /**
