@@ -56,7 +56,10 @@ subprojects {
     // not pull the IntelliJ SDK or trigger an IDE distribution download.
     // `:feature:analysis` is main's native IntelliJ plugin module (core +
     // plugin.*); `:feature:clients:intellij` is the LSP client plugin module.
-    if (project.path != ':feature:lsp') {
+    // `:feature:core-tests` is a plain Java subproject that runs core unit
+    // tests under the default system classloader so JaCoCo records coverage
+    // (the PathClassLoader forced by the intellij plugin zeroes JaCoCo data).
+    if (project.path != ':feature:lsp' && project.path != ':feature:core-tests') {
         apply plugin: 'org.jetbrains.intellij'
 
         intellij {
