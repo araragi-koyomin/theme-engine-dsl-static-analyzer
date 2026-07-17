@@ -39,8 +39,8 @@ created: 2026-07-17
 ### 3.1 改动 canary（Change Delta）— LL-012 防护
 - **触发**：任何改 analyzer 行为的 fix/feat。纯 doc 豁免；纯 refactor 豁免**且不走 SDD**（无行为变化，无需 spec）。
 - **运行**：PHASE 2 前用 ≥1 真实 DSL 脚本跑 `java -jar dsl-analyzer.jar --format json <file>`，diff `main` vs 改后输出。新功能无 main 基线 → 改为构造"应触发新行为"的真实输入，确认触发。
-- **信号**：diff 空 = 改动是剧场 → 废弃/重定界，不进 SDD；diff 非空 = 有实效 → 进 SDD。
-- **同时是 LL-011 解药**：canary 若证明改动"简单且有效"（如一行参数改动产生可见 diff），则跳过 PHASE 1-4 走轻量路径（本 spec 即此例）。
+- **信号**：先声明**预期 delta**（refactor/测试基建改动=预期空 diff；行为修复/新功能=预期非空 diff）。跑真实脚本，`actual ≠ expected` → 查：空 diff 撞上"声称行为修复" = 剧场 → 废弃/重定界（如 FIX006）；非空 diff 撞上"声称 refactor" = 副作用回归 → 查。`actual = expected` → canary 过，进 SDD。
+- **同时是 LL-011 解药**：canary 若证明改动"简单且有效"（如一行参数改动产生**预期内**可见 diff），则跳过 PHASE 1-4 走轻量路径（本 spec 即此例）。
 
 ### 3.2 测试 canary（Negative Control）
 - **触发**：任何声称"防 bug X"的测试。
