@@ -126,7 +126,187 @@ class TypeAnalyzerTest {
         assertTrue(diagnostics.isEmpty());
     }
 
+    @Test
+    void nestedBinaryStringOperandProducesSEM_TYPE_001() {
+        ExpressionNode left = ExpressionNode.binaryExpr("+",
+                ExpressionNode.literal("1", "1", 1, 0),
+                ExpressionNode.literal("2", "2", 1, 0), "1+2", 1, 0);
+        ExpressionNode right = ExpressionNode.variableRef("@", "a", "@a", 15, 3);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", left, right, "1+2+@a", 1, 0);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", expr, "1+2+@a"));
+        VarDeclaration a = varDecl("a", new DslStringType());
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithAttrs(), table(a)));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
+        assertEquals(10, diagnostics.get(0).getLine());
+        assertEquals(5, diagnostics.get(0).getColumn());
+    }
+
+    @Test
+    void twoStringOperandsProduceTwoSEM_TYPE_001() {
+        ExpressionNode left = ExpressionNode.variableRef("@", "a", "@a", 15, 3);
+        ExpressionNode right = ExpressionNode.variableRef("@", "b", "@b", 16, 4);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", left, right, "@a+@b", 1, 0);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", expr, "@a+@b"));
+        VarDeclaration a = varDecl("a", new DslStringType());
+        VarDeclaration b = varDecl("b", new DslStringType());
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithAttrs(), table(a, b)));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
+        assertEquals(10, diagnostics.get(0).getLine());
+        assertEquals(5, diagnostics.get(0).getColumn());
+    }
+
+    @Test
+    void unaryStringOperandProducesSEM_TYPE_001() {
+        ExpressionNode operand = ExpressionNode.variableRef("@", "a", "@a", 15, 3);
+        ExpressionNode expr = ExpressionNode.unaryExpr("-", operand, "-@a", 1, 0);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", expr, "-@a"));
+        VarDeclaration a = varDecl("a", new DslStringType());
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithAttrs(), table(a)));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
+        assertEquals(10, diagnostics.get(0).getLine());
+        assertEquals(5, diagnostics.get(0).getColumn());
+    }
+
+    @Test
+    void stringContextConcatWithStringVarNoViolation() {
+        ExpressionNode left = ExpressionNode.literal("a", "'a'", 1, 0);
+        ExpressionNode right = ExpressionNode.variableRef("@", "b", "@b", 15, 3);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", left, right, "'a'+@b", 1, 0);
+        DslElementNode text = element("Text", 10, 5, exprAttr("textExp", expr, "'a'+@b"));
+        VarDeclaration b = varDecl("b", new DslStringType());
+
+        List<Diagnostic> diagnostics = analyzer.analyze(text,
+                context(repoWithAttrs(), table(b)));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void stringContextConcatWithNumberVarNoViolation() {
+        ExpressionNode left = ExpressionNode.literal("a", "'a'", 1, 0);
+        ExpressionNode right = ExpressionNode.variableRef("#", "num", "#num", 15, 3);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", left, right, "'a'+#num", 1, 0);
+        DslElementNode text = element("Text", 10, 5, exprAttr("textExp", expr, "'a'+#num"));
+        VarDeclaration num = varDecl("num", new DslNumberType());
+
+        List<Diagnostic> diagnostics = analyzer.analyze(text,
+                context(repoWithAttrs(), table(num)));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void literalStringInBinaryProducesSEM_TYPE_001() {
+        ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode right = ExpressionNode.literal("str", "'str'", 15, 3);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", left, right, "1+'str'", 1, 0);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", expr, "1+'str'"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithAttrs(), emptyTable()));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
+        assertEquals(10, diagnostics.get(0).getLine());
+        assertEquals(5, diagnostics.get(0).getColumn());
+    }
+
+    @Test
+    void hashStringVarInBinaryProducesSEM_TYPE_001() {
+        ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode right = ExpressionNode.variableRef("#", "strVar", "#strVar", 15, 3);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", left, right, "1+#strVar", 1, 0);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", expr, "1+#strVar"));
+        VarDeclaration strVar = varDecl("strVar", new DslStringType());
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithAttrs(), table(strVar)));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
+        assertEquals(10, diagnostics.get(0).getLine());
+        assertEquals(5, diagnostics.get(0).getColumn());
+    }
+
     // --- SEM-TYPE-001: auto 上下文（Var.expression）---
+
+    @Test
+    void varExpressionNumberContextStringOperandProducesSEM_TYPE_001() {
+        ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode right = ExpressionNode.variableRef("@", "a", "@a", 15, 3);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", left, right, "1+@a", 1, 0);
+        DslElementNode var = element("Var", 10, 5,
+                exprAttr("expression", expr, "1+@a"),
+                literalAttr("type", "number"));
+        VarDeclaration a = varDecl("a", new DslStringType());
+
+        List<Diagnostic> diagnostics = analyzer.analyze(var,
+                context(repoWithAttrs(), table(a)));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
+        assertEquals(10, diagnostics.get(0).getLine());
+        assertEquals(5, diagnostics.get(0).getColumn());
+    }
+
+    @Test
+    void functionReturningStringInArithmeticProducesSEM_TYPE_001() {
+        ExpressionNode call = ExpressionNode.functionCall("strfn",
+                List.of(ExpressionNode.literal("1", "1", 1, 0)), "strfn(1)", 15, 3);
+        ExpressionNode right = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", call, right, "strfn(1)+1", 1, 0);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", expr, "strfn(1)+1"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithAttrs(), emptyTable()));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
+        assertEquals(10, diagnostics.get(0).getLine());
+        assertEquals(5, diagnostics.get(0).getColumn());
+    }
+
+    @Test
+    void nullOperandSkipped() {
+        ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode right = ExpressionNode.variableRef("#", "undef", "#undef", 15, 3);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", left, right, "1+#undef", 1, 0);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", expr, "1+#undef"));
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithAttrs(), emptyTable()));
+
+        assertTrue(diagnostics.isEmpty());
+    }
+
+    @Test
+    void numberAttrWithStringOperandProducesSEM_TYPE_001() {
+        ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode right = ExpressionNode.variableRef("@", "a", "@a", 15, 3);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", left, right, "1+@a", 1, 0);
+        DslElementNode image = element("Image", 10, 5, exprAttr("x", expr, "1+@a"));
+        VarDeclaration a = varDecl("a", new DslStringType());
+
+        List<Diagnostic> diagnostics = analyzer.analyze(image,
+                context(repoWithAttrs(), table(a)));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
+        assertEquals(10, diagnostics.get(0).getLine());
+        assertEquals(5, diagnostics.get(0).getColumn());
+    }
 
     @Test
     void varAutoNumberNoViolation() {
@@ -172,7 +352,7 @@ class TypeAnalyzerTest {
     // --- 跨上下文函数签名回退 ---
 
     @Test
-    void crossContextFunctionWithValidParamsProducesNoViolation() {
+    void numberFunctionInStringAttrProducesSEM_TYPE_001() {
         ExpressionNode arg = ExpressionNode.literal("1", "1", 1, 0);
         ExpressionNode expr = ExpressionNode.functionCall("sin", List.of(arg), "sin(1)", 1, 0);
         DslElementNode text = element("Text", 10, 5, exprAttr("textExp", expr, "sin(1)"));
@@ -180,7 +360,8 @@ class TypeAnalyzerTest {
         List<Diagnostic> diagnostics = analyzer.analyze(text,
                 context(repoWithAttrs(), emptyTable()));
 
-        assertTrue(diagnostics.isEmpty());
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
     }
 
     // --- SEM-TYPE-002: 函数参数类型不匹配 ---
@@ -350,7 +531,13 @@ class TypeAnalyzerTest {
                 .returnType(new DslNumberType())
                 .expressionKind("number")
                 .build();
-        return new StubFunctionLibrary(Map.of("sin:number", sin));
+        FunctionSignature strfn = FunctionSignature.builder()
+                .name("strfn")
+                .params(List.of(FunctionParam.builder().name("x").type(new DslNumberType()).isVariadic(false).build()))
+                .returnType(new DslStringType())
+                .expressionKind("string")
+                .build();
+        return new StubFunctionLibrary(Map.of("sin:number", sin, "strfn:string", strfn));
     }
 
     private static final class StubFunctionLibrary implements FunctionSignatureLibrary {
