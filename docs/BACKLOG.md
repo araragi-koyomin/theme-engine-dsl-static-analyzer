@@ -39,13 +39,15 @@ created: 2026-07-15
 |---|---|---|---|---|
 | FIX001 | P0 Beta 闭环修复 | done | — | [→](development/specs/p0-bugfix/) |
 | FIX003 | TypeAnalyzer null 函数库静默吞 SEM-TYPE-* | pending | — | [审计 C2](development/reports/test-theater-audit-2026-07-15.md) |
-| FIX004 | 测试剧场治理（15 CRITICAL + 34 HIGH） | pending | — | [审计报告](development/reports/test-theater-audit-2026-07-15.md) |
+| FIX004 | 测试剧场治理（15 CRITICAL + 34 HIGH） | in-progress | fix/quality-gates | [审计报告](development/reports/test-theater-audit-2026-07-15.md) |
+| FIX005 | 质量门禁与工作流改革（JaCoCo 0% 覆盖率 + 可证伪 canary 原则） | in-progress | fix/quality-gates | [→](development/specs/quality-gates/design.md) |
 
 ## 活跃分支
 
 | 分支 | 描述 | PR |
 |---|---|---|
 | feature/doc-restructure | 文档管理体系重构(三层记忆 + frontmatter + stale 更新) | 待创建 |
+| fix/quality-gates | 质量门禁+工作流改革(JaCoCo 全量迁移+FIX004+可证伪 canary) | 待创建 |
 
 ## E2E 测试门禁
 
