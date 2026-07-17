@@ -41,7 +41,7 @@ created: 2026-07-15
 | FIX003 | TypeAnalyzer null 函数库静默吞 SEM-TYPE-* | pending | — | [审计 C2](development/reports/test-theater-audit-2026-07-15.md) |
 | FIX004 | 测试剧场治理（15 CRITICAL + 34 HIGH） | pending | — | [审计报告](development/reports/test-theater-audit-2026-07-15.md) |
 | FIX005 | 二元/一元表达式操作数类型一致性校验（方案A） | superseded (被FIX006取代) | — | [→](development/specs/FIX005-binary-operand-type-check/) |
-| FIX006 | 表达式类型推断系统重设计（操作数推导论,4类型） | in-progress (T1-T8核心done单测绿, A方案string上下文细化+T9 golden+PHASE6 待下次) | — | [→](development/specs/FIX006-expression-type-inference/) |
+| FIX006 | 表达式类型推断系统重设计（操作数推导论,4类型,A方案string细化） | done (PHASE6全量门禁全绿) | — | [→](development/specs/FIX006-expression-type-inference/) |
 
 ## 活跃分支
 
