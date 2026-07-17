@@ -152,7 +152,11 @@ public class DslExpressionVisitorAdapter extends DslExpressionBaseVisitor<Expres
             return visit(ctx.literal());
         }
         if (ctx.expression() != null) {
-            return visit(ctx.expression());
+            ExpressionNode inner = visit(ctx.expression());
+            if (ctx.getChild(0) != null && "{".equals(ctx.getChild(0).getText())) {
+                return ExpressionNode.bracedExpr(inner, ctx.getText(), rangeOf(ctx));
+            }
+            return inner;
         }
         return unknown(ctx.getText(), rangeOf(ctx));
     }
