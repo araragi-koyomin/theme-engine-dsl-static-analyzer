@@ -41,6 +41,12 @@ created: 2026-07-15
 | FIX003 | TypeAnalyzer null 函数库静默吞 SEM-TYPE-* | pending | — | [审计 C2](development/reports/test-theater-audit-2026-07-15.md) |
 | FIX004 | 测试剧场治理（15 CRITICAL + 34 HIGH） | pending | — | [审计报告](development/reports/test-theater-audit-2026-07-15.md) |
 
+## 功能开发追踪
+
+| 编号 | 名称 | 状态 | 分支 | 入口 |
+|---|---|---|---|---|
+| FEAT001 | LSP 变量定义跳转（`#var`/`@var` → `<Var name>`） | in-progress (PHASE 6) | `lsp-server` | [→](development/specs/feat001-lsp-variable-definition/) |
+
 ## 活跃分支
 
 | 分支 | 描述 | PR |
