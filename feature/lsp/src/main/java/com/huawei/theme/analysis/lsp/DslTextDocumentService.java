@@ -15,11 +15,14 @@ import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.Command;
+import org.eclipse.lsp4j.DefinitionParams;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.SemanticTokensParams;
@@ -55,6 +58,7 @@ public final class DslTextDocumentService implements TextDocumentService {
     // configuration changes (updateRuleRepository). Volatile for visibility.
     private volatile AnalysisService analysisService;
     private volatile CompletionProvider completionProvider;
+    private volatile DefinitionProvider definitionProvider;
     private volatile HoverProvider hoverProvider;
     private volatile DslFileIdentifier fileIdentifier;
     private volatile SemanticTokensProvider semanticTokensProvider;
@@ -103,6 +107,7 @@ public final class DslTextDocumentService implements TextDocumentService {
         this.analysisService = new AnalysisService(ruleRepository);
         this.completionProvider = new CompletionProvider(ruleRepository);
         this.hoverProvider = new HoverProvider(ruleRepository);
+        this.definitionProvider = new DefinitionProvider(ruleRepository);
         this.fileIdentifier = new DslFileIdentifier(ruleRepository);
         this.semanticTokensProvider = new SemanticTokensProvider(ruleRepository);
         QuickFixProvider quickFixProvider = new QuickFixProviderImpl();
@@ -212,6 +217,27 @@ public final class DslTextDocumentService implements TextDocumentService {
                 params.getPosition().getCharacter());
         ContextResolver.Context ctx = resolveContext(uri, text, offset);
         return CompletableFuture.completedFuture(hoverProvider.hover(ctx));
+    }
+
+    @Override
+    public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>>
+            definition(DefinitionParams params) {
+        String uri = params.getTextDocument().getUri();
+        String text = documents.get(uri);
+        if (text == null) {
+            return CompletableFuture.completedFuture(Either.forLeft(List.of()));
+        }
+        PositionMapper mapper = new PositionMapper(text);
+        int offset = mapper.toOffset(
+                params.getPosition().getLine(),
+                params.getPosition().getCharacter());
+        DslFileNode ast = analysisService.parse(uri, text);
+        ContextResolver.Context ctx = new AstContextResolver(text).resolve(offset, ast);
+        if (ctx == null) {
+            ctx = new ContextResolver(text).resolve(offset);
+        }
+        List<Location> locations = definitionProvider.definition(ctx, ast, uri, mapper);
+        return CompletableFuture.completedFuture(Either.forLeft(locations));
     }
 
     /**
