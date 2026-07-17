@@ -4,11 +4,11 @@
   "expectedCounts": { "errors": 13, "warnings": 1, "info": 0 },
   "expectedDiagnostics": [
     { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 10, "lineTolerance": 2 },
-    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 45, "lineTolerance": 2 },
-    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 49, "lineTolerance": 2 },
-    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 54, "lineTolerance": 2 },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 45, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
+    { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 49, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
+    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 54, "lineTolerance": 2, "expectedFixes": ["声明 Var name=\"undefined_global\""] },
     { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 62, "lineTolerance": 2 },
-    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 69, "lineTolerance": 2 },
+    { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 69, "lineTolerance": 2, "expectedFixes": ["声明带 name=\"ghost_elem\" 的元素"] },
     { "ruleId": "SYN-EXPR-001", "severity": "error", "approxLine": 16, "lineTolerance": 2 },
     { "ruleId": "SYN-EXPR-005", "severity": "error", "approxLine": 29, "lineTolerance": 2 },
     { "ruleId": "SYN-EXPR-002", "severity": "warning", "approxLine": 38, "lineTolerance": 2 },
@@ -18,5 +18,13 @@
     { "ruleId": "SYN-EXPR-001", "severity": "error", "approxLine": 74, "lineTolerance": 2 },
     { "ruleId": "SYN-EXPR-001", "severity": "error", "approxLine": 76, "lineTolerance": 2 }
   ],
-  "mustNotTrigger": []
+  "mustNotTrigger": [
+    { "approxLine": 3, "reason": "multiplier valid const number" },
+    { "approxLine": 4, "reason": "color_dark/color_light valid const string" },
+    { "approxLine": 6, "reason": "x_offset/str_value valid const declarations" },
+    { "approxLine": 19, "reason": "container valid Group container" },
+    { "approxLine": 20, "reason": "nested_img valid deeply nested ifelse" },
+    { "approxLine": 24, "reason": "nested_text valid string with braced numeric exprs" },
+    { "approxLine": 57, "reason": "late_var valid const number" }
+  ]
 }
