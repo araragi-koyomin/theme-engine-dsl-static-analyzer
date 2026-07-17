@@ -32,6 +32,8 @@ import com.huawei.theme.analysis.core.fileidentification.DslFileIdentifier;
 import com.huawei.theme.analysis.core.quickfix.QuickFixProvider;
 import com.huawei.theme.analysis.core.quickfix.QuickFixProviderImpl;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
+import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
+import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 
@@ -155,9 +157,47 @@ public final class DslTextDocumentService implements TextDocumentService {
         int offset = new PositionMapper(text).toOffset(
                 params.getPosition().getLine(),
                 params.getPosition().getCharacter());
+        // Collect element names and Var declarations present in the document
+        // for completion sorting (present items sorted last) and variable
+        // completion (offering #declaredVar inside expressions).
+        java.util.Set<String> presentElementNames = new java.util.HashSet<>();
+        java.util.Set<String> declaredVars = new java.util.HashSet<>();
+        try {
+            DslFileNode ast = analysisService.parse(uri, text);
+            if (ast != null && ast.getRootElement() != null) {
+                collectElementAndVarNames(ast.getRootElement(), presentElementNames, declaredVars);
+            }
+        } catch (RuntimeException ignored) {
+            // AST parse failure — proceed with empty sets (fallback).
+        }
         ContextResolver.Context ctx = resolveContext(uri, text, offset);
-        List<CompletionItem> items = completionProvider.complete(ctx);
+        List<CompletionItem> items = completionProvider.complete(ctx, presentElementNames, declaredVars);
         return CompletableFuture.completedFuture(Either.forLeft(items));
+    }
+
+    private void collectElementAndVarNames(DslElementNode element,
+                                           java.util.Set<String> elementNames,
+                                           java.util.Set<String> varNames) {
+        if (element == null) {
+            return;
+        }
+        String tag = element.getTagName();
+        if (tag != null && !tag.isEmpty()) {
+            elementNames.add(tag);
+        }
+        if ("Var".equals(tag) && element.getAttributes() != null) {
+            for (DslAttributeNode attr : element.getAttributes()) {
+                if ("name".equals(attr.getName()) && attr.getValue() != null
+                        && attr.getValue().getRawValue() != null) {
+                    varNames.add(attr.getValue().getRawValue());
+                }
+            }
+        }
+        if (element.getChildElements() != null) {
+            for (DslElementNode child : element.getChildElements()) {
+                collectElementAndVarNames(child, elementNames, varNames);
+            }
+        }
     }
 
     @Override

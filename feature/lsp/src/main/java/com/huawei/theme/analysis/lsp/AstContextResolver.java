@@ -1,9 +1,12 @@
 package com.huawei.theme.analysis.lsp;
 
+import com.huawei.theme.analysis.core.expression.ExpressionNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
+import com.huawei.theme.analysis.core.shared.ast.ExpressionAstNode;
+import com.huawei.theme.analysis.core.shared.ast.ExpressionKind;
 
 /**
  * AST-based cursor context resolver. Determines the cursor's structural
@@ -91,16 +94,26 @@ final class AstContextResolver {
             if (attributeValue != null) {
                 int valueStart = mapper.coreOffset(attributeValue.getLine(), attributeValue.getColumn());
                 int valueEnd = mapper.coreOffset(attributeValue.getEndLine(), attributeValue.getEndColumn());
-                // Half-open [valueStart, valueEnd) covers the value content;
-                // for an empty value (attr="") the range is zero-width, so
-                // also accept the cursor exactly at valueStart.
                 if (cursor >= valueStart && cursor <= valueEnd) {
                     String word = safeSubstring(valueStart, cursor);
+                    // Resolve the individual expression token at cursor for
+                    // per-token hover (variable ref / function / literal).
+                    // Uses text scanning (not AST traversal) for robustness —
+                    // expression node ranges from the parser can be point ranges
+                    // that don't reliably contain the cursor.
+                    ExpressionAstNode exprNode = null;
+                    if (attributeValue.getExpression().isPresent()) {
+                        String exprText = attributeValue.getRawValue();
+                        int offsetInExpr = cursor - valueStart;
+                        exprNode = findExprTokenByText(exprText, offsetInExpr);
+                    }
                     return new ContextResolver.Context(
                             ContextResolver.PositionType.ATTRIBUTE_VALUE,
                             tagName.isEmpty() ? null : tagName,
                             word,
-                            attrName);
+                            attrName,
+                            exprNode,
+                            element);
                 }
             }
             return new ContextResolver.Context(
@@ -204,5 +217,55 @@ final class AstContextResolver {
         DslElementNode element;
         DslAttributeNode attribute;
         DslAttributeValueNode attributeValue;
+    }
+
+    // ---- Expression token resolution for per-token hover ----
+
+    private static final java.util.regex.Pattern EXPR_TOKEN_PATTERN =
+            java.util.regex.Pattern.compile("[#@][A-Za-z_][\\w.]*|[A-Za-z_]\\w*(?=\\()|'[^']*'|-?\\d+\\.?\\d*");
+
+    /**
+     * Scans the expression text for the token at the given offset and returns
+     * a minimal {@link ExpressionNode} with the right kind / variableName /
+     * functionName / text for hover rendering. Uses text patterns instead of
+     * AST node ranges (which can be point ranges from the parser that don't
+     * reliably contain the cursor).
+     */
+    private static ExpressionAstNode findExprTokenByText(String exprText, int offsetInExpr) {
+        if (exprText == null || offsetInExpr < 0 || offsetInExpr >= exprText.length()) {
+            return null;
+        }
+        java.util.regex.Matcher m = EXPR_TOKEN_PATTERN.matcher(exprText);
+        while (m.find()) {
+            if (offsetInExpr >= m.start() && offsetInExpr < m.end()) {
+                String token = m.group();
+                if (token.charAt(0) == '#' || token.charAt(0) == '@') {
+                    // Variable reference: #var or @var
+                    String prefix = String.valueOf(token.charAt(0));
+                    String varName = token.substring(1);
+                    return ExpressionNode.variableRef(prefix, varName, token, 1, m.start());
+                } else if (token.startsWith("'")) {
+                    // String literal
+                    return ExpressionNode.literal(token, token, 1, m.start());
+                } else if (Character.isDigit(token.charAt(0))
+                        || (token.length() > 1 && token.charAt(0) == '-'
+                                && Character.isDigit(token.charAt(1)))) {
+                    // Number literal (e.g. 123, -0.5)
+                    return ExpressionNode.literal(token, token, 1, m.start());
+                } else {
+                    // Function call: funcName( — token is just the name (lookahead matched '(')
+                    return ExpressionNode.functionCall(token, java.util.Collections.emptyList(), token, 1, m.start());
+                }
+            }
+        }
+        // Also check for bare numbers (no minus sign in the pattern above for positive numbers)
+        java.util.regex.Pattern numPattern = java.util.regex.Pattern.compile("\\d+\\.?\\d*");
+        java.util.regex.Matcher nm = numPattern.matcher(exprText);
+        while (nm.find()) {
+            if (offsetInExpr >= nm.start() && offsetInExpr < nm.end()) {
+                return ExpressionNode.literal(nm.group(), nm.group(), 1, nm.start());
+            }
+        }
+        return null;
     }
 }

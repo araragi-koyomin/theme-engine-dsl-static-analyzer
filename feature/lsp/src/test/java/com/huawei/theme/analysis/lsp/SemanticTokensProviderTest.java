@@ -26,22 +26,28 @@ class SemanticTokensProviderTest {
     private static final int TYPE_NUMBER = 2;
     private static final int TYPE_STRING = 3;
     private static final int TYPE_TAG = 4;
-    private static final int TYPE_ATTRIBUTE = 5;
-    private static final int TYPE_COMMENT = 6;
-    private static final int TYPE_KEYWORD = 7;
+    private static final int TYPE_TAG_ROOT = 5;
+    private static final int TYPE_TAG_VARIABLE = 6;
+    private static final int TYPE_TAG_COMMAND = 7;
+    private static final int TYPE_ATTRIBUTE = 8;
+    private static final int TYPE_COMMENT = 9;
+    private static final int TYPE_KEYWORD = 10;
+    private static final int TYPE_VARIABLE_DEF = 11;
 
     @Test
     void legendUsesStandardTypesWithExpressionsFirst() {
-        // Expression types (0–3) first so the IntelliJ client can ignore the
-        // structural types (4+) via its default-null mapping.
         assertEquals("variable", SemanticTokensProvider.TOKEN_TYPES.get(0));
         assertEquals("function", SemanticTokensProvider.TOKEN_TYPES.get(1));
         assertEquals("number", SemanticTokensProvider.TOKEN_TYPES.get(2));
         assertEquals("string", SemanticTokensProvider.TOKEN_TYPES.get(3));
-        assertEquals("type", SemanticTokensProvider.TOKEN_TYPES.get(4));
-        assertEquals("property", SemanticTokensProvider.TOKEN_TYPES.get(5));
-        assertEquals("comment", SemanticTokensProvider.TOKEN_TYPES.get(6));
-        assertEquals("keyword", SemanticTokensProvider.TOKEN_TYPES.get(7));
+        assertEquals("tag", SemanticTokensProvider.TOKEN_TYPES.get(4));
+        assertEquals("tagRoot", SemanticTokensProvider.TOKEN_TYPES.get(5));
+        assertEquals("tagVariable", SemanticTokensProvider.TOKEN_TYPES.get(6));
+        assertEquals("tagCommand", SemanticTokensProvider.TOKEN_TYPES.get(7));
+        assertEquals("property", SemanticTokensProvider.TOKEN_TYPES.get(8));
+        assertEquals("comment", SemanticTokensProvider.TOKEN_TYPES.get(9));
+        assertEquals("keyword", SemanticTokensProvider.TOKEN_TYPES.get(10));
+        assertEquals("variableDef", SemanticTokensProvider.TOKEN_TYPES.get(11));
         assertTrue(SemanticTokensProvider.TOKEN_MODIFIERS.isEmpty());
     }
 
@@ -49,12 +55,36 @@ class SemanticTokensProviderTest {
     void emitsTagAttributeAndExpressionTokens() {
         // '<'(0)T(1)e(2)x(3)t(4)' '(5)x(6)=(7)"(8)#(9)v(10)"(11)/(12)>(13)
         List<int[]> tokens = decode(provider.collect("test.xml", "<Text x=\"#v\"/>"));
-        // tag "Text" at (0,1) len 4
+        // tag "Text" at (0,1) len 4 — Text is category=view → default tag
         assertToken(tokens, 0, 1, 4, TYPE_TAG);
         // attribute "x" at (0,6) len 1
         assertToken(tokens, 0, 6, 1, TYPE_ATTRIBUTE);
         // expression variable "#v" at (0,9) len 2
         assertToken(tokens, 0, 9, 2, TYPE_VARIABLE);
+    }
+
+    @Test
+    void emitsDifferentTagTypesByCategory() {
+        // <Lockscreen> → root → tagRoot; <Var> → variable → tagVariable;
+        // <Command> → command → tagCommand; <Text> → view → tag
+        String text = "<Lockscreen><Var name=\"v\"/><Command target=\"x.visibility\"/><Text x=\"0\"/></Lockscreen>";
+        List<int[]> tokens = decode(provider.collect("test.xml", text));
+        assertTrue(hasToken(tokens, TYPE_TAG_ROOT));
+        assertTrue(hasToken(tokens, TYPE_TAG_VARIABLE));
+        assertTrue(hasToken(tokens, TYPE_TAG_COMMAND));
+        assertTrue(hasToken(tokens, TYPE_TAG));
+    }
+
+    @Test
+    void emitsLiteralAttrValueTokens() {
+        // <Widget screenWidth="1080" align="center" enableMove="true" name="img"/>
+        // "1080" → number, "center" → string, "true" → keyword, "img" → variableDef
+        String text = "<Widget screenWidth=\"1080\" align=\"center\" enableMove=\"true\" name=\"img\"/>";
+        List<int[]> tokens = decode(provider.collect("test.xml", text));
+        assertTrue(hasToken(tokens, TYPE_NUMBER), "numeric attr value should emit number");
+        assertTrue(hasToken(tokens, TYPE_STRING), "string attr value should emit string");
+        assertTrue(hasToken(tokens, TYPE_KEYWORD), "boolean attr value should emit keyword");
+        assertTrue(hasToken(tokens, TYPE_VARIABLE_DEF), "name attr value should emit variableDef");
     }
 
     @Test
