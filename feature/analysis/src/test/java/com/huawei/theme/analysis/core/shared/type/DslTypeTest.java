@@ -26,4 +26,16 @@ class DslTypeTest {
         assertEquals("array", type.getName());
         assertEquals("number", type.getBaseType());
     }
+
+    @Test
+    void dslUndefinedTypeName() {
+        DslType type = new DslUndefinedType();
+        assertEquals("undefine", type.getName());
+    }
+
+    @Test
+    void dslUnknownTypeName() {
+        DslType type = new DslUnknownType();
+        assertEquals("unknown", type.getName());
+    }
 }

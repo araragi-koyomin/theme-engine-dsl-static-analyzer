@@ -1,9 +1,8 @@
 {
   "fixture": "semantic_only_test.xml",
   "expectedExitCode": 1,
-  "expectedCounts": { "errors": 4, "warnings": 0, "info": 0 },
+  "expectedCounts": { "errors": 3, "warnings": 0, "info": 0 },
   "expectedDiagnostics": [
-    { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 4, "lineTolerance": 2 },
     { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 5, "lineTolerance": 2, "expectedFixes": ["声明 Var name=\"undefined_var\""] },
     { "ruleId": "SEM-NEST-001", "severity": "error", "approxLine": 7, "lineTolerance": 2 },
     { "ruleId": "SEM-TRIG-001", "severity": "error", "approxLine": 8, "lineTolerance": 2, "expectedFixes": ["修改action值为合法枚举值"] }

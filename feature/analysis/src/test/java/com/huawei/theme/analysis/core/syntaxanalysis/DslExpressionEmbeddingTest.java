@@ -223,10 +223,12 @@ class DslExpressionEmbeddingTest {
         assertEquals(ExpressionKind.LITERAL, e.getChildren().get(0).getKind());
         assertEquals("val: ", e.getChildren().get(0).getLiteralValue());
         ExpressionNode inner = e.getChildren().get(1);
-        assertEquals(ExpressionKind.BINARY_EXPR, inner.getKind());
-        assertEquals("*", inner.getOperator());
-        assertEquals("10", inner.getChildren().get(0).getLiteralValue());
-        assertEquals("num", inner.getChildren().get(1).getVariableName());
+        assertEquals(ExpressionKind.BRACED, inner.getKind());
+        ExpressionNode innerExpr = inner.getChildren().get(0);
+        assertEquals(ExpressionKind.BINARY_EXPR, innerExpr.getKind());
+        assertEquals("*", innerExpr.getOperator());
+        assertEquals("10", innerExpr.getChildren().get(0).getLiteralValue());
+        assertEquals("num", innerExpr.getChildren().get(1).getVariableName());
     }
 
     @Test
@@ -372,12 +374,14 @@ class DslExpressionEmbeddingTest {
         assertEquals(ExpressionKind.BINARY_EXPR, e0.getKind());
         assertEquals("+", e0.getOperator());
         ExpressionNode aniCall = e0.getChildren().get(1);
-        assertEquals(ExpressionKind.FUNCTION_CALL, aniCall.getKind());
-        assertEquals("int", aniCall.getFunctionName());
-        assertEquals(1, aniCall.getChildren().size());
-        assertEquals(ExpressionKind.VARIABLE_REF, aniCall.getChildren().get(0).getKind());
-        assertEquals("#", aniCall.getChildren().get(0).getPrefix());
-        assertEquals("aniTime", aniCall.getChildren().get(0).getVariableName());
+        assertEquals(ExpressionKind.BRACED, aniCall.getKind());
+        ExpressionNode aniFunc = aniCall.getChildren().get(0);
+        assertEquals(ExpressionKind.FUNCTION_CALL, aniFunc.getKind());
+        assertEquals("int", aniFunc.getFunctionName());
+        assertEquals(1, aniFunc.getChildren().size());
+        assertEquals(ExpressionKind.VARIABLE_REF, aniFunc.getChildren().get(0).getKind());
+        assertEquals("#", aniFunc.getChildren().get(0).getPrefix());
+        assertEquals("aniTime", aniFunc.getChildren().get(0).getVariableName());
 
         // e1 = (... + '_')
         ExpressionNode e1 = e0.getChildren().get(0);
@@ -393,12 +397,14 @@ class DslExpressionEmbeddingTest {
         assertEquals(ExpressionKind.LITERAL, e2.getChildren().get(0).getKind());
         assertEquals("number/hour/", e2.getChildren().get(0).getLiteralValue());
         ExpressionNode hourCall = e2.getChildren().get(1);
-        assertEquals(ExpressionKind.FUNCTION_CALL, hourCall.getKind());
-        assertEquals("int", hourCall.getFunctionName());
-        assertEquals(1, hourCall.getChildren().size());
-        assertEquals(ExpressionKind.VARIABLE_REF, hourCall.getChildren().get(0).getKind());
-        assertEquals("#", hourCall.getChildren().get(0).getPrefix());
-        assertEquals("system.time.hour1", hourCall.getChildren().get(0).getVariableName());
+        assertEquals(ExpressionKind.BRACED, hourCall.getKind());
+        ExpressionNode hourFunc = hourCall.getChildren().get(0);
+        assertEquals(ExpressionKind.FUNCTION_CALL, hourFunc.getKind());
+        assertEquals("int", hourFunc.getFunctionName());
+        assertEquals(1, hourFunc.getChildren().size());
+        assertEquals(ExpressionKind.VARIABLE_REF, hourFunc.getChildren().get(0).getKind());
+        assertEquals("#", hourFunc.getChildren().get(0).getPrefix());
+        assertEquals("system.time.hour1", hourFunc.getChildren().get(0).getVariableName());
     }
 
     @Test

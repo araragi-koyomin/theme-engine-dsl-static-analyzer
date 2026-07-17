@@ -59,10 +59,18 @@ class TypeInferenceEngineTest {
     }
 
     @Test
-    void hashUndefinedVarReturnsNull() {
+    void hashUndefinedVarReturnsUnknown() {
         ExpressionNode node = ExpressionNode.variableRef("#", "missing", "#missing", 1, 0);
         DslType result = engine.inferType(node, new DslNumberType(), emptyTable());
-        assertNull(result);
+        assertEquals("unknown", result.getName());
+    }
+
+    @Test
+    void hashUndefinedArrayAccessReturnsUnknown() {
+        ExpressionNode index = ExpressionNode.literal("0", "0", 1, 0);
+        ExpressionNode node = ExpressionNode.arrayAccess("#", "missingArr", index, "#missingArr[0]", 1, 0);
+        DslType result = engine.inferType(node, new DslNumberType(), emptyTable());
+        assertEquals("unknown", result.getName());
     }
 
     @Test
@@ -97,12 +105,110 @@ class TypeInferenceEngineTest {
     }
 
     @Test
-    void binaryExprReturnsExpectedContext() {
+    void binaryNumberPlusNumberReturnsNumber() {
         ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
         ExpressionNode right = ExpressionNode.literal("2", "2", 1, 0);
         ExpressionNode node = ExpressionNode.binaryExpr("+", left, right, "1+2", 1, 0);
         DslType result = engine.inferType(node, new DslStringType(), emptyTable());
+        assertEquals("number", result.getName());
+    }
+
+    @Test
+    void binaryNumberPlusStringReturnsString() {
+        ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode right = ExpressionNode.variableRef("@", "a", "@a", 1, 0);
+        ExpressionNode node = ExpressionNode.binaryExpr("+", left, right, "1+@a", 1, 0);
+        DslType result = engine.inferType(node, new DslNumberType(), emptyTable());
         assertEquals("string", result.getName());
+    }
+
+    @Test
+    void binaryStringPlusNumberReturnsString() {
+        ExpressionNode left = ExpressionNode.variableRef("@", "a", "@a", 1, 0);
+        ExpressionNode right = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode node = ExpressionNode.binaryExpr("+", left, right, "@a+1", 1, 0);
+        DslType result = engine.inferType(node, new DslNumberType(), emptyTable());
+        assertEquals("string", result.getName());
+    }
+
+    @Test
+    void binaryNumberMinusStringReturnsUndefine() {
+        ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode right = ExpressionNode.variableRef("@", "a", "@a", 1, 0);
+        ExpressionNode node = ExpressionNode.binaryExpr("-", left, right, "1-@a", 1, 0);
+        DslType result = engine.inferType(node, new DslNumberType(), emptyTable());
+        assertEquals("undefine", result.getName());
+    }
+
+    @Test
+    void binaryWithUnknownReturnsUnknown() {
+        ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode right = ExpressionNode.variableRef("#", "undef", "#undef", 1, 0);
+        ExpressionNode node = ExpressionNode.binaryExpr("+", left, right, "1+#undef", 1, 0);
+        DslType result = engine.inferType(node, new DslNumberType(), emptyTable());
+        assertEquals("unknown", result.getName());
+    }
+
+    @Test
+    void unaryMinusNumberReturnsNumber() {
+        ExpressionNode operand = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode node = ExpressionNode.unaryExpr("-", operand, "-1", 1, 0);
+        DslType result = engine.inferType(node, new DslStringType(), emptyTable());
+        assertEquals("number", result.getName());
+    }
+
+    @Test
+    void unaryMinusStringReturnsUndefine() {
+        ExpressionNode operand = ExpressionNode.variableRef("@", "a", "@a", 1, 0);
+        ExpressionNode node = ExpressionNode.unaryExpr("-", operand, "-@a", 1, 0);
+        DslType result = engine.inferType(node, new DslNumberType(), emptyTable());
+        assertEquals("undefine", result.getName());
+    }
+
+    @Test
+    void unaryMinusUnknownReturnsUnknown() {
+        ExpressionNode operand = ExpressionNode.variableRef("#", "undef", "#undef", 1, 0);
+        ExpressionNode node = ExpressionNode.unaryExpr("-", operand, "-#undef", 1, 0);
+        DslType result = engine.inferType(node, new DslNumberType(), emptyTable());
+        assertEquals("unknown", result.getName());
+    }
+
+    @Test
+    void ifelseConsistentBranchesReturnsType() {
+        ExpressionNode cond = ExpressionNode.variableRef("#", "c", "#c", 1, 0);
+        ExpressionNode b1 = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode b2 = ExpressionNode.literal("2", "2", 1, 0);
+        ExpressionNode node = ExpressionNode.functionCall("ifelse", List.of(cond, b1, b2), "ifelse(#c,1,2)", 1, 0);
+        DslType result = engine.inferType(node, new DslNumberType(), table(varDecl("c", new DslNumberType())));
+        assertEquals("number", result.getName());
+    }
+
+    @Test
+    void ifelseConflictingBranchesReturnsUnknown() {
+        ExpressionNode cond = ExpressionNode.variableRef("#", "c", "#c", 1, 0);
+        ExpressionNode b1 = ExpressionNode.functionCall("sin", List.of(ExpressionNode.literal("0.5", "0.5", 1, 0)), "sin(0.5)", 1, 0);
+        ExpressionNode b2 = ExpressionNode.literal("hello", "'hello'", 1, 0);
+        ExpressionNode node = ExpressionNode.functionCall("ifelse", List.of(cond, b1, b2), "ifelse(#c,sin(0.5),'hello')", 1, 0);
+        DslType result = engine.inferType(node, new DslNumberType(), table(varDecl("c", new DslNumberType())));
+        assertEquals("unknown", result.getName());
+    }
+
+    @Test
+    void functionCallStringReturnReturnsString() {
+        ExpressionNode arg1 = ExpressionNode.literal("abc", "'abc'", 1, 0);
+        ExpressionNode arg2 = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode arg3 = ExpressionNode.literal("2", "2", 1, 0);
+        ExpressionNode node = ExpressionNode.functionCall("substr", List.of(arg1, arg2, arg3), "substr('abc',1,2)", 1, 0);
+        DslType result = engine.inferType(node, new DslNumberType(), emptyTable());
+        assertEquals("string", result.getName());
+    }
+
+    @Test
+    void undefinedFunctionReturnsUnknown() {
+        ExpressionNode arg = ExpressionNode.literal("1", "1", 1, 0);
+        ExpressionNode node = ExpressionNode.functionCall("bogusFunc", List.of(arg), "bogusFunc(1)", 1, 0);
+        DslType result = engine.inferType(node, new DslNumberType(), emptyTable());
+        assertEquals("unknown", result.getName());
     }
 
     @Test

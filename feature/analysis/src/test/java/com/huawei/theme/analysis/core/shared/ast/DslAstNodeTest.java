@@ -72,7 +72,7 @@ class DslAstNodeTest {
 
     @Test
     void expressionKindEnumValues() {
-        assertEquals(8, ExpressionKind.values().length);
+        assertEquals(9, ExpressionKind.values().length);
         assertEquals(ExpressionKind.LITERAL, ExpressionKind.valueOf("LITERAL"));
         assertEquals(ExpressionKind.VARIABLE_REF, ExpressionKind.valueOf("VARIABLE_REF"));
         assertEquals(ExpressionKind.FUNCTION_CALL, ExpressionKind.valueOf("FUNCTION_CALL"));
@@ -80,6 +80,7 @@ class DslAstNodeTest {
         assertEquals(ExpressionKind.UNARY_EXPR, ExpressionKind.valueOf("UNARY_EXPR"));
         assertEquals(ExpressionKind.CONDITIONAL, ExpressionKind.valueOf("CONDITIONAL"));
         assertEquals(ExpressionKind.ARRAY_ACCESS, ExpressionKind.valueOf("ARRAY_ACCESS"));
+        assertEquals(ExpressionKind.BRACED, ExpressionKind.valueOf("BRACED"));
         assertEquals(ExpressionKind.UNKNOWN, ExpressionKind.valueOf("UNKNOWN"));
     }
 
