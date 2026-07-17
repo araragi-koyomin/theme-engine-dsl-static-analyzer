@@ -1,7 +1,7 @@
 {
   "fixture": "multi_element_expression_blast.xml",
   "expectedExitCode": 1,
-  "expectedCounts": { "errors": 13, "warnings": 1, "info": 0 },
+  "expectedCounts": { "errors": 14, "warnings": 1, "info": 0 },
   "expectedDiagnostics": [
     { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 10, "lineTolerance": 2 },
     { "ruleId": "SEM-ATTR-001", "severity": "error", "approxLine": 45, "lineTolerance": 2, "expectedFixes": ["设置alpha值在0-255范围内"] },
@@ -9,6 +9,7 @@
     { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 54, "lineTolerance": 2, "expectedFixes": ["声明 Var name=\"undefined_global\""] },
     { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 62, "lineTolerance": 2 },
     { "ruleId": "SEM-REF-001", "severity": "error", "approxLine": 69, "lineTolerance": 2, "expectedFixes": ["声明带 name=\"ghost_elem\" 的元素"] },
+    { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 72, "lineTolerance": 2 },
     { "ruleId": "SYN-EXPR-001", "severity": "error", "approxLine": 16, "lineTolerance": 2 },
     { "ruleId": "SYN-EXPR-005", "severity": "error", "approxLine": 29, "lineTolerance": 2 },
     { "ruleId": "SYN-EXPR-002", "severity": "warning", "approxLine": 38, "lineTolerance": 2 },

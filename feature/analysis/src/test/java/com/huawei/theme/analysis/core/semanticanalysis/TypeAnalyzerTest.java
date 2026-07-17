@@ -234,6 +234,21 @@ class TypeAnalyzerTest {
     }
 
     @Test
+    void stringConcatWithNumberFunctionProducesSEM_TYPE_001() {
+        ExpressionNode left = ExpressionNode.variableRef("@", "a", "@a", 1, 0);
+        ExpressionNode right = ExpressionNode.functionCall("sin",
+                List.of(ExpressionNode.literal("1", "1", 1, 0)), "sin(1)", 15, 3);
+        ExpressionNode expr = ExpressionNode.binaryExpr("+", left, right, "@a+sin(1)", 1, 0);
+        DslElementNode text = element("Text", 10, 5, exprAttr("textExp", expr, "@a+sin(1)"));
+        VarDeclaration a = varDecl("a", new DslStringType());
+
+        List<Diagnostic> diagnostics = analyzer.analyze(text, context(repoWithAttrs(), table(a)));
+
+        assertEquals(1, diagnostics.size());
+        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
+    }
+
+    @Test
     void literalStringInBinaryProducesSEM_TYPE_001() {
         ExpressionNode left = ExpressionNode.literal("1", "1", 1, 0);
         ExpressionNode right = ExpressionNode.literal("str", "'str'", 15, 3);

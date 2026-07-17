@@ -106,7 +106,10 @@ public class TypeAnalyzer implements DslAnalyzer {
                     expectedType.getName(),
                     inferred != null && isTypeMatch(expectedType, inferred));
         }
-        if (inferred != null && !isTypeMatch(expectedType, inferred)
+        if (expectedType instanceof DslStringType
+                && containsUnbracedNumberFunctionCall(exprNode, expectedType, engine, symbolTable)) {
+            diagnostics.add(buildStringContextNumberFunctionDiagnostic(attr, context));
+        } else if (inferred != null && !isTypeMatch(expectedType, inferred)
                 && !isStringContextNumberAllowed(expectedType, inferred, exprNode, engine, symbolTable)) {
             diagnostics.add(buildTypeMismatchDiagnostic(attr, expectedType, inferred, context));
         }
@@ -127,6 +130,17 @@ public class TypeAnalyzer implements DslAnalyzer {
             return false;
         }
         return !containsUnbracedNumberFunctionCall(expr, expected, engine, symbolTable);
+    }
+
+    private Diagnostic buildStringContextNumberFunctionDiagnostic(DslAstNode locationNode, DslContext context) {
+        return Diagnostic.builder()
+                .severity(DiagnosticSeverity.ERROR)
+                .ruleId(RULE_TYPE_001)
+                .message("string 表达式含 number 函数调用，需用 {} 包裹")
+                .filePath(context.getFilePath())
+                .astNode(locationNode)
+                .ruleDocUrl(resolveDocUrl(context, RULE_TYPE_001))
+                .build();
     }
 
     private static boolean containsUnbracedNumberFunctionCall(ExpressionNode node, DslType expectedContext,
@@ -314,7 +328,10 @@ public class TypeAnalyzer implements DslAnalyzer {
                     varType.getName(),
                     exprType != null && isTypeMatch(varType, exprType));
         }
-        if (exprType != null && !isTypeMatch(varType, exprType)
+        if (varType instanceof DslStringType
+                && containsUnbracedNumberFunctionCall(exprNode, varType, engine, symbolTable)) {
+            diagnostics.add(buildStringContextNumberFunctionDiagnostic(exprAttr, context));
+        } else if (exprType != null && !isTypeMatch(varType, exprType)
                 && !isStringContextNumberAllowed(varType, exprType, exprNode, engine, symbolTable)) {
             diagnostics.add(buildVarTypeMismatchDiagnostic(elementNode, exprAttr, varType, exprType, context));
         }
