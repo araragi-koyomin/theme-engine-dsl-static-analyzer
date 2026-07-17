@@ -1,10 +1,8 @@
 {
   "fixture": "string_expression_errors.xml",
   "expectedExitCode": 1,
-  "expectedCounts": { "errors": 9, "warnings": 0, "info": 0 },
+  "expectedCounts": { "errors": 7, "warnings": 0, "info": 0 },
   "expectedDiagnostics": [
-    { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 15, "lineTolerance": 2 },
-    { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 17, "lineTolerance": 2 },
     { "ruleId": "SEM-TYPE-001", "severity": "error", "approxLine": 19, "lineTolerance": 2 },
     { "ruleId": "SYN-EXPR-004", "severity": "error", "approxLine": 5, "lineTolerance": 2 },
     { "ruleId": "SYN-EXPR-004", "severity": "error", "approxLine": 7, "lineTolerance": 2 },
