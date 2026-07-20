@@ -64,6 +64,26 @@ class GitHubReleaseBackendTest {
     }
 
     @Test
+    void rejectsUnexpectedOrDuplicateReleaseAssets() {
+        GitHubReleaseDescriptor unexpected = release();
+        unexpected.getAssets().add(GitHubReleaseAsset.builder()
+                .name("release-notes.md")
+                .state("uploaded")
+                .digest("sha256:" + "c".repeat(64))
+                .build());
+        GitHubReleaseDescriptor duplicate = release();
+        duplicate.getAssets().add(GitHubReleaseAsset.builder()
+                .name("manifest.json")
+                .state("uploaded")
+                .digest(asset(duplicate, "manifest.json").getDigest())
+                .content(asset(duplicate, "manifest.json").getContent())
+                .build());
+
+        assertRejected(unexpected, GitHubReleaseRejection.INVALID_RELEASE_METADATA);
+        assertRejected(duplicate, GitHubReleaseRejection.INVALID_RELEASE_METADATA);
+    }
+
+    @Test
     void rejectsTagDigestAndCompatibilityMismatch() {
         GitHubReleaseDescriptor tagMismatch = release();
         tagMismatch.setTagName("rules-v2026.07.20.2");

@@ -31,6 +31,11 @@ public class GitHubReleaseBackend {
         if (!assets.keySet().containsAll(REQUIRED_ASSETS)) {
             return rejected(GitHubReleaseRejection.MISSING_REQUIRED_ASSET);
         }
+        if (descriptor.getAssets() == null
+                || descriptor.getAssets().size() != REQUIRED_ASSETS.size()
+                || assets.size() != REQUIRED_ASSETS.size()) {
+            return rejected(GitHubReleaseRejection.INVALID_RELEASE_METADATA);
+        }
         GitHubReleaseAsset packageAsset = assets.get("rule-package.zip");
         if (!allAssetsUploaded(assets) || packageAsset.getDownloadUrl() == null) {
             return rejected(GitHubReleaseRejection.INVALID_RELEASE_METADATA);

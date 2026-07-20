@@ -252,6 +252,17 @@ public class RuleCenterValidationOrchestrator {
         if (outcome.getStatus() == CandidateStatus.VERIFIED) {
             RuleConstraint verified = outcome.getFinalProposal()
                     .getVerificationRequest().getConstraint();
+            JsonObject verifiedDraft = draft.deepCopy();
+            verifiedDraft.addProperty("condition", verified.getCondition());
+            verifiedDraft.addProperty("message", verified.getMessage());
+            if (!sourceEvidencePolicy.supportsConstraint(candidate, verifiedDraft)
+                    || !applier.constraintTargetExists(candidate, verified.getCondition())
+                    || !applier.conditionUsesOnlyDeclaredLiteralValues(
+                            candidate, verified.getCondition())) {
+                candidate.setStatus(CandidateStatus.SKIPPED);
+                candidate.setSkipReason(SkipReason.EVIDENCE_CONFLICT);
+                return;
+            }
             applier.applyConstraint(candidate, verified);
             verifications.add(outcome.getLastVerification().getVerification());
             publishedRuleIds.add(verified.getRuleId());

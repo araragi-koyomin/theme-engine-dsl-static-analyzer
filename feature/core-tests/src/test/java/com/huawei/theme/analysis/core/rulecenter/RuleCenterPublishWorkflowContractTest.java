@@ -113,20 +113,27 @@ class RuleCenterPublishWorkflowContractTest {
     }
 
     private List<String> positionalReleaseAssets(String command) {
+        String normalized = command.replace("\\\r\n", " ")
+                .replace("\\\n", " ");
+        String[] tokens = normalized.trim().split("\\s+");
         List<String> assets = new ArrayList<>();
-        boolean createSeen = false;
-        for (String rawLine : command.split("\\R")) {
-            String line = rawLine.trim().replaceFirst("\\s*\\\\$", "");
-            if (line.startsWith("gh release create ")) {
-                createSeen = true;
-                continue;
-            }
-            if (createSeen && line.startsWith("--")) {
+        int create = -1;
+        for (int index = 0; index + 2 < tokens.length; index++) {
+            if ("gh".equals(tokens[index]) && "release".equals(tokens[index + 1])
+                    && "create".equals(tokens[index + 2])) {
+                create = index + 3;
                 break;
             }
-            if (createSeen && !line.isEmpty()) {
-                assets.add(line);
+        }
+        if (create < 0 || create >= tokens.length) {
+            return List.of();
+        }
+        for (int index = create + 1; index < tokens.length; index++) {
+            String token = tokens[index];
+            if (token.startsWith("--")) {
+                break;
             }
+            assets.add(token);
         }
         return List.copyOf(assets);
     }

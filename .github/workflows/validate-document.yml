@@ -2,6 +2,7 @@ name: Validate DSL rule document
 
 on:
   pull_request_target:
+    branches: [main]
     paths:
       - 'rule-center/docs/**/*.md'
       - '.github/workflows/validate-document.yml'
@@ -12,18 +13,17 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: read
-  models: read
-  pull-requests: write
-
 concurrency:
   group: rule-document-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
   validate-pull-request:
-    if: github.event_name == 'pull_request_target'
+    if: github.event_name == 'pull_request_target' && github.event.pull_request.base.ref == 'main'
+    permissions:
+      contents: read
+      models: read
+      pull-requests: write
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -121,6 +121,9 @@ jobs:
 
   validate-manual:
     if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      models: read
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

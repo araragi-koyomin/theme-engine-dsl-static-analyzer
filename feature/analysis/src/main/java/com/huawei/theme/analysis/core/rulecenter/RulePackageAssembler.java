@@ -254,8 +254,8 @@ public class RulePackageAssembler {
                 return false;
             }
             JsonObject function = item.getAsJsonObject();
-            if (!hasString(function, "name") || !hasString(function, "returnType")
-                    || !hasString(function, "expressionKind")
+            if (!hasTextString(function, "name") || !hasTextString(function, "returnType")
+                    || !hasTextString(function, "expressionKind")
                     || !function.has("params") || !function.get("params").isJsonArray()) {
                 return false;
             }
@@ -264,7 +264,7 @@ public class RulePackageAssembler {
                     return false;
                 }
                 JsonObject parameter = parameterItem.getAsJsonObject();
-                if (!hasString(parameter, "name") || !hasString(parameter, "type")
+                if (!hasTextString(parameter, "name") || !hasTextString(parameter, "type")
                         || !parameter.has("isVariadic")
                         || !parameter.get("isVariadic").isJsonPrimitive()
                         || !parameter.get("isVariadic").getAsJsonPrimitive().isBoolean()) {
@@ -453,6 +453,10 @@ public class RulePackageAssembler {
     private boolean hasString(JsonObject object, String field) {
         return object.has(field) && object.get(field).isJsonPrimitive()
                 && object.get(field).getAsJsonPrimitive().isString();
+    }
+
+    private boolean hasTextString(JsonObject object, String field) {
+        return hasString(object, field) && !object.get(field).getAsString().trim().isEmpty();
     }
 
     private String relative(Path packageDirectory, Path file) {

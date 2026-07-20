@@ -290,3 +290,18 @@ PR 工作流现在从 base SHA 检出可信 Gradle/Java，从 fork/head SHA 仅�
 | 测试 canary | 临时移除 report 候选的 candidateId 排序，只运行确定性元数据测试 | 退出 1；逆序候选导致 release-report 字节不同，测试精确在第 200 行变红；恢复后通过 |
 
 函数文件除数组外还必须逐项包含 `name`、`params`、`returnType`、`expressionKind`，参数包含 `name`、`type`、`isVariadic`，且声明数量必须等于生产 loader 实际加载数量。规则包元数据不再依赖 `Files.walk`、输入列表或 Set 的迭代顺序，相同内容可重建出相同 manifest/report 和确定性 ZIP。
+
+### Review A 冷启动复审修复：可信 main、精确资产与修复后二次证据校验
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*GitHubReleaseBackendTest" --tests "*RuleCenterWorkflowContractTest" --tests "*RuleCenterValidationOrchestratorTest" --tests "*RulePackageAssemblerTest" --tests "*RuleCenterPublishWorkflowContractTest"` | 退出 1；额外/重复 Release 资产、非 main PR、顶层写权限、repair 后反向 condition、函数空必需字符串共 5 个测试失败。 |
+| GREEN / REFACTOR | 同一命令；随后以 actionlint v1.7.12 校验两个 workflow | 退出 0；42 个聚焦测试全部通过，两个 workflow 无诊断。 |
+| Release 资产 canary | 临时移除 `GitHubReleaseBackend` 的精确数量/去重检查，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*GitHubReleaseBackendTest.rejectsUnexpectedOrDuplicateReleaseAssets"` | 退出 1；1 个测试失败，证明第四资产或重复资产会被测试捕获；恢复后通过。 |
+| repair 语义 canary | 临时移除 verified proposal 发布前的 `SourceEvidencePolicy` 二次校验，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterValidationOrchestratorTest.repairCannotReverseEvidenceDirectionEvenWithPassingReplacementFixtures"` | 退出 1；repair 把“不能共存”改成“两者都缺失时报错”并配套伪造 fixture 后被错误发布；恢复后通过。 |
+| 函数 schema canary | 临时让 `hasTextString` 只检查 JSON string 类型，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*RulePackageAssemblerTest.functionSchemaRejectsEmptyRequiredStrings"` | 退出 1；空函数名、返回类型、表达式类型、参数名或参数类型重新被接受；恢复后通过。 |
+| workflow 执行边界 canary | 临时加入 `working-directory: proposal` 的 `run` step，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterWorkflowContractTest.everyExecutablePullRequestStepStaysOutsideUntrustedCheckout"` | 退出 1；测试定位该不可信执行 step；恢复后通过。 |
+| main 分支 canary | 临时删除 `pull_request_target.branches: [main]`，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterWorkflowContractTest.pullRequestRunsOnlyTrustedBaseCodeAndTreatsHeadCheckoutAsDocumentData"` | 退出 1；main 限定断言失败；恢复后通过。 |
+| 发布命令解析 canary | 在 `gh release create "$tag"` 同一行临时加入第四资产，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterPublishWorkflowContractTest.releaseIsCreatedOnlyAfterGateWithExactlyThreeFixedAssets"` | 退出 1；精确资产集合断言失败，证明首行位置参数不再逃过解析；恢复后通过。 |
+
+PR 验证现在只响应以受保护 `main` 为 base 的 `pull_request_target`，job 条件再次校验 `base.ref`；PR job 独占 `pull-requests: write`，手动 job 仅有内容与模型读取权限。客户端 Release backend 要求资产列表恰为三个固定名称且不得重复。repair 结果即使通过真实 parser/analyzer 与替换 fixture，也必须重新满足同一原文方向、目标元素/属性和字面量证据，才能进入规则包。

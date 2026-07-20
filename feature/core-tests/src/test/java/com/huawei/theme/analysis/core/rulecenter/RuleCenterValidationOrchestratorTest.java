@@ -22,6 +22,7 @@ import com.huawei.theme.analysis.core.rulecenter.model.ProposedKind;
 import com.huawei.theme.analysis.core.rulecenter.model.RuleCandidate;
 import com.huawei.theme.analysis.core.rulecenter.model.SkipReason;
 import com.huawei.theme.analysis.core.rulecenter.model.TargetKind;
+import com.huawei.theme.analysis.core.rulelibrary.model.RuleConstraint;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -297,6 +298,54 @@ class RuleCenterValidationOrchestratorTest {
         assertEquals(1, attempts.get());
         assertEquals(CandidateStatus.PUBLISHED, result.getCandidates().get(0).getStatus());
         assertEquals(1, result.getVerifications().size());
+    }
+
+    @Test
+    void repairCannotReverseEvidenceDirectionEvenWithPassingReplacementFixtures()
+            throws IOException {
+        RuleCandidate candidate = candidate("repair-inversion", ProposedKind.CONSTRAINT, draft(
+                "SEM-IMG-911",
+                "element.attrs['src'] != null AND element.attrs['srcExp'] != null",
+                true,
+                "<Image src=\"a\"/>",
+                "<Image src=\"a\" srcExp=\"#b\"/>"));
+        ConstraintRepairStrategy repair = context -> {
+            ConstraintRepairProposal current = context.getCurrentProposal();
+            ConstraintVerificationRequest verification = current.getVerificationRequest();
+            RuleConstraint reversed = RuleConstraint.builder()
+                    .ruleId(verification.getConstraint().getRuleId())
+                    .condition("element.attrs['src'] == null AND "
+                            + "element.attrs['srcExp'] == null")
+                    .message(verification.getConstraint().getMessage())
+                    .severity(verification.getConstraint().getSeverity())
+                    .suggestedFixes(verification.getConstraint().getSuggestedFixes())
+                    .build();
+            return ConstraintRepairProposal.builder()
+                    .sourceEvidenceFingerprint(current.getSourceEvidenceFingerprint())
+                    .targetFingerprint(current.getTargetFingerprint())
+                    .verificationRequest(ConstraintVerificationRequest.builder()
+                            .targetElement(verification.getTargetElement())
+                            .constraint(reversed)
+                            .positiveFixturePath(verification.getPositiveFixturePath())
+                            .positiveFixtureContent("<Image/>")
+                            .negativeFixturePath(verification.getNegativeFixturePath())
+                            .negativeFixtureContent("<Image src=\"a\"/>")
+                            .evidenceCandidateIds(verification.getEvidenceCandidateIds())
+                            .build())
+                    .build();
+        };
+
+        RuleCenterValidationResult result = orchestrator(
+                request -> extraction(candidate), repair).validate(request());
+
+        assertEquals(CandidateStatus.SKIPPED, result.getCandidates().get(0).getStatus());
+        assertEquals(SkipReason.EVIDENCE_CONFLICT,
+                result.getCandidates().get(0).getSkipReason());
+        assertTrue(result.getVerifications().isEmpty());
+        JsonObject image = JsonParser.parseString(Files.readString(
+                result.getAssembly().getPackageDirectory()
+                        .resolve("rules/elements/view/Image.json"))).getAsJsonObject();
+        assertTrue(image.getAsJsonArray("constraints").isEmpty());
     }
 
     @Test

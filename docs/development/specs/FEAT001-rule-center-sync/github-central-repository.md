@@ -94,7 +94,7 @@ company/dsl-rule-center/
     publish-rule-package.yml    # main 合并后的发布工作流
 ```
 
-`validate-document.yml` 由 `pull_request_target` 触发，但绝不直接执行 PR head 中的代码。工作流从 base SHA 检出可信 Gradle/Java 到 `trusted/`，从 fork/head SHA 仅稀疏检出 `rule-center/docs` 到 `proposal/`，并把后者作为不可信数据交给可信程序。head 检出显式设置 `persist-credentials: false` 与 `allow-unsafe-pr-checkout: true`；该 opt-in 只允许数据检出，不允许从 `proposal/` 运行脚本、Gradle wrapper、Action 或可执行文件。文档真实路径还必须位于显式 `RULE_CENTER_DOCUMENT_ROOT` 下。工作流只处理受影响 MD，但对每份受影响文档保留全文扫描能力，并发布转换报告和作者反馈。
+`validate-document.yml` 只由 base 为受保护 `main` 的 `pull_request_target` 触发，事件过滤与 job 条件会分别校验一次；它绝不直接执行 PR head 中的代码。工作流从 `main` 的 base SHA 检出可信 Gradle/Java 到 `trusted/`，从 fork/head SHA 仅稀疏检出 `rule-center/docs` 到 `proposal/`，并把后者作为不可信数据交给可信程序。head 检出显式设置 `persist-credentials: false` 与 `allow-unsafe-pr-checkout: true`；该 opt-in 只允许数据检出，不允许从 `proposal/` 运行脚本、Gradle wrapper、Action 或可执行文件。文档真实路径还必须位于显式 `RULE_CENTER_DOCUMENT_ROOT` 下。`pull-requests: write` 只授予需要回写作者反馈的 PR job，手动验证 job 不继承该权限。工作流只处理受影响 MD，但对每份受影响文档保留全文扫描能力，并发布转换报告和作者反馈。
 
 `publish-rule-package.yml` 由受保护 `main` 的合并提交触发：若已有 approved Release，按最高数字点分版本（而非发布时间）选择不可变 Release，先下载并验证其 `rule-package.zip`，把其中的完整 `rules/`、`functions/`、`source-markdown/` 与 manifest 作为上一版基线；首版才使用仓库内置规则并转换全部中心文档。新版本必须严格大于现有最高版本。本次只对新增/修改 Markdown 调用模型，验证通过的变化覆盖到完整基线，未修改的规则与源文档原样保留。随后工作流再次运行最终门禁、组装完整包、创建 GitHub Release、上传三个固定资产。正式发布环境使用 GitHub Environment `dsl-rule-production` 的人工审批或等价公司审批门禁。
 
@@ -137,7 +137,7 @@ GitHub 实现 `GitHubReleaseBackend`：
 | Release draft/pre-release | 不可发布状态 |
 | Release body / asset metadata | 变更摘要与发布元数据 |
 
-网关仅把同时满足以下条件的 Release 映射为 `approved`：`immutable=true`、非 draft、非 pre-release、存在且仅使用三个固定资产、三项 GitHub asset SHA-256 可验证、manifest 摘要一致、release report 是允许发布状态、最低分析器版本兼容。
+网关仅把同时满足以下条件的 Release 映射为 `approved`：`immutable=true`、非 draft、非 pre-release、资产列表恰好由 `rule-package.zip`、`manifest.json`、`release-report.json` 三项组成且名称不重复、三项 GitHub asset SHA-256 可验证、manifest 摘要一致、release report 是允许发布状态、最低分析器版本兼容。额外资产和重复资产会在客户端发现阶段直接拒绝，而不只是依赖发布 workflow 的上传命令。
 
 ## 6. 从 GitHub 迁到 CodeHub 的边界
 

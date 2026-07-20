@@ -173,6 +173,33 @@ class RulePackageAssemblerTest {
     }
 
     @Test
+    void functionSchemaRejectsEmptyRequiredStrings() throws IOException {
+        List<String> malformedFiles = List.of(
+                "{\"functions\":[{\"name\":\"\",\"params\":[],"
+                        + "\"returnType\":\"number\",\"expressionKind\":\"value\"}]}",
+                "{\"functions\":[{\"name\":\"max\",\"params\":[],"
+                        + "\"returnType\":\"\",\"expressionKind\":\"value\"}]}",
+                "{\"functions\":[{\"name\":\"max\",\"params\":[],"
+                        + "\"returnType\":\"number\",\"expressionKind\":\"\"}]}",
+                "{\"functions\":[{\"name\":\"max\",\"params\":[{"
+                        + "\"name\":\"\",\"type\":\"number\",\"isVariadic\":false}],"
+                        + "\"returnType\":\"number\",\"expressionKind\":\"value\"}]}",
+                "{\"functions\":[{\"name\":\"max\",\"params\":[{"
+                        + "\"name\":\"value\",\"type\":\"\",\"isVariadic\":false}],"
+                        + "\"returnType\":\"number\",\"expressionKind\":\"value\"}]}"
+        );
+
+        for (String malformed : malformedFiles) {
+            write(functionsDirectory.resolve("dsl_functions.json"), malformed);
+            RulePackageAssemblyResult result = assembler.assemble(requestBuilder().build());
+            assertEquals(ReleaseReportStatus.FAILED, result.getStatus(), malformed);
+            assertTrue(result.getErrors().stream()
+                    .anyMatch(error -> error.contains("functions/dsl_functions.json")),
+                    malformed);
+        }
+    }
+
+    @Test
     void equivalentInputOrderingProducesIdenticalManifestAndReportBytes()
             throws IOException {
         SourceDocumentArtifact first = SourceDocumentArtifact.builder()
