@@ -12,12 +12,14 @@ import org.eclipse.lsp4j.services.LanguageServer;
 
 import com.intellij.lang.documentation.DocumentationProvider;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -42,21 +44,38 @@ public final class ThemeDslLspHoverProvider implements DocumentationProvider {
     private static final Logger LOG = Logger.getLogger(ThemeDslLspHoverProvider.class.getName());
 
     @Override
+    public @Nullable PsiElement getCustomDocumentationElement(@NotNull Editor editor,
+                                                                @NotNull PsiFile file,
+                                                                @Nullable PsiElement element,
+                                                                int offset) {
+        // Capture the exact caret/hover offset. Return a DslHoverElement so
+        // generateDoc can read the precise position — instead of the PSI
+        // element's getTextOffset() which for XmlAttributeValue is the value
+        // start, not the token the user is hovering on.
+        return new DslHoverElement(element, offset);
+    }
+
+    @Override
     public @Nullable String generateDoc(PsiElement element, @Nullable PsiElement originalElement) {
         // Completion lookup items carry pre-fetched markup; surface it directly.
         if (element instanceof DslLookupDocElement) {
-            String markup = ((DslLookupDocElement) element).getMarkup();
-            LOG.info("generateDoc: lookup item markup, length=" + markup.length());
-            return markdownToHtml(markup);
+            return markdownToHtml(((DslLookupDocElement) element).getMarkup());
+        }
+        // Hover: DslHoverElement carries the exact cursor offset.
+        if (element instanceof DslHoverElement he) {
+            return fetchHoverAtOffset(he.getOriginal(), he.getOffset());
         }
         return fetchHover(originalElement, element);
     }
 
     @Override
     public @Nullable String getQuickNavigateInfo(PsiElement element,
-                                                   @Nullable PsiElement originalElement) {
+                                                    @Nullable PsiElement originalElement) {
         if (element instanceof DslLookupDocElement) {
             return markdownToHtml(((DslLookupDocElement) element).getMarkup());
+        }
+        if (element instanceof DslHoverElement he) {
+            return fetchHoverAtOffset(he.getOriginal(), he.getOffset());
         }
         return fetchHover(originalElement, element);
     }
@@ -75,28 +94,37 @@ public final class ThemeDslLspHoverProvider implements DocumentationProvider {
     }
 
     private @Nullable String fetchHover(@Nullable PsiElement preferred, @Nullable PsiElement fallback) {
-        // Try the cursor element first (has a real VirtualFile), then the
-        // documentation target.
         PsiElement target = pickWithVirtualFile(preferred, fallback);
         if (target == null) {
-            LOG.info("fetchHover: no candidate with virtual file");
             return null;
         }
-        PsiFile file = target.getContainingFile();
-        VirtualFile vf = file.getVirtualFile();
-        Project project = target.getProject();
+        return fetchHoverAtOffset(target, target.getTextOffset());
+    }
+
+    /**
+     * Sends {@code textDocument/hover} to the server with the given exact
+     * offset (not the PSI element's start offset), converts the markdown
+     * response to HTML for IntelliJ's documentation panel.
+     */
+    private @Nullable String fetchHoverAtOffset(@Nullable PsiElement element, int offset) {
+        if (element == null) {
+            return null;
+        }
+        PsiFile file = element.getContainingFile();
+        VirtualFile vf = file != null ? file.getVirtualFile() : null;
+        if (vf == null) {
+            return null;
+        }
+        Project project = element.getProject();
         DslLspServerService service = project.getService(DslLspServerService.class);
         LanguageServer server = service.getServerProxy();
         if (server == null) {
-            LOG.info("fetchHover: no server proxy");
             return null;
         }
         Document doc = FileDocumentManager.getInstance().getDocument(vf);
         if (doc == null) {
-            LOG.info("fetchHover: no document");
             return null;
         }
-        int offset = target.getTextOffset();
         int line = doc.getLineNumber(offset);
         int col = offset - doc.getLineStartOffset(line);
 
@@ -109,19 +137,16 @@ public final class ThemeDslLspHoverProvider implements DocumentationProvider {
             hover = server.getTextDocumentService().hover(params)
                     .get(500, java.util.concurrent.TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "fetchHover: hover request failed", e);
+            LOG.log(Level.WARNING, "fetchHoverAtOffset: hover request failed", e);
             return null;
         }
         if (hover == null || hover.getContents() == null) {
-            LOG.info("fetchHover: hover null or no contents");
             return null;
         }
         MarkupContent mc = hover.getContents().getRight();
         if (mc == null) {
-            LOG.info("fetchHover: no markup content (left side)");
             return null;
         }
-        LOG.info("fetchHover: returning markdown, length=" + mc.getValue().length());
         return markdownToHtml(mc.getValue());
     }
 

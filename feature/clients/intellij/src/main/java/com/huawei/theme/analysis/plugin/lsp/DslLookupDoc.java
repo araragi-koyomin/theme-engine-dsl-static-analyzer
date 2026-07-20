@@ -11,9 +11,15 @@ final class DslLookupDoc {
 
     final String label;
     final String markup;
+    final int sortPriority; // 0=highest (required/default), 4=lowest (function)
 
     DslLookupDoc(String label, String markup) {
+        this(label, markup, 5);
+    }
+
+    DslLookupDoc(String label, String markup, int sortPriority) {
         this.label = label;
         this.markup = markup;
+        this.sortPriority = sortPriority;
     }
 }

@@ -10,6 +10,9 @@ package com.huawei.theme.analysis.lsp;
  * A later iteration can replace this with AST-based resolution once core
  * AST nodes carry end positions.</p>
  */
+import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
+import com.huawei.theme.analysis.core.shared.ast.ExpressionAstNode;
+
 final class ContextResolver {
 
     enum PositionType { ELEMENT_NAME, ATTRIBUTE_NAME, ATTRIBUTE_VALUE, OTHER }
@@ -19,16 +22,25 @@ final class ContextResolver {
         final String tagName;
         final String word;
         final String attrName;
+        final ExpressionAstNode exprNode;
+        final DslElementNode elementNode;
 
         Context(PositionType type, String tagName, String word) {
-            this(type, tagName, word, null);
+            this(type, tagName, word, null, null, null);
         }
 
         Context(PositionType type, String tagName, String word, String attrName) {
+            this(type, tagName, word, attrName, null, null);
+        }
+
+        Context(PositionType type, String tagName, String word, String attrName,
+                ExpressionAstNode exprNode, DslElementNode elementNode) {
             this.type = type;
             this.tagName = tagName;
             this.word = word;
             this.attrName = attrName;
+            this.exprNode = exprNode;
+            this.elementNode = elementNode;
         }
     }
 
