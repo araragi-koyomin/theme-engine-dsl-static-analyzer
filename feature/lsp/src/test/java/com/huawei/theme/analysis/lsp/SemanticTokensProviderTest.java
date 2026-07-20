@@ -129,9 +129,10 @@ class SemanticTokensProviderTest {
         assertToken(tokens, 0, 0, 21, TYPE_KEYWORD);
         // line 1: comment
         assertToken(tokens, 1, 0, 16, TYPE_COMMENT);
-        // line 2: Lockscreen tag + frameRate attr + Text tag + x attr + #v var
-        assertToken(tokens, 2, 1, 10, TYPE_TAG);         // "Lockscreen"
+        // line 2: Lockscreen(tagRoot) + frameRate attr + "60" number + Text tag + x attr + #v var
+        assertToken(tokens, 2, 1, 10, TYPE_TAG_ROOT);  // "Lockscreen" — root tag
         assertToken(tokens, 2, 12, 9, TYPE_ATTRIBUTE);   // "frameRate"
+        assertToken(tokens, 2, 23, 2, TYPE_NUMBER);      // "60" literal attr value
         assertToken(tokens, 2, 28, 4, TYPE_TAG);         // "Text"
         assertToken(tokens, 2, 33, 1, TYPE_ATTRIBUTE);   // "x"
         assertToken(tokens, 2, 36, 2, TYPE_VARIABLE);    // "#v"
