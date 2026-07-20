@@ -28,6 +28,14 @@ sourceSets {
 
 test {
     useJUnitPlatform()
+    // Migrated core tests resolve fixtures/rules via filesystem paths built
+    // from System.getProperty("user.dir") (e.g. DslFileIdentifierTest reads
+    // src/main/resources/rules and src/test/resources/dsl). Under
+    // :feature:core-tests the CWD would be this module, which has no
+    // main/resources, so point the forked test JVM at the analysis module
+    // dir where those resources actually live. Build config only — no test
+    // or main source change, so the canary is unaffected.
+    workingDir = project(':feature:analysis').projectDir
     finalizedBy jacocoTestReport
 }
 
