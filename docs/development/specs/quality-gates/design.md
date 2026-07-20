@@ -98,6 +98,15 @@ created: 2026-07-17
 | FIX004 逐条治理再变重流程 | 本 spec 不展开 FIX004 逐条方案，留给执行阶段按 canary 逐条决策 |
 
 ## 9. 来源锚点
-- LL-011/012/013：`C:\Users\30991\Desktop\tmp\lesson.md`（用户本机，待迁入 `docs/knowledge/lessons-learned.md`）
+- LL-011/012/013：已迁入 `docs/knowledge/lessons-learned.md`（源：用户本机 lesson.md）
+- LL-014（JaCoCo 0% 门禁剧场）/ LL-015（可证伪性原则）：同上文件
 - 审计 R1（JaCoCo 0%）、R2（测试剧场）：本次审计报告
 - spike 验证：commit `888682f` 于 `fix/quality-gates`
+- 实现计划：`plan.md`（同目录）
+
+## 10. 生命周期
+
+- **当前状态**：`status: active`（Phase A 已实现于 `fix/quality-gates`，awaiting merge）。
+- **merge to main 后**：本目录 `docs/development/specs/quality-gates/`（design.md + plan.md）归档至 `docs/archive/2026-07/quality-gates/`；`BACKLOG.md` FIX005 → done → 条目移除（热层只放活跃项）；`活跃分支` 表 fix/quality-gates 行移除。
+- **不归档**：`AGENTS.md` 可证伪性节 / `SOP.md` PHASE 1.5+§1.4 / `lessons-learned.md` LL-011~015 —— 活文档/活规则，长期保留。
+- **Phase B（FIX004）**：用本 Phase 建的 canary 方法（尤其测试 canary），单独 spec/plan，不在本目录。
