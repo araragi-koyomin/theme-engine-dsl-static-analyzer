@@ -165,3 +165,14 @@ created: 2026-07-20
 | 测试 canary | 临时绕过 draft/pre-release 拒绝，只运行 `rejectsDraftAndPrerelease` | 退出 1；精确在测试第 148 行失败；恢复后全组强制重跑通过 |
 
 后端固定要求 `rule-package.zip`、`manifest.json`、`release-report.json`，并使用 GitHub REST Release asset 官方 `digest = sha256:...` 字段校验下载制品摘要。只有非 draft、非 pre-release、tag/manifest/report 一致、报告可发布且分析器兼容的 Release 才映射为 `GitHubApprovedRelease`。任务提交信息为 `feat(C10): gate approved GitHub rule releases`。
+
+### C11：稳定 ReleaseCatalog 网关
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | Gradle 8.2 `--no-daemon :feature:core-tests:test --tests "*ReleaseCatalogContractTest"` | 退出 1；catalog、stable metadata/artifact、GitHub adapter/source 和 fixture backend 共 22 个缺失符号 |
+| GREEN | 同一目标测试命令 | 退出 0；4 组双后端同构、draft 隐藏、下载篡改和传输字段隔离场景通过 |
+| REFACTOR | 同一命令追加 `--rerun-tasks` | 退出 0；20 个 Gradle task 全部实际执行 |
+| 测试 canary | 临时向插件可见的 `LatestRelease` 加入 `githubUrl`，只运行 `stablePluginContractContainsNoGitHubTransportFields` | 退出 1；精确在测试第 68 行失败；恢复后全组强制重跑通过 |
+
+稳定接口仅暴露 `findLatest`、`findVersion`、`download(packageVersion)`；元数据不含 URL、token、仓库名或 GitHub 类型。GitHub adapter 与 `FixtureReleaseCatalog` 返回相同 `LatestRelease`/`ReleaseMetadata`/`RulePackageArtifact` 语义，并在交付字节前再次校验资产 SHA-256。任务提交信息为 `feat(C11): isolate release catalog gateway`。
