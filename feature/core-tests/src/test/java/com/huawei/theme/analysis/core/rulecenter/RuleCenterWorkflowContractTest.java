@@ -3,8 +3,10 @@ package com.huawei.theme.analysis.core.rulecenter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,7 +31,8 @@ class RuleCenterWorkflowContractTest {
     void validationWorkflowHasModelsPermissionAndProducesAuthorFeedback() throws IOException {
         String workflow = read(".github/workflows/validate-document.yml");
 
-        assertTrue(workflow.contains("pull_request:"));
+        assertTrue(workflow.contains("pull_request_target:"));
+        assertFalse(workflow.contains("\n  pull_request:\n"));
         assertTrue(workflow.contains("models: read"));
         assertTrue(workflow.contains("pull-requests: write"));
         assertTrue(workflow.contains("./gradlew --no-daemon ruleCenterValidateDocument"));
@@ -39,6 +42,25 @@ class RuleCenterWorkflowContractTest {
         assertTrue(workflow.contains("actions/github-script@"));
         assertTrue(workflow.contains("actions/upload-artifact@"));
         assertFalse(workflow.contains("gh release create"));
+        Map<?, ?> parsed = new Yaml().load(workflow);
+        assertTrue(parsed.get("jobs") instanceof Map);
+    }
+
+    @Test
+    void pullRequestRunsOnlyTrustedBaseCodeAndTreatsHeadCheckoutAsDocumentData()
+            throws IOException {
+        String workflow = read(".github/workflows/validate-document.yml");
+
+        assertTrue(workflow.contains("ref: ${{ github.event.pull_request.base.sha }}"));
+        assertTrue(workflow.contains("path: trusted"));
+        assertTrue(workflow.contains("ref: ${{ github.event.pull_request.head.sha }}"));
+        assertTrue(workflow.contains("path: proposal"));
+        assertTrue(workflow.contains("sparse-checkout: rule-center/docs"));
+        assertTrue(workflow.contains("persist-credentials: false"));
+        assertTrue(workflow.contains("working-directory: trusted"));
+        assertTrue(workflow.contains("RULE_CENTER_DOCUMENT_ROOT:"));
+        assertTrue(workflow.contains("proposal/rule-center/docs"));
+        assertFalse(workflow.matches("(?s).*uses: actions/checkout@v[0-9].*"));
     }
 
     @Test

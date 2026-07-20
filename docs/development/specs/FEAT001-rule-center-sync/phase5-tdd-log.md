@@ -246,3 +246,15 @@ manifest 现在保存排序后的 `rules/` 与 `functions/` 文件清单。编�
 | 测试 canary | 临时移除 manifest/report 字节摘要检查，只运行 `rejectsTamperedManifestAndReportBytesAgainstTheirGitHubAssetDigests` | 退出 1；篡改资产不再首先得到 `INVALID_ASSET_DIGEST`，测试精确变红；恢复后通过 |
 
 客户端发现 Release 时不再只相信 `rule-package.zip` 的摘要。固定三资产均必须处于 uploaded 状态并带 GitHub `sha256:` 摘要；元数据资产在解析前先以 UTF-8 原始内容计算 SHA-256。ZIP 在实际下载交付时由既有 gateway 再按同一官方摘要校验真实字节。
+
+### Review A 修复 4：GitHub 工作流信任边界与不可变发布
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterWorkflowContractTest" --tests "*RuleCenterPublishWorkflowContractTest" --tests "*RuleCenterDocumentResolverTest"` | 退出 1；可信/不可信检出、外部文档根解析器、main 限定、完整历史、不可变发布、分页与固定时间契约均缺失 |
+| GREEN/REFACTOR | 同一测试命令 | 退出 0；两个 workflow 经 SnakeYAML 结构解析，PR 数据隔离、发布门禁和真实文档路径解析场景通过 |
+| workflow 静态验证 | actionlint v1.7.12 对 `.github/workflows/validate-document.yml` 与 `publish-rule-package.yml` 执行 | 退出 0；YAML、GitHub expression 与内嵌 shell 均无诊断 |
+| PR 权限 canary | 临时将 `pull_request_target` 改回 `pull_request`，只运行 `validationWorkflowHasModelsPermissionAndProducesAuthorFeedback` | 退出 1；测试第 34 行精确变红；恢复后通过 |
+| 不可变发布 canary | 临时将官方 `/immutable-releases` 预检改为不存在的 `/release-policy`，只运行 `releaseIsCreatedOnlyAfterGateWithExactlyThreeFixedAssets` | 退出 1；测试第 49 行精确变红；恢复后通过 |
+
+PR 工作流现在从 base SHA 检出可信 Gradle/Java，从 fork/head SHA 仅稀疏检出 `rule-center/docs`，模型 token 只交给可信工作目录中的程序；文档解析器以真实路径复验显式文档根并拒绝逃逸/符号链接。Actions 均固定到实际提交 SHA。发布工作流使用完整 Git 历史、仅允许 main、首版处理全部源文档、分页查找上一正式版、固定 `createdAt`、显式创建并复验 tag，再以 `--verify-tag` 发布。推理前通过 GitHub 2026-03-10 官方接口确认仓库启用 Immutable Releases，发布后复查 Release 的 `immutable` 字段。

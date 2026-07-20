@@ -51,32 +51,8 @@ public final class RuleCenterWorkflowMain {
             Path repository,
             Path output,
             Map<String, String> env) throws IOException {
-        Path documentList = resolve(repository, required(env, "RULE_CENTER_DOCUMENT_LIST"));
-        Path docsRoot = repository.resolve("rule-center/docs").normalize();
-        List<RuleDocumentRevision> documents = new ArrayList<>();
-        for (String line : Files.readAllLines(documentList, StandardCharsets.UTF_8)) {
-            if (line.isBlank()) {
-                continue;
-            }
-            Path documentPath = resolve(repository, line.trim());
-            if (!documentPath.startsWith(docsRoot) || !Files.isRegularFile(documentPath)
-                    || !documentPath.getFileName().toString().endsWith(".md")) {
-                throw new IllegalArgumentException(
-                        "document must be a Markdown file under rule-center/docs: " + line);
-            }
-            String markdown = Files.readString(documentPath);
-            Path relative = docsRoot.relativize(documentPath);
-            String relativeText = relative.toString().replace('\\', '/');
-            documents.add(RuleDocumentRevision.builder()
-                    .documentId(withoutExtension(relativeText))
-                    .revision(env.getOrDefault("GITHUB_SHA", sha256(markdown).substring(0, 12)))
-                    .markdown(markdown)
-                    .sourceMarkdownRelativePath(relativeText)
-                    .build());
-        }
-        if (documents.isEmpty()) {
-            throw new IllegalArgumentException("document list contains no Markdown files");
-        }
+        List<RuleDocumentRevision> documents = new RuleCenterDocumentResolver()
+                .resolve(repository, env);
 
         Path rules = resolve(repository, valueOrDefault(env,
                 "RULE_CENTER_BASELINE_RULES",
@@ -115,7 +91,7 @@ public final class RuleCenterWorkflowMain {
                 .outputDirectory(workDirectory)
                 .packageVersion(env.getOrDefault(
                         "RULE_CENTER_PACKAGE_VERSION", defaultVersion(env)))
-                .createdAt(Instant.now().toString())
+                .createdAt(valueOrDefault(env, "RULE_CENTER_CREATED_AT", Instant.now().toString()))
                 .minimumAnalyzerVersion(valueOrDefault(env,
                         "RULE_CENTER_MINIMUM_ANALYZER_VERSION", "1.0.0"))
                 .build());
