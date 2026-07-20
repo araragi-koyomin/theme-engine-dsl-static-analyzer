@@ -193,12 +193,17 @@ class BatchInspectionRealScenarioTest {
 
     @Test
     void cleanLockscreenHasMinimalErrors() {
+        // FIX004 C8: was theater — asserted errorCount<=2 on a "clean" file,
+        // tolerating up to 2 false positives. Canary: inject 1 false-positive
+        // ERROR per file → errorCount<=2 still passed = theater confirmed.
+        // Now: strict — clean file must have ZERO errors.
         Path cleanFile = fixturesDir.resolve("clean").resolve("lockscreen_valid.xml");
         BatchInspectionResult result = runner.runOnFile(cleanFile.toString());
         assertEquals(1, result.getTotalFiles());
         assertEquals(0, result.getSkippedFiles());
-        assertTrue(result.getErrorCount() <= 2,
-                "Clean file should have minimal errors, got " + result.getErrorCount());
+        assertEquals(0, result.getErrorCount(),
+                "clean lockscreen must produce ZERO errors (no false positives tolerated); got: "
+                        + result.getFileResults().get(0).getDiagnostics());
     }
 
     @Test

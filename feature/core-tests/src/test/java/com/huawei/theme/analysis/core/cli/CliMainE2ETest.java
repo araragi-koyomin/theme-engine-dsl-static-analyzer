@@ -179,10 +179,20 @@ class CliMainE2ETest {
 
     @Test
     void singleFileWithErrors_returnsOne_terminalFormatShowsErrors() throws Exception {
+        // FIX004 C9: was theater — asserted exitCode==0||1 + stdout.length()>0.
+        // Name says "returnsOne"+"ShowsErrors" but accepted exit 0 (analyzer
+        // failed to detect) and only checked stdout non-empty (even "0 errors"
+        // header passes). Canary: DiagnosticProviderImpl → return empty →
+        // exit 0 + non-empty stdout = original test passed = theater confirmed.
+        // Now: strict — exitCode must be 1 (errors detected) AND stdout must
+        // contain a SEM-* ruleId (proves errors are actually shown).
         Path targetFile = copyResourceToTemp("batch-inspection/widget_missing_required.xml", "widget_missing_required.xml");
         int exitCode = CliMain.run(new String[]{"--no-color", targetFile.toString()});
-        assertTrue(exitCode == 0 || exitCode == 1);
-        assertTrue(stdout().length() > 0);
+        assertEquals(1, exitCode,
+                "file with missing required attrs must return exit 1; got " + exitCode
+                        + ", stdout=" + stdout());
+        assertTrue(stdout().contains("SEM-"),
+                "terminal output must show SEM-* diagnostic ruleIds; got: " + stdout());
     }
 
     @Test
@@ -200,15 +210,26 @@ class CliMainE2ETest {
 
     @Test
     void singleFileWithErrors_jsonFormat_producesOutput() throws Exception {
+        // FIX004 C10: was theater — name "WithErrors" but accepted exit 0
+        // (analyzer failed) and only checked JSON starts with {/[, which is
+        // true even for the empty-diagnostics report. Canary: DiagnosticProviderImpl
+        // → return empty → exit 0 + valid JSON = original test passed = theater.
+        // Now: strict — exitCode must be 1 AND JSON must contain error severity
+        // + at least one SEM-* ruleId.
         Path targetFile = copyResourceToTemp("batch-inspection/widget_missing_required.xml", "widget_missing_required.xml");
         Path outputFile = tempDir.resolve("report.json");
         int exitCode = CliMain.run(new String[]{"--format", "json", "--no-color",
                 "--output", outputFile.toString(), targetFile.toString()});
-        assertTrue(exitCode == 0 || exitCode == 1);
+        assertEquals(1, exitCode,
+                "file with errors must return exit 1; got " + exitCode);
         assertTrue(Files.exists(outputFile));
         String content = Files.readString(outputFile, StandardCharsets.UTF_8);
         assertTrue(content.length() > 0);
         assertTrue(content.trim().startsWith("{") || content.trim().startsWith("["));
+        assertTrue(content.contains("\"severity\": \"error\""),
+                "JSON report for file-with-errors must contain error severity; got: " + content);
+        assertTrue(content.contains("\"ruleId\": \"SEM-"),
+                "JSON report must contain SEM-* ruleId; got: " + content);
     }
 
     @Test
@@ -222,11 +243,20 @@ class CliMainE2ETest {
 
     @Test
     void singleFileWithErrors_markdownFormat_producesReport() throws Exception {
+        // FIX004 C11: was theater — name "WithErrors" but accepted exit 0 and
+        // only checked markdown headers exist (headers are present even with
+        // 0 diagnostics). Canary: DiagnosticProviderImpl → return empty →
+        // exit 0 + markdown headers = original test passed = theater.
+        // Now: strict — exitCode must be 1 AND markdown must contain a SEM-*
+        // ruleId (proves errors are actually reported in the body).
         Path targetFile = copyResourceToTemp("batch-inspection/widget_missing_required.xml", "widget_missing_required.xml");
         int exitCode = CliMain.run(new String[]{"--format", "markdown", "--no-color", targetFile.toString()});
-        assertTrue(exitCode == 0 || exitCode == 1);
+        assertEquals(1, exitCode,
+                "file with errors must return exit 1; got " + exitCode);
         assertTrue(stdout().contains("# DSL 诊断报告"));
         assertTrue(stdout().contains("## 汇总"));
+        assertTrue(stdout().contains("SEM-"),
+                "markdown report body must contain SEM-* ruleId; got: " + stdout());
     }
 
     @Test
@@ -256,10 +286,25 @@ class CliMainE2ETest {
 
     @Test
     void syntaxOnlyMode_producesOutput_skipsSemanticDiags() throws Exception {
+        // FIX004 C12: was theater — name "skipsSemanticDiags" but NEVER verified
+        // output contains no SEM-* (audit: "从未验证输出中无 SEM-*"). Original
+        // asserted exitCode==0||1 + stdout.length()>0 — passes even if semantic
+        // diags leak through. Canary: DiagnosticProviderImpl → return empty →
+        // original test passed = theater confirmed (weak assertion). To verify
+        // the FIXED assertion is real: mutate DiagnosticProviderImpl to remove
+        // the SYNTAX_ONLY guard (semantic runs in syntax-only mode) → fixed
+        // test must FAIL (proves the SEM-* absence check catches the bug).
         Path targetFile = copyResourceToTemp("batch-inspection/widget_missing_required.xml", "widget_missing_required.xml");
         int exitCode = CliMain.run(new String[]{"--syntax-only", "--no-color", targetFile.toString()});
-        assertTrue(exitCode == 0 || exitCode == 1);
-        assertTrue(stdout().length() > 0);
+        assertTrue(exitCode == 0 || exitCode == 1,
+                "syntax-only mode exit code should be 0 or 1; got " + exitCode);
+        assertTrue(stdout().length() > 0,
+                "syntax-only mode must produce some output");
+        // The key assertion the original test was missing: no SEM-* diagnostics
+        // may appear in syntax-only output (widget_missing_required has SEM-REQ-001
+        // + SEM-TRIG-002 in full mode; these MUST be absent in syntax-only mode).
+        assertFalse(stdout().contains("SEM-"),
+                "syntax-only mode must NOT produce semantic (SEM-*) diagnostics; got: " + stdout());
     }
 
     @Test

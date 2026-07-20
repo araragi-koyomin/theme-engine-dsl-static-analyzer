@@ -107,17 +107,18 @@ class PipelineEndToEndTest {
 
     @Test
     void exitCodeZeroForCleanFile() {
+        // FIX004 C7: was theater — accepted exit 1 + errorCount<=2 for a "clean"
+        // file, encoding false positives as OK. Canary: inject 1 false-positive
+        // ERROR per file → original test took else branch, errorCount<=2 passed
+        // + exitCode==1 passed = theater confirmed. Now: strict — clean file
+        // must have ZERO errors and exit 0 (no false positives tolerated).
         Path cleanFile = fixturesDir.resolve("clean").resolve("lockscreen_valid.xml");
         BatchInspectionResult result = runner.runOnFile(cleanFile.toString());
-        if (result.getErrorCount() == 0) {
-            assertEquals(0, ExitCodeCalculator.compute(result),
-                    "Clean file with 0 errors should produce exit code 0");
-        } else {
-            assertTrue(result.getErrorCount() <= 2,
-                    "Clean file should have minimal errors, got " + result.getErrorCount());
-            assertEquals(1, ExitCodeCalculator.compute(result),
-                    "Clean file with errors should produce exit code 1, got errors=" + result.getErrorCount());
-        }
+        assertEquals(0, result.getErrorCount(),
+                "clean file must produce ZERO errors (no false positives tolerated); got: "
+                        + result.getFileResults().get(0).getDiagnostics());
+        assertEquals(0, ExitCodeCalculator.compute(result),
+                "clean file with 0 errors must produce exit code 0");
     }
 
     @Test
@@ -306,10 +307,15 @@ class PipelineEndToEndTest {
 
     @Test
     void cleanFileHasMinimalOrZeroErrors() {
+        // FIX004 C6: was theater — asserted errorCount<=2 on a "clean" file,
+        // tolerating up to 2 false positives. Canary: inject 1 false-positive
+        // ERROR per file → errorCount<=2 still passed = theater confirmed.
+        // Now: strict — clean file must have ZERO errors.
         Path cleanFile = fixturesDir.resolve("clean").resolve("lockscreen_valid.xml");
         BatchInspectionResult result = runner.runOnFile(cleanFile.toString());
-        assertTrue(result.getErrorCount() <= 2,
-                "Clean file should have minimal errors, got " + result.getErrorCount());
+        assertEquals(0, result.getErrorCount(),
+                "clean file must produce ZERO errors (no false positives tolerated); got: "
+                        + result.getFileResults().get(0).getDiagnostics());
     }
 
     @Test

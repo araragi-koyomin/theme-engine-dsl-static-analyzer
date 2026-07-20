@@ -111,15 +111,28 @@ class BatchInspectionIntegrationTest {
 
     @Test
     void runOnFileWithInvalidAttrValue() {
+        // FIX004 C3: was theater — guard `if (errorCount>0||warningCount>0)`
+        // skipped all assertions when the analyzer failed to detect anything
+        // (0 diagnostics → guard false → test passed vacuously). Canary: mutate
+        // DiagnosticProviderImpl.analyze to return empty → original test still
+        // passed = theater confirmed. Now: strict assertions, no guard.
         Path tempFile = writeTempFile("invalid.xml",
                 "<Lockscreen>\n" +
                 "  <Var name=\"x\" type=\"number\" const=\"true\" expression=\"1\"/>\n" +
                 "  <DateTime format=\"HH:mm\" x=\"not_a_number\"/>\n" +
                 "</Lockscreen>");
         BatchInspectionResult result = runner.runOnFile(tempFile.toString());
-        if (result.getErrorCount() > 0 || result.getWarningCount() > 0) {
-            assertTrue(result.getFileResults().get(0).getDiagnostics().size() > 0);
-        }
+        assertFalse(result.getFileResults().isEmpty(),
+                "invalid-attr-value file must produce a file result entry");
+        List<Diagnostic> diags = result.getFileResults().get(0).getDiagnostics();
+        assertTrue(result.getErrorCount() > 0,
+                "invalid attr value (x=not_a_number on number-context DateTime:x) must produce errors; got: "
+                        + diags);
+        assertFalse(diags.isEmpty(),
+                "diagnostics list must be non-empty for invalid attr value; got empty");
+        assertTrue(diags.stream().anyMatch(d -> d.getRuleId().startsWith("SEM-") || d.getRuleId().startsWith("SYN-")),
+                "expected at least one SEM-*/SYN-* diagnostic for invalid attr value; got: "
+                        + diags.stream().map(Diagnostic::getRuleId).toList());
     }
 
     @Test
@@ -219,16 +232,31 @@ class BatchInspectionIntegrationTest {
 
     @Test
     void diagnosticProviderAndQuickFixChainProducesFixActions() {
+        // FIX004 C4: was theater — guard `if (!diagnostics.isEmpty())` skipped
+        // all assertions when analyzer failed to detect, AND inner assertion
+        // was assertNotNull(getFixActions()) which passes for an empty list.
+        // Canary: DiagnosticProviderImpl.analyze → return empty → original test
+        // still passed = theater confirmed. Now: strict assertions, no guard,
+        // and require fixActions to be non-empty (not just non-null).
         Path tempFile = writeTempFile("fixtest.xml",
                 "<Lockscreen>\n" +
                 "  <Var name=\"v\" type=\"number\" const=\"true\" expression=\"1\"/>\n" +
                 "  <DateTime format=\"#undeclared_var\"/>\n" +
                 "</Lockscreen>");
         BatchInspectionResult result = runner.runOnFile(tempFile.toString());
-        if (!result.getFileResults().isEmpty() && !result.getFileResults().get(0).getDiagnostics().isEmpty()) {
-            FileDiagnosticResult fileResult = result.getFileResults().get(0);
-            assertNotNull(fileResult.getFixActions());
-        }
+        // DateTime requires format + size; size is missing → SEM-REQ-001 fires.
+        assertFalse(result.getFileResults().isEmpty(),
+                "file with missing required attr (DateTime size) must produce a file result entry");
+        assertTrue(result.getErrorCount() > 0,
+                "missing required attr (DateTime size) must produce errors; got: "
+                        + result.getErrorCount());
+        List<Diagnostic> diags = result.getFileResults().get(0).getDiagnostics();
+        assertFalse(diags.isEmpty(),
+                "diagnostics list must be non-empty for missing required attr; got empty");
+        FileDiagnosticResult fileResult = result.getFileResults().get(0);
+        assertNotNull(fileResult.getFixActions(), "fixActions list must not be null");
+        assertFalse(fileResult.getFixActions().isEmpty(),
+                "fixActions must be non-empty for SEM-REQ-001 (missing size attr); got empty list");
     }
 
     @Test
