@@ -154,3 +154,14 @@ created: 2026-07-20
 | 测试 canary | 临时允许源证据 `startLine = 0`，只运行 `rejectsFeedbackItemWithoutValidSourceLine` | 退出 1；精确在测试第 99 行失败；恢复后全组强制重跑通过 |
 
 服务通过 `DocumentFeedbackPublisher` 抽象发布，不绑定 GitHub 或公司消息系统。每项反馈保留原文行号和摘录；外部资源静态范围跳过对应 `AuthorAction.NONE`，验证错误对应 `REWORK_REQUIRED`，沿用旧规则通过 `previousRuleRetained` 明示。任务提交信息为 `feat(C09): publish actionable document feedback`。
+
+### C10：GitHub Release 生产后端契约
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | Gradle 8.2 `--no-daemon :feature:core-tests:test --tests "*GitHubReleaseBackendTest"` | 退出 1；GitHub descriptor/asset/backend/evaluation 等共 31 个缺失符号 |
+| GREEN | 同一目标测试命令 | 退出 0；5 组 approved、draft/pre-release、报告/资产、版本/摘要/兼容性及资产摘要场景通过 |
+| REFACTOR | 同一命令追加 `--rerun-tasks` | 退出 0；20 个 Gradle task 全部实际执行 |
+| 测试 canary | 临时绕过 draft/pre-release 拒绝，只运行 `rejectsDraftAndPrerelease` | 退出 1；精确在测试第 148 行失败；恢复后全组强制重跑通过 |
+
+后端固定要求 `rule-package.zip`、`manifest.json`、`release-report.json`，并使用 GitHub REST Release asset 官方 `digest = sha256:...` 字段校验下载制品摘要。只有非 draft、非 pre-release、tag/manifest/report 一致、报告可发布且分析器兼容的 Release 才映射为 `GitHubApprovedRelease`。任务提交信息为 `feat(C10): gate approved GitHub rule releases`。
