@@ -39,8 +39,9 @@ created: 2026-07-15
 |---|---|---|---|---|
 | FIX001 | P0 Beta 闭环修复 | done | — | [→](development/specs/p0-bugfix/) |
 | FIX003 | TypeAnalyzer null 函数库静默吞 SEM-TYPE-* | pending | — | [审计 C2](development/reports/test-theater-audit-2026-07-15.md) |
-| FIX004 | 测试剧场治理（15 CRITICAL + 34 HIGH） | pending | — | [审计报告](development/reports/test-theater-audit-2026-07-15.md)；Phase A canary 框架就绪，治理=Phase B |
+| FIX004 | 测试剧场治理（15 CRITICAL + 34 HIGH） | in-progress | fix/quality-gates | [审计报告](development/reports/test-theater-audit-2026-07-15.md)；Phase A canary 框架就绪，治理=Phase B（batch 1 进行中） |
 | FIX005 | 质量门禁与工作流改革（JaCoCo 0% 覆盖率 + 可证伪 canary 原则） | in-progress | fix/quality-gates | [→](development/specs/quality-gates/design.md) |
+| FIX006 | SyntaxChecker 静默吞 XML 解析错误（root.isHasError 短路返回空） | pending | — | [审计 C14](development/reports/test-theater-audit-2026-07-15.md)；待 PHASE 1 确认设计意图（是否应产出 SYN-002 诊断告知用户 XML 损坏） |
 
 ## 活跃分支
 
