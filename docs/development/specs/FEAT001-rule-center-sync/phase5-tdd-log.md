@@ -110,3 +110,14 @@ created: 2026-07-20
 | 测试 canary | 临时绕过 `hasPassingVerification`，只运行 `excludesExampleWithoutPassingVerificationRecord` | 退出 1；精确在测试第 53 行失败；恢复后强制重跑全组通过 |
 
 目录最多返回 3 条同关系、同 target kind 且 condition 能力覆盖查询要求的示例；相同元素和属性只影响排序，不把示例业务语义复制到新目标。缺验证记录、验证字段不一致、未登记 condition 和 `EXTERNAL_RESOURCE` 证据全部不建索引。任务提交信息为 `feat(C05): catalog only verified constraint examples`。
+
+### C06：候选发布分流
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | Gradle 8.2 `--no-daemon :feature:core-tests:test --tests "*CandidatePublicationRouterTest"` | 退出 1；router、request、decision 共 13 个缺失符号 |
+| GREEN | 同一目标测试命令 | 退出 0；5 组直接跳过、验证错误、待验证、已验证和 description 场景通过 |
+| REFACTOR | 同一命令追加 `--rerun-tasks` | 退出 0；20 个 Gradle task 全部实际执行 |
+| 测试 canary | 临时把 fixture 失败从 `VALIDATION_ERROR` 改成 `SKIPPED`，只运行 `fixtureFailureIsValidationErrorAndNeverSkipped` | 退出 1；精确在测试第 59 行失败；恢复后全组强制重跑通过 |
+
+分流器只产生候选状态和稳定原因码，不生成 IDE 诊断。约束候选的外部资源语义、目标不明、未登记 grammar 与证据冲突直接 skipped；parser 已接受后的 fixture 失败保留 `validationFailure`。description 候选不把资源说明误当约束，可继续作为文档内容处理。任务提交信息为 `feat(C06): route candidate publication outcomes`。
