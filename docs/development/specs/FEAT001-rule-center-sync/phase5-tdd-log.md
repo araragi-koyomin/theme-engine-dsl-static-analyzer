@@ -132,3 +132,14 @@ created: 2026-07-20
 | 测试 canary | 临时把 `MAX_REPAIR_ATTEMPTS` 从 2 改成 3，只运行 `neverCallsRepairStrategyAThirdTime` | 退出 1；第三次调用精确触发测试第 76 行的 `AssertionError`；恢复后全组强制重跑通过 |
 
 每轮修复上下文携带最多 3 条 C05 已验证示例，但每个 proposal 仍由 C04 真实验证器复验。原文证据指纹、目标指纹、目标元素、证据候选 ID 与规则 ID 均不可变；首次或第二次修复成功为 `VERIFIED`，两次失败或越权修改为 `VALIDATION_ERROR + REWORK_REQUIRED`。任务提交信息为 `feat(C07): bound constraint repair loop`。
+
+### C08：完整规则包与发布报告组装
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | Gradle 8.2 `--no-daemon :feature:core-tests:test --tests "*RulePackageAssemblerTest"` | 退出 1；assembler、request/result、source artifact 和 report status 共 15 个缺失符号 |
+| GREEN | 同一目标测试命令 | 退出 0；5 组完整快照、排除项、缺文件、坏 JSON、伪造验证记录场景通过 |
+| REFACTOR | 同一命令追加 `--rerun-tasks` | 退出 0；20 个 Gradle task 全部实际执行 |
+| 门禁/测试 canary | 临时从必需路径删除 `rules/rule_sources.json`，只运行 `missingRequiredRuleCategoryMakesReportFailed` | 退出 1；精确在测试第 112 行失败；恢复后全组强制重跑通过 |
+
+组装器复制完整 `rules/`、`functions/`，按现有分类写入 `source-markdown/`，并生成 manifest 与 `verification/release-report.json`。摘要按相对路径和文件字节确定性计算，报告中的摘要字段以空值规范化以消除循环引用。安全排除项得到 `passed-with-exclusions`；结构、JSON/schema 或新发布 condition 验证错误得到 `failed`。任务提交信息为 `feat(C08): assemble complete verified rule packages`。
