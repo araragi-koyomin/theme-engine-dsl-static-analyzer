@@ -88,3 +88,14 @@ created: 2026-07-20
 | 测试 canary（修正） | 尾随第二段合法 condition token，再移除 EOF 检查 | 退出 1；精确在第 56 行失败；恢复 EOF 检查后 5 组测试强制重跑通过 |
 
 该任务把“语法被接受”与“业务计算结果为 false”分离，并拒绝尾随合法 token、残缺表达式、未登记方法及 DSL 函数库函数。任务提交信息为 `feat(C03): strictly accept complete rule conditions`。
+
+### C04：正反例真实验证运行器
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | Gradle 8.2 `--no-daemon :feature:core-tests:test --tests "*ConstraintVerificationRunnerTest"` | 退出 1；运行器、请求和结果共 10 个缺失符号 |
+| GREEN | 同一目标测试命令 | 退出 0；5 组真实 `AstBuilder` + `ConstraintAnalyzer` 场景通过 |
+| REFACTOR | 同一命令追加 `--rerun-tasks` | 退出 0；20 个 Gradle task 全部实际执行 |
+| 测试 canary | 临时反转“正例必须包含目标 ruleId”的生产判断，只运行 `passesOnlyWhenProductionAnalyzerHitsPositiveAndMissesNegative` | 退出 1；精确在测试第 29 行失败；恢复后强制重跑 5 组测试通过 |
+
+验证只把 fixture 文本交给当前静态分析链，不读取 `src` 等属性所指向的资源。XML 语法错误或当前脚本解析器不支持的内容得到 `FIXTURE_PARSE_ERROR`；condition 已被严格接受后，正例漏报和反例误报分别得到 `POSITIVE_FIXTURE_MISSED` 与 `NEGATIVE_FIXTURE_HIT`，不会伪装成 skipped。任务提交信息为 `feat(C04): verify constraints with production analyzer`。
