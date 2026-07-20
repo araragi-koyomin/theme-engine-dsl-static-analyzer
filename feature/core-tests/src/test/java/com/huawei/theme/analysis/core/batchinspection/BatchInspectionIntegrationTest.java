@@ -204,30 +204,51 @@ class BatchInspectionIntegrationTest {
 
     @Test
     void terminalFormatterNoColorOutputIsValid() {
+        // FIX004 b2 P1: was theater — guard `if (!fileResults.isEmpty() &&
+        // !diagnostics.isEmpty())` skipped all assertions when analyzer
+        // produced 0 diagnostics. The temp file was clean (no errors) so the
+        // guard always skipped. Canary: DiagnosticProviderImpl.analyze → return
+        // empty → original test passed = theater confirmed. Now: strict — use
+        // an error-producing fixture (DateTime with #undeclared_var → SEM-REF
+        // + SEM-REQ), require errors, then verify no-ANSI + content.
         Path tempFile = writeTempFile("lockscreen.xml",
                 "<Lockscreen>\n" +
-                "  <Var name=\"test_var\" type=\"number\" const=\"true\" expression=\"1\"/>\n" +
+                "  <Var name=\"v\" type=\"number\" const=\"true\" expression=\"1\"/>\n" +
+                "  <DateTime format=\"#undeclared_var\"/>\n" +
                 "</Lockscreen>");
         BatchInspectionResult result = runner.runOnFile(tempFile.toString());
-        if (!result.getFileResults().isEmpty() && !result.getFileResults().get(0).getDiagnostics().isEmpty()) {
-            String output = formatter.formatFullReport(result);
-            assertFalse(output.contains("\u001B["));
-            assertTrue(output.contains("lockscreen.xml"));
-            assertTrue(output.contains("errors"));
-        }
+        assertFalse(result.getFileResults().isEmpty(),
+                "file with #undeclared_var should produce a file result entry");
+        assertTrue(result.getErrorCount() > 0,
+                "file with #undeclared_var should produce errors; got: " + result.getErrorCount());
+        String output = formatter.formatFullReport(result);
+        assertFalse(output.contains("\u001B["),
+                "no-color formatter must not emit ANSI escape codes");
+        assertTrue(output.contains("lockscreen.xml"),
+                "report should contain source file name");
+        assertTrue(output.contains("error"),
+                "report should mention 'error' for a file with errors");
     }
 
     @Test
     void terminalFormatterColorOutputIsValid() {
+        // FIX004 b2 P1: was theater — guard `if (errorCount > 0) {...}` skipped
+        // all assertions when analyzer produced 0 diagnostics. The temp file was
+        // clean (no errors) so the guard always skipped. Canary:
+        // DiagnosticProviderImpl.analyze → return empty → original test passed
+        // = theater confirmed. Now: strict — use an error-producing fixture,
+        // require errors, then verify color formatter emits ANSI red codes.
         Path tempFile = writeTempFile("lockscreen.xml",
                 "<Lockscreen>\n" +
-                "  <Var name=\"test_var\" type=\"number\" const=\"true\" expression=\"1\"/>\n" +
+                "  <Var name=\"v\" type=\"number\" const=\"true\" expression=\"1\"/>\n" +
+                "  <DateTime format=\"#undeclared_var\"/>\n" +
                 "</Lockscreen>");
         BatchInspectionResult result = runner.runOnFile(tempFile.toString());
-        if (result.getErrorCount() > 0) {
-            String output = colorFormatter.formatFullReport(result);
-            assertTrue(output.contains("\u001B[31m"));
-        }
+        assertTrue(result.getErrorCount() > 0,
+                "file with #undeclared_var should produce errors; got: " + result.getErrorCount());
+        String output = colorFormatter.formatFullReport(result);
+        assertTrue(output.contains("\u001B[31m"),
+                "color formatter should emit ANSI red codes for error-level diagnostics; output=" + output);
     }
 
     @Test
@@ -261,22 +282,36 @@ class BatchInspectionIntegrationTest {
 
     @Test
     void severityCountsAreConsistentWithDiagnostics() {
+        // FIX004 b2 P1: was theater — guard `if (!fileResults.isEmpty() &&
+        // !diagnostics.isEmpty())` skipped all assertions when analyzer
+        // produced 0 diagnostics. The temp file was clean (no errors) so the
+        // guard always skipped. Canary: DiagnosticProviderImpl.analyze → return
+        // empty → original test passed = theater confirmed. Now: strict — use
+        // an error-producing fixture, require non-empty diagnostics, then
+        // verify ERROR/WARNING/INFO counts in result match the diagnostic list.
         Path tempFile = writeTempFile("sevcheck.xml",
                 "<Lockscreen>\n" +
                 "  <Var name=\"v\" type=\"number\" const=\"true\" expression=\"1\"/>\n" +
+                "  <DateTime format=\"#undeclared_var\"/>\n" +
                 "</Lockscreen>");
         BatchInspectionResult result = runner.runOnFile(tempFile.toString());
-        if (!result.getFileResults().isEmpty() && !result.getFileResults().get(0).getDiagnostics().isEmpty()) {
-            int actualErrors = (int) result.getFileResults().get(0).getDiagnostics().stream()
-                    .filter(d -> d.getSeverity() == DiagnosticSeverity.ERROR).count();
-            int actualWarnings = (int) result.getFileResults().get(0).getDiagnostics().stream()
-                    .filter(d -> d.getSeverity() == DiagnosticSeverity.WARNING).count();
-            int actualInfos = (int) result.getFileResults().get(0).getDiagnostics().stream()
-                    .filter(d -> d.getSeverity() == DiagnosticSeverity.INFO).count();
-            assertEquals(actualErrors, result.getErrorCount());
-            assertEquals(actualWarnings, result.getWarningCount());
-            assertEquals(actualInfos, result.getInfoCount());
-        }
+        assertFalse(result.getFileResults().isEmpty(),
+                "file with #undeclared_var should produce a file result entry");
+        List<Diagnostic> diags = result.getFileResults().get(0).getDiagnostics();
+        assertFalse(diags.isEmpty(),
+                "file with #undeclared_var should produce diagnostics; got empty list");
+        int actualErrors = (int) diags.stream()
+                .filter(d -> d.getSeverity() == DiagnosticSeverity.ERROR).count();
+        int actualWarnings = (int) diags.stream()
+                .filter(d -> d.getSeverity() == DiagnosticSeverity.WARNING).count();
+        int actualInfos = (int) diags.stream()
+                .filter(d -> d.getSeverity() == DiagnosticSeverity.INFO).count();
+        assertEquals(actualErrors, result.getErrorCount(),
+                "Error count mismatch: computed=" + actualErrors + " reported=" + result.getErrorCount());
+        assertEquals(actualWarnings, result.getWarningCount(),
+                "Warning count mismatch: computed=" + actualWarnings + " reported=" + result.getWarningCount());
+        assertEquals(actualInfos, result.getInfoCount(),
+                "Info count mismatch: computed=" + actualInfos + " reported=" + result.getInfoCount());
     }
 
     @Test

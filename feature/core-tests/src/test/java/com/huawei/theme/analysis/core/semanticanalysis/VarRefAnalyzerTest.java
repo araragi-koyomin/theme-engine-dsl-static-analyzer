@@ -154,6 +154,11 @@ class VarRefAnalyzerTest {
 
     @Test
     void binaryExprReportsBothUndefinedRefs() {
+        // FIX004 b2 P4: was theater — `assertEquals(2, diagnostics.size())`
+        // was count-only; 2 wrong-rule-ID diagnostics would still pass.
+        // Canary: mutate VarRefAnalyzer RULE_REF_001/002/003 → "SEM-REF-FAKE"
+        // → original test still passed = theater confirmed. Now: also verify
+        // ruleId + message for each diagnostic so wrong-rule-ID is caught.
         ExpressionNode a = ExpressionNode.variableRef("#", "a", "#a", 15, 0);
         ExpressionNode b = ExpressionNode.variableRef("#", "b", "#b", 15, 4);
         ExpressionNode binary = ExpressionNode.binaryExpr("+", a, b, "#a+#b", 15, 0);
@@ -162,6 +167,14 @@ class VarRefAnalyzerTest {
         List<Diagnostic> diagnostics = analyzer.analyze(image, context(stubRepo(), globalTable()));
 
         assertEquals(2, diagnostics.size());
+        assertEquals("SEM-REF-001", diagnostics.get(0).getRuleId(),
+                "first diag should be SEM-REF-001 for #a; got: " + diagnostics.get(0).getRuleId());
+        assertTrue(diagnostics.get(0).getMessage().contains("#a"),
+                "first diag message should mention #a; got: " + diagnostics.get(0).getMessage());
+        assertEquals("SEM-REF-001", diagnostics.get(1).getRuleId(),
+                "second diag should be SEM-REF-001 for #b; got: " + diagnostics.get(1).getRuleId());
+        assertTrue(diagnostics.get(1).getMessage().contains("#b"),
+                "second diag message should mention #b; got: " + diagnostics.get(1).getMessage());
     }
 
     @Test
@@ -491,6 +504,11 @@ class VarRefAnalyzerTest {
 
     @Test
     void commandTargetUndefinedElementAndInvalidPropertyReportsBoth() {
+        // FIX004 b2 P4: was theater — `assertEquals(2, diagnostics.size())`
+        // was count-only; 2 wrong-rule-ID diagnostics would still pass.
+        // Canary: mutate VarRefAnalyzer RULE_REF_* → "SEM-REF-FAKE" → original
+        // test still passed = theater confirmed. Now: also verify ruleId +
+        // message for both diagnostics (undefined element + invalid property).
         DslElementNode cmd = element("Command", 10, 5,
                 literalAttr("target", "missing.unknown"), literalAttr("value", "false"));
 
@@ -498,6 +516,16 @@ class VarRefAnalyzerTest {
                 context(repoWithTemplates(), globalTable(elementNames())));
 
         assertEquals(2, diagnostics.size());
+        assertEquals("SEM-REF-002", diagnostics.get(0).getRuleId(),
+                "first diag should be SEM-REF-002 for undefined element 'missing'; got: "
+                        + diagnostics.get(0).getRuleId());
+        assertTrue(diagnostics.get(0).getMessage().contains("missing"),
+                "first diag message should mention 'missing'; got: " + diagnostics.get(0).getMessage());
+        assertEquals("SEM-REF-002", diagnostics.get(1).getRuleId(),
+                "second diag should be SEM-REF-002 for invalid property 'unknown'; got: "
+                        + diagnostics.get(1).getRuleId());
+        assertTrue(diagnostics.get(1).getMessage().contains("unknown"),
+                "second diag message should mention 'unknown'; got: " + diagnostics.get(1).getMessage());
     }
 
     @Test
@@ -585,15 +613,29 @@ class VarRefAnalyzerTest {
 
     @Test
     void tripleDuplicateVarDeclarations() {
+        // FIX004 b2 P4: was theater — `assertEquals(1, ...size())` was
+        // count-only; 1 wrong-rule-ID diagnostic would still pass. Canary:
+        // mutate VarRefAnalyzer RULE_REF_003 → "SEM-REF-FAKE" → original test
+        // still passed = theater confirmed. Now: also verify ruleId is
+        // SEM-REF-003 for each Var's diagnostic.
         DslElementNode var1 = element("Var", 5, 0, literalAttr("name", "v"));
         DslElementNode var2 = element("Var", 8, 0, literalAttr("name", "v"));
         DslElementNode var3 = element("Var", 12, 0, literalAttr("name", "v"));
         VarDeclaration effective = varDecl("v", new DslNumberType(), var3);
         SymbolTable table = globalTableWithDuplicateVars(Set.of("v"), effective);
 
-        assertEquals(1, analyzer.analyze(var1, context(stubRepo(), table)).size());
-        assertEquals(1, analyzer.analyze(var2, context(stubRepo(), table)).size());
-        assertEquals(1, analyzer.analyze(var3, context(stubRepo(), table)).size());
+        List<Diagnostic> d1 = analyzer.analyze(var1, context(stubRepo(), table));
+        assertEquals(1, d1.size());
+        assertEquals("SEM-REF-003", d1.get(0).getRuleId(),
+                "var1 diag should be SEM-REF-003; got: " + d1.get(0).getRuleId());
+        List<Diagnostic> d2 = analyzer.analyze(var2, context(stubRepo(), table));
+        assertEquals(1, d2.size());
+        assertEquals("SEM-REF-003", d2.get(0).getRuleId(),
+                "var2 diag should be SEM-REF-003; got: " + d2.get(0).getRuleId());
+        List<Diagnostic> d3 = analyzer.analyze(var3, context(stubRepo(), table));
+        assertEquals(1, d3.size());
+        assertEquals("SEM-REF-003", d3.get(0).getRuleId(),
+                "var3 diag should be SEM-REF-003; got: " + d3.get(0).getRuleId());
     }
 
     @Test

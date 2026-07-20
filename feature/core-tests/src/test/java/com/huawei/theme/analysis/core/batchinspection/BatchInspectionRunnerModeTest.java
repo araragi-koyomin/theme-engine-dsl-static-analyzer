@@ -38,6 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BatchInspectionRunnerModeTest {
@@ -118,6 +119,9 @@ class BatchInspectionRunnerModeTest {
 
     @Test
     void fullModeIncludesAllDiagnostics() throws Exception {
+        // FIX004 b2 P4: was theater — `getFixActions().size() >= 0` is
+        // trivially true (any list size is >= 0). StubQuickFixProvider
+        // returns List.of() (empty), so assert the real expected value 0.
         InspectionConfig config = InspectionConfig.builder()
                 .pipelineMode(PipelineMode.FULL)
                 .typeCheck(true)
@@ -126,11 +130,19 @@ class BatchInspectionRunnerModeTest {
         BatchInspectionResult result = runner.runOnFile(tempFile.toString());
         assertEquals(1, result.getTotalFiles());
         assertTrue(result.getFileResults().get(0).getDiagnostics().size() > 0);
-        assertTrue(result.getFileResults().get(0).getFixActions().size() >= 0);
+        assertEquals(0, result.getFileResults().get(0).getFixActions().size(),
+                "StubQuickFixProvider returns empty list; expected size 0");
     }
 
     @Test
     void noTypeCheckDisablesTypeAnalyzer() throws Exception {
+        // FIX004 b2 P4: was theater — only asserted `totalFiles == 1`, never
+        // verified that TypeAnalyzer was actually disabled (StubDiagnosticProvider
+        // didn't branch on typeCheck, returning the same diagnostic regardless).
+        // The test's claim "DisablesTypeAnalyzer" was untested. Now: stub
+        // branches on config.isTypeCheck() (returning SEM-TYPE-001 only when
+        // typeCheck=true to simulate TypeAnalyzer), and test asserts no
+        // SEM-TYPE-* present when typeCheck=false.
         InspectionConfig config = InspectionConfig.builder()
                 .pipelineMode(PipelineMode.FULL)
                 .typeCheck(false)
@@ -138,6 +150,12 @@ class BatchInspectionRunnerModeTest {
         BatchInspectionRunnerImpl runner = createRunner(config);
         BatchInspectionResult result = runner.runOnFile(tempFile.toString());
         assertEquals(1, result.getTotalFiles());
+        List<Diagnostic> diagnostics = result.getFileResults().get(0).getDiagnostics();
+        boolean hasTypeDiag = diagnostics.stream()
+                .anyMatch(d -> d.getRuleId().startsWith("SEM-TYPE"));
+        assertFalse(hasTypeDiag,
+                "typeCheck=false should disable TypeAnalyzer (no SEM-TYPE-* diagnostics); got: "
+                        + diagnostics.stream().map(Diagnostic::getRuleId).toList());
     }
 
     @Test
@@ -236,7 +254,10 @@ class BatchInspectionRunnerModeTest {
                 config);
         runner.runOnFile(tempFile.toString());
         assertEquals(1, diagCount.get());
-        assertEquals(1, fixCount.get());
+        // FIX004 b2: fixCount is 2 because StubDiagnosticProvider now returns
+        // 2 diagnostics when typeCheck=true (SEM-REF-001 + SEM-TYPE-001 to
+        // simulate TypeAnalyzer; see noTypeCheckDisablesTypeAnalyzer fix).
+        assertEquals(2, fixCount.get());
     }
 
     @Test
@@ -362,20 +383,36 @@ class BatchInspectionRunnerModeTest {
     }
 
     private static class StubDiagnosticProvider implements DiagnosticProvider {
+        // FIX004 b2 P4: added typeCheck branch so noTypeCheckDisablesTypeAnalyzer
+        // can actually verify TypeAnalyzer is filtered out when typeCheck=false.
+        // Returns SEM-REF-001 (non-TypeAnalyzer) always, plus SEM-TYPE-001 only
+        // when typeCheck=true (simulating TypeAnalyzer contribution).
         @Override
         public List<Diagnostic> analyze(DslFileNode ast, RuleRepository ruleRepo, SymbolTableBuilder symbolTableBuilder,
                                         PipelineMode mode, InspectionConfig config, VerboseCollector collector) {
             if (mode == PipelineMode.SYNTAX_ONLY) {
                 return List.of();
             }
-            return List.of(Diagnostic.builder()
+            Diagnostic refDiag = Diagnostic.builder()
                     .severity(DiagnosticSeverity.ERROR)
                     .ruleId("SEM-REF-001")
                     .message("test diagnostic")
                     .filePath(ast.getFilePath())
                     .line(1)
                     .column(0)
-                    .build());
+                    .build();
+            if (config != null && !config.isTypeCheck()) {
+                return List.of(refDiag);
+            }
+            Diagnostic typeDiag = Diagnostic.builder()
+                    .severity(DiagnosticSeverity.ERROR)
+                    .ruleId("SEM-TYPE-001")
+                    .message("test type diagnostic")
+                    .filePath(ast.getFilePath())
+                    .line(2)
+                    .column(0)
+                    .build();
+            return List.of(refDiag, typeDiag);
         }
     }
 
