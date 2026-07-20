@@ -19,6 +19,13 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
 }
 
+sourceSets {
+    test {
+        java.srcDirs 'src/test/java'
+        resources.srcDirs 'src/test/resources', '../analysis/src/test/resources'
+    }
+}
+
 test {
     useJUnitPlatform()
     finalizedBy jacocoTestReport
@@ -28,7 +35,10 @@ jacocoTestReport {
     // The classes under test live in :feature:analysis main output (core-tests
     // has no main source of its own). Point the report at analysis's classes
     // and sources so coverage for the exercised core classes is rendered.
-    classDirectories.setFrom(project(':feature:analysis').sourceSets.main.output.classesDirs)
+    dependsOn test
+    classDirectories.setFrom(fileTree("${project(':feature:analysis').layout.buildDirectory.get().asFile}/classes/java/main") {
+        include 'com/huawei/theme/analysis/core/**'
+    })
     sourceDirectories.setFrom(project(':feature:analysis').sourceSets.main.allSource)
     reports {
         xml.required = true
