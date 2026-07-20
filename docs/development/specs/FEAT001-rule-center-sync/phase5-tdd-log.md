@@ -305,3 +305,15 @@ PR 工作流现在从 base SHA 检出可信 Gradle/Java，从 fork/head SHA 仅�
 | 发布命令解析 canary | 在 `gh release create "$tag"` 同一行临时加入第四资产，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterPublishWorkflowContractTest.releaseIsCreatedOnlyAfterGateWithExactlyThreeFixedAssets"` | 退出 1；精确资产集合断言失败，证明首行位置参数不再逃过解析；恢复后通过。 |
 
 PR 验证现在只响应以受保护 `main` 为 base 的 `pull_request_target`，job 条件再次校验 `base.ref`；PR job 独占 `pull-requests: write`，手动 job 仅有内容与模型读取权限。客户端 Release backend 要求资产列表恰为三个固定名称且不得重复。repair 结果即使通过真实 parser/analyzer 与替换 fixture，也必须重新满足同一原文方向、目标元素/属性和字面量证据，才能进入规则包。
+
+### Review A 最终复审修复：统一版本语义与精确 workflow 脚本
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*ApprovedReleaseVersionSelectorTest" --tests "*RuleCenterPublishWorkflowContractTest" --tests "*RuleCenterWorkflowContractTest"` | 退出 1；缺少统一版本选择器，证明原 workflow 仍依赖与客户端不一致的 `sort -V`。 |
+| GREEN / REFACTOR | 同一命令 | 退出 0；13 个聚焦测试通过，workflow 改由 Java 比较器从全部分页 tag 中选择基线并执行严格递增校验。 |
+| 等价版本 canary | 临时把严格比较从 `<= 0` 放宽为 `< 0`，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*ApprovedReleaseVersionSelectorTest.rejectsCandidateEquivalentAfterZeroPadding"` | 退出 1；`1.0.0` 错误越过已有 `1.0` 的门禁，测试精确变红；恢复后通过。 |
+| flags 后资产 canary | 临时在 `--notes-file` 后续接第四个位置资产，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterPublishWorkflowContractTest.releaseIsCreatedOnlyAfterGateWithExactlyThreeFixedAssets"` | 退出 1；完整 `gh release create` 命令精确断言失败；恢复后通过。 |
+| 同名可信 step canary | 在保留 resolver step 名称与工作目录不变时临时追加 `../proposal/malicious.sh`，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterWorkflowContractTest.everyExecutablePullRequestStepStaysOutsideUntrustedCheckout"` | 退出 1；resolver 完整可信脚本断言失败；恢复后通过。 |
+
+版本选择不再由 shell 自行定义。`ApprovedReleaseVersionSelector` 直接复用客户端 `ReleaseVersionSupport`，流水线只负责分页取得合格不可变 Release tag 并把列表作为数据交给 Java；选中的 tag 和“新版本必须严格更高”使用同一比较结果。发布命令与 PR resolver 脚本均改为完整结构断言，不能靠把额外内容移动到 flags 后或保留 step 名称逃过测试。

@@ -108,6 +108,25 @@ class RuleCenterWorkflowContractTest {
         Set<String> allowedRunSteps = Set.of(
                 "Resolve changed Markdown data through the GitHub API",
                 "Extract, validate, repair, and assemble report with trusted code");
+        String expectedResolver = """
+                set -euo pipefail
+                mkdir -p trusted/build/rule-center
+                gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100" <CONT>
+                  --jq '.[] | select(.status != "removed") | .filename' <CONT>
+                  > trusted/build/rule-center/changed-files.txt
+                while IFS= read -r file; do
+                  case "$file" in
+                    rule-center/docs/*.md)
+                      printf '%s/proposal/%s\\n' "$GITHUB_WORKSPACE" "$file" <CONT>
+                        >> trusted/build/rule-center/documents.txt
+                      ;;
+                  esac
+                done < trusted/build/rule-center/changed-files.txt
+                if [[ ! -s trusted/build/rule-center/documents.txt ]]; then
+                  echo "No added or modified rule Markdown documents were found" >&2
+                  exit 1
+                fi
+                """.replace("<CONT>", "\\");
 
         for (Map<String, Object> executable : steps(pullRequestJob)) {
             String name = String.valueOf(executable.get("name"));
@@ -123,6 +142,9 @@ class RuleCenterWorkflowContractTest {
                 assertFalse(uses.startsWith("proposal/"), name);
             }
         }
+        assertEquals(expectedResolver.strip(), String.valueOf(step(
+                pullRequestJob,
+                "Resolve changed Markdown data through the GitHub API").get("run")).strip());
     }
 
     @Test

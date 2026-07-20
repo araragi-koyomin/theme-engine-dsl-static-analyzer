@@ -112,3 +112,11 @@ tasks.register('ruleCenterExtractBaseline', JavaExec) {
     classpath = project(':feature:analysis').sourceSets.main.runtimeClasspath
     mainClass = 'com.huawei.theme.analysis.core.rulecenter.RuleCenterBaselineExtractorMain'
 }
+
+tasks.register('ruleCenterSelectReleaseBaseline', JavaExec) {
+    group = 'verification'
+    description = 'Select the highest approved rule release using analyzer version semantics'
+    dependsOn ':feature:analysis:classes'
+    classpath = project(':feature:analysis').sourceSets.main.runtimeClasspath
+    mainClass = 'com.huawei.theme.analysis.core.rulecenter.RuleCenterReleaseBaselineSelectorMain'
+}

@@ -3,7 +3,6 @@ package com.huawei.theme.analysis.core.rulecenter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -64,30 +63,30 @@ class RuleCenterPublishWorkflowContractTest {
                         "build/rule-center-publish/release/rule-package.zip",
                         "build/rule-center-publish/release/manifest.json",
                         "build/rule-center-publish/release/release-report.json"),
-                positionalReleaseAssets(command));
+                releaseCreateAssets(command));
     }
 
     @Test
     void previousApprovedPackageIsOptionalBaselineAndChangedDocsAreExplicit()
             throws IOException {
         String workflow = read(".github/workflows/publish-rule-package.yml");
+        String build = read("build.gradle");
         String baseline = (String) step(
                 job(workflow, "publish"),
                 "Restore the previous approved complete-package baseline").get("run");
-        int selectionStart = baseline.indexOf("latest_tag=");
-        int selectionEnd = baseline.indexOf("\nif [[ -z", selectionStart);
-        String baselineSelection = baseline.substring(selectionStart, selectionEnd);
-
         assertTrue(workflow.contains("gh release download"));
         assertTrue(workflow.contains("RULE_CENTER_BASELINE_RULES"));
         assertTrue(workflow.contains("RULE_CENTER_DOCUMENT_LIST"));
         assertTrue(workflow.contains("--diff-filter=AM"));
-        assertTrue(baselineSelection.contains("--paginate"));
-        assertTrue(baselineSelection.contains(".immutable == true"));
-        assertTrue(baselineSelection.contains("| sort -V | tail -n 1"));
-        assertFalse(baselineSelection.contains("published_at"));
-        assertTrue(baseline.contains(
-                "Package version must be greater than latest approved version"));
+        assertTrue(baseline.contains("--paginate"));
+        assertTrue(baseline.contains(".immutable == true"));
+        assertTrue(baseline.contains("ruleCenterSelectReleaseBaseline"));
+        assertTrue(baseline.contains("RULE_CENTER_RELEASE_TAGS="));
+        assertTrue(baseline.contains("RULE_CENTER_LATEST_TAG_OUTPUT="));
+        assertTrue(build.contains("tasks.register('ruleCenterSelectReleaseBaseline', JavaExec)"));
+        assertTrue(build.contains("RuleCenterReleaseBaselineSelectorMain"));
+        assertFalse(baseline.contains("sort -V"));
+        assertFalse(baseline.contains("published_at"));
         assertTrue(workflow.contains("No previous approved Release"));
         assertTrue(workflow.indexOf("No previous approved Release")
                 < workflow.lastIndexOf("git ls-files 'rule-center/docs/**/*.md'"));
@@ -112,29 +111,24 @@ class RuleCenterPublishWorkflowContractTest {
                 .orElseThrow();
     }
 
-    private List<String> positionalReleaseAssets(String command) {
-        String normalized = command.replace("\\\r\n", " ")
-                .replace("\\\n", " ");
-        String[] tokens = normalized.trim().split("\\s+");
-        List<String> assets = new ArrayList<>();
-        int create = -1;
-        for (int index = 0; index + 2 < tokens.length; index++) {
-            if ("gh".equals(tokens[index]) && "release".equals(tokens[index + 1])
-                    && "create".equals(tokens[index + 2])) {
-                create = index + 3;
-                break;
-            }
-        }
-        if (create < 0 || create >= tokens.length) {
-            return List.of();
-        }
-        for (int index = create + 1; index < tokens.length; index++) {
-            String token = tokens[index];
-            if (token.startsWith("--")) {
-                break;
-            }
-            assets.add(token);
-        }
-        return List.copyOf(assets);
+    private List<String> releaseCreateAssets(String command) {
+        int start = command.indexOf("gh release create");
+        int end = command.indexOf("\nimmutable=", start);
+        String releaseCommand = command.substring(start, end)
+                .replaceAll("\\s*\\\\\\R\\s*", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+        assertEquals("gh release create \"$tag\" "
+                + "build/rule-center-publish/release/rule-package.zip "
+                + "build/rule-center-publish/release/manifest.json "
+                + "build/rule-center-publish/release/release-report.json "
+                + "--repo \"$GITHUB_REPOSITORY\" --verify-tag "
+                + "--title \"DSL rules ${RULE_CENTER_PACKAGE_VERSION}\" "
+                + "--notes-file build/rule-center-publish/release/release-notes.md",
+                releaseCommand);
+        return List.of(
+                "build/rule-center-publish/release/rule-package.zip",
+                "build/rule-center-publish/release/manifest.json",
+                "build/rule-center-publish/release/release-report.json");
     }
 }
