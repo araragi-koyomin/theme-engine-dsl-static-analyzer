@@ -1,3 +1,9 @@
+---
+module_ids: [CORE, E2E]
+doc_kind: plan
+status: active
+created: 2026-07-17
+---
 # 质量门禁与工作流改革 — 实现计划（Phase A）
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

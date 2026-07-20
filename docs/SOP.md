@@ -1,3 +1,9 @@
+---
+module_ids: [CORE]
+doc_kind: guide
+status: active
+created: 2026-07-17
+---
 # SOP: 开发全流程导航图
 
 > 用途：Debug 定位（主要） + 新功能开发启动 + 代码库导航。
@@ -45,6 +51,19 @@ L4 子进程   → src/test/java/.../core/e2e/FatJarSubprocessE2ETest.java
 
 常见陷阱和防护措施详见 `docs/knowledge/lessons-learned.md`（7-slot 模板，每条有可追溯来源锚点和可执行防护机制）。
 
+### 1.4 改动 canary（防质量剧场）
+
+改动前/后各跑一次，diff 输出验证改动有（或如预期无）实效：
+
+```bash
+bash scripts/canary-real-run.sh > /tmp/canary-before.out
+# ...改动 + 重建...
+bash scripts/canary-real-run.sh > /tmp/canary-after.out
+diff /tmp/canary-before.out /tmp/canary-after.out
+```
+
+纯 refactor/测试基建→预期空 diff；行为修复→预期非空 diff。详见 AGENTS.md"可证伪性原则"。
+
 ---
 
 ## 2. 新功能开发
@@ -64,6 +83,7 @@ main (稳定,全量门禁绿)
 | PHASE | 做什么 | 产出放哪 | 验证方式 |
 |---|---|---|---|
 | 1 需求澄清 | 向用户提问直到无歧义 | `docs/development/specs/<phase>/phase1-requirements.md` | 用户确认 |
+| 1.5 改动 canary | 用真实 DSL 脚本跑 jar diff main vs 改后，声明预期 delta，actual≠expected→查 | — | canary 输出 diff |
 | 2 规格定义 | 定义接口契约(输入/输出/前后置/异常) | `docs/development/specs/<phase>/phase2-spec.md` | 用户确认 |
 | 3 设计 | 类图/时序图/模块职责/可测试性 | `docs/development/specs/<phase>/phase3-design.md` | 用户确认 |
 | 4 任务拆分 | 15-30min 粒度 TDD 任务 | `docs/development/specs/<phase>/phase4-tasks.md` | 用户确认 |
