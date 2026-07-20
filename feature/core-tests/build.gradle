@@ -1,0 +1,82 @@
+// Plain Java subproject (no org.jetbrains.intellij plugin) that hosts core
+// unit tests so they run under the default system classloader, letting the
+// JaCoCo agent record real coverage. Excluded from the root subprojects{}
+// intellij-plugin block in build.gradle. java/sourceSets are inherited from
+// the root allprojects/subprojects blocks.
+apply plugin: 'jacoco'
+
+jacoco {
+    toolVersion = '0.8.11'
+}
+
+dependencies {
+    // Provides the compiled core classes under test.
+    implementation project(':feature:analysis')
+    implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'org.antlr:antlr4-runtime:4.13.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.3'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
+}
+
+sourceSets {
+    test {
+        java.srcDirs 'src/test/java'
+        resources.srcDirs 'src/test/resources', '../analysis/src/test/resources'
+    }
+}
+
+test {
+    useJUnitPlatform()
+    // Migrated core tests resolve fixtures/rules via filesystem paths built
+    // from System.getProperty("user.dir") (e.g. DslFileIdentifierTest reads
+    // src/main/resources/rules and src/test/resources/dsl). Under
+    // :feature:core-tests the CWD would be this module, which has no
+    // main/resources, so point the forked test JVM at the analysis module
+    // dir where those resources actually live. Build config only — no test
+    // or main source change, so the canary is unaffected.
+    workingDir = project(':feature:analysis').projectDir
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    // The classes under test live in :feature:analysis main output (core-tests
+    // has no main source of its own). Point the report at analysis's classes
+    // and sources so coverage for the exercised core classes is rendered.
+    dependsOn test
+    classDirectories.setFrom(fileTree("${project(':feature:analysis').layout.buildDirectory.get().asFile}/classes/java/main") {
+        include 'com/huawei/theme/analysis/core/**'
+    })
+    sourceDirectories.setFrom(project(':feature:analysis').sourceSets.main.allSource)
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    // Mirror jacocoTestReport's classDirectories + executionData. By default
+    // the verification task uses sourceSets.main.output (EMPTY for core-tests,
+    // which has no main source) and trivially passes = theater. The gate
+    // canary caught this: minimum was raised to 1.0 and the gate did NOT trip
+    // until classDirectories + executionData were wired here. After the fix,
+    // minimum=1.0 trips correctly ("lines covered ratio is 0.8, expected 1.0").
+    // minimum=0.80 satisfies the AGENTS.md quality gate (>80% LINE coverage);
+    // real coverage is ~82.5% (4274/5180) after migrating ~880 core unit tests
+    // here (away from the intellij-plugin PathClassLoader that recorded 0%).
+    classDirectories.setFrom(fileTree("${project(':feature:analysis').layout.buildDirectory.get().asFile}/classes/java/main") {
+        include 'com/huawei/theme/analysis/core/**'
+    })
+    executionData.setFrom(jacocoTestReport.executionData)
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+        }
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification

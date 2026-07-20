@@ -322,6 +322,12 @@ class ConstraintAnalyzerTest {
 
     @Test
     void evaluationContextIncludesScopeAndDeviceSupport() {
+        // FIX004 b2 P4: was theater — `assertEquals(2, diagnostics.size())`
+        // was count-only; 2 wrong-rule-ID diagnostics would still pass. The
+        // test's name claims the evaluation context includes scope and device
+        // support so BOTH constraints (SEM-CMD-001 + SEM-SCOPE-TEST) trigger.
+        // Now: also verify specific ruleIds are present so wrong rule IDs or
+        // a single constraint triggering twice would be caught.
         DslElementNode node = element("VideoCommand", Map.of("play", "1", "sound", "0.5"));
         RuleConstraint scopeConstraint = RuleConstraint.builder()
                 .ruleId("SEM-SCOPE-TEST")
@@ -337,6 +343,14 @@ class ConstraintAnalyzerTest {
         List<Diagnostic> diagnostics = analyzer.analyze(node, context(ruleRepo));
 
         assertEquals(2, diagnostics.size());
+        boolean hasCmd001 = diagnostics.stream().anyMatch(d -> d.getRuleId().equals("SEM-CMD-001"));
+        boolean hasScopeTest = diagnostics.stream().anyMatch(d -> d.getRuleId().equals("SEM-SCOPE-TEST"));
+        assertTrue(hasCmd001,
+                "Expected SEM-CMD-001 (play+sound mutual exclusion); got ruleIds: "
+                        + diagnostics.stream().map(Diagnostic::getRuleId).toList());
+        assertTrue(hasScopeTest,
+                "Expected SEM-SCOPE-TEST (scope constraint on play attr); got ruleIds: "
+                        + diagnostics.stream().map(Diagnostic::getRuleId).toList());
     }
 
     @Test

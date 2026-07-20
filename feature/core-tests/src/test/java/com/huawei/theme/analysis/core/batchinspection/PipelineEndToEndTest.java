@@ -107,17 +107,18 @@ class PipelineEndToEndTest {
 
     @Test
     void exitCodeZeroForCleanFile() {
+        // FIX004 C7: was theater — accepted exit 1 + errorCount<=2 for a "clean"
+        // file, encoding false positives as OK. Canary: inject 1 false-positive
+        // ERROR per file → original test took else branch, errorCount<=2 passed
+        // + exitCode==1 passed = theater confirmed. Now: strict — clean file
+        // must have ZERO errors and exit 0 (no false positives tolerated).
         Path cleanFile = fixturesDir.resolve("clean").resolve("lockscreen_valid.xml");
         BatchInspectionResult result = runner.runOnFile(cleanFile.toString());
-        if (result.getErrorCount() == 0) {
-            assertEquals(0, ExitCodeCalculator.compute(result),
-                    "Clean file with 0 errors should produce exit code 0");
-        } else {
-            assertTrue(result.getErrorCount() <= 2,
-                    "Clean file should have minimal errors, got " + result.getErrorCount());
-            assertEquals(1, ExitCodeCalculator.compute(result),
-                    "Clean file with errors should produce exit code 1, got errors=" + result.getErrorCount());
-        }
+        assertEquals(0, result.getErrorCount(),
+                "clean file must produce ZERO errors (no false positives tolerated); got: "
+                        + result.getFileResults().get(0).getDiagnostics());
+        assertEquals(0, ExitCodeCalculator.compute(result),
+                "clean file with 0 errors must produce exit code 0");
     }
 
     @Test
@@ -139,10 +140,17 @@ class PipelineEndToEndTest {
 
     @Test
     void allFormatsContainSameRuleIdsForDirectory() {
+        // FIX004 b2 P1: was theater — guard `if (fileResults.isEmpty() ||
+        // errorCount==0) return;` skipped all assertions when analyzer produced
+        // 0 diagnostics, masking silent analyzer failure. Canary: mutate
+        // DiagnosticProviderImpl to return empty → original test passed = theater
+        // confirmed. Now: strict — directory must produce errors, then verify
+        // formats contain matching rule IDs.
         BatchInspectionResult result = runner.runOnDirectory(fixturesDir.toString());
-        if (result.getFileResults().isEmpty() || result.getErrorCount() == 0) {
-            return;
-        }
+        assertFalse(result.getFileResults().isEmpty(),
+                "directory scan should produce file results; got empty");
+        assertTrue(result.getErrorCount() > 0,
+                "fixtures directory should produce errors; got: " + result.getErrorCount());
         Set<String> ruleIdsFromJson = extractRuleIdsFromJson(exporter.exportJson(result));
         Set<String> ruleIdsFromTerminal = extractRuleIdsFromTerminal(noColorFormatter.formatFullReport(result));
         Set<String> ruleIdsFromMarkdown = extractRuleIdsFromMarkdown(exporter.exportMarkdown(result));
@@ -157,20 +165,27 @@ class PipelineEndToEndTest {
 
     @Test
     void allFormatsSummaryMatchesExitCode() {
+        // FIX004 b2 P1: was theater — guard `if (exitCode == 1) {...}` meant
+        // any other exit code (e.g., 0 from silent analyzer failure) caused
+        // the test to pass vacuously with no assertions. Canary: mutate
+        // DiagnosticProviderImpl to return empty → exitCode=0, original test
+        // took else branch and passed = theater confirmed. Now: strict — file
+        // must produce exit code 1, then verify all format summaries show error.
         Path errorFile = fixturesDir.resolve("lockscreen_type_and_ref.xml");
         BatchInspectionResult result = runner.runOnFile(errorFile.toString());
         int exitCode = ExitCodeCalculator.compute(result);
-        if (exitCode == 1) {
-            String json = exporter.exportJson(result);
-            assertTrue(json.contains("\"severity\": \"error\""),
-                    "Exit code 1 but JSON has no error severity");
-            String terminal = noColorFormatter.formatFullReport(result);
-            assertTrue(terminal.contains("error"),
-                    "Exit code 1 but Terminal has no error");
-            String markdown = exporter.exportMarkdown(result);
-            assertTrue(markdown.contains("Error"),
-                    "Exit code 1 but Markdown has no Error section");
-        }
+        assertEquals(1, exitCode,
+                "lockscreen_type_and_ref.xml should produce exit code 1; got: " + exitCode
+                        + " (errorCount=" + result.getErrorCount() + ")");
+        String json = exporter.exportJson(result);
+        assertTrue(json.contains("\"severity\": \"error\""),
+                "Exit code 1 but JSON has no error severity");
+        String terminal = noColorFormatter.formatFullReport(result);
+        assertTrue(terminal.contains("error"),
+                "Exit code 1 but Terminal has no error");
+        String markdown = exporter.exportMarkdown(result);
+        assertTrue(markdown.contains("Error"),
+                "Exit code 1 but Markdown has no Error section");
     }
 
     @Test
@@ -289,27 +304,44 @@ class PipelineEndToEndTest {
 
     @Test
     void eachErrorFileHasThreeOrMoreDiagnostics() {
+        // FIX004 b2 P1: was theater — `if (diagnostics.isEmpty()) continue;`
+        // caused the test to silently skip every file when analyzer produced 0
+        // diagnostics, ending the loop with zero assertions executed. Canary:
+        // DiagnosticProviderImpl.analyze → return empty → original test passed
+        // = theater confirmed. Now: strict — count error files explicitly,
+        // require >=1 error file, and fail any file whose diagnostics list is
+        // unexpectedly empty (rather than silently skipping).
         BatchInspectionResult result = runner.runOnDirectory(fixturesDir.toString());
+        int errorFileCount = 0;
         for (FileDiagnosticResult fr : result.getFileResults()) {
             String fileName = Path.of(fr.getFilePath()).getFileName().toString();
             if (fileName.contains("lockscreen_valid")) {
                 continue;
             }
-            if (fr.getDiagnostics() == null || fr.getDiagnostics().isEmpty()) {
-                continue;
-            }
-            assertTrue(fr.getDiagnostics().size() >= 3,
-                    fileName + " should have at least 3 diagnostics, got " + fr.getDiagnostics().size()
-                            + " ruleIds: " + fr.getDiagnostics().stream().map(Diagnostic::getRuleId).collect(Collectors.toSet()));
+            errorFileCount++;
+            List<Diagnostic> diags = fr.getDiagnostics() == null ? List.of() : fr.getDiagnostics();
+            assertFalse(diags.isEmpty(),
+                    "error file " + fileName + " should have diagnostics; got empty list");
+            assertTrue(diags.size() >= 3,
+                    fileName + " should have at least 3 diagnostics, got " + diags.size()
+                            + " ruleIds: " + diags.stream().map(Diagnostic::getRuleId).collect(Collectors.toSet()));
         }
+        assertTrue(errorFileCount >= 1,
+                "expected at least 1 error file in fixtures directory; got " + errorFileCount
+                        + " (totalFiles=" + result.getTotalFiles() + ")");
     }
 
     @Test
     void cleanFileHasMinimalOrZeroErrors() {
+        // FIX004 C6: was theater — asserted errorCount<=2 on a "clean" file,
+        // tolerating up to 2 false positives. Canary: inject 1 false-positive
+        // ERROR per file → errorCount<=2 still passed = theater confirmed.
+        // Now: strict — clean file must have ZERO errors.
         Path cleanFile = fixturesDir.resolve("clean").resolve("lockscreen_valid.xml");
         BatchInspectionResult result = runner.runOnFile(cleanFile.toString());
-        assertTrue(result.getErrorCount() <= 2,
-                "Clean file should have minimal errors, got " + result.getErrorCount());
+        assertEquals(0, result.getErrorCount(),
+                "clean file must produce ZERO errors (no false positives tolerated); got: "
+                        + result.getFileResults().get(0).getDiagnostics());
     }
 
     @Test
@@ -328,11 +360,20 @@ class PipelineEndToEndTest {
 
     @Test
     void terminalColorAndNoColorConsistentContent() {
+        // FIX004 b2 P1: was theater — guard `if (fileResults.isEmpty() ||
+        // getDiagnostics().isEmpty()) return;` skipped all assertions when
+        // analyzer produced 0 diagnostics, masking silent analyzer failure.
+        // Canary: DiagnosticProviderImpl.analyze → return empty → original
+        // test returned early and passed = theater confirmed. Now: strict —
+        // file must produce a non-empty result with diagnostics, then verify
+        // color stripped of ANSI equals no-color output.
         Path errorFile = fixturesDir.resolve("wallpaper_constraint_enum.xml");
         BatchInspectionResult result = runner.runOnFile(errorFile.toString());
-        if (result.getFileResults().isEmpty() || result.getFileResults().get(0).getDiagnostics().isEmpty()) {
-            return;
-        }
+        assertFalse(result.getFileResults().isEmpty(),
+                "wallpaper_constraint_enum.xml should produce a file result; got empty");
+        List<Diagnostic> diagnostics = result.getFileResults().get(0).getDiagnostics();
+        assertFalse(diagnostics.isEmpty(),
+                "wallpaper_constraint_enum.xml should produce diagnostics; got empty list");
         String noColor = noColorFormatter.formatFullReport(result);
         String color = colorFormatter.formatFullReport(result);
         String noColorStripped = color.replaceAll("\u001B\\[[0-9;]*m", "");

@@ -74,6 +74,18 @@
 | 编译告警 | 0 |
 | spec/design/code 一致性 | 无未说明的偏差 |
 
+### 可证伪性原则（Anti-Theater Canaries）
+
+每个产物（改动/测试/门禁）必须有"能反证它在干活"的机制。无反证通道 = 剧场（0% 覆盖率报告、假绿测、零效果 SDD 都是此病）。三条 canary：
+
+| canary | 触发 | 运行 | 信号 |
+|---|---|---|---|
+| **改动 canary** | 任何改 analyzer 行为的 fix/feat（纯 doc/纯 refactor 豁免且不走 SDD） | PHASE 2 前用 ≥1 真实 DSL 脚本跑 `java -jar dsl-analyzer.jar --format json <f>`，diff main vs 改后；新功能无 main 基线→构造应触发新行为的真实输入确认触发。运行器：`bash scripts/canary-real-run.sh`（5 真实 DSL 脚本语料） | 先声明预期 delta（refactor/测试基建=预期空；行为修复/新功能=预期非空）；`actual≠expected`→查（空 diff 撞"声称行为修复"=剧场→废弃；非空撞"声称 refactor"=回归→查副作用）；`actual=expected`→进 SDD |
+| **测试 canary** | 任何声称"防 bug X"的测试 | 注入 bug X（mutate SUT 重引入），跑该测试 | 绿→红=真测试；仍绿=剧场→修或删 |
+| **门禁 canary** | 每个 CI 门禁（含 `jacocoTestCoverageVerification`） | 引入门禁时喂已知坏输入，确认门禁 trip（build fail/非 0 退出/测试红）；文档化一次 | 能 trip=活门禁；不能 trip=剧场。不每次 CI 跑，引入时一次+文档化 |
+
+**meta-canary**：每条规则必须含"运行命令+信号"。无具体命令/信号的规则=剧场，不许入文。
+
 ### 阶段切换规则
 
 - 每个 PHASE 完成后，**向用户展示产出物并请求确认**，用户确认后再进入下一 PHASE。

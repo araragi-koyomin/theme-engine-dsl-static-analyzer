@@ -80,6 +80,12 @@ class BatchInspectionRealScenarioTest {
 
     @Test
     void multiErrorLockscreenProducesDiverseRuleIds() {
+        // FIX004 b2 P4: was theater — `ruleIds.size() >= 5` was count-only;
+        // 5 wrong-rule-ID diagnostics would still pass. Canary: mutate
+        // VarRefAnalyzer RULE_REF_* → "SEM-REF-FAKE" → original test still
+        // passed (other analyzers still produced 5+ distinct IDs) = theater
+        // confirmed. Now: also verify specific rule IDs are present so wrong
+        // rule IDs from any analyzer are caught.
         Path multiErrorFile = fixturesDir.resolve("lockscreen_multi_error.xml");
         BatchInspectionResult result = runner.runOnFile(multiErrorFile.toString());
         assertTrue(result.getTotalFiles() > 0);
@@ -89,6 +95,10 @@ class BatchInspectionRealScenarioTest {
         Set<String> ruleIds = diagnostics.stream().map(Diagnostic::getRuleId).collect(Collectors.toSet());
         assertTrue(ruleIds.size() >= 5,
                 "Expected at least 5 different rule IDs, got: " + ruleIds);
+        assertTrue(ruleIds.contains("SEM-REF-001"),
+                "Expected SEM-REF-001 (#undefined_var in Image.x) in ruleIds: " + ruleIds);
+        assertTrue(ruleIds.contains("SEM-REF-003"),
+                "Expected SEM-REF-003 (duplicate Var name=dup_var) in ruleIds: " + ruleIds);
     }
 
     @Test
@@ -193,12 +203,17 @@ class BatchInspectionRealScenarioTest {
 
     @Test
     void cleanLockscreenHasMinimalErrors() {
+        // FIX004 C8: was theater — asserted errorCount<=2 on a "clean" file,
+        // tolerating up to 2 false positives. Canary: inject 1 false-positive
+        // ERROR per file → errorCount<=2 still passed = theater confirmed.
+        // Now: strict — clean file must have ZERO errors.
         Path cleanFile = fixturesDir.resolve("clean").resolve("lockscreen_valid.xml");
         BatchInspectionResult result = runner.runOnFile(cleanFile.toString());
         assertEquals(1, result.getTotalFiles());
         assertEquals(0, result.getSkippedFiles());
-        assertTrue(result.getErrorCount() <= 2,
-                "Clean file should have minimal errors, got " + result.getErrorCount());
+        assertEquals(0, result.getErrorCount(),
+                "clean lockscreen must produce ZERO errors (no false positives tolerated); got: "
+                        + result.getFileResults().get(0).getDiagnostics());
     }
 
     @Test
@@ -237,23 +252,36 @@ class BatchInspectionRealScenarioTest {
 
     @Test
     void noColorFormatterProducesValidReport() {
+        // FIX004 b2 P1: was theater — guard `if (errorCount > 0) {...}` skipped
+        // all assertions when analyzer produced 0 diagnostics. Canary: mutate
+        // DiagnosticProviderImpl to return empty → errorCount=0, original test
+        // took else branch and passed = theater confirmed. Now: strict —
+        // fixtures dir must produce errors, then verify no-color report content.
         BatchInspectionResult result = runner.runOnDirectory(fixturesDir.toString());
-        if (result.getErrorCount() > 0) {
-            String report = noColorFormatter.formatFullReport(result);
-            assertFalse(report.contains("\u001B["));
-            assertTrue(report.contains("errors"));
-            assertTrue(report.contains("lockscreen_multi_error"));
-        }
+        assertTrue(result.getErrorCount() > 0,
+                "fixtures directory should produce errors; got: " + result.getErrorCount());
+        String report = noColorFormatter.formatFullReport(result);
+        assertFalse(report.contains("\u001B["),
+                "no-color formatter must not emit ANSI escape codes");
+        assertTrue(report.contains("errors"),
+                "report should mention 'errors' summary");
+        assertTrue(report.contains("lockscreen_multi_error"),
+                "report should include file name 'lockscreen_multi_error'");
     }
 
     @Test
     void colorFormatterProducesAnsiReport() {
+        // FIX004 b2 P1: was theater — guard `if (errorCount > 0) {...}` skipped
+        // all assertions when analyzer produced 0 diagnostics. Canary: mutate
+        // DiagnosticProviderImpl to return empty → errorCount=0, original test
+        // took else branch and passed = theater confirmed. Now: strict —
+        // fixtures dir must produce errors, then verify color report has ANSI.
         BatchInspectionResult result = runner.runOnDirectory(fixturesDir.toString());
-        if (result.getErrorCount() > 0) {
-            String report = colorFormatter.formatFullReport(result);
-            assertTrue(report.contains("\u001B[31m"),
-                    "Expected ANSI red color codes in color formatter output");
-        }
+        assertTrue(result.getErrorCount() > 0,
+                "fixtures directory should produce errors; got: " + result.getErrorCount());
+        String report = colorFormatter.formatFullReport(result);
+        assertTrue(report.contains("\u001B[31m"),
+                "Expected ANSI red color codes in color formatter output; report=" + report);
     }
 
     @Test

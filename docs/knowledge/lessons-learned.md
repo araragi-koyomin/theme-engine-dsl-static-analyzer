@@ -101,3 +101,48 @@ created: 2026-07-15
 - 修复：main 已 merge（不回退历史改写风险大），后续 PR 需用户手动选 "Squash and merge" 下拉
 - 防护：GitHub 仓库 Settings → General → Pull Request merges 关闭 "Allow merge commits" 只留 "Allow squash merging"；或 branch protection rule 要求 squash
 - 来源锚点：FIX002 PR #88, SOP §2.3 step 5
+
+### LL-011: SDD 流程未能阻止过度工程化
+- 状态：validated
+- 坑：FIX006（diagnostic 定位精确化）用 6 阶段 SDD + 15 commit + 2 轮 review + 双模式设计（模式 A `astNode(attr)` / 模式 B `positionFromExpr`）+ 零宽保护 + 0,0 回退 + 5 golden 更新 + quickfix 回归修复，最终在真实 DSL 脚本上验证零效果——三个分支（main / fix:typeanalyzer / fix:FIX006）输出完全一致。contributor 用 1 个 commit 在 1 个文件完成 TypeAnalyzer 部分，效果相同。
+- 根因：SDD 的 PHASE 1-4（需求/规格/设计/任务）把一个"改 `.astNode()` 参数"的简单改动放大为多契约设计，引入了不必要的复杂度（双模式、helper、零宽保护）。设计文档让过度设计被"正当化"——每多一个"模式"都有 spec 条目背书。
+- 触发条件：用 SDD 重流程处理本质上简单的改动；设计阶段引入"通用框架"思维（positionFromExpr helper、模式分类）而非最小改动
+- 修复：废弃整个分支
+- 防护：改动前先用真实 DSL 脚本跑 CLI 对比预期效果——如果 main 和改后输出无差异，改动无意义，不应进入 SDD。SDD PHASE 1 应包含"在真实输入上验证改动确实产生可见差异"的前置检查。简单改动（改参数/改常量/改一行）不应走完整 6 阶段 SDD。
+- 来源锚点：FIX006 全流程，用户用 `script_test.xml` 验证零效果后废弃
+
+### LL-012: 未在真实输入上验证就投入开发
+- 状态：validated
+- 坑：FIX006 从 PHASE 1 到 PHASE 6 + review，全程用单元测试和 golden fixture 验证，但从未在真实 DSL 脚本上跑 CLI 对比。直到用户用 `script_test.xml` 测试才发现三个分支输出完全一致——ConstraintAnalyzer 改了 condition 正则提取首属性，但单行元素的属性 col 与元素 col 相同，改动被吞掉。
+- 根因：测试 fixture 是为"触发规则"设计的最小输入，不反映真实 DSL 的元素结构（单行多属性、属性在同一行）。golden 的 `lineTolerance: 2` 和"不检查 col"进一步掩盖了差异。SDD 流程中无"真实输入端到端验证"环节。
+- 触发条件：仅用单元测试/fixture 验证，跳过真实 DSL 脚本的 CLI 输出对比
+- 修复：用户介入，用 `script_test.xml` 对比三个分支，发现零差异后废弃
+- 防护：PHASE 5 GREEN 后、PHASE 6 前，必须用至少一个真实 DSL 脚本跑 `java -jar dsl-analyzer.jar --format json` 对比 main 和改后输出。如果输出无差异，改动无效，应废弃或重新评估。
+- 来源锚点：FIX006，用户用 `script_test.xml` + `type_inference_edge_cases.xml` 对比
+
+### LL-013: review 发现的 bug 被跳过修复直接推进
+- 状态：validated
+- 坑：FIX006 review 发现 Important 级 quickfix 回归（ClampValueGenerator/ConstraintFixGenerator 的 `instanceof DslElementNode` 在 astNode 改为 DslAttributeNode 后失败），跳过修复直接登记到 BACKLOG 并推进到文档状态更新。用户指出后修复，但首次"验证"用的仍是不覆盖该场景的既有测试——直到被指出后才补端到端测试。
+- 根因：将"记录到 backlog"等同于"已处理"；用不覆盖 bug 场景的测试验证修复
+- 触发条件：review 标记 Important 后未立即修复就推进
+- 修复：用户两次纠正——(1) 修复 generator (2) 补端到端测试
+- 防护：review 的 Important/Critical 必须在推进前修复并用覆盖该 bug 场景的测试验证，不可用不相关的既有测试替代
+- 来源锚点：FIX006 review Important, 用户两次纠正
+
+### LL-014: JaCoCo 0% 覆盖率门禁剧场
+- 状态：validated
+- 坑：JaCoCo `jacocoTestReport` 一直报 LINE covered=0/6594，但 `test.exec` 非空、880 测试在跑。被当门禁存在数月，无人发现它报 0。加 `jacocoTestCoverageVerification` 时设 minimum=1.0，build 仍 SUCCESSFUL——门禁不 trip，是剧场。
+- 根因：gradle-intellij 插件强制 test JVM 用 `com.intellij.util.lang.PathClassLoader`，JaCoCo load-time agent 无法记录经该 classloader 加载的项目类（test.exec 只含 gradle-infra 类）；又 `jacocoTestCoverageVerification` 默认用 `sourceSets.main.output`（core-tests 无 main → 空 classDirectories）→ trivially pass。无门禁 canary，故 0% 报告长期"绿"。
+- 触发条件：IntelliJ 插件模块套 JaCoCo 但无"门禁能 trip"的 canary；verification 任务用空 classDirectories
+- 修复：迁 core 单测到无 intellij 插件的 `feature:core-tests`（默认 classloader）→ JaCoCo 记录非零（LINE 4274/5180 = 82.5%）；给 verification 显式设 classDirectories(core/**) + executionData；加 `jacocoTestCoverageVerification`（minimum=0.80）+ 门禁 canary（minimum=1.0 验证可 trip）
+- 防护：每个 CI 门禁引入时必须喂已知坏输入证明能 trip（门禁 canary，见 AGENTS.md"可证伪性原则"）
+- 来源锚点：审计 R1 + commit 4423ac2（门禁 canary 抓到空 classDirectories 剧场 bug）
+
+### LL-015: 可证伪性原则（Anti-Theater Canaries）
+- 状态：validated
+- 坑：流程层（FIX006 6 阶段 SDD 零效果，LL-011）、测试层（假绿测掩盖真 bug，LL-008）、门禁层（0% 覆盖率"绿"，LL-014）三处同病——"通过"信号不等于"在干活"。
+- 根因：缺"可证伪性"——整套流程没有机制能反证"这个绿/这个流程/这个门禁"其实没在干活。全是"看起来对"，没有"能反证它在量/在干活"的通道。
+- 触发条件：任何产物加"通过"信号却不加"能 fail"的反证通道
+- 修复：给改动/测试/门禁各加一条 canary（见 AGENTS.md"可证伪性原则"节）：改动 canary（真实 DSL 脚本跑 jar diff）、测试 canary（注入 bug 确认测试 fail）、门禁 canary（喂坏输入确认门禁 trip）
+- 防护：meta-canary——每条规则必须含"运行命令+信号"，无具体命令/信号的规则=剧场，不许入文
+- 来源锚点：本 reform（docs/development/specs/quality-gates/）+ lesson.md LL-011/012/013

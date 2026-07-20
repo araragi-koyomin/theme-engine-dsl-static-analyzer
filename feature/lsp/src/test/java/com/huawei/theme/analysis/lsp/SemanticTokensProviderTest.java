@@ -114,15 +114,28 @@ class SemanticTokensProviderTest {
 
     @Test
     void emitsTokensAcrossMultipleLines() {
+        // FIX004 b2 LSP HIGH: was theater — used `hasToken(tokens, TYPE)` which
+        // only checks a token of that type exists ANYWHERE, not that tokens span
+        // multiple lines. The name "AcrossMultipleLines" was unverified. Canary:
+        // mutate deltaEncode to emit deltaLine=0 always (collapse all tokens to
+        // line 0) → original test still passed = theater confirmed. Now: use
+        // assertToken to verify tokens are on SPECIFIC lines (0, 1, 2) so the
+        // multi-line claim is actually verified.
         String text = "<?xml version=\"1.0\"?>\n"
                 + "<!-- comment -->\n"
                 + "<Lockscreen frameRate=\"60\"><Text x=\"#v\"/></Lockscreen>";
         List<int[]> tokens = decode(provider.collect("test.xml", text));
-        assertTrue(hasToken(tokens, TYPE_KEYWORD));    // xml decl
-        assertTrue(hasToken(tokens, TYPE_COMMENT));   // comment
-        assertTrue(hasToken(tokens, TYPE_TAG));        // Lockscreen / Text
-        assertTrue(hasToken(tokens, TYPE_ATTRIBUTE));  // frameRate / x
-        assertTrue(hasToken(tokens, TYPE_VARIABLE));   // #v
+        // line 0: XML declaration keyword
+        assertToken(tokens, 0, 0, 21, TYPE_KEYWORD);
+        // line 1: comment
+        assertToken(tokens, 1, 0, 16, TYPE_COMMENT);
+        // line 2: Lockscreen(tagRoot) + frameRate attr + "60" number + Text tag + x attr + #v var
+        assertToken(tokens, 2, 1, 10, TYPE_TAG_ROOT);  // "Lockscreen" — root tag
+        assertToken(tokens, 2, 12, 9, TYPE_ATTRIBUTE);   // "frameRate"
+        assertToken(tokens, 2, 23, 2, TYPE_NUMBER);      // "60" literal attr value
+        assertToken(tokens, 2, 28, 4, TYPE_TAG);         // "Text"
+        assertToken(tokens, 2, 33, 1, TYPE_ATTRIBUTE);   // "x"
+        assertToken(tokens, 2, 36, 2, TYPE_VARIABLE);    // "#v"
     }
 
     @Test

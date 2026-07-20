@@ -18,6 +18,8 @@ import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 import com.huawei.theme.analysis.core.syntaxanalysis.AstBuilder;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiagnosticProviderDegradationTest {
@@ -45,11 +47,25 @@ class DiagnosticProviderDegradationTest {
 
     @Test
     void analyzeWithNormalAnalyzersProducesDiagnostics() {
+        // FIX004 b2 P4: was theater — `assertTrue(diagnostics != null)` is
+        // trivially true (DiagnosticProviderImpl always returns a non-null
+        // list, even when empty). Canary: DiagnosticProviderImpl.analyze →
+        // return new ArrayList<>() → original test still passed = theater
+        // confirmed. Now: strict — Var with no name/type/expression must
+        // produce SEM-REQ-001 (RequiredAttrAnalyzer fires on missing attrs),
+        // so assert non-empty diagnostics list.
         AnalyzerRegistry.init();
         DslFileNode ast = astBuilder.getDslAst("test.xml", "<Lockscreen><Var/></Lockscreen>");
         List<Diagnostic> diagnostics = provider.analyze(ast, ruleRepo, symbolTableBuilder,
                 PipelineMode.FULL, InspectionConfig.builder().build(), null);
-        assertTrue(diagnostics != null);
+        assertNotNull(diagnostics, "diagnostics list must not be null");
+        assertFalse(diagnostics.isEmpty(),
+                "<Lockscreen><Var/></Lockscreen> should produce diagnostics (Var missing required "
+                        + "name/type attrs → SEM-REQ-001); got empty list");
+        boolean hasReq001 = diagnostics.stream().anyMatch(d -> d.getRuleId().equals("SEM-REQ-001"));
+        assertTrue(hasReq001,
+                "Expected SEM-REQ-001 for Var missing required attrs; got ruleIds: "
+                        + diagnostics.stream().map(Diagnostic::getRuleId).toList());
     }
 
     @Test

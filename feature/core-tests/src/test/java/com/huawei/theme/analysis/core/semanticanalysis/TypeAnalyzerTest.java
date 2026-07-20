@@ -229,6 +229,10 @@ class TypeAnalyzerTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("blocked by FIX003: TypeAnalyzer.java:53-56 early-returns on null functionLibrary, "
+            + "silently swallowing SEM-TYPE-* for non-function literals like 'hello' in number-context. "
+            + "FIX003 must remove the early-return (use empty stub instead) so literal type checks still run. "
+            + "Audit C2 — theater-masks-real-bug: original assertion assertTrue(isEmpty()) encoded the bug as correct.")
     void nullFunctionLibrarySkipped() {
         ExpressionNode expr = ExpressionNode.literal("hello", "'hello'", 1, 0);
         DslElementNode image = element("Image", 10, 5, exprAttr("x", expr, "'hello'"));
@@ -237,7 +241,17 @@ class TypeAnalyzerTest {
 
         List<Diagnostic> diagnostics = analyzer.analyze(image, ctx);
 
-        assertTrue(diagnostics.isEmpty());
+        // Correct behavior (post-FIX003): a string literal 'hello' placed in a
+        // number-context attribute (Image:x) must still produce SEM-TYPE-001
+        // regardless of whether a functionLibrary is configured — literal type
+        // checks do not depend on function signatures.
+        assertEquals(1, diagnostics.size(),
+                "string literal in number-context must produce SEM-TYPE-001 even when functionLibrary is null; got: "
+                        + diagnostics);
+        assertEquals("SEM-TYPE-001", diagnostics.get(0).getRuleId());
+        assertTrue(diagnostics.get(0).getMessage().contains("string"),
+                "SEM-TYPE-001 message should mention the string/number mismatch; got: "
+                        + diagnostics.get(0).getMessage());
     }
 
     @Test

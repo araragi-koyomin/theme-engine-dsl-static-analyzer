@@ -65,9 +65,23 @@ class SyntaxCheckerTest {
         assertFalse(hasRuleId(check("<Lockscreen><Image name=\"x\" src=\"a.png\"/></Lockscreen>"), "SYN-004"));
     }
 
-    // XML format error returns empty
+    // XML format error must surface a diagnostic (not silently swallowed)
     @Test
+    @org.junit.jupiter.api.Disabled("blocked by FIX006: SyntaxChecker.java:33-36 early-returns when "
+            + "root.isHasError(), silently swallowing malformed-XML errors that AstBuilder stored in "
+            + "root.getErrorMessage(). Correct behavior: emit a SYN-002 diagnostic with the XML parse "
+            + "error message so the user knows the file failed to parse. Audit C14 — theater-masks-real-bug, "
+            + "flagged 待确认设计意图 by audit; needs PHASE 1 to confirm SYN-002 rule + message format.")
     void xmlFormatErrorReturnsEmpty() {
-        assertTrue(check("<Lockscreen><Image></Lockscreen>").isEmpty());
+        // FIX004 C14: original assertion assertTrue(isEmpty()) encoded the
+        // silent-swallow behavior as correct. Correct behavior: malformed XML
+        // (unclosed <Image>) must produce a diagnostic, not be silently dropped.
+        List<Diagnostic> diags = check("<Lockscreen><Image></Lockscreen>");
+        assertFalse(diags.isEmpty(),
+                "malformed XML must produce a diagnostic; got empty list (silent swallow). "
+                        + "AstBuilder stored the XMLStreamException message in root.getErrorMessage(); "
+                        + "SyntaxChecker should surface it as SYN-002.");
+        assertTrue(hasRuleId(diags, "SYN-002"),
+                "malformed XML should produce SYN-002; got: " + diags);
     }
 }
