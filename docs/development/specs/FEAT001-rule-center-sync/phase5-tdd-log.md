@@ -54,3 +54,14 @@ created: 2026-07-20
 ## 2. 逐任务 RED / GREEN / REFACTOR
 
 后续每个 C/G/I 任务在独立提交前追加：失败命令与断言、最小通过命令、重构后命令、测试 canary mutation 和 commit SHA。
+
+### C01：中心仓 JSON 契约模型
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | Gradle 8.2 `--no-daemon :feature:core-tests:test --tests "com.huawei.theme.analysis.core.rulecenter.RuleCenterJsonCodecTest"` | 退出 1；`RuleCenterJsonCodec`、`RuleCandidate`、`ConstraintVerification`、`DocumentConversionFeedback` 等 16 个缺失符号，证明测试先于实现 |
+| GREEN | 同一目标测试命令 | 退出 0；5 个契约场景全部通过 |
+| REFACTOR | 同一命令追加 `--rerun-tasks` | 退出 0；20 个 Gradle task 实际执行，未依赖 up-to-date 假绿 |
+| 测试 canary | 临时让 `SKIPPED` 接受空 `skipReason`，只跑 `rejectsSkippedCandidateWithoutReasonAndValidationErrorWithoutFailure` | 退出 1；精确在测试第 52 行失败；恢复校验后全部 5 项重新通过 |
+
+实现仅包含共享 DTO、枚举和严格 Gson codec，不加载规则、不调用模型、不访问网络。任务提交信息为 `feat(C01): add strict rule center JSON contracts`；最终 SHA 在 Phase 6 提交矩阵记录。
