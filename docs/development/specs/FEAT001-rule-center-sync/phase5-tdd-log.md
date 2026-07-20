@@ -317,3 +317,13 @@ PR 验证现在只响应以受保护 `main` 为 base 的 `pull_request_target`�
 | 同名可信 step canary | 在保留 resolver step 名称与工作目录不变时临时追加 `../proposal/malicious.sh`，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterWorkflowContractTest.everyExecutablePullRequestStepStaysOutsideUntrustedCheckout"` | 退出 1；resolver 完整可信脚本断言失败；恢复后通过。 |
 
 版本选择不再由 shell 自行定义。`ApprovedReleaseVersionSelector` 直接复用客户端 `ReleaseVersionSupport`，流水线只负责分页取得合格不可变 Release tag 并把列表作为数据交给 Java；选中的 tag 和“新版本必须严格更高”使用同一比较结果。发布命令与 PR resolver 脚本均改为完整结构断言，不能靠把额外内容移动到 flags 后或保留 step 名称逃过测试。
+
+### Review A 数值边界修复：任意精度版本段
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*ApprovedReleaseVersionSelectorTest.numericSegmentsLargerThanIntegerRemainNumeric"` | 退出 1；旧比较器溢出后把 `3.0` 误选为高于 `2147483648.0`。 |
+| GREEN / REFACTOR | `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*ApprovedReleaseVersionSelectorTest" --tests "*ReleaseCatalogContractTest" --tests "*GitHubReleaseBackendTest"` | 退出 0；版本选择、fixture/GitHub catalog 与 Release backend 共用任意精度比较后全部通过。 |
+| 溢出 canary | 临时把 `BigInteger` 解析改回 `Integer.parseInt`，运行 `.\gradlew.bat --no-daemon :feature:core-tests:test --tests "*ApprovedReleaseVersionSelectorTest.numericSegmentsLargerThanIntegerRemainNumeric"` | 退出 1；超 32 位版本段重新走错误字符串顺序，测试精确变红；恢复后通过。 |
+
+`ReleaseVersionSupport` 现在逐段使用 `BigInteger` 比较；中心发布基线、客户端更新发现和兼容性判断不再因整数溢出退化为字典序。

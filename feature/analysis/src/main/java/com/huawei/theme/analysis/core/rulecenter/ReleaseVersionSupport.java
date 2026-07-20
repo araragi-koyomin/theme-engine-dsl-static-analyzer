@@ -1,21 +1,26 @@
 package com.huawei.theme.analysis.core.rulecenter;
 
+import java.math.BigInteger;
+
 final class ReleaseVersionSupport {
     private ReleaseVersionSupport() {
     }
 
     static int compare(String left, String right) {
-        int[] leftParts = parse(left);
-        int[] rightParts = parse(right);
+        BigInteger[] leftParts = parse(left);
+        BigInteger[] rightParts = parse(right);
         if (leftParts == null || rightParts == null) {
             return left.compareTo(right);
         }
         int length = Math.max(leftParts.length, rightParts.length);
         for (int index = 0; index < length; index++) {
-            int leftValue = index < leftParts.length ? leftParts[index] : 0;
-            int rightValue = index < rightParts.length ? rightParts[index] : 0;
-            if (leftValue != rightValue) {
-                return Integer.compare(leftValue, rightValue);
+            BigInteger leftValue = index < leftParts.length
+                    ? leftParts[index] : BigInteger.ZERO;
+            BigInteger rightValue = index < rightParts.length
+                    ? rightParts[index] : BigInteger.ZERO;
+            int comparison = leftValue.compareTo(rightValue);
+            if (comparison != 0) {
+                return comparison;
             }
         }
         return 0;
@@ -25,26 +30,26 @@ final class ReleaseVersionSupport {
         if (minimumAnalyzerVersion == null || minimumAnalyzerVersion.isEmpty()) {
             return true;
         }
-        int[] current = parse(analyzerVersion);
-        int[] minimum = parse(minimumAnalyzerVersion);
+        BigInteger[] current = parse(analyzerVersion);
+        BigInteger[] minimum = parse(minimumAnalyzerVersion);
         if (current == null || minimum == null) {
             return false;
         }
         return compare(analyzerVersion, minimumAnalyzerVersion) >= 0;
     }
 
-    private static int[] parse(String version) {
+    private static BigInteger[] parse(String version) {
         if (version == null || version.isEmpty()) {
             return null;
         }
         String[] parts = version.split("\\.");
-        int[] values = new int[parts.length];
+        BigInteger[] values = new BigInteger[parts.length];
         try {
             for (int index = 0; index < parts.length; index++) {
                 if (!parts[index].matches("\\d+")) {
                     return null;
                 }
-                values[index] = Integer.parseInt(parts[index]);
+                values[index] = new BigInteger(parts[index]);
             }
             return values;
         } catch (NumberFormatException exception) {

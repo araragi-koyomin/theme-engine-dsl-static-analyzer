@@ -33,4 +33,14 @@ class ApprovedReleaseVersionSelectorTest {
         assertEquals("", ApprovedReleaseVersionSelector.selectLatestAndRequireNewer(
                 List.of(), "1.0.0"));
     }
+
+    @Test
+    void numericSegmentsLargerThanIntegerRemainNumeric() {
+        List<String> tags = List.of("rules-v2147483648.0", "rules-v3.0");
+
+        assertEquals("rules-v2147483648.0",
+                ApprovedReleaseVersionSelector.selectLatestTag(tags));
+        assertThrows(IllegalArgumentException.class,
+                () -> ApprovedReleaseVersionSelector.selectLatestAndRequireNewer(tags, "3.0"));
+    }
 }
