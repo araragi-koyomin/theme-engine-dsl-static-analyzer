@@ -76,3 +76,15 @@ created: 2026-07-20
 | 测试 canary | 临时使 `containsExpression` 正则不匹配，运行其精确测试方法 | 退出 1；测试第 37 行失败；恢复后强制重跑全绿 |
 
 拒绝信号覆盖 `.endsWith()`、`number()`、`c => ...count()`、`element.parent.children`、不完整内置调用和依赖 child attrs 的未登记 Lambda。任务提交信息为 `feat(C02): register supported condition capabilities`。
+
+### C03：严格 condition 接受器
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | Gradle 8.2 `--no-daemon :feature:core-tests:test --tests "com.huawei.theme.analysis.core.rulecenter.StrictConditionAcceptorTest"` | 退出 1；acceptor、结果和状态共 13 个缺失符号 |
+| GREEN | 同一目标测试命令 | 退出 0；5 组真实 ANTLR lexer/parser 接受与拒绝测试通过 |
+| REFACTOR | 同一命令追加 `--rerun-tasks` | 退出 0；20 个 Gradle task 实际执行 |
+| 测试 canary（初次） | 移除 EOF 检查，但尾随输入使用 lexer 不认识的 `trailing` | 测试仍绿，证明原测试由 lexer 错误兜底、没有反证 EOF 门禁；该输入被废弃 |
+| 测试 canary（修正） | 尾随第二段合法 condition token，再移除 EOF 检查 | 退出 1；精确在第 56 行失败；恢复 EOF 检查后 5 组测试强制重跑通过 |
+
+该任务把“语法被接受”与“业务计算结果为 false”分离，并拒绝尾随合法 token、残缺表达式、未登记方法及 DSL 函数库函数。任务提交信息为 `feat(C03): strictly accept complete rule conditions`。
