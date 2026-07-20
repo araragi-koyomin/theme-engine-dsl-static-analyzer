@@ -1,7 +1,7 @@
 ---
 module_ids: [CORE, E2E]
 doc_kind: spec
-status: active
+status: archived
 created: 2026-07-17
 ---
 # 质量门禁与工作流改革 — 设计规格（Lean Spec）
@@ -106,7 +106,7 @@ created: 2026-07-17
 
 ## 10. 生命周期
 
-- **当前状态**：`status: active`（Phase A 已实现于 `fix/quality-gates`，awaiting merge）。
+- **当前状态**：`status: archived`（PR #93 squash-merged to main 2026-07-20；本目录已归档至 `docs/archive/2026-07/quality-gates/`）。
 - **merge to main 后**：本目录 `docs/development/specs/quality-gates/`（design.md + plan.md）归档至 `docs/archive/2026-07/quality-gates/`；`BACKLOG.md` FIX005 → done → 条目移除（热层只放活跃项）；`活跃分支` 表 fix/quality-gates 行移除。
 - **不归档**：`AGENTS.md` 可证伪性节 / `SOP.md` PHASE 1.5+§1.4 / `lessons-learned.md` LL-011~015 —— 活文档/活规则，长期保留。
 - **Phase B（FIX004）**：用本 Phase 建的 canary 方法（尤其测试 canary），单独 spec/plan，不在本目录。

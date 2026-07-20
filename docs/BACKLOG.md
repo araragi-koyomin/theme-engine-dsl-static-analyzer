@@ -39,8 +39,6 @@ created: 2026-07-15
 |---|---|---|---|---|
 | FIX001 | P0 Beta 闭环修复 | done | — | [→](development/specs/p0-bugfix/) |
 | FIX003 | TypeAnalyzer null 函数库静默吞 SEM-TYPE-* | pending | — | [审计 C2](development/reports/test-theater-audit-2026-07-15.md) |
-| FIX004 | 测试剧场治理（15 CRITICAL + 34 HIGH） | in-progress | fix/quality-gates | [审计报告](development/reports/test-theater-audit-2026-07-15.md)；Phase B batch1+2 done: 27修/9删/2@Disabled(C2→FIX003,C14→FIX006)/6假阳/1新bug(FIX006); awaiting merge |
-| FIX005 | 质量门禁与工作流改革（JaCoCo 0% 覆盖率 + 可证伪 canary 原则） | in-progress | fix/quality-gates | [→](development/specs/quality-gates/design.md) |
 | FIX006 | SyntaxChecker 静默吞 XML 解析错误（root.isHasError 短路返回空） | pending | — | [审计 C14](development/reports/test-theater-audit-2026-07-15.md)；待 PHASE 1 确认设计意图（是否应产出 SYN-002 诊断告知用户 XML 损坏） |
 | FIX007 | 测试剧场治理 MEDIUM+LOW（59+9） | pending | — | [审计报告](development/reports/test-theater-audit-2026-07-15.md)；CRITICAL+HIGH 已在 FIX004 治；MEDIUM(59)=existence 弱断言，LOW(9)=redundant/setter round-trip，ROI 递减留后续 |
 
@@ -49,7 +47,6 @@ created: 2026-07-15
 | 分支 | 描述 | PR |
 |---|---|---|
 | feature/doc-restructure | 文档管理体系重构(三层记忆 + frontmatter + stale 更新) | 待创建 |
-| fix/quality-gates | 质量门禁+工作流改革(JaCoCo 全量迁移+FIX004+可证伪 canary) | 待创建 |
 
 ## E2E 测试门禁
 
