@@ -17,10 +17,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.huawei.theme.analysis.core.rulecenter.model.CandidateStatus;
 import com.huawei.theme.analysis.core.rulecenter.model.RuleCandidate;
+import com.huawei.theme.analysis.core.rulecenter.model.TargetKind;
 
 public class GitHubModelsCandidateExtractionService implements CandidateExtractionService {
     private static final int SEED = 42;
     private static final double TEMPERATURE = 0.0;
+    private static final Set<TargetKind> SUPPORTED_TARGET_KINDS = Set.of(
+            TargetKind.ELEMENT, TargetKind.ELEMENT_ATTRIBUTE);
 
     private final GitHubModelsInferenceClient inferenceClient;
     private final String model;
@@ -98,6 +101,13 @@ public class GitHubModelsCandidateExtractionService implements CandidateExtracti
         if (!ids.add(candidate.getCandidateId())) {
             throw new CandidateExtractionException("duplicate candidateId: "
                     + candidate.getCandidateId());
+        }
+        if (candidate.getTarget() == null
+                || !SUPPORTED_TARGET_KINDS.contains(candidate.getTarget().getKind())) {
+            throw new CandidateExtractionException(
+                    "unsupported P1 target kind: "
+                            + (candidate.getTarget() == null
+                                    ? null : candidate.getTarget().getKind()));
         }
         RuleCandidate.SourceEvidence evidence = candidate.getSourceEvidence();
         int startLine = evidence.getLocation().getStartLine();
@@ -202,6 +212,9 @@ public class GitHubModelsCandidateExtractionService implements CandidateExtracti
                 + "Set evidenceConflict=true only when the document makes contradictory claims "
                 + "about the same static DSL-text behavior. A disclaimer that string paths do not "
                 + "imply file metadata does not conflict with an explicit attribute co-occurrence rule. "
+                + "Description values and constraint messages must copy exact wording from the quoted "
+                + "source evidence; do not paraphrase or add semantics. Every attribute and literal "
+                + "used by a condition must be explicitly named in that same evidence excerpt. "
                 + "Return status extracted only. Do not publish, skip, validate, or repair candidates. "
                 + "Examples demonstrate condition syntax only and never transfer business semantics.";
     }
@@ -245,8 +258,7 @@ public class GitHubModelsCandidateExtractionService implements CandidateExtracti
 
         JsonObject target = objectSchema();
         target.add("properties", properties(
-                "kind", enumSchema("element", "elementAttribute", "parentChildRelation",
-                        "globalVariable", "functionSignature", "ruleSource"),
+                "kind", enumSchema("element", "elementAttribute"),
                 "element", nullableString.deepCopy(),
                 "attribute", nullableString.deepCopy()));
         target.add("required", strings("kind", "element", "attribute"));

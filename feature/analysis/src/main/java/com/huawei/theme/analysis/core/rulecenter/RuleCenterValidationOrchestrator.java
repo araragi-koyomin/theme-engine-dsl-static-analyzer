@@ -37,6 +37,7 @@ public class RuleCenterValidationOrchestrator {
     private final ConstraintRepairStrategy repairStrategy;
     private final DocumentFeedbackService feedbackService;
     private final CandidatePublicationRouter publicationRouter = new CandidatePublicationRouter();
+    private final SourceEvidencePolicy sourceEvidencePolicy = new SourceEvidencePolicy();
 
     public RuleCenterValidationOrchestrator(
             CandidateExtractionService extractionService,
@@ -71,6 +72,7 @@ public class RuleCenterValidationOrchestrator {
         validateBatchRequest(request);
         List<CandidateExtractionResult> extractions = new ArrayList<>();
         List<RuleCandidate> candidates = new ArrayList<>();
+        Set<String> candidateIds = new HashSet<>();
         for (RuleDocumentRevision document : request.getDocuments()) {
             CandidateExtractionResult extraction = extractionService.extract(
                     CandidateExtractionRequest.builder()
@@ -80,6 +82,13 @@ public class RuleCenterValidationOrchestrator {
                             .examples(exampleCatalog.allVerifiedExamples())
                             .build());
             extractions.add(extraction);
+            for (RuleCandidate candidate : extraction.getCandidates()) {
+                if (!candidateIds.add(candidate.getCandidateId())) {
+                    throw new CandidateExtractionException(
+                            "duplicate candidateId across documents: "
+                                    + candidate.getCandidateId());
+                }
+            }
             candidates.addAll(extraction.getCandidates());
         }
         List<ConstraintVerification> verifications = new ArrayList<>();
@@ -163,6 +172,11 @@ public class RuleCenterValidationOrchestrator {
             candidate.setSkipReason(SkipReason.UNRESOLVED_TARGET);
             return;
         }
+        if (!sourceEvidencePolicy.isExtractiveDescription(candidate)) {
+            candidate.setStatus(CandidateStatus.SKIPPED);
+            candidate.setSkipReason(SkipReason.EVIDENCE_CONFLICT);
+            return;
+        }
         applier.applyDescription(candidate);
         candidate.setStatus(CandidateStatus.PUBLISHED);
     }
@@ -175,6 +189,9 @@ public class RuleCenterValidationOrchestrator {
             Set<String> carriedForward) {
         JsonObject draft = requireDraft(candidate);
         String condition = requiredString(draft, "condition");
+        boolean externalSemantics = sourceEvidencePolicy
+                .isExternalResourceSemantics(candidate);
+        boolean evidenceSupported = sourceEvidencePolicy.supportsConstraint(candidate, draft);
         boolean previousRuleExists = applier.hasRuleId(
                 candidate, requiredString(draft, "ruleId"));
         ConditionAcceptance acceptance = conditionAcceptor.accept(condition);
@@ -184,11 +201,13 @@ public class RuleCenterValidationOrchestrator {
                         .proposedKind(ProposedKind.CONSTRAINT)
                         .targetResolved(applier.constraintTargetExists(candidate, condition))
                         .evidenceScope(requiredBoolean(draft, "staticTextOnly")
+                                && !externalSemantics
                                 && applier.conditionUsesOnlyDeclaredLiteralValues(
                                         candidate, condition)
                                 ? ConstraintEvidenceScope.DSL_TEXT_ONLY
                                 : ConstraintEvidenceScope.EXTERNAL_RESOURCE)
-                        .evidenceConflict(requiredBoolean(draft, "evidenceConflict"))
+                        .evidenceConflict(requiredBoolean(draft, "evidenceConflict")
+                                || (acceptance.isAccepted() && !evidenceSupported))
                         .conditionAcceptance(acceptance)
                         .build());
         if (preflight.getStatus() == CandidateStatus.SKIPPED) {

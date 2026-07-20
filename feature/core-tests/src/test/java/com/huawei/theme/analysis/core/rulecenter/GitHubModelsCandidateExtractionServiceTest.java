@@ -33,6 +33,13 @@ class GitHubModelsCandidateExtractionServiceTest {
         assertTrue(client.request.getResponseFormat().toString().contains("sourceEvidence"));
         assertTrue(client.request.getResponseFormat().toString().contains("staticTextOnly"));
         assertTrue(client.request.getResponseFormat().toString().contains("positiveFixture"));
+        String schema = client.request.getResponseFormat().toString();
+        assertTrue(schema.contains("elementAttribute"));
+        assertTrue(schema.contains("\"element\""));
+        assertFalse(schema.contains("functionSignature"));
+        assertFalse(schema.contains("globalVariable"));
+        assertFalse(schema.contains("ruleSource"));
+        assertFalse(schema.contains("parentChildRelation"));
         assertTrue(client.request.getSystemPrompt().contains("must prove"));
         assertTrue(client.request.getUserPrompt().contains("1: # Image"));
         assertTrue(client.request.getUserPrompt().contains("3: src is the image path"));
@@ -116,6 +123,19 @@ class GitHubModelsCandidateExtractionServiceTest {
                 () -> service(new CapturingClient(duplicate)).extract(request()));
         assertThrows(CandidateExtractionException.class,
                 () -> service(new CapturingClient(wrongDocument)).extract(request()));
+    }
+
+    @Test
+    void rejectsTargetKindsThatTheP1PackageApplierCannotApply() {
+        String unsupportedTarget = response(candidateJson(
+                "extracted", 3, 3, "src is the image path", "image path")
+                .replace("elementAttribute", "functionSignature"));
+
+        CandidateExtractionException error = assertThrows(
+                CandidateExtractionException.class,
+                () -> service(new CapturingClient(unsupportedTarget)).extract(request()));
+
+        assertTrue(error.getMessage().contains("target kind"));
     }
 
     private GitHubModelsCandidateExtractionService service(CapturingClient client) {

@@ -214,3 +214,15 @@ created: 2026-07-20
 | YAML/本地发布 smoke | PyYAML 读取两个 workflow；随后对 G02 的真实通过包依次运行 `ruleCenterPrepareRelease` 与 `ruleCenterExtractBaseline` | 两个 YAML 均可解析；发布门禁输出 `release_gate=passed` 与 tag `rules-v2026.07.20.9001`；安全恢复门禁输出 `baseline_gate=passed` |
 
 发布工作流只在受保护 `main` 的规则 Markdown 更新或显式手动触发时运行，并绑定 `dsl-rule-production` environment。已有正式 Release 时，它先下载固定名 `rule-package.zip`，执行 zip-slip/条目数/解压大小保护及 manifest/report/content digest 复验，再把完整 rules、functions、source-markdown 与 revisions 作为增量转换基线；首版才回退仓库内置规则。main 合并提交上的模型提取和真实验证全部重跑，`RulePackagePublicationPreparer` 再次核对 `passed` / `passed-with-exclusions`、schema、完整性和双摘要，之后才允许 `gh release create` 上传 `rule-package.zip`、`manifest.json`、`release-report.json`。任务提交信息为 `feat(G03): publish approved GitHub rule releases`。
+
+### Review A 修复 1：原文证据边界与候选身份
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterValidationOrchestratorTest"` | 新增“模型谎报静态范围”和“无关证据虚构语义”后退出 1；两个场景均被错误发布 |
+| GREEN | 同一目标测试命令 | 退出 0；外部资源事实、非逐字描述、非规范性证据与未在证据中出现的 condition 字面量均不可发布 |
+| RED | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*GitHubModelsCandidateExtractionServiceTest" --tests "*RuleCenterValidationOrchestratorTest.duplicateCandidateIdsAcrossDocumentsAbortTheBatchBeforeApplication"` | 退出 1；响应 schema 暴露四类 P1 不可应用目标，解析器接受该目标，跨文档同 candidateId 未终止批次 |
+| GREEN/REFACTOR | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*GitHubModelsCandidateExtractionServiceTest" --tests "*RuleCenterValidationOrchestratorTest"` | 退出 0；schema 与运行时均只接受 element/elementAttribute，candidateId 在整个批次唯一且在写 staged-rules 前检查 |
+| 测试 canary | 临时移除外部语义判定中的 `!externalSemantics`，只运行 `lyingStaticTextFlagCannotConvertExternalFileDurationOrExistenceSemantics` | 退出 1；“文件必须存在且时长不超过 30 秒”被模型谎报为静态后错误进入验证，测试精确变红；恢复后目标测试通过 |
+
+这组修复不依赖模型自报的 `staticTextOnly` 或 `evidenceConflict` 得出安全结论。确定性门禁以原文逐字证据、规范性措辞、condition 所引用属性/字面量和外部资源事实关键词交叉判定；未通过时只形成 skipped 反馈，不写入规则 JSON。P1 模型输出目标同步收窄为当前应用器真实支持的元素及元素属性，避免“schema 声称支持、发布阶段才静默丢失”。

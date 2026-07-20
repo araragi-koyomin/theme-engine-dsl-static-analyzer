@@ -25,6 +25,7 @@ import com.huawei.theme.analysis.core.rulecenter.model.TargetKind;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RuleCenterValidationOrchestratorTest {
@@ -67,7 +68,8 @@ class RuleCenterValidationOrchestratorTest {
                 "<Image src=\"a\" srcExp=\"#b\"/>",
                 "<Image src=\"a\"/>"));
         RuleCandidate description = candidate(
-                "description", ProposedKind.DESCRIPTION, new JsonPrimitive("image source path"));
+                "description", ProposedKind.DESCRIPTION,
+                new JsonPrimitive("src is the image path"));
         RuleCenterValidationOrchestrator orchestrator = orchestrator(
                 request -> extraction(constraint, description), context -> context.getCurrentProposal());
 
@@ -80,7 +82,7 @@ class RuleCenterValidationOrchestratorTest {
         Path imageRule = result.getAssembly().getPackageDirectory()
                 .resolve("rules/elements/view/Image.json");
         JsonObject image = JsonParser.parseString(Files.readString(imageRule)).getAsJsonObject();
-        assertEquals("image source path", image.getAsJsonObject("attrTypes")
+        assertEquals("src is the image path", image.getAsJsonObject("attrTypes")
                 .getAsJsonObject("src").get("description").getAsString());
         assertEquals("SEM-IMG-901", image.getAsJsonArray("constraints")
                 .get(0).getAsJsonObject().get("ruleId").getAsString());
@@ -174,7 +176,7 @@ class RuleCenterValidationOrchestratorTest {
                 result.getAssembly().getPackageDirectory()
                         .resolve("rules/elements/view/Image.json"))).getAsJsonObject();
         assertEquals(1, image.getAsJsonArray("constraints").size());
-        assertEquals("generated message", image.getAsJsonArray("constraints").get(0)
+        assertEquals("src and srcExp cannot coexist", image.getAsJsonArray("constraints").get(0)
                 .getAsJsonObject().get("message").getAsString());
     }
 
@@ -224,6 +226,42 @@ class RuleCenterValidationOrchestratorTest {
     }
 
     @Test
+    void duplicateCandidateIdsAcrossDocumentsAbortTheBatchBeforeApplication() {
+        CandidateExtractionService extraction = request -> {
+            RuleCandidate duplicate = candidate(
+                    "shared-id", ProposedKind.DESCRIPTION,
+                    new JsonPrimitive("src is the image path"));
+            duplicate.setDocumentId(request.getDocumentId());
+            duplicate.setDocumentRevision(request.getDocumentRevision());
+            return extraction(duplicate);
+        };
+
+        CandidateExtractionException error = assertThrows(
+                CandidateExtractionException.class,
+                () -> orchestrator(extraction, context -> context.getCurrentProposal())
+                        .validateBatch(RuleCenterBatchValidationRequest.builder()
+                                .documents(List.of(
+                                        RuleDocumentRevision.builder()
+                                                .documentId("image-a").revision("r1")
+                                                .markdown("# A\n\nsrc is the image path")
+                                                .sourceMarkdownRelativePath("a.md").build(),
+                                        RuleDocumentRevision.builder()
+                                                .documentId("image-b").revision("r2")
+                                                .markdown("# B\n\nsrc is the image path")
+                                                .sourceMarkdownRelativePath("b.md").build()))
+                                .rulesDirectory(rulesDirectory)
+                                .functionsDirectory(functionsDirectory)
+                                .outputDirectory(tempDir.resolve("duplicate-output"))
+                                .packageVersion("2026.07.20.3")
+                                .createdAt("2026-07-20T10:00:00Z")
+                                .minimumAnalyzerVersion("1.0.0")
+                                .build()));
+
+        assertTrue(error.getMessage().contains("shared-id"));
+        assertFalse(Files.exists(tempDir.resolve("duplicate-output/staged-rules")));
+    }
+
+    @Test
     void fixtureFailureEntersRepairLoopAndPublishesOnlyAfterRealReverification()
             throws IOException {
         RuleCandidate candidate = candidate("repair", ProposedKind.CONSTRAINT, draft(
@@ -259,6 +297,60 @@ class RuleCenterValidationOrchestratorTest {
         assertEquals(1, attempts.get());
         assertEquals(CandidateStatus.PUBLISHED, result.getCandidates().get(0).getStatus());
         assertEquals(1, result.getVerifications().size());
+    }
+
+    @Test
+    void lyingStaticTextFlagCannotConvertExternalFileDurationOrExistenceSemantics()
+            throws IOException {
+        RuleCandidate external = candidate("external-lie", ProposedKind.CONSTRAINT, draft(
+                "SEM-IMG-906",
+                "element.attrs['src'] != null",
+                true,
+                "<Image src=\"video.mp4\"/>",
+                "<Image/>"));
+        external.getSourceEvidence().setExcerpt("视频文件必须存在且时长不能超过 30 秒");
+        external.getProposedChange().getValue().getAsJsonObject()
+                .addProperty("message", external.getSourceEvidence().getExcerpt());
+
+        RuleCenterValidationResult result = orchestrator(
+                request -> extraction(external), context -> context.getCurrentProposal())
+                .validate(request());
+
+        assertEquals(CandidateStatus.SKIPPED, result.getCandidates().get(0).getStatus());
+        assertEquals(SkipReason.OUT_OF_STATIC_SCOPE,
+                result.getCandidates().get(0).getSkipReason());
+        assertTrue(result.getVerifications().isEmpty());
+    }
+
+    @Test
+    void unrelatedDescriptiveEvidenceCannotAuthorizeInventedConstraintOrDescription()
+            throws IOException {
+        RuleCandidate inventedConstraint = candidate(
+                "invented-constraint", ProposedKind.CONSTRAINT, draft(
+                        "SEM-IMG-907",
+                        "element.attrs['src'] != null",
+                        true,
+                        "<Image src=\"a\"/>",
+                        "<Image/>"));
+        inventedConstraint.getSourceEvidence().setExcerpt("src is the image path");
+        inventedConstraint.getProposedChange().getValue().getAsJsonObject()
+                .addProperty("message", "src is the image path");
+        RuleCandidate inventedDescription = candidate(
+                "invented-description", ProposedKind.DESCRIPTION,
+                new JsonPrimitive("src must be an existing MP4 file"));
+
+        RuleCenterValidationResult result = orchestrator(
+                request -> extraction(inventedConstraint, inventedDescription),
+                context -> context.getCurrentProposal()).validate(request());
+
+        assertEquals(List.of(SkipReason.EVIDENCE_CONFLICT, SkipReason.EVIDENCE_CONFLICT),
+                result.getCandidates().stream().map(RuleCandidate::getSkipReason).toList());
+        JsonObject image = JsonParser.parseString(Files.readString(
+                result.getAssembly().getPackageDirectory()
+                        .resolve("rules/elements/view/Image.json"))).getAsJsonObject();
+        assertEquals("old src", image.getAsJsonObject("attrTypes")
+                .getAsJsonObject("src").get("description").getAsString());
+        assertTrue(image.getAsJsonArray("constraints").isEmpty());
     }
 
     private RuleCenterValidationOrchestrator orchestrator(
@@ -306,6 +398,9 @@ class RuleCenterValidationOrchestratorTest {
         int line = id.equals("description") ? 5 : 3;
         String excerpt = id.equals("description")
                 ? "src is the image path" : "src and srcExp cannot coexist";
+        if (kind == ProposedKind.CONSTRAINT && value.isJsonObject()) {
+            value.getAsJsonObject().addProperty("message", excerpt);
+        }
         return RuleCandidate.builder()
                 .candidateId(id)
                 .documentId("image")
