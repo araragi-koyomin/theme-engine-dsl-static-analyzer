@@ -1,6 +1,10 @@
 package com.huawei.theme.analysis.core.rulecenter;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -43,7 +47,7 @@ class GitHubReleaseBackendTest {
     @Test
     void rejectsFailedReportAndMissingFixedAsset() {
         GitHubReleaseDescriptor failed = release();
-        asset(failed, "release-report.json").setContent(reportJson("failed"));
+        setContentAndDigest(asset(failed, "release-report.json"), reportJson("failed"));
         GitHubReleaseDescriptor missing = release();
         missing.getAssets().removeIf(asset -> asset.getName().equals("manifest.json"));
 
@@ -56,8 +60,8 @@ class GitHubReleaseBackendTest {
         GitHubReleaseDescriptor tagMismatch = release();
         tagMismatch.setTagName("rules-v2026.07.20.2");
         GitHubReleaseDescriptor digestMismatch = release();
-        asset(digestMismatch, "release-report.json")
-                .setContent(reportJson("passed").replace(CONTENT_SHA, "c".repeat(64)));
+        setContentAndDigest(asset(digestMismatch, "release-report.json"),
+                reportJson("passed").replace(CONTENT_SHA, "c".repeat(64)));
 
         assertRejected(tagMismatch, GitHubReleaseRejection.VERSION_MISMATCH);
         assertRejected(digestMismatch, GitHubReleaseRejection.DIGEST_MISMATCH);
@@ -72,6 +76,18 @@ class GitHubReleaseBackendTest {
         assertRejected(release, GitHubReleaseRejection.INVALID_ASSET_DIGEST);
     }
 
+    @Test
+    void rejectsTamperedManifestAndReportBytesAgainstTheirGitHubAssetDigests() {
+        GitHubReleaseDescriptor tamperedManifest = release();
+        asset(tamperedManifest, "manifest.json").setContent(
+                manifestJson().replace("approved", "tampered"));
+        GitHubReleaseDescriptor tamperedReport = release();
+        asset(tamperedReport, "release-report.json").setContent(reportJson("failed"));
+
+        assertRejected(tamperedManifest, GitHubReleaseRejection.INVALID_ASSET_DIGEST);
+        assertRejected(tamperedReport, GitHubReleaseRejection.INVALID_ASSET_DIGEST);
+    }
+
     private GitHubReleaseDescriptor release() {
         List<GitHubReleaseAsset> assets = new ArrayList<>();
         assets.add(GitHubReleaseAsset.builder()
@@ -80,19 +96,21 @@ class GitHubReleaseBackendTest {
                 .state("uploaded")
                 .digest("sha256:" + ARTIFACT_SHA)
                 .build());
+        String manifest = manifestJson();
         assets.add(GitHubReleaseAsset.builder()
                 .name("manifest.json")
                 .downloadUrl("https://github.test/manifest.json")
                 .state("uploaded")
-                .digest("sha256:" + "d".repeat(64))
-                .content(manifestJson())
+                .digest("sha256:" + sha256(manifest))
+                .content(manifest)
                 .build());
+        String report = reportJson("passed");
         assets.add(GitHubReleaseAsset.builder()
                 .name("release-report.json")
                 .downloadUrl("https://github.test/release-report.json")
                 .state("uploaded")
-                .digest("sha256:" + "e".repeat(64))
-                .content(reportJson("passed"))
+                .digest("sha256:" + sha256(report))
+                .content(report)
                 .build());
         return GitHubReleaseDescriptor.builder()
                 .tagName("rules-v2026.07.20.1")
@@ -112,6 +130,8 @@ class GitHubReleaseBackendTest {
                 + "\"createdAt\":\"2026-07-20T10:00:00Z\","
                 + "\"contentSha256\":\"" + CONTENT_SHA + "\","
                 + "\"minimumAnalyzerVersion\":\"1.0.0\","
+                + "\"inventory\":{\"ruleFiles\":[\"rules/elements/view/Image.json\"],"
+                + "\"functionFiles\":[\"functions/dsl_functions.json\"]},"
                 + "\"sourceDocumentRevisions\":[]}";
     }
 
@@ -131,6 +151,20 @@ class GitHubReleaseBackendTest {
                 .filter(asset -> asset.getName().equals(name))
                 .findFirst()
                 .orElseThrow();
+    }
+
+    private void setContentAndDigest(GitHubReleaseAsset asset, String content) {
+        asset.setContent(content);
+        asset.setDigest("sha256:" + sha256(content));
+    }
+
+    private String sha256(String content) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(content.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException(exception);
+        }
     }
 
     private void assertRejected(

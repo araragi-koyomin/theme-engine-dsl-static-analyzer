@@ -1,6 +1,10 @@
 package com.huawei.theme.analysis.core.rulecenter;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,6 +37,10 @@ public class GitHubReleaseBackend {
         }
         String artifactSha256 = parseSha256Digest(packageAsset.getDigest());
         if (artifactSha256 == null) {
+            return rejected(GitHubReleaseRejection.INVALID_ASSET_DIGEST);
+        }
+        if (!contentMatchesAssetDigest(assets.get("manifest.json"))
+                || !contentMatchesAssetDigest(assets.get("release-report.json"))) {
             return rejected(GitHubReleaseRejection.INVALID_ASSET_DIGEST);
         }
 
@@ -115,7 +123,10 @@ public class GitHubReleaseBackend {
                 && hasText(manifest.getPackageVersion())
                 && hasText(manifest.getCreatedAt())
                 && manifest.getContentSha256() != null
-                && SHA256.matcher(manifest.getContentSha256()).matches();
+                && SHA256.matcher(manifest.getContentSha256()).matches()
+                && manifest.getInventory() != null
+                && manifest.getInventory().getRuleFiles() != null
+                && manifest.getInventory().getFunctionFiles() != null;
     }
 
     private boolean validReport(RulePackageReleaseReport report) {
@@ -132,6 +143,23 @@ public class GitHubReleaseBackend {
         }
         String value = digest.substring("sha256:".length());
         return SHA256.matcher(value).matches() ? value.toLowerCase() : null;
+    }
+
+    private boolean contentMatchesAssetDigest(GitHubReleaseAsset asset) {
+        if (asset == null || asset.getContent() == null) {
+            return false;
+        }
+        String expected = parseSha256Digest(asset.getDigest());
+        return expected != null && expected.equals(sha256(asset.getContent()));
+    }
+
+    private String sha256(String content) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(content.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable", exception);
+        }
     }
 
     private boolean isCompatible(String analyzerVersion, String minimumAnalyzerVersion) {

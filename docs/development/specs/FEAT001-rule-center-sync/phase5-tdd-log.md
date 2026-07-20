@@ -236,3 +236,13 @@ created: 2026-07-20
 | 门禁 canary | 临时移除 publication preparer 的 manifest/实际 inventory 比对，只运行 `manifestInventoryTripsGateEvenWhenAnAttackerRecomputesBothContentDigests` | 退出 1；删除唯一元素规则并重算 manifest/report 双摘要后会错误产出 Release，测试精确变红；恢复门禁后通过 |
 
 manifest 现在保存排序后的 `rules/` 与 `functions/` 文件清单。编排器在任何模型改写前记录上一版完整清单，组装结果必须是该清单的超集且至少包含一个元素规则；随后使用生产 `JsonRuleLoader` 和 `JsonFunctionSignatureLoader` 重载最终目录。发布准备阶段重新扫描清单并与 manifest 精确比对，因此“只剩少量合法 JSON 后重算摘要”的截断包不能发布。ZIP 基线恢复还会在所有操作系统上拒绝反斜杠、绝对路径和盘符路径。
+
+### Review A 修复 3：Release 三资产摘要
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*GitHubReleaseBackendTest"` | 退出 1；篡改 manifest/report 字节但保留原 GitHub asset digest 时仍走到内容语义判断，未判定资产摘要无效 |
+| GREEN/REFACTOR | 同一命令并追加 `--tests "*ReleaseCatalogContractTest"` | 退出 0；ZIP 官方 digest 进入下载契约，manifest/report 官方 digest 与当前读取字节逐项一致，catalog 稳定契约同步通过 |
+| 测试 canary | 临时移除 manifest/report 字节摘要检查，只运行 `rejectsTamperedManifestAndReportBytesAgainstTheirGitHubAssetDigests` | 退出 1；篡改资产不再首先得到 `INVALID_ASSET_DIGEST`，测试精确变红；恢复后通过 |
+
+客户端发现 Release 时不再只相信 `rule-package.zip` 的摘要。固定三资产均必须处于 uploaded 状态并带 GitHub `sha256:` 摘要；元数据资产在解析前先以 UTF-8 原始内容计算 SHA-256。ZIP 在实际下载交付时由既有 gateway 再按同一官方摘要校验真实字节。

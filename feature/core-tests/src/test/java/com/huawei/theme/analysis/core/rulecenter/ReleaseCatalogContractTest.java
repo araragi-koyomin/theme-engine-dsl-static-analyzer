@@ -132,29 +132,33 @@ class ReleaseCatalogContractTest {
                 .state("uploaded")
                 .digest("sha256:" + artifactSha)
                 .build());
+        String manifest = "{\"schemaVersion\":1,\"packageVersion\":\"" + version
+                + "\",\"channel\":\"approved\","
+                + "\"createdAt\":\"2026-07-20T10:00:00Z\","
+                + "\"contentSha256\":\"" + contentSha + "\","
+                + "\"minimumAnalyzerVersion\":\"1.0.0\","
+                + "\"inventory\":{\"ruleFiles\":[\"rules/elements/view/Image.json\"],"
+                + "\"functionFiles\":[\"functions/dsl_functions.json\"]},"
+                + "\"sourceDocumentRevisions\":[]}";
         assets.add(GitHubReleaseAsset.builder()
                 .name("manifest.json")
                 .downloadUrl("memory://" + version + "/manifest")
                 .state("uploaded")
-                .digest("sha256:" + "a".repeat(64))
-                .content("{\"schemaVersion\":1,\"packageVersion\":\"" + version
-                        + "\",\"channel\":\"approved\","
-                        + "\"createdAt\":\"2026-07-20T10:00:00Z\","
-                        + "\"contentSha256\":\"" + contentSha + "\","
-                        + "\"minimumAnalyzerVersion\":\"1.0.0\","
-                        + "\"sourceDocumentRevisions\":[]}")
+                .digest("sha256:" + sha256(manifest.getBytes(StandardCharsets.UTF_8)))
+                .content(manifest)
                 .build());
+        String report = "{\"packageVersion\":\"" + version + "\","
+                + "\"manifestContentSha256\":\"" + contentSha + "\","
+                + "\"status\":\"passed\",\"candidateCounts\":{},"
+                + "\"candidatesByStatus\":{},\"carriedForwardCandidateIds\":[],"
+                + "\"constraintVerifications\":[],\"jsonSchemaValid\":true,"
+                + "\"packageComplete\":true,\"errors\":[]}";
         assets.add(GitHubReleaseAsset.builder()
                 .name("release-report.json")
                 .downloadUrl("memory://" + version + "/report")
                 .state("uploaded")
-                .digest("sha256:" + "b".repeat(64))
-                .content("{\"packageVersion\":\"" + version + "\","
-                        + "\"manifestContentSha256\":\"" + contentSha + "\","
-                        + "\"status\":\"passed\",\"candidateCounts\":{},"
-                        + "\"candidatesByStatus\":{},\"carriedForwardCandidateIds\":[],"
-                        + "\"constraintVerifications\":[],\"jsonSchemaValid\":true,"
-                        + "\"packageComplete\":true,\"errors\":[]}")
+                .digest("sha256:" + sha256(report.getBytes(StandardCharsets.UTF_8)))
+                .content(report)
                 .build());
         return GitHubReleaseDescriptor.builder()
                 .tagName("rules-v" + version)
