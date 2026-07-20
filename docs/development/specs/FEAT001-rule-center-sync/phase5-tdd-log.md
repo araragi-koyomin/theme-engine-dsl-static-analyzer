@@ -121,3 +121,14 @@ created: 2026-07-20
 | 测试 canary | 临时把 fixture 失败从 `VALIDATION_ERROR` 改成 `SKIPPED`，只运行 `fixtureFailureIsValidationErrorAndNeverSkipped` | 退出 1；精确在测试第 59 行失败；恢复后全组强制重跑通过 |
 
 分流器只产生候选状态和稳定原因码，不生成 IDE 诊断。约束候选的外部资源语义、目标不明、未登记 grammar 与证据冲突直接 skipped；parser 已接受后的 fixture 失败保留 `validationFailure`。description 候选不把资源说明误当约束，可继续作为文档内容处理。任务提交信息为 `feat(C06): route candidate publication outcomes`。
+
+### C07：两轮受控修复循环
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | Gradle 8.2 `--no-daemon :feature:core-tests:test --tests "*ConstraintRepairLoopTest"` | 退出 1；repair loop、strategy、context、proposal、request、outcome 共 17 个缺失符号 |
+| GREEN | 同一目标测试命令 | 退出 0；4 组首轮修复、两轮耗尽、第三轮禁止和不可变字段保护场景通过 |
+| REFACTOR | 同一命令追加 `--rerun-tasks` | 退出 0；20 个 Gradle task 全部实际执行 |
+| 测试 canary | 临时把 `MAX_REPAIR_ATTEMPTS` 从 2 改成 3，只运行 `neverCallsRepairStrategyAThirdTime` | 退出 1；第三次调用精确触发测试第 76 行的 `AssertionError`；恢复后全组强制重跑通过 |
+
+每轮修复上下文携带最多 3 条 C05 已验证示例，但每个 proposal 仍由 C04 真实验证器复验。原文证据指纹、目标指纹、目标元素、证据候选 ID 与规则 ID 均不可变；首次或第二次修复成功为 `VERIFIED`，两次失败或越权修改为 `VALIDATION_ERROR + REWORK_REQUIRED`。任务提交信息为 `feat(C07): bound constraint repair loop`。
