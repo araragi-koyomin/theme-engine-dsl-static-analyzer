@@ -53,3 +53,30 @@ jacocoTestReport {
         html.required = true
     }
 }
+
+jacocoTestCoverageVerification {
+    // Mirror jacocoTestReport's classDirectories + executionData. By default
+    // the verification task uses sourceSets.main.output (EMPTY for core-tests,
+    // which has no main source) and trivially passes = theater. The gate
+    // canary caught this: minimum was raised to 1.0 and the gate did NOT trip
+    // until classDirectories + executionData were wired here. After the fix,
+    // minimum=1.0 trips correctly ("lines covered ratio is 0.8, expected 1.0").
+    // minimum=0.80 satisfies the AGENTS.md quality gate (>80% LINE coverage);
+    // real coverage is ~82.5% (4274/5180) after migrating ~880 core unit tests
+    // here (away from the intellij-plugin PathClassLoader that recorded 0%).
+    classDirectories.setFrom(fileTree("${project(':feature:analysis').layout.buildDirectory.get().asFile}/classes/java/main") {
+        include 'com/huawei/theme/analysis/core/**'
+    })
+    executionData.setFrom(jacocoTestReport.executionData)
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+        }
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
