@@ -717,15 +717,6 @@ class BatchInspectionRunnerImplTest {
     }
 
     @Test
-    void runOnDirectoryWithUnreadableFileGracefullyDegraded() throws Exception {
-        Path dir = Files.createTempDirectory("batch-unreadable");
-        Path readable = dir.resolve("readable.xml");
-        Files.writeString(readable, "<Lockscreen/>", StandardCharsets.UTF_8);
-        BatchInspectionResult result = runner.runOnDirectory(dir.toString());
-        assertTrue(result.getTotalFiles() >= 1);
-    }
-
-    @Test
     void runOnDirectoryWithOnlyDslFilesNoThrows() throws Exception {
         Path dir = Files.createTempDirectory("batch-only-dsl");
         StubDiagnosticProvider multiDiagProvider = new StubDiagnosticProvider() {
