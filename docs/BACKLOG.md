@@ -39,7 +39,7 @@ created: 2026-07-15
 |---|---|---|---|---|
 | FIX001 | P0 Beta 闭环修复 | done | — | [→](development/specs/p0-bugfix/) |
 | FIX003 | TypeAnalyzer null 函数库静默吞 SEM-TYPE-* | pending | — | [审计 C2](development/reports/test-theater-audit-2026-07-15.md) |
-| FIX004 | 测试剧场治理（15 CRITICAL + 34 HIGH） | in-progress | fix/quality-gates | [审计报告](development/reports/test-theater-audit-2026-07-15.md) |
+| FIX004 | 测试剧场治理（15 CRITICAL + 34 HIGH） | pending | — | [审计报告](development/reports/test-theater-audit-2026-07-15.md)；Phase A canary 框架就绪，治理=Phase B |
 | FIX005 | 质量门禁与工作流改革（JaCoCo 0% 覆盖率 + 可证伪 canary 原则） | in-progress | fix/quality-gates | [→](development/specs/quality-gates/design.md) |
 
 ## 活跃分支
@@ -53,12 +53,12 @@ created: 2026-07-15
 
 **CI 门禁(必须全绿)**:
 ```bash
-./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e :feature:lsp:test
+./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e :feature:lsp:test :feature:core-tests:test :feature:core-tests:jacocoTestReport :feature:core-tests:jacocoTestCoverageVerification
 ```
 包含 L4 fat jar 子进程测试(33/33 绿)。
 
 **本地快速开发(不含 L4)**:
 ```bash
-./gradlew --no-daemon :feature:analysis:test
+./gradlew --no-daemon :feature:core-tests:test :feature:analysis:test
 ```
-仅跑 L1-L3 单元/golden 测试,L4 fat jar 子进程测试被 Assumption 跳过(需 `:feature:analysis:e2e` 单独触发)。
+:feature:core-tests:test 跑 ~817 迁移 core 单测(默认 classloader,JaCoCo 记录);:feature:analysis:test 跑 ~98 留守(e2e/golden + plugin lexer + antlr-adaptor)。L4 fat jar 子进程测试被 Assumption 跳过(需 `:feature:analysis:e2e` 单独触发)。

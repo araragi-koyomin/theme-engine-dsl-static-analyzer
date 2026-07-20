@@ -39,8 +39,8 @@ L4 子进程   → src/test/java/.../core/e2e/FatJarSubprocessE2ETest.java
 
 运行测试（详见 skill `gradle-build-test`）：
 ```bash
-# 单个测试类
-./gradlew --no-daemon :feature:analysis:test --tests "com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderModeTest"
+# 单个测试类（core 单测已迁 feature:core-tests）
+./gradlew --no-daemon :feature:core-tests:test --tests "com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderModeTest"
 # Golden 匹配
 ./gradlew --no-daemon :feature:analysis:test --tests "com.huawei.theme.analysis.core.e2e.GoldenDiagnosticMatchTest"
 # L4 fat jar 子进程
@@ -87,12 +87,12 @@ main (稳定,全量门禁绿)
 | 2 规格定义 | 定义接口契约(输入/输出/前后置/异常) | `docs/development/specs/<phase>/phase2-spec.md` | 用户确认 |
 | 3 设计 | 类图/时序图/模块职责/可测试性 | `docs/development/specs/<phase>/phase3-design.md` | 用户确认 |
 | 4 任务拆分 | 15-30min 粒度 TDD 任务 | `docs/development/specs/<phase>/phase4-tasks.md` | 用户确认 |
-| 5 TDD 编码 | RED→GREEN→REFACTOR,每 task commit | 代码 + 测试 | `./gradlew --no-daemon :feature:analysis:test` |
+| 5 TDD 编码 | RED→GREEN→REFACTOR,每 task commit | 代码 + 测试 | `./gradlew --no-daemon :feature:analysis:test :feature:core-tests:test` |
 | 6 一致性验证 | 逐项核对 spec→测试覆盖 | `docs/development/specs/<phase>/phase6-validation.md` | 全量门禁 + 用户确认 |
 
 ### 2.3 合入流程
 
-1. 全量门禁全绿: `./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e :feature:lsp:test`
+1. 全量门禁全绿: `./gradlew --no-daemon clean :feature:analysis:test :feature:analysis:checkCoreIntellijDependency :feature:analysis:buildFatJar :feature:analysis:e2e :feature:lsp:test :feature:core-tests:test :feature:core-tests:jacocoTestReport :feature:core-tests:jacocoTestCoverageVerification`
 2. 调 reviewer agent 审查
 3. 审查通过 → push → 创建 PR
 4. 用户确认 → merge to main

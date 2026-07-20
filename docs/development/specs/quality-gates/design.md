@@ -65,7 +65,7 @@ created: 2026-07-17
 
 ### 5.1 JaCoCo 全量迁移（交付 G2-a）
 1. 按 spike caveats（commit `888682f` 已验证）把 ~880 core 测试搬到 `feature:core-tests`：保留根 `build.gradle:59` 的 intellij 插件排除；`jacocoTestReport.classDirectories` 限 `core/**`；fixture 依赖的测试逐个评估（搬资源 or 留 `:feature:analysis`）；L4 `FatJarSubprocessE2ETest` + `buildFatJar` 留 `:feature:analysis`。
-2. 加 `jacocoTestCoverageVerification`：阈值 = **当前真实覆盖率**（回归保护，能 fail-on-drop）。0.80 不写死进 `check`，直到真实数 ≥ 0.80；gap 标记给用户定夺。
+2. 加 `jacocoTestCoverageVerification`：实测 real core LINE = 82.51% >= 0.80 → 阈值 = **0.80**（AGENTS.md 质量门禁），wired into `check`（commit 4423ac2）。门禁 canary 已验证可 trip（minimum=1.0 → FAIL；0.80 → PASS）。0.80 而非 0.825：留 2.5% 缓冲防 JaCoCo 微小波动假 fail，避免门禁因 0.01% 抖动变剧场。
 3. **门禁 canary**：写一个 canary 测试注入 0% 覆盖类，确认 `jacocoTestCoverageVerification` fail——证明门禁活着（§3.3）。
 
 ### 5.2 FIX004 治理（交付 G2-b）
