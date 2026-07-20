@@ -176,3 +176,15 @@ created: 2026-07-20
 | 测试 canary | 临时向插件可见的 `LatestRelease` 加入 `githubUrl`，只运行 `stablePluginContractContainsNoGitHubTransportFields` | 退出 1；精确在测试第 68 行失败；恢复后全组强制重跑通过 |
 
 稳定接口仅暴露 `findLatest`、`findVersion`、`download(packageVersion)`；元数据不含 URL、token、仓库名或 GitHub 类型。GitHub adapter 与 `FixtureReleaseCatalog` 返回相同 `LatestRelease`/`ReleaseMetadata`/`RulePackageArtifact` 语义，并在交付字节前再次校验资产 SHA-256。任务提交信息为 `feat(C11): isolate release catalog gateway`。
+
+### G01：GitHub Models 候选抽取适配器
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | Gradle 8.2 `--no-daemon :feature:core-tests:test --tests "*GitHubModelsCandidateExtractionServiceTest"` | 退出 1；抽取 service/request/result、inference client/request/response 和异常共 20 个缺失符号 |
+| GREEN | 同一目标测试命令 | 退出 0；5 组结构化请求、证据/行号、发布绕过、语义证据和身份/去重场景通过 |
+| REFACTOR | 同一命令追加 `--rerun-tasks` | 退出 0；20 个 Gradle task 全部实际执行 |
+| 测试 canary | 临时允许模型候选返回 `published`，只运行 `rejectsModelAttemptToBypassGateWithPublishedStatus` | 退出 1；精确在测试第 60 行失败；恢复后全组强制重跑通过 |
+| 真实 inference smoke | 以 `gh auth token` 仅注入进程内存，POST GitHub Models `openai/gpt-4.1`，`temperature=0`、`seed=42`、`json_schema` | HTTP 成功；实际模型 `gpt-4.1-2025-04-14`；响应 `candidateCount=0`、`schemaValid=true`；token 未输出 |
+
+生产 HTTP client 使用 GitHub Models 官方 inference endpoint、`models: read` 对应 Bearer token 与版本化 REST header。抽取结果记录请求/实际模型、prompt 版本、prompt/文档/原始响应 SHA-256；模型只能产生 `EXTRACTED` 候选，精确原文摘录和行号不匹配即拒绝。任务提交信息为 `feat(G01): extract candidates with GitHub Models`。
