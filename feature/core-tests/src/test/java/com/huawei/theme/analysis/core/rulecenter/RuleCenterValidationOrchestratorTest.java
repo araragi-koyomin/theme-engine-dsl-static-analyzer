@@ -353,6 +353,60 @@ class RuleCenterValidationOrchestratorTest {
         assertTrue(image.getAsJsonArray("constraints").isEmpty());
     }
 
+    @Test
+    void modelCannotInvertMustCoexistEvidenceIntoAnErrorOnCoexistence()
+            throws IOException {
+        RuleCandidate inverted = candidate("inverted", ProposedKind.CONSTRAINT, draft(
+                "SEM-IMG-908",
+                "element.attrs['src'] != null AND element.attrs['srcExp'] != null",
+                true,
+                "<Image src=\"a\" srcExp=\"#b\"/>",
+                "<Image src=\"a\"/>"));
+        inverted.getSourceEvidence().setExcerpt("src and srcExp must coexist");
+        inverted.getProposedChange().getValue().getAsJsonObject()
+                .addProperty("message", "src and srcExp must coexist");
+
+        RuleCenterValidationResult result = orchestrator(
+                request -> extraction(inverted), context -> context.getCurrentProposal())
+                .validate(request());
+
+        assertEquals(CandidateStatus.SKIPPED, result.getCandidates().get(0).getStatus());
+        assertEquals(SkipReason.EVIDENCE_CONFLICT,
+                result.getCandidates().get(0).getSkipReason());
+    }
+
+    @Test
+    void sourceDocumentIdentityAndDeclaredAttributeMustMatchConstraintTarget()
+            throws IOException {
+        RuleCandidate wrongElement = candidate(
+                "wrong-element", ProposedKind.CONSTRAINT, draft(
+                        "SEM-IMG-909",
+                        "element.attrs['src'] != null AND element.attrs['srcExp'] != null",
+                        true,
+                        "<Image src=\"a\" srcExp=\"#b\"/>",
+                        "<Image src=\"a\"/>"));
+        wrongElement.setDocumentId("video");
+        RuleCandidate wrongAttribute = candidate(
+                "wrong-attribute", ProposedKind.CONSTRAINT, draft(
+                        "SEM-IMG-910",
+                        "element.attrs['srcExp'] == null",
+                        true,
+                        "<Image/>",
+                        "<Image srcExp=\"#b\"/>"));
+        wrongAttribute.getTarget().setAttribute("src");
+        wrongAttribute.getSourceEvidence().setExcerpt("srcExp is required");
+        wrongAttribute.getProposedChange().getValue().getAsJsonObject()
+                .addProperty("message", "srcExp is required");
+
+        RuleCenterValidationResult result = orchestrator(
+                request -> extraction(wrongElement, wrongAttribute),
+                context -> context.getCurrentProposal()).validate(request());
+
+        assertEquals(List.of(SkipReason.EVIDENCE_CONFLICT, SkipReason.EVIDENCE_CONFLICT),
+                result.getCandidates().stream().map(RuleCandidate::getSkipReason).toList());
+        assertTrue(result.getVerifications().isEmpty());
+    }
+
     private RuleCenterValidationOrchestrator orchestrator(
             CandidateExtractionService extractionService,
             ConstraintRepairStrategy repairStrategy) {

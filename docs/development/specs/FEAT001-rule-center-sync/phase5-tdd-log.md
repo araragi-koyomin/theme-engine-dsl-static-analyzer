@@ -258,3 +258,13 @@ manifest 现在保存排序后的 `rules/` 与 `functions/` 文件清单。编�
 | 不可变发布 canary | 临时将官方 `/immutable-releases` 预检改为不存在的 `/release-policy`，只运行 `releaseIsCreatedOnlyAfterGateWithExactlyThreeFixedAssets` | 退出 1；测试第 49 行精确变红；恢复后通过 |
 
 PR 工作流现在从 base SHA 检出可信 Gradle/Java，从 fork/head SHA 仅稀疏检出 `rule-center/docs`，模型 token 只交给可信工作目录中的程序；文档解析器以真实路径复验显式文档根并拒绝逃逸/符号链接。Actions 均固定到实际提交 SHA。发布工作流使用完整 Git 历史、仅允许 main、首版处理全部源文档、分页查找上一正式版、固定 `createdAt`、显式创建并复验 tag，再以 `--verify-tag` 发布。推理前通过 GitHub 2026-03-10 官方接口确认仓库启用 Immutable Releases，发布后复查 Release 的 `immutable` 字段。
+
+### Review A 复审修复 1：约束语义方向与目标身份
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterValidationOrchestratorTest.modelCannotInvertMustCoexistEvidenceIntoAnErrorOnCoexistence" --tests "*RuleCenterValidationOrchestratorTest.sourceDocumentIdentityAndDeclaredAttributeMustMatchConstraintTarget"` | 退出 1；“必须共存”可被反写为“共存时报错”，且 video 文档/不相干 target.attribute 可写入 Image |
+| GREEN/REFACTOR | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*RuleCenterValidationOrchestratorTest"` | 退出 0；互斥、至少一个、必填、禁止四类证据只接受对应的违规态 null-comparison 模板，文档元素和目标属性必须匹配 |
+| 测试 canary | 临时绕过 `relationMatches` 返回 true，只运行语义反转测试 | 退出 1；反转约束再次被发布，测试精确变红；恢复后全组通过 |
+
+原文中的规范性关键词不再只是“有出现就算证明”。确定性策略会把受支持的自然语言关系映射到诊断应命中的违规状态：例如“不能同时存在”只允许两个属性均非空的 AND 条件；“必填”只允许该属性为空的条件。无法证明关系方向的候选直接以 `EVIDENCE_CONFLICT` 跳过，不进入修复循环。目标元素由源文档 identity 绑定，元素属性目标还必须真实出现在 condition 引用集合中。

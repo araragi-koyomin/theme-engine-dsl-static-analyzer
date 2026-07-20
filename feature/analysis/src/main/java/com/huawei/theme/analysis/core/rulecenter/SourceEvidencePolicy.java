@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 import com.google.gson.JsonObject;
 import com.huawei.theme.analysis.core.rulecenter.model.RuleCandidate;
+import com.huawei.theme.analysis.core.rulecenter.model.TargetKind;
 
 final class SourceEvidencePolicy {
     private static final Pattern ATTRIBUTE_REFERENCE = Pattern.compile(
@@ -15,6 +16,8 @@ final class SourceEvidencePolicy {
     private static final Pattern STRING_LITERAL = Pattern.compile("'([^']+)'");
     private static final Pattern NUMBER_LITERAL = Pattern.compile(
             "(?<![A-Za-z0-9_])-?\\d+(?:\\.\\d+)?(?![A-Za-z0-9_])");
+    private static final Pattern NULL_COMPARISON = Pattern.compile(
+            "element\\.attrs\\[\\s*'([^']+)'\\s*]\\s*(==|!=)\\s*null");
     private static final Pattern NORMATIVE_LANGUAGE = Pattern.compile(
             "(?:必须|不得|不能|不允许|仅限|至少|至多|应当|应该|需要|禁止|范围|"
                     + "同时|不可|must|shall|should|required|cannot|not allowed|only|"
@@ -29,6 +32,18 @@ final class SourceEvidencePolicy {
                     + "尺寸|时长|持续时间|分辨率|帧率|码率|秒|分钟|字节|KB|MB|GB|"
                     + "exists?|existence|format|extension|suffix|file size|duration|"
                     + "resolution|frame rate|bitrate|seconds?|minutes?|bytes?|kb|mb|gb)",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern MUTUAL_EXCLUSION = Pattern.compile(
+            "(?:不能|不可|不得|不允许).{0,12}同时|(?:不能|不可|不得).{0,8}共存|"
+                    + "mutually exclusive|cannot coexist|must not coexist|not.{0,20}both",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern AT_LEAST_ONE = Pattern.compile(
+            "至少.{0,8}(?:一个|一项)|at least one", Pattern.CASE_INSENSITIVE);
+    private static final Pattern REQUIRED_ATTRIBUTE = Pattern.compile(
+            "必填|必须.{0,8}(?:设置|提供|存在)|required|must be (?:set|present|provided)",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern FORBIDDEN_ATTRIBUTE = Pattern.compile(
+            "禁止|不得设置|不允许设置|must not be set|not allowed",
             Pattern.CASE_INSENSITIVE);
 
     boolean isExtractiveDescription(RuleCandidate candidate) {
@@ -81,7 +96,77 @@ final class SourceEvidencePolicy {
                 return false;
             }
         }
-        return !attributes.isEmpty() || condition.contains("element.children");
+        if (attributes.isEmpty() || !targetMatches(candidate, attributes)) {
+            return false;
+        }
+        return relationMatches(evidence, condition);
+    }
+
+    private boolean targetMatches(RuleCandidate candidate, Set<String> attributes) {
+        RuleCandidate.CandidateTarget target = candidate.getTarget();
+        if (target == null || target.getElement() == null
+                || candidate.getDocumentId() == null) {
+            return false;
+        }
+        String expectedElement = identity(target.getElement());
+        boolean documentMatches = Pattern.compile("[/\\\\]")
+                .splitAsStream(candidate.getDocumentId())
+                .map(this::identity)
+                .anyMatch(expectedElement::equals);
+        if (!documentMatches) {
+            return false;
+        }
+        return target.getKind() != TargetKind.ELEMENT_ATTRIBUTE
+                || target.getAttribute() != null
+                        && attributes.contains(target.getAttribute());
+    }
+
+    private boolean relationMatches(String evidence, String condition) {
+        ListComparison comparisons = nullComparisons(condition);
+        if (comparisons == null) {
+            return false;
+        }
+        if (MUTUAL_EXCLUSION.matcher(evidence).find()) {
+            return comparisons.size >= 2 && comparisons.allNotNull
+                    && comparisons.andOnly;
+        }
+        if (AT_LEAST_ONE.matcher(evidence).find()) {
+            return comparisons.size >= 2 && comparisons.allNull
+                    && comparisons.andOnly;
+        }
+        if (FORBIDDEN_ATTRIBUTE.matcher(evidence).find()) {
+            return comparisons.size == 1 && comparisons.allNotNull;
+        }
+        if (REQUIRED_ATTRIBUTE.matcher(evidence).find()) {
+            return comparisons.size == 1 && comparisons.allNull;
+        }
+        return false;
+    }
+
+    private ListComparison nullComparisons(String condition) {
+        Matcher matcher = NULL_COMPARISON.matcher(condition);
+        int size = 0;
+        boolean allNull = true;
+        boolean allNotNull = true;
+        while (matcher.find()) {
+            size++;
+            allNull &= "==".equals(matcher.group(2));
+            allNotNull &= "!=".equals(matcher.group(2));
+        }
+        String remainder = matcher.replaceAll("")
+                .replaceAll("(?i)\\bAND\\b", "")
+                .replaceAll("[()\\s]", "");
+        if (size == 0 || !remainder.isEmpty()) {
+            return null;
+        }
+        boolean andOnly = !Pattern.compile("(?i)\\bOR\\b").matcher(condition).find()
+                && (size == 1 || Pattern.compile("(?i)\\bAND\\b")
+                        .matcher(condition).find());
+        return new ListComparison(size, allNull, allNotNull, andOnly);
+    }
+
+    private String identity(String value) {
+        return value.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
     }
 
     private boolean containsToken(String evidence, String token) {
@@ -101,5 +186,12 @@ final class SourceEvidencePolicy {
     private String string(JsonObject object, String field) {
         return object.has(field) && object.get(field).isJsonPrimitive()
                 ? object.get(field).getAsString() : "";
+    }
+
+    private record ListComparison(
+            int size,
+            boolean allNull,
+            boolean allNotNull,
+            boolean andOnly) {
     }
 }
