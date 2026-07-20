@@ -140,7 +140,8 @@ public final class RuleCenterWorkflowMain {
         List<SourceDocumentArtifact> retained = new ArrayList<>();
         try (var paths = Files.walk(sourceRoot)) {
             for (Path path : paths.filter(Files::isRegularFile)
-                    .filter(file -> file.getFileName().toString().endsWith(".md")).toList()) {
+                    .filter(file -> file.getFileName().toString().endsWith(".md"))
+                    .sorted().toList()) {
                 String relative = sourceRoot.relativize(path).toString().replace('\\', '/');
                 String documentId = withoutExtension(relative);
                 String content = Files.readString(path);

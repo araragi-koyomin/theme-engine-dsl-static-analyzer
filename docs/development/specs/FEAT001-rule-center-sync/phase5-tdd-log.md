@@ -268,3 +268,25 @@ PR 工作流现在从 base SHA 检出可信 Gradle/Java，从 fork/head SHA 仅�
 | 测试 canary | 临时绕过 `relationMatches` 返回 true，只运行语义反转测试 | 退出 1；反转约束再次被发布，测试精确变红；恢复后全组通过 |
 
 原文中的规范性关键词不再只是“有出现就算证明”。确定性策略会把受支持的自然语言关系映射到诊断应命中的违规状态：例如“不能同时存在”只允许两个属性均非空的 AND 条件；“必填”只允许该属性为空的条件。无法证明关系方向的候选直接以 `EVIDENCE_CONFLICT` 跳过，不进入修复循环。目标元素由源文档 identity 绑定，元素属性目标还必须真实出现在 condition 引用集合中。
+
+### Review A 复审修复 2：不可变 Release、最高版本基线与工作流真断言
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*GitHubReleaseBackendTest" --tests "*ReleaseCatalogContractTest" --tests "*RuleCenterWorkflowContractTest" --tests "*RuleCenterPublishWorkflowContractTest"` | 退出 1；descriptor 缺 immutable 字段，且工作流缺 fork 数据检出 opt-in、最高版本基线和严格递增门禁 |
+| GREEN/REFACTOR | 同一测试命令，并以 actionlint v1.7.12 校验两个 workflow | 退出 0；Release、catalog、结构化 workflow step 关联和发布命令精确资产测试通过，actionlint 无诊断 |
+| PR 信任边界 canary | 同时把 proposal checkout 的 `allow-unsafe-pr-checkout` 改为 false、向 release 命令加第四资产，运行两个精确结构测试 | 退出 1；分别在测试第 72、63 行变红；恢复后通过 |
+| Release canary | 临时移除 backend 的 `!descriptor.isImmutable()` 拒绝，运行 mutable Release 测试 | 退出 1；自洽摘要的可变 Release 被错误接受，测试精确变红；恢复后通过 |
+| 版本基线 canary | 将 latest tag 选择块中的 `sort -V` 改为普通 `sort`，运行基线测试 | 首版宽松断言曾错误保持绿色，随即收紧为只截取 `latest_tag` 赋值块；再次运行退出 1 并在第 87 行变红，恢复后通过 |
+
+客户端和发布基线都只接受 GitHub REST 明示 `immutable=true` 的 Release。基线从所有分页结果中选择最高数字点分 tag，新版本必须严格更高。PR 测试不再全文件搜索若干关键词，而是解析 YAML 后精确核对 base checkout、proposal checkout、可信 JavaExec step 的字段归属；发布测试从 `gh release create` 命令解析位置参数并要求恰好三个固定资产。
+
+### Review A 复审修复 3：函数严格性与确定性元数据
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*RulePackageAssemblerTest.malformedFunctionEntriesCannotBeSilentlyDroppedByProductionLoader" --tests "*RulePackageAssemblerTest.equivalentInputOrderingProducesIdenticalManifestAndReportBytes"` | 退出 1；`functions:[{}]` 被静默接受，等价逆序输入生成不同 manifest/report 字节 |
+| GREEN/REFACTOR | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*RulePackageAssemblerTest"` | 退出 0；函数签名必需字段/参数字段与生产加载数量一致，源文档、候选、验证、沿用 ID 和 revisions 规范排序 |
+| 测试 canary | 临时移除 report 候选的 candidateId 排序，只运行确定性元数据测试 | 退出 1；逆序候选导致 release-report 字节不同，测试精确在第 200 行变红；恢复后通过 |
+
+函数文件除数组外还必须逐项包含 `name`、`params`、`returnType`、`expressionKind`，参数包含 `name`、`type`、`isVariadic`，且声明数量必须等于生产 loader 实际加载数量。规则包元数据不再依赖 `Files.walk`、输入列表或 Set 的迭代顺序，相同内容可重建出相同 manifest/report 和确定性 ZIP。

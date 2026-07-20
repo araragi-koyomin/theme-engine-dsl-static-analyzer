@@ -3,12 +3,15 @@ package com.huawei.theme.analysis.core.rulecenter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RuleCenterPublishWorkflowContractTest {
@@ -38,8 +41,11 @@ class RuleCenterPublishWorkflowContractTest {
     @Test
     void releaseIsCreatedOnlyAfterGateWithExactlyThreeFixedAssets() throws IOException {
         String workflow = read(".github/workflows/publish-rule-package.yml");
+        Map<String, Object> publish = job(workflow, "publish");
+        String command = (String) step(
+                publish, "Create immutable approved GitHub Release").get("run");
 
-        assertTrue(workflow.contains("gh release create"));
+        assertTrue(command.contains("gh release create"));
         assertTrue(workflow.contains("rules-v${RULE_CENTER_PACKAGE_VERSION}"));
         assertTrue(workflow.contains("rule-package.zip"));
         assertTrue(workflow.contains("manifest.json"));
@@ -54,18 +60,34 @@ class RuleCenterPublishWorkflowContractTest {
         assertFalse(workflow.contains("actions/download-artifact"));
         assertTrue(workflow.indexOf("ruleCenterPrepareRelease")
                 < workflow.indexOf("gh release create"));
+        assertEquals(List.of(
+                        "build/rule-center-publish/release/rule-package.zip",
+                        "build/rule-center-publish/release/manifest.json",
+                        "build/rule-center-publish/release/release-report.json"),
+                positionalReleaseAssets(command));
     }
 
     @Test
     void previousApprovedPackageIsOptionalBaselineAndChangedDocsAreExplicit()
             throws IOException {
         String workflow = read(".github/workflows/publish-rule-package.yml");
+        String baseline = (String) step(
+                job(workflow, "publish"),
+                "Restore the previous approved complete-package baseline").get("run");
+        int selectionStart = baseline.indexOf("latest_tag=");
+        int selectionEnd = baseline.indexOf("\nif [[ -z", selectionStart);
+        String baselineSelection = baseline.substring(selectionStart, selectionEnd);
 
         assertTrue(workflow.contains("gh release download"));
         assertTrue(workflow.contains("RULE_CENTER_BASELINE_RULES"));
         assertTrue(workflow.contains("RULE_CENTER_DOCUMENT_LIST"));
         assertTrue(workflow.contains("--diff-filter=AM"));
-        assertTrue(workflow.contains("--paginate"));
+        assertTrue(baselineSelection.contains("--paginate"));
+        assertTrue(baselineSelection.contains(".immutable == true"));
+        assertTrue(baselineSelection.contains("| sort -V | tail -n 1"));
+        assertFalse(baselineSelection.contains("published_at"));
+        assertTrue(baseline.contains(
+                "Package version must be greater than latest approved version"));
         assertTrue(workflow.contains("No previous approved Release"));
         assertTrue(workflow.indexOf("No previous approved Release")
                 < workflow.lastIndexOf("git ls-files 'rule-center/docs/**/*.md'"));
@@ -74,5 +96,38 @@ class RuleCenterPublishWorkflowContractTest {
 
     private String read(String relativePath) throws IOException {
         return Files.readString(repositoryRoot.resolve(relativePath));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> job(String workflow, String name) {
+        Map<String, Object> root = new Yaml().load(workflow);
+        return (Map<String, Object>) ((Map<String, Object>) root.get("jobs")).get(name);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> step(Map<String, Object> job, String name) {
+        return ((List<Map<String, Object>>) job.get("steps")).stream()
+                .filter(item -> name.equals(item.get("name")))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private List<String> positionalReleaseAssets(String command) {
+        List<String> assets = new ArrayList<>();
+        boolean createSeen = false;
+        for (String rawLine : command.split("\\R")) {
+            String line = rawLine.trim().replaceFirst("\\s*\\\\$", "");
+            if (line.startsWith("gh release create ")) {
+                createSeen = true;
+                continue;
+            }
+            if (createSeen && line.startsWith("--")) {
+                break;
+            }
+            if (createSeen && !line.isEmpty()) {
+                assets.add(line);
+            }
+        }
+        return List.copyOf(assets);
     }
 }

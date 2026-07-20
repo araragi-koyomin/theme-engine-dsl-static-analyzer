@@ -24,6 +24,7 @@ import com.huawei.theme.analysis.core.rulecenter.model.ValidationFailure;
 import com.huawei.theme.analysis.core.rulecenter.model.VerificationStatus;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -157,6 +158,52 @@ class RulePackageAssemblerTest {
         assertEquals(ReleaseReportStatus.FAILED, result.getStatus());
         assertTrue(result.getErrors().stream()
                 .anyMatch(error -> error.contains("production rule loader")));
+    }
+
+    @Test
+    void malformedFunctionEntriesCannotBeSilentlyDroppedByProductionLoader()
+            throws IOException {
+        write(functionsDirectory.resolve("dsl_functions.json"), "{\"functions\":[{}]}");
+
+        RulePackageAssemblyResult result = assembler.assemble(requestBuilder().build());
+
+        assertEquals(ReleaseReportStatus.FAILED, result.getStatus());
+        assertTrue(result.getErrors().stream()
+                .anyMatch(error -> error.contains("functions/dsl_functions.json")));
+    }
+
+    @Test
+    void equivalentInputOrderingProducesIdenticalManifestAndReportBytes()
+            throws IOException {
+        SourceDocumentArtifact first = SourceDocumentArtifact.builder()
+                .documentId("a").revision("r1").relativePath("a.md").content("# A").build();
+        SourceDocumentArtifact second = SourceDocumentArtifact.builder()
+                .documentId("b").revision("r2").relativePath("b.md").content("# B").build();
+        RuleCandidate alpha = candidate(
+                "alpha", CandidateStatus.SKIPPED, SkipReason.OUT_OF_STATIC_SCOPE, null);
+        RuleCandidate zeta = candidate(
+                "zeta", CandidateStatus.SKIPPED, SkipReason.OUT_OF_STATIC_SCOPE, null);
+
+        RulePackageAssemblyResult ordered = assembler.assemble(requestBuilder()
+                .sourceDocuments(List.of(first, second))
+                .candidates(List.of(alpha, zeta))
+                .carriedForwardCandidateIds(new java.util.LinkedHashSet<>(
+                        List.of("alpha", "zeta")))
+                .build());
+        RulePackageAssemblyResult reversed = assembler.assemble(requestBuilder()
+                .sourceDocuments(List.of(second, first))
+                .candidates(List.of(zeta, alpha))
+                .carriedForwardCandidateIds(new java.util.LinkedHashSet<>(
+                        List.of("zeta", "alpha")))
+                .build());
+
+        assertArrayEquals(Files.readAllBytes(
+                        ordered.getPackageDirectory().resolve("manifest.json")),
+                Files.readAllBytes(reversed.getPackageDirectory().resolve("manifest.json")));
+        assertArrayEquals(Files.readAllBytes(ordered.getPackageDirectory()
+                        .resolve("verification/release-report.json")),
+                Files.readAllBytes(reversed.getPackageDirectory()
+                        .resolve("verification/release-report.json")));
     }
 
     @Test

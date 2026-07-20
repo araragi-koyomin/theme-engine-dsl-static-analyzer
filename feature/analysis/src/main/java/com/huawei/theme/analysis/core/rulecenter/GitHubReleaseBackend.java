@@ -24,7 +24,7 @@ public class GitHubReleaseBackend {
             GitHubReleaseDescriptor descriptor,
             String analyzerVersion) {
         Objects.requireNonNull(descriptor, "descriptor");
-        if (descriptor.isDraft() || descriptor.isPrerelease()) {
+        if (descriptor.isDraft() || descriptor.isPrerelease() || !descriptor.isImmutable()) {
             return rejected(GitHubReleaseRejection.NOT_APPROVED_RELEASE);
         }
         Map<String, GitHubReleaseAsset> assets = indexAssets(descriptor.getAssets());

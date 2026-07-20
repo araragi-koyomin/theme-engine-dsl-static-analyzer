@@ -11,6 +11,7 @@ public class GitHubReleaseDescriptor {
     String tagName;
     boolean draft;
     boolean prerelease;
+    boolean immutable;
     String publishedAt;
     String body;
     List<GitHubReleaseAsset> assets;

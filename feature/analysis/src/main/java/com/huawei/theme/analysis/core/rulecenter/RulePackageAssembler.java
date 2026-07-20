@@ -8,6 +8,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -113,7 +114,9 @@ public class RulePackageAssembler {
             List<SourceDocumentArtifact> sourceDocuments) throws IOException {
         Path sourceRoot = packageDirectory.resolve("source-markdown").toAbsolutePath().normalize();
         Files.createDirectories(sourceRoot);
-        for (SourceDocumentArtifact document : sourceDocuments) {
+        for (SourceDocumentArtifact document : sourceDocuments.stream()
+                .sorted(Comparator.comparing(SourceDocumentArtifact::getRelativePath))
+                .toList()) {
             Path target = sourceRoot.resolve(document.getRelativePath()).normalize();
             if (!target.startsWith(sourceRoot)) {
                 throw new IllegalArgumentException("source markdown path escapes package");
@@ -168,10 +171,19 @@ public class RulePackageAssembler {
             }
             ruleLoader.loadGlobalVars(packageDirectory.resolve("rules").toString());
             ruleLoader.loadRuleSources(packageDirectory.resolve("rules").toString());
-            new JsonFunctionSignatureLoader().loadFromDirectory(
-                    packageDirectory.resolve("functions").toString());
+            JsonObject functions = JsonParser.parseString(Files.readString(
+                    packageDirectory.resolve("functions/dsl_functions.json")))
+                    .getAsJsonObject();
+            int declaredFunctions = functions.getAsJsonArray("functions").size();
+            int loadedFunctions = new JsonFunctionSignatureLoader().loadFromDirectory(
+                    packageDirectory.resolve("functions").toString())
+                    .getAllSignatures().size();
+            if (declaredFunctions != loadedFunctions) {
+                errors.add("production function loader did not load every declared signature");
+                return false;
+            }
             return true;
-        } catch (RuntimeException exception) {
+        } catch (RuntimeException | IOException exception) {
             errors.add("production rule loader rejected package: "
                     + exception.getClass().getSimpleName());
             return false;
@@ -221,15 +233,44 @@ public class RulePackageAssembler {
             return root.isJsonArray();
         }
         if ("functions/dsl_functions.json".equals(path)) {
-            return root.isJsonObject()
-                    && root.getAsJsonObject().has("functions")
-                    && root.getAsJsonObject().get("functions").isJsonArray();
+            return validFunctionFile(root);
         }
         if (path.startsWith("rules/elements/")) {
             return root.isJsonObject()
                     && hasString(root.getAsJsonObject(), "element")
                     && (!root.getAsJsonObject().has("constraints")
                             || root.getAsJsonObject().get("constraints").isJsonArray());
+        }
+        return true;
+    }
+
+    private boolean validFunctionFile(JsonElement root) {
+        if (!root.isJsonObject() || !root.getAsJsonObject().has("functions")
+                || !root.getAsJsonObject().get("functions").isJsonArray()) {
+            return false;
+        }
+        for (JsonElement item : root.getAsJsonObject().getAsJsonArray("functions")) {
+            if (!item.isJsonObject()) {
+                return false;
+            }
+            JsonObject function = item.getAsJsonObject();
+            if (!hasString(function, "name") || !hasString(function, "returnType")
+                    || !hasString(function, "expressionKind")
+                    || !function.has("params") || !function.get("params").isJsonArray()) {
+                return false;
+            }
+            for (JsonElement parameterItem : function.getAsJsonArray("params")) {
+                if (!parameterItem.isJsonObject()) {
+                    return false;
+                }
+                JsonObject parameter = parameterItem.getAsJsonObject();
+                if (!hasString(parameter, "name") || !hasString(parameter, "type")
+                        || !parameter.has("isVariadic")
+                        || !parameter.get("isVariadic").isJsonPrimitive()
+                        || !parameter.get("isVariadic").getAsJsonPrimitive().isBoolean()) {
+                    return false;
+                }
+            }
         }
         return true;
     }
@@ -343,7 +384,12 @@ public class RulePackageAssembler {
             List<String> errors) {
         Map<CandidateStatus, Integer> rawCounts = new EnumMap<>(CandidateStatus.class);
         Map<String, List<String>> byStatus = new LinkedHashMap<>();
-        for (RuleCandidate candidate : request.getCandidates()) {
+        List<RuleCandidate> orderedCandidates = request.getCandidates().stream()
+                .sorted(Comparator.comparing(
+                        candidate -> candidate.getCandidateId() == null
+                                ? "" : candidate.getCandidateId()))
+                .toList();
+        for (RuleCandidate candidate : orderedCandidates) {
             rawCounts.merge(candidate.getStatus(), 1, Integer::sum);
             byStatus.computeIfAbsent(statusName(candidate.getStatus()), ignored -> new ArrayList<>())
                     .add(candidate.getCandidateId());
@@ -358,8 +404,13 @@ public class RulePackageAssembler {
                 .status(status)
                 .candidateCounts(counts)
                 .candidatesByStatus(byStatus)
-                .carriedForwardCandidateIds(List.copyOf(request.getCarriedForwardCandidateIds()))
-                .constraintVerifications(List.copyOf(request.getVerifications()))
+                .carriedForwardCandidateIds(request.getCarriedForwardCandidateIds().stream()
+                        .sorted().toList())
+                .constraintVerifications(request.getVerifications().stream()
+                        .sorted(Comparator.comparing(verification -> verification == null
+                                || verification.getRuleId() == null
+                                        ? "" : verification.getRuleId()))
+                        .toList())
                 .jsonSchemaValid(jsonValid)
                 .packageComplete(complete)
                 .errors(List.copyOf(errors))
@@ -377,6 +428,10 @@ public class RulePackageAssembler {
                                 .revision(document.getRevision())
                                 .sha256(sha256(document.getContent()))
                                 .build())
+                        .sorted(Comparator.comparing(
+                                RulePackageManifest.SourceDocumentRevision::getDocumentId)
+                                .thenComparing(
+                                        RulePackageManifest.SourceDocumentRevision::getRevision))
                         .toList();
         return RulePackageManifest.builder()
                 .schemaVersion(1)

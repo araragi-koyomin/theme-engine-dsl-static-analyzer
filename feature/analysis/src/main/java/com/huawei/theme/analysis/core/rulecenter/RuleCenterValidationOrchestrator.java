@@ -125,7 +125,10 @@ public class RuleCenterValidationOrchestrator {
             sourceDocumentsByPath.put(artifact.getRelativePath(), artifact);
         }
         List<SourceDocumentArtifact> sourceDocuments = List.copyOf(
-                sourceDocumentsByPath.values());
+                sourceDocumentsByPath.values().stream()
+                        .sorted(java.util.Comparator.comparing(
+                                SourceDocumentArtifact::getRelativePath))
+                        .toList());
         grandfatheredDuplicateRuleIds.removeAll(publishedRuleIds);
         RulePackageInventory minimumInventory;
         try {

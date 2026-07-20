@@ -138,13 +138,21 @@ jobs:
           set -euo pipefail
           latest_tag="$(gh api --paginate \
             "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
-            --jq '.[] | select(.draft == false and .prerelease == false and (.tag_name | startswith("rules-v"))) | [.published_at, .tag_name] | @tsv' \
-            | sort | tail -n 1 | cut -f 2-)"
+            --jq '.[] | select(.draft == false and .prerelease == false and .immutable == true and (.tag_name | test("^rules-v[0-9]+(\\.[0-9]+)+$"))) | .tag_name' \
+            | sort -V | tail -n 1)"
           if [[ -z "$latest_tag" ]]; then
             echo "No previous approved Release; using repository built-in rules as initial baseline"
             git ls-files 'rule-center/docs/**/*.md' \
               > build/rule-center-publish/documents.txt
             exit 0
+          fi
+          latest_version="${latest_tag#rules-v}"
+          highest_version="$(printf '%s\n%s\n' "$latest_version" \
+            "$RULE_CENTER_PACKAGE_VERSION" | sort -V | tail -n 1)"
+          if [[ "$RULE_CENTER_PACKAGE_VERSION" == "$latest_version" \
+                || "$highest_version" != "$RULE_CENTER_PACKAGE_VERSION" ]]; then
+            echo "Package version must be greater than latest approved version $latest_version" >&2
+            exit 1
           fi
           mkdir -p build/rule-center-publish/baseline-download
           gh release download "$latest_tag" --repo "$GITHUB_REPOSITORY" \

@@ -164,6 +164,7 @@ class ReleaseCatalogContractTest {
                 .tagName("rules-v" + version)
                 .draft(draft)
                 .prerelease(false)
+                .immutable(true)
                 .publishedAt("2026-07-20T10:05:00Z")
                 .body("changes-" + version)
                 .assets(assets)

@@ -45,6 +45,14 @@ class GitHubReleaseBackendTest {
     }
 
     @Test
+    void rejectsMutableReleaseEvenWhenAllAssetsAndDigestsAreSelfConsistent() {
+        GitHubReleaseDescriptor mutable = release();
+        mutable.setImmutable(false);
+
+        assertRejected(mutable, GitHubReleaseRejection.NOT_APPROVED_RELEASE);
+    }
+
+    @Test
     void rejectsFailedReportAndMissingFixedAsset() {
         GitHubReleaseDescriptor failed = release();
         setContentAndDigest(asset(failed, "release-report.json"), reportJson("failed"));
@@ -116,6 +124,7 @@ class GitHubReleaseBackendTest {
                 .tagName("rules-v2026.07.20.1")
                 .draft(false)
                 .prerelease(false)
+                .immutable(true)
                 .publishedAt("2026-07-20T10:05:00Z")
                 .body("DSL rule changes")
                 .assets(assets)

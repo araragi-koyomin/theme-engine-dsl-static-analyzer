@@ -94,9 +94,11 @@ company/dsl-rule-center/
     publish-rule-package.yml    # main 合并后的发布工作流
 ```
 
-`validate-document.yml` 由 `pull_request` 触发，只处理受影响 MD 但保留全文扫描能力；它发布 Check、转换报告和作者反馈。
+`validate-document.yml` 由 `pull_request_target` 触发，但绝不直接执行 PR head 中的代码。工作流从 base SHA 检出可信 Gradle/Java 到 `trusted/`，从 fork/head SHA 仅稀疏检出 `rule-center/docs` 到 `proposal/`，并把后者作为不可信数据交给可信程序。head 检出显式设置 `persist-credentials: false` 与 `allow-unsafe-pr-checkout: true`；该 opt-in 只允许数据检出，不允许从 `proposal/` 运行脚本、Gradle wrapper、Action 或可执行文件。文档真实路径还必须位于显式 `RULE_CENTER_DOCUMENT_ROOT` 下。工作流只处理受影响 MD，但对每份受影响文档保留全文扫描能力，并发布转换报告和作者反馈。
 
-`publish-rule-package.yml` 由受保护 `main` 的合并提交触发：若已有 approved Release，先下载并验证其 `rule-package.zip`，把其中的完整 `rules/`、`functions/`、`source-markdown/` 与 manifest 作为上一版基线；首版才使用仓库内置规则。本次只对新增/修改 Markdown 调用模型，验证通过的变化覆盖到完整基线，未修改的规则与源文档原样保留。随后工作流再次运行最终门禁、组装完整包、创建 GitHub Release、上传三个固定资产。正式发布环境使用 GitHub Environment `dsl-rule-production` 的人工审批或等价公司审批门禁。
+`publish-rule-package.yml` 由受保护 `main` 的合并提交触发：若已有 approved Release，按最高数字点分版本（而非发布时间）选择不可变 Release，先下载并验证其 `rule-package.zip`，把其中的完整 `rules/`、`functions/`、`source-markdown/` 与 manifest 作为上一版基线；首版才使用仓库内置规则并转换全部中心文档。新版本必须严格大于现有最高版本。本次只对新增/修改 Markdown 调用模型，验证通过的变化覆盖到完整基线，未修改的规则与源文档原样保留。随后工作流再次运行最终门禁、组装完整包、创建 GitHub Release、上传三个固定资产。正式发布环境使用 GitHub Environment `dsl-rule-production` 的人工审批或等价公司审批门禁。
+
+仓库必须启用 GitHub Immutable Releases。发布工作流在模型推理前通过官方 `/repos/{owner}/{repo}/immutable-releases` 接口预检设置，发布后再次核对 Release 的 `immutable=true`。该预检需要 Administration: read，因此 `dsl-rule-production` environment 保存专用的 `RULE_CENTER_ADMIN_TOKEN`；它不进入插件、不进入 PR 校验 job，也不得输出到日志。普通插件用户和文档作者无需配置该令牌。[GitHub Immutable Releases](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/establish-provenance-and-integrity/prevent-release-changes) [仓库不可变发布 API](https://docs.github.com/en/rest/repos/repos?apiVersion=2026-03-10#check-if-immutable-releases-are-enabled-for-a-repository)
 
 ## 5. 稳定接口：防止 IDEA 绑定 GitHub
 
@@ -135,7 +137,7 @@ GitHub 实现 `GitHubReleaseBackend`：
 | Release draft/pre-release | 不可发布状态 |
 | Release body / asset metadata | 变更摘要与发布元数据 |
 
-网关仅把同时满足以下条件的 Release 映射为 `approved`：非 draft、非 pre-release、存在三个固定资产、manifest 摘要一致、release report 是允许发布状态、最低分析器版本兼容。
+网关仅把同时满足以下条件的 Release 映射为 `approved`：`immutable=true`、非 draft、非 pre-release、存在且仅使用三个固定资产、三项 GitHub asset SHA-256 可验证、manifest 摘要一致、release report 是允许发布状态、最低分析器版本兼容。
 
 ## 6. 从 GitHub 迁到 CodeHub 的边界
 
@@ -161,11 +163,12 @@ GitHub 实现 `GitHubReleaseBackend`：
 ## 7. 安全、完整性与运维要求
 
 1. GitHub 仓库必须为私有，`main` 开启保护和必需检查。
-2. 只有网关的 GitHub App 有 Release 读取权限；Actions 发布身份只拥有创建 Release 所需的最小权限。
-3. 插件下载后必须再次校验网关返回摘要、包内 `manifest.contentSha256`、目录完整性和规则可加载性。
-4. 不使用 GitHub Actions artifact 作为正式下载地址；只使用已发布 Release 的固定资产。
-5. 网关缓存最新 Release 时必须保留 packageVersion 与摘要，不得把“更晚创建但不兼容”的 Release 告知旧插件。
-6. GitHub API 故障、权限过期或资产缺失时，网关返回检查失败；IDEA 保持当前规则版本。
+2. 仓库或组织必须启用 Immutable Releases；生产 environment 只额外保存预检所需的 Administration: read 令牌。
+3. 只有网关的 GitHub App 有 Release 读取权限；Actions 发布身份只拥有创建 Release 所需的最小权限。
+4. 插件下载后必须再次校验网关返回摘要、包内 `manifest.contentSha256`、目录完整性和规则可加载性。
+5. 不使用 GitHub Actions artifact 作为正式下载地址；只使用已发布 Release 的固定资产。
+6. 网关缓存最新 Release 时必须保留 packageVersion 与摘要，不得把“更晚创建但不兼容”的 Release 告知旧插件。
+7. GitHub API 故障、权限过期或资产缺失时，网关返回检查失败；IDEA 保持当前规则版本。
 
 ## 8. 开发与测试路径
 

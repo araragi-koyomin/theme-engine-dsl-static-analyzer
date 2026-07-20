@@ -41,6 +41,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           path: proposal
           persist-credentials: false
+          allow-unsafe-pr-checkout: true
           sparse-checkout: rule-center/docs
           sparse-checkout-cone-mode: false
 
