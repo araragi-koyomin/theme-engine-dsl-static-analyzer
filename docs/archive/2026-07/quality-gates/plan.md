@@ -1,7 +1,7 @@
 ---
 module_ids: [CORE, E2E]
 doc_kind: plan
-status: active
+status: archived
 created: 2026-07-17
 ---
 # 质量门禁与工作流改革 — 实现计划（Phase A）
