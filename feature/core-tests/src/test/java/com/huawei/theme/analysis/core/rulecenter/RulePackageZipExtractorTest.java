@@ -51,6 +51,21 @@ class RulePackageZipExtractorTest {
         assertFalse(Files.exists(baseline));
     }
 
+    @Test
+    void rejectsWindowsStyleBackslashTraversalOnEveryOperatingSystem() throws IOException {
+        Path zip = tempDir.resolve("backslash-malicious.zip");
+        try (ZipOutputStream output = new ZipOutputStream(Files.newOutputStream(zip))) {
+            output.putNextEntry(new ZipEntry("rules\\..\\..\\escaped.txt"));
+            output.write("bad".getBytes(StandardCharsets.UTF_8));
+            output.closeEntry();
+        }
+
+        assertThrows(IllegalArgumentException.class,
+                () -> new RulePackageZipExtractor().extractAndValidate(
+                        zip, tempDir.resolve("backslash-baseline")));
+        assertFalse(Files.exists(tempDir.resolve("escaped.txt")));
+    }
+
     private Path passingPackage() throws IOException {
         Path rules = tempDir.resolve("input/rules");
         Path functions = tempDir.resolve("input/functions");

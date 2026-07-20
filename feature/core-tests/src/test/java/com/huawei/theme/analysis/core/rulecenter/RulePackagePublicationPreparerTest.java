@@ -114,6 +114,28 @@ class RulePackagePublicationPreparerTest {
         assertTrue(error.getMessage().contains("digest"));
     }
 
+    @Test
+    void manifestInventoryTripsGateEvenWhenAnAttackerRecomputesBothContentDigests()
+            throws IOException {
+        Files.delete(packageDirectory.resolve("rules/elements/view/Image.json"));
+        String recomputed = RulePackageDigest.compute(packageDirectory);
+        JsonObject manifest = JsonParser.parseString(Files.readString(
+                packageDirectory.resolve("manifest.json"))).getAsJsonObject();
+        manifest.addProperty("contentSha256", recomputed);
+        Files.writeString(packageDirectory.resolve("manifest.json"), manifest.toString());
+        JsonObject report = JsonParser.parseString(Files.readString(
+                packageDirectory.resolve("verification/release-report.json"))).getAsJsonObject();
+        report.addProperty("manifestContentSha256", recomputed);
+        Files.writeString(packageDirectory.resolve("verification/release-report.json"),
+                report.toString());
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> new RulePackagePublicationPreparer().prepare(
+                        packageDirectory, tempDir.resolve("inventory-failure")));
+
+        assertTrue(error.getMessage().contains("inventory"));
+    }
+
     private void write(Path path, String content) throws IOException {
         Files.createDirectories(path.getParent());
         Files.writeString(path, content, StandardCharsets.UTF_8);

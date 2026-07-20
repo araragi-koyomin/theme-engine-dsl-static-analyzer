@@ -14,6 +14,7 @@ public class RulePackageManifest {
     String createdAt;
     String contentSha256;
     String minimumAnalyzerVersion;
+    RulePackageInventory inventory;
     List<SourceDocumentRevision> sourceDocumentRevisions;
 
     @Data

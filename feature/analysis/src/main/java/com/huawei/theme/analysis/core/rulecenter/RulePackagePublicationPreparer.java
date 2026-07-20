@@ -84,6 +84,12 @@ public class RulePackagePublicationPreparer {
         if (manifest.getSchemaVersion() != 1 || !"approved".equals(manifest.getChannel())) {
             throw new IllegalArgumentException("manifest is not an approved schema-v1 package");
         }
+        RulePackageInventory actualInventory = RulePackageInventory.fromPackage(packageDirectory);
+        if (manifest.getInventory() == null
+                || !manifest.getInventory().equals(actualInventory)) {
+            throw new IllegalArgumentException(
+                    "rule package inventory does not match manifest");
+        }
         if (manifest.getPackageVersion() == null || manifest.getPackageVersion().isEmpty()
                 || !manifest.getPackageVersion().equals(report.getPackageVersion())) {
             throw new IllegalArgumentException("manifest and report package versions differ");

@@ -29,6 +29,8 @@ import com.huawei.theme.analysis.core.rulecenter.model.CandidateStatus;
 import com.huawei.theme.analysis.core.rulecenter.model.ConstraintVerification;
 import com.huawei.theme.analysis.core.rulecenter.model.RuleCandidate;
 import com.huawei.theme.analysis.core.rulecenter.model.VerificationStatus;
+import com.huawei.theme.analysis.core.function.JsonFunctionSignatureLoader;
+import com.huawei.theme.analysis.core.rulelibrary.JsonRuleLoader;
 
 public class RulePackageAssembler {
     private static final List<String> REQUIRED_PATHS = List.of(
@@ -55,8 +57,13 @@ public class RulePackageAssembler {
             Files.createDirectories(packageDirectory.resolve("verification"));
 
             List<String> errors = new ArrayList<>();
-            boolean complete = validateCompleteness(packageDirectory, errors);
+            RulePackageInventory inventory = RulePackageInventory.fromPackage(packageDirectory);
+            boolean complete = validateCompleteness(
+                    packageDirectory, request.getMinimumInventory(), inventory, errors);
             boolean jsonValid = validateJsonAndSchema(packageDirectory, errors);
+            boolean productionLoadable = validateWithProductionLoaders(
+                    packageDirectory, inventory, errors);
+            jsonValid = jsonValid && productionLoadable;
             if (jsonValid) {
                 validatePublishedConstraints(packageDirectory, request, errors);
             }
@@ -69,7 +76,8 @@ public class RulePackageAssembler {
             String contentSha256 = RulePackageDigest.compute(packageDirectory);
             report.setManifestContentSha256(contentSha256);
             writeJson(reportPath, report);
-            writeJson(packageDirectory.resolve("manifest.json"), buildManifest(request, contentSha256));
+            writeJson(packageDirectory.resolve("manifest.json"),
+                    buildManifest(request, contentSha256, inventory));
 
             return RulePackageAssemblyResult.builder()
                     .packageDirectory(packageDirectory)
@@ -115,7 +123,11 @@ public class RulePackageAssembler {
         }
     }
 
-    private boolean validateCompleteness(Path packageDirectory, List<String> errors) {
+    private boolean validateCompleteness(
+            Path packageDirectory,
+            RulePackageInventory minimumInventory,
+            RulePackageInventory actualInventory,
+            List<String> errors) {
         boolean complete = true;
         for (String requiredPath : REQUIRED_PATHS) {
             if (!Files.exists(packageDirectory.resolve(requiredPath))) {
@@ -123,7 +135,47 @@ public class RulePackageAssembler {
                 complete = false;
             }
         }
+        boolean hasElementRule = actualInventory.getRuleFiles().stream()
+                .anyMatch(path -> path.startsWith("rules/elements/")
+                        && path.endsWith(".json"));
+        if (!hasElementRule) {
+            errors.add("package contains no element rule JSON files");
+            complete = false;
+        }
+        for (String missing : minimumInventory.missingFrom(actualInventory)) {
+            errors.add("baseline inventory file is missing: " + missing);
+            complete = false;
+        }
         return complete;
+    }
+
+    private boolean validateWithProductionLoaders(
+            Path packageDirectory,
+            RulePackageInventory inventory,
+            List<String> errors) {
+        try {
+            JsonRuleLoader ruleLoader = new JsonRuleLoader();
+            int loadedElements = ruleLoader.loadElementRules(
+                    packageDirectory.resolve("rules").toString()).size();
+            long elementFiles = inventory.getRuleFiles().stream()
+                    .filter(path -> path.startsWith("rules/elements/")
+                            || path.startsWith("rules/commands/"))
+                    .filter(path -> path.endsWith(".json"))
+                    .count();
+            if (loadedElements != elementFiles) {
+                errors.add("production rule loader did not load every element rule file");
+                return false;
+            }
+            ruleLoader.loadGlobalVars(packageDirectory.resolve("rules").toString());
+            ruleLoader.loadRuleSources(packageDirectory.resolve("rules").toString());
+            new JsonFunctionSignatureLoader().loadFromDirectory(
+                    packageDirectory.resolve("functions").toString());
+            return true;
+        } catch (RuntimeException exception) {
+            errors.add("production rule loader rejected package: "
+                    + exception.getClass().getSimpleName());
+            return false;
+        }
     }
 
     private boolean validateJsonAndSchema(Path packageDirectory, List<String> errors)
@@ -316,7 +368,8 @@ public class RulePackageAssembler {
 
     private RulePackageManifest buildManifest(
             RulePackageAssemblyRequest request,
-            String contentSha256) {
+            String contentSha256,
+            RulePackageInventory inventory) {
         List<RulePackageManifest.SourceDocumentRevision> revisions =
                 request.getSourceDocuments().stream()
                         .map(document -> RulePackageManifest.SourceDocumentRevision.builder()
@@ -332,6 +385,7 @@ public class RulePackageAssembler {
                 .createdAt(request.getCreatedAt())
                 .contentSha256(contentSha256)
                 .minimumAnalyzerVersion(request.getMinimumAnalyzerVersion())
+                .inventory(inventory)
                 .sourceDocumentRevisions(revisions)
                 .build();
     }
@@ -375,6 +429,7 @@ public class RulePackageAssembler {
         Objects.requireNonNull(request.getVerifications(), "verifications");
         Objects.requireNonNull(request.getPublishedConstraintRuleIds(), "publishedConstraintRuleIds");
         Objects.requireNonNull(request.getCarriedForwardCandidateIds(), "carriedForwardCandidateIds");
+        Objects.requireNonNull(request.getMinimumInventory(), "minimumInventory");
         Objects.requireNonNull(
                 request.getGrandfatheredDuplicateRuleIds(), "grandfatheredDuplicateRuleIds");
     }

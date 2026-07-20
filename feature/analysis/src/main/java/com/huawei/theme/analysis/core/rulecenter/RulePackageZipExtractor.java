@@ -58,7 +58,12 @@ public class RulePackageZipExtractor {
                 if (++entries > MAX_ENTRIES) {
                     throw new IllegalArgumentException("baseline zip contains too many entries");
                 }
-                Path target = normalizedStaging.resolve(entry.getName()).normalize();
+                String entryName = entry.getName();
+                if (entryName.contains("\\") || entryName.startsWith("/")
+                        || entryName.matches("^[A-Za-z]:.*")) {
+                    throw new IllegalArgumentException("baseline zip entry has unsafe path syntax");
+                }
+                Path target = normalizedStaging.resolve(entryName).normalize();
                 if (!target.startsWith(normalizedStaging) || target.equals(normalizedStaging)) {
                     throw new IllegalArgumentException("baseline zip entry escapes output directory");
                 }

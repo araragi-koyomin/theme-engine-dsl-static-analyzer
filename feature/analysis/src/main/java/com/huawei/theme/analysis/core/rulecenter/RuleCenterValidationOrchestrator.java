@@ -127,6 +127,13 @@ public class RuleCenterValidationOrchestrator {
         List<SourceDocumentArtifact> sourceDocuments = List.copyOf(
                 sourceDocumentsByPath.values());
         grandfatheredDuplicateRuleIds.removeAll(publishedRuleIds);
+        RulePackageInventory minimumInventory;
+        try {
+            minimumInventory = RulePackageInventory.fromInputs(
+                    request.getRulesDirectory(), request.getFunctionsDirectory());
+        } catch (java.io.IOException exception) {
+            throw new IllegalStateException("Unable to inventory baseline rule package", exception);
+        }
         RulePackageAssemblyResult assembly = new RulePackageAssembler(conditionAcceptor).assemble(
                 RulePackageAssemblyRequest.builder()
                         .packageDirectory(request.getOutputDirectory().resolve("rule-package"))
@@ -140,6 +147,7 @@ public class RuleCenterValidationOrchestrator {
                         .verifications(verifications)
                         .publishedConstraintRuleIds(publishedRuleIds)
                         .carriedForwardCandidateIds(carriedForward)
+                        .minimumInventory(minimumInventory)
                         .grandfatheredDuplicateRuleIds(grandfatheredDuplicateRuleIds)
                         .build());
         List<DocumentConversionFeedback> feedbackItems = request.getDocuments().stream()

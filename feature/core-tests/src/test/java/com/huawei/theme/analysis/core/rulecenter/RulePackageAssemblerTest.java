@@ -115,6 +115,51 @@ class RulePackageAssemblerTest {
     }
 
     @Test
+    void emptyElementsDirectoryCannotMasqueradeAsACompletePackage() throws IOException {
+        Files.delete(rulesDirectory.resolve("elements/view/Image.json"));
+
+        RulePackageAssemblyResult result = assembler.assemble(requestBuilder().build());
+
+        assertEquals(ReleaseReportStatus.FAILED, result.getStatus());
+        assertTrue(result.getErrors().stream()
+                .anyMatch(error -> error.contains("element rule")));
+    }
+
+    @Test
+    void outputMustRetainEveryFileDeclaredByTheBaselineInventory() throws IOException {
+        RulePackageInventory baseline = RulePackageInventory.builder()
+                .ruleFiles(List.of(
+                        "rules/elements/view/Image.json",
+                        "rules/elements/view/Text.json",
+                        "rules/global_vars.json",
+                        "rules/rule_sources.json"))
+                .functionFiles(List.of("functions/dsl_functions.json"))
+                .build();
+
+        RulePackageAssemblyResult result = assembler.assemble(requestBuilder()
+                .minimumInventory(baseline)
+                .build());
+
+        assertEquals(ReleaseReportStatus.FAILED, result.getStatus());
+        assertTrue(result.getErrors().stream()
+                .anyMatch(error -> error.contains("rules/elements/view/Text.json")));
+    }
+
+    @Test
+    void packageMustLoadThroughTheProductionRuleLoader() throws IOException {
+        write(rulesDirectory.resolve("elements/view/Image.json"), "{"
+                + "\"element\":\"Image\",\"constraints\":[{"
+                + "\"ruleId\":\"SEM-BAD\",\"condition\":\"true\","
+                + "\"message\":\"bad\",\"severity\":\"fatal\"}]}" );
+
+        RulePackageAssemblyResult result = assembler.assemble(requestBuilder().build());
+
+        assertEquals(ReleaseReportStatus.FAILED, result.getStatus());
+        assertTrue(result.getErrors().stream()
+                .anyMatch(error -> error.contains("production rule loader")));
+    }
+
+    @Test
     void malformedJsonMakesReportFailed() throws IOException {
         write(functionsDirectory.resolve("dsl_functions.json"), "{not-json}");
 

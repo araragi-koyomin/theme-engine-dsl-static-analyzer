@@ -226,3 +226,13 @@ created: 2026-07-20
 | 测试 canary | 临时移除外部语义判定中的 `!externalSemantics`，只运行 `lyingStaticTextFlagCannotConvertExternalFileDurationOrExistenceSemantics` | 退出 1；“文件必须存在且时长不超过 30 秒”被模型谎报为静态后错误进入验证，测试精确变红；恢复后目标测试通过 |
 
 这组修复不依赖模型自报的 `staticTextOnly` 或 `evidenceConflict` 得出安全结论。确定性门禁以原文逐字证据、规范性措辞、condition 所引用属性/字面量和外部资源事实关键词交叉判定；未通过时只形成 skipped 反馈，不写入规则 JSON。P1 模型输出目标同步收窄为当前应用器真实支持的元素及元素属性，避免“schema 声称支持、发布阶段才静默丢失”。
+
+### Review A 修复 2：完整包清单与生产加载复验
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*RulePackageAssemblerTest" --tests "*RulePackagePublicationPreparerTest" --tests "*RulePackageZipExtractorTest"` | 退出 1；缺少 inventory 契约，空元素目录、基线文件丢失、生产加载失败和反斜杠路径攻击均无对应实现 |
+| GREEN/REFACTOR | 同一命令并追加 `--tests "*RuleCenterValidationOrchestratorTest"` | 退出 0；完整性、真实加载、发布前 inventory 复验、跨平台 zip 路径保护及编排基线传递全部通过 |
+| 门禁 canary | 临时移除 publication preparer 的 manifest/实际 inventory 比对，只运行 `manifestInventoryTripsGateEvenWhenAnAttackerRecomputesBothContentDigests` | 退出 1；删除唯一元素规则并重算 manifest/report 双摘要后会错误产出 Release，测试精确变红；恢复门禁后通过 |
+
+manifest 现在保存排序后的 `rules/` 与 `functions/` 文件清单。编排器在任何模型改写前记录上一版完整清单，组装结果必须是该清单的超集且至少包含一个元素规则；随后使用生产 `JsonRuleLoader` 和 `JsonFunctionSignatureLoader` 重载最终目录。发布准备阶段重新扫描清单并与 manifest 精确比对，因此“只剩少量合法 JSON 后重算摘要”的截断包不能发布。ZIP 基线恢复还会在所有操作系统上拒绝反斜杠、绝对路径和盘符路径。

@@ -25,5 +25,7 @@ public class RulePackageAssemblyRequest {
     Set<String> publishedConstraintRuleIds;
     Set<String> carriedForwardCandidateIds;
     @Builder.Default
+    RulePackageInventory minimumInventory = RulePackageInventory.builder().build();
+    @Builder.Default
     Set<String> grandfatheredDuplicateRuleIds = Set.of();
 }
