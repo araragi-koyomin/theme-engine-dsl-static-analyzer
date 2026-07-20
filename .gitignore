@@ -81,3 +81,6 @@ docs/e2e-verify
 
 # Git worktrees (local isolated workspaces)
 .worktrees/
+
+# Weekly reports (local-only, not tracked — see user directive 2026-07-17)
+weekly-report-*.md
