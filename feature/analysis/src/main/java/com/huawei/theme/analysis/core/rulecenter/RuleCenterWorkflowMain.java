@@ -12,6 +12,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -77,20 +78,22 @@ public final class RuleCenterWorkflowMain {
             throw new IllegalArgumentException("document list contains no Markdown files");
         }
 
-        Path rules = resolve(repository, env.getOrDefault(
+        Path rules = resolve(repository, valueOrDefault(env,
                 "RULE_CENTER_BASELINE_RULES",
                 "feature/analysis/src/main/resources/rules"));
-        Path functions = resolve(repository, env.getOrDefault(
+        Path functions = resolve(repository, valueOrDefault(env,
                 "RULE_CENTER_BASELINE_FUNCTIONS",
                 "feature/analysis/src/main/resources/functions"));
+        List<SourceDocumentArtifact> retainedSourceDocuments = retainedSourceDocuments(
+                repository, env);
         StrictConditionAcceptor acceptor = new StrictConditionAcceptor(
                 new ConditionCapabilityRegistry());
         ConstraintVerificationRunner verificationRunner = new ConstraintVerificationRunner(acceptor);
         VerifiedConstraintExampleCatalog examples = new VerifiedConstraintExampleCatalog(
                 BuiltInVerifiedConstraintExamples.load(rules, verificationRunner), acceptor);
         String token = required(env, "GITHUB_TOKEN");
-        String model = env.getOrDefault("RULE_CENTER_MODEL", "openai/gpt-4.1");
-        String promptVersion = env.getOrDefault(
+        String model = valueOrDefault(env, "RULE_CENTER_MODEL", "openai/gpt-4.1");
+        String promptVersion = valueOrDefault(env,
                 "RULE_CENTER_PROMPT_VERSION", "md-to-rule-v1");
         GitHubModelsInferenceClient inferenceClient = new GitHubModelsHttpInferenceClient(token);
         RuleCenterValidationOrchestrator orchestrator = new RuleCenterValidationOrchestrator(
@@ -106,13 +109,14 @@ public final class RuleCenterWorkflowMain {
         resetWorkDirectory(output, workDirectory);
         return orchestrator.validateBatch(RuleCenterBatchValidationRequest.builder()
                 .documents(documents)
+                .retainedSourceDocuments(retainedSourceDocuments)
                 .rulesDirectory(rules)
                 .functionsDirectory(functions)
                 .outputDirectory(workDirectory)
                 .packageVersion(env.getOrDefault(
                         "RULE_CENTER_PACKAGE_VERSION", defaultVersion(env)))
                 .createdAt(Instant.now().toString())
-                .minimumAnalyzerVersion(env.getOrDefault(
+                .minimumAnalyzerVersion(valueOrDefault(env,
                         "RULE_CENTER_MINIMUM_ANALYZER_VERSION", "1.0.0"))
                 .build());
     }
@@ -131,6 +135,49 @@ public final class RuleCenterWorkflowMain {
                 output.resolve("release-report.json"), StandardCopyOption.REPLACE_EXISTING);
         Files.writeString(output.resolve("feedback-summary.md"),
                 feedbackSummary(result), StandardCharsets.UTF_8);
+    }
+
+    private static List<SourceDocumentArtifact> retainedSourceDocuments(
+            Path repository,
+            Map<String, String> env) throws IOException {
+        String sourceValue = env.get("RULE_CENTER_BASELINE_SOURCE_MARKDOWN");
+        String manifestValue = env.get("RULE_CENTER_BASELINE_MANIFEST");
+        if (sourceValue == null || sourceValue.isBlank()) {
+            return List.of();
+        }
+        Path sourceRoot = resolve(repository, sourceValue);
+        if (!Files.isDirectory(sourceRoot)) {
+            throw new IllegalArgumentException("baseline source-markdown directory does not exist");
+        }
+        Map<String, String> revisions = new HashMap<>();
+        if (manifestValue != null && !manifestValue.isBlank()) {
+            RulePackageManifest manifest = GSON.fromJson(
+                    Files.readString(resolve(repository, manifestValue)),
+                    RulePackageManifest.class);
+            if (manifest != null && manifest.getSourceDocumentRevisions() != null) {
+                for (RulePackageManifest.SourceDocumentRevision revision
+                        : manifest.getSourceDocumentRevisions()) {
+                    revisions.put(revision.getDocumentId(), revision.getRevision());
+                }
+            }
+        }
+        List<SourceDocumentArtifact> retained = new ArrayList<>();
+        try (var paths = Files.walk(sourceRoot)) {
+            for (Path path : paths.filter(Files::isRegularFile)
+                    .filter(file -> file.getFileName().toString().endsWith(".md")).toList()) {
+                String relative = sourceRoot.relativize(path).toString().replace('\\', '/');
+                String documentId = withoutExtension(relative);
+                String content = Files.readString(path);
+                retained.add(SourceDocumentArtifact.builder()
+                        .documentId(documentId)
+                        .revision(revisions.getOrDefault(
+                                documentId, sha256(content).substring(0, 12)))
+                        .relativePath(relative)
+                        .content(content)
+                        .build());
+            }
+        }
+        return List.copyOf(retained);
     }
 
     private static String feedbackSummary(RuleCenterValidationResult result) {
@@ -226,5 +273,13 @@ public final class RuleCenterWorkflowMain {
             throw new IllegalArgumentException(name + " must be configured");
         }
         return value;
+    }
+
+    private static String valueOrDefault(
+            Map<String, String> env,
+            String name,
+            String defaultValue) {
+        String value = env.get(name);
+        return value == null || value.isBlank() ? defaultValue : value;
     }
 }

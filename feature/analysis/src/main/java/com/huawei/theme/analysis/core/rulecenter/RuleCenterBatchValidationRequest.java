@@ -10,6 +10,8 @@ import lombok.Value;
 @Builder
 public class RuleCenterBatchValidationRequest {
     List<RuleDocumentRevision> documents;
+    @Builder.Default
+    List<SourceDocumentArtifact> retainedSourceDocuments = List.of();
     Path rulesDirectory;
     Path functionsDirectory;
     Path outputDirectory;

@@ -58,12 +58,12 @@ flowchart LR
 发布工作流只有在 release report 为 `passed` 或 `passed-with-exclusions` 时才创建正式 GitHub Release。发布资产固定为：
 
 ```text
-rule-package-<version>.zip
+rule-package.zip
 manifest.json
 release-report.json
 ```
 
-zip 内必须是 SP-01 规定的完整包结构，包含 `rules/`、`functions/`、`source-markdown/` 与 `verification/`。Release tag 使用 `rules-v<packageVersion>`；发布说明列出版本、变更摘要、跳过/validation-error 数量和最小分析器版本。
+资产名保持固定，版本由 Release tag 与 manifest 表达，避免客户端下载协议随版本拼接文件名。zip 内必须是 SP-01 规定的完整包结构，包含 `rules/`、`functions/`、`source-markdown/` 与 `verification/`。Release tag 使用 `rules-v<packageVersion>`；发布说明列出版本、变更摘要、跳过/validation-error 数量和最小分析器版本。
 
 GitHub Release 适合作为版本制品仓库：Release API 支持按版本管理 Release 与上传/下载 release assets；而 Actions artifact 是工作流运行的产物，适合报告、日志和同一流水线内传递，不作为 IDEA 的长期发布通道。[GitHub Releases API](https://docs.github.com/en/rest/releases/releases?apiVersion=latest) [GitHub Actions artifacts](https://docs.github.com/en/actions/concepts/workflows-and-actions/workflow-artifacts?apiVersion=2022-11-28)
 
@@ -96,7 +96,7 @@ company/dsl-rule-center/
 
 `validate-document.yml` 由 `pull_request` 触发，只处理受影响 MD 但保留全文扫描能力；它发布 Check、转换报告和作者反馈。
 
-`publish-rule-package.yml` 由受保护 `main` 的合并提交触发：加载完整基线规则、应用本次已验证改动、运行最终全量验证、组装完整包、创建 GitHub Release、上传三个固定资产。正式发布环境应使用 GitHub Environment 的人工审批或等价公司审批门禁。
+`publish-rule-package.yml` 由受保护 `main` 的合并提交触发：若已有 approved Release，先下载并验证其 `rule-package.zip`，把其中的完整 `rules/`、`functions/`、`source-markdown/` 与 manifest 作为上一版基线；首版才使用仓库内置规则。本次只对新增/修改 Markdown 调用模型，验证通过的变化覆盖到完整基线，未修改的规则与源文档原样保留。随后工作流再次运行最终门禁、组装完整包、创建 GitHub Release、上传三个固定资产。正式发布环境使用 GitHub Environment `dsl-rule-production` 的人工审批或等价公司审批门禁。
 
 ## 5. 稳定接口：防止 IDEA 绑定 GitHub
 

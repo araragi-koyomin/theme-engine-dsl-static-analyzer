@@ -202,3 +202,15 @@ created: 2026-07-20
 真实链路使用临时 Image Markdown，并以 `gh auth token` 仅注入当前 Gradle 进程，运行 `./gradlew.bat --no-daemon ruleCenterValidateDocument`。首次运行因模型证据行号不准退出 1；加入“全文精确唯一摘录定位”后，模型省略 Markdown 反引号仍被严格拒绝；再加入“只在规范化文本唯一匹配时回填原始完整行”后越过证据门禁。随后完整包暴露当前内置库存在跨元素同 ID 历史规则；门禁改为仅 grandfather 未被本次修改的历史冲突，本次发布 ID 若参与冲突仍失败。
 
 最终真实运行退出 0，实际模型为 GitHub Models `openai/gpt-4.1`，报告 `passed`：唯一候选覆盖 `SEM-IMG-002`，condition 为 `src`/`srcExp` 同时存在，真实正例观察到该 ruleId、反例未观察到；未生成文件格式、存在性、大小或时长约束。产物为 `candidates.json`、`feedback.json`、`release-report.json`、`audit.json`、`feedback-summary.md` 和完整临时规则包。token 未写文件、未输出。任务提交信息为 `feat(G02): validate rule documents in GitHub Actions`。
+
+### G03：approved Release 发布门禁与三项固定资产
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*RulePackagePublicationPreparerTest" --tests "*RuleCenterPublishWorkflowContractTest"` | 退出 1；publication preparer/result 共 4 个缺失符号，publish workflow 文件不存在 |
+| GREEN | `./gradlew.bat --no-daemon :feature:core-tests:test --tests "*RulePackagePublicationPreparerTest" --tests "*RulePackageZipExtractorTest" --tests "*RuleCenterPublishWorkflowContractTest" --tests "*RuleCenterValidationOrchestratorTest"` | 退出 0；三项资产、确定性 zip、failed/digest 门禁、zip-slip、上一版基线与 workflow 顺序共 14 个场景通过 |
+| REFACTOR/回归 | `./gradlew.bat --no-daemon :feature:core-tests:test :feature:analysis:checkCoreIntellijDependency` | 退出 0；887 tests、0 failure、0 error、2 个既有 skipped；core IntelliJ dependency 0 violations |
+| 发布门禁 canary | 临时把 publishable status 判断改为“status 非空”，只运行 `failedReportTripsGateBeforeAnyReleaseAssetIsCreated` | 退出 1；测试第 94 行发现 `failed` 报告不再抛错且生成了资产；恢复后全组通过 |
+| YAML/本地发布 smoke | PyYAML 读取两个 workflow；随后对 G02 的真实通过包依次运行 `ruleCenterPrepareRelease` 与 `ruleCenterExtractBaseline` | 两个 YAML 均可解析；发布门禁输出 `release_gate=passed` 与 tag `rules-v2026.07.20.9001`；安全恢复门禁输出 `baseline_gate=passed` |
+
+发布工作流只在受保护 `main` 的规则 Markdown 更新或显式手动触发时运行，并绑定 `dsl-rule-production` environment。已有正式 Release 时，它先下载固定名 `rule-package.zip`，执行 zip-slip/条目数/解压大小保护及 manifest/report/content digest 复验，再把完整 rules、functions、source-markdown 与 revisions 作为增量转换基线；首版才回退仓库内置规则。main 合并提交上的模型提取和真实验证全部重跑，`RulePackagePublicationPreparer` 再次核对 `passed` / `passed-with-exclusions`、schema、完整性和双摘要，之后才允许 `gh release create` 上传 `rule-package.zip`、`manifest.json`、`release-report.json`。任务提交信息为 `feat(G03): publish approved GitHub rule releases`。

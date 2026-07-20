@@ -6,8 +6,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -100,14 +102,21 @@ public class RuleCenterValidationOrchestrator {
             }
         }
 
-        List<SourceDocumentArtifact> sourceDocuments = request.getDocuments().stream()
-                .map(document -> SourceDocumentArtifact.builder()
-                        .documentId(document.getDocumentId())
-                        .revision(document.getRevision())
-                        .relativePath(document.getSourceMarkdownRelativePath())
-                        .content(document.getMarkdown())
-                        .build())
-                .toList();
+        Map<String, SourceDocumentArtifact> sourceDocumentsByPath = new LinkedHashMap<>();
+        for (SourceDocumentArtifact retained : request.getRetainedSourceDocuments()) {
+            sourceDocumentsByPath.put(retained.getRelativePath(), retained);
+        }
+        for (RuleDocumentRevision document : request.getDocuments()) {
+            SourceDocumentArtifact artifact = SourceDocumentArtifact.builder()
+                    .documentId(document.getDocumentId())
+                    .revision(document.getRevision())
+                    .relativePath(document.getSourceMarkdownRelativePath())
+                    .content(document.getMarkdown())
+                    .build();
+            sourceDocumentsByPath.put(artifact.getRelativePath(), artifact);
+        }
+        List<SourceDocumentArtifact> sourceDocuments = List.copyOf(
+                sourceDocumentsByPath.values());
         grandfatheredDuplicateRuleIds.removeAll(publishedRuleIds);
         RulePackageAssemblyResult assembly = new RulePackageAssembler(conditionAcceptor).assemble(
                 RulePackageAssemblyRequest.builder()
@@ -345,6 +354,8 @@ public class RuleCenterValidationOrchestrator {
         if (request.getDocuments() == null || request.getDocuments().isEmpty()) {
             throw new IllegalArgumentException("documents must not be empty");
         }
+        Objects.requireNonNull(
+                request.getRetainedSourceDocuments(), "retainedSourceDocuments");
         for (RuleDocumentRevision document : request.getDocuments()) {
             Objects.requireNonNull(document, "document");
             requireText(document.getDocumentId(), "documentId");

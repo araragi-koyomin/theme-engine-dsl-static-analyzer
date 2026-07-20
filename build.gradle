@@ -96,3 +96,19 @@ tasks.register('ruleCenterValidateDocument', JavaExec) {
     classpath = project(':feature:analysis').sourceSets.main.runtimeClasspath
     mainClass = 'com.huawei.theme.analysis.core.rulecenter.RuleCenterWorkflowMain'
 }
+
+tasks.register('ruleCenterPrepareRelease', JavaExec) {
+    group = 'verification'
+    description = 'Gate and prepare immutable rule package release assets'
+    dependsOn ':feature:analysis:classes'
+    classpath = project(':feature:analysis').sourceSets.main.runtimeClasspath
+    mainClass = 'com.huawei.theme.analysis.core.rulecenter.RuleCenterPublishGateMain'
+}
+
+tasks.register('ruleCenterExtractBaseline', JavaExec) {
+    group = 'verification'
+    description = 'Securely extract and validate the previous approved rule package baseline'
+    dependsOn ':feature:analysis:classes'
+    classpath = project(':feature:analysis').sourceSets.main.runtimeClasspath
+    mainClass = 'com.huawei.theme.analysis.core.rulecenter.RuleCenterBaselineExtractorMain'
+}

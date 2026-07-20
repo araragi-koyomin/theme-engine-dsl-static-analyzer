@@ -202,6 +202,9 @@ class RuleCenterValidationOrchestratorTest {
                                 RuleDocumentRevision.builder()
                                         .documentId("image-b").revision("r2")
                                         .markdown("# B").sourceMarkdownRelativePath("b.md").build()))
+                        .retainedSourceDocuments(List.of(SourceDocumentArtifact.builder()
+                                .documentId("old").revision("r0")
+                                .relativePath("old.md").content("# Old").build()))
                         .rulesDirectory(rulesDirectory)
                         .functionsDirectory(functionsDirectory)
                         .outputDirectory(tempDir.resolve("batch-output"))
@@ -216,6 +219,8 @@ class RuleCenterValidationOrchestratorTest {
                 .resolve("source-markdown/a.md")));
         assertTrue(Files.isRegularFile(result.getAssembly().getPackageDirectory()
                 .resolve("source-markdown/b.md")));
+        assertTrue(Files.isRegularFile(result.getAssembly().getPackageDirectory()
+                .resolve("source-markdown/old.md")));
     }
 
     @Test
