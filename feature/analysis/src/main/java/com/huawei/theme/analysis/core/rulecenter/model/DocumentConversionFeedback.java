@@ -21,6 +21,8 @@ public class DocumentConversionFeedback {
         int published;
         int descriptionOnly;
         int skipped;
+        int validationErrors;
+        int carriedForward;
     }
 
     @Data
@@ -30,5 +32,6 @@ public class DocumentConversionFeedback {
         FeedbackOutcome outcome;
         FeedbackReasonCode reasonCode;
         AuthorAction authorAction;
+        boolean previousRuleRetained;
     }
 }
