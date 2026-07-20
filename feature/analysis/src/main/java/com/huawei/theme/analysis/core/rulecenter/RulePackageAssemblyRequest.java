@@ -24,4 +24,6 @@ public class RulePackageAssemblyRequest {
     List<ConstraintVerification> verifications;
     Set<String> publishedConstraintRuleIds;
     Set<String> carriedForwardCandidateIds;
+    @Builder.Default
+    Set<String> grandfatheredDuplicateRuleIds = Set.of();
 }

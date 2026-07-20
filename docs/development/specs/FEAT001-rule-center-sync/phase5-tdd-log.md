@@ -188,3 +188,17 @@ created: 2026-07-20
 | 真实 inference smoke | 以 `gh auth token` 仅注入进程内存，POST GitHub Models `openai/gpt-4.1`，`temperature=0`、`seed=42`、`json_schema` | HTTP 成功；实际模型 `gpt-4.1-2025-04-14`；响应 `candidateCount=0`、`schemaValid=true`；token 未输出 |
 
 生产 HTTP client 使用 GitHub Models 官方 inference endpoint、`models: read` 对应 Bearer token 与版本化 REST header。抽取结果记录请求/实际模型、prompt 版本、prompt/文档/原始响应 SHA-256；模型只能产生 `EXTRACTED` 候选，精确原文摘录和行号不匹配即拒绝。任务提交信息为 `feat(G01): extract candidates with GitHub Models`。
+
+### G02：PR 文档转换、验证、修复与作者反馈 workflow
+
+| 阶段 | 命令 | 实际信号 |
+|---|---|---|
+| RED | Gradle 8.2 `--no-daemon :feature:core-tests:test --tests "*RuleCenterValidationOrchestratorTest"` | 退出 1；`CandidateExtractionService`、批量请求/结果和 orchestrator 共 10 个缺失符号，证明 workflow 不是先写 shell 外壳后补测试 |
+| GREEN | Gradle 8.2 `--no-daemon :feature:core-tests:test --tests "*RuleCenterValidationOrchestratorTest" --tests "*GitHubModelsConstraintRepairStrategyTest" --tests "*RuleCenterWorkflowContractTest"` | 退出 0；单/多文档、说明写入、同 ID 覆盖、外部资源排除、普通 string 防误约束、真实 fixture 修复、GitHub 权限与产物契约通过 |
+| REFACTOR/回归 | `./gradlew.bat --no-daemon :feature:core-tests:test :feature:analysis:checkCoreIntellijDependency` | 退出 0；879 tests、0 failure、0 error、2 个既有 skipped；core IntelliJ dependency 0 violations |
+| 测试 canary | 临时移除 `conditionUsesOnlyDeclaredLiteralValues` 门禁，只运行 `modelCannotTurnAnOrdinaryStringAttributeIntoAnUndeclaredValueConstraint` | 退出 1；模型生成的 `src == 'video.mp4'` 会被错误发布，测试精确在第 141 行变红；恢复后通过 |
+| workflow 权限 canary | 临时把 `models: read` 改为 `models: none`，只运行 `validationWorkflowHasModelsPermissionAndProducesAuthorFeedback` | 退出 1；精确在 workflow contract 第 33 行变红；恢复后通过 |
+
+真实链路使用临时 Image Markdown，并以 `gh auth token` 仅注入当前 Gradle 进程，运行 `./gradlew.bat --no-daemon ruleCenterValidateDocument`。首次运行因模型证据行号不准退出 1；加入“全文精确唯一摘录定位”后，模型省略 Markdown 反引号仍被严格拒绝；再加入“只在规范化文本唯一匹配时回填原始完整行”后越过证据门禁。随后完整包暴露当前内置库存在跨元素同 ID 历史规则；门禁改为仅 grandfather 未被本次修改的历史冲突，本次发布 ID 若参与冲突仍失败。
+
+最终真实运行退出 0，实际模型为 GitHub Models `openai/gpt-4.1`，报告 `passed`：唯一候选覆盖 `SEM-IMG-002`，condition 为 `src`/`srcExp` 同时存在，真实正例观察到该 ruleId、反例未观察到；未生成文件格式、存在性、大小或时长约束。产物为 `candidates.json`、`feedback.json`、`release-report.json`、`audit.json`、`feedback-summary.md` 和完整临时规则包。token 未写文件、未输出。任务提交信息为 `feat(G02): validate rule documents in GitHub Actions`。

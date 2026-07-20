@@ -1,0 +1,105 @@
+name: Validate DSL rule document
+
+on:
+  pull_request:
+    paths:
+      - 'rule-center/docs/**/*.md'
+      - 'rule-center/fixtures/**'
+      - 'rule-center/templates/**'
+      - 'feature/analysis/src/main/resources/rules/**'
+      - 'feature/analysis/src/main/resources/functions/**'
+      - '.github/workflows/validate-document.yml'
+  workflow_dispatch:
+    inputs:
+      document:
+        description: Repository-relative Markdown path to validate
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  models: read
+  pull-requests: write
+  checks: write
+
+concurrency:
+  group: rule-document-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  validate-document:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out approved source and proposed revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Resolve changed Markdown documents
+        id: documents
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MANUAL_DOCUMENT: ${{ inputs.document }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/rule-center
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            printf '%s\n' "$MANUAL_DOCUMENT" > build/rule-center/documents.txt
+          else
+            git diff --name-only --diff-filter=AM "$BASE_SHA" "$HEAD_SHA" -- 'rule-center/docs/**/*.md' > build/rule-center/documents.txt
+          fi
+          if [[ ! -s build/rule-center/documents.txt ]]; then
+            echo "No changed rule documents were found" >&2
+            exit 1
+          fi
+
+      - name: Extract, validate, repair, and assemble report
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RULE_CENTER_DOCUMENT_LIST: build/rule-center/documents.txt
+          RULE_CENTER_OUTPUT: build/rule-center
+          RULE_CENTER_MODEL: openai/gpt-4.1
+          RULE_CENTER_PROMPT_VERSION: md-to-rule-v1
+        run: ./gradlew --no-daemon ruleCenterValidateDocument
+
+      - name: Upload immutable validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rule-document-validation-${{ github.run_id }}
+          if-no-files-found: error
+          path: |
+            build/rule-center/candidates.json
+            build/rule-center/feedback.json
+            build/rule-center/release-report.json
+            build/rule-center/audit.json
+
+      - name: Publish author-facing PR feedback
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'build/rule-center/feedback-summary.md';
+            const body = fs.existsSync(path)
+              ? fs.readFileSync(path, 'utf8')
+              : 'DSL rule validation did not produce feedback. Inspect the workflow logs.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });

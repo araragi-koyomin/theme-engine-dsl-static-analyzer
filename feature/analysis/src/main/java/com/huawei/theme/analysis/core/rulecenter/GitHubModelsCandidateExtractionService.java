@@ -18,7 +18,7 @@ import com.google.gson.JsonParseException;
 import com.huawei.theme.analysis.core.rulecenter.model.CandidateStatus;
 import com.huawei.theme.analysis.core.rulecenter.model.RuleCandidate;
 
-public class GitHubModelsCandidateExtractionService {
+public class GitHubModelsCandidateExtractionService implements CandidateExtractionService {
     private static final int SEED = 42;
     private static final double TEMPERATURE = 0.0;
 
@@ -37,6 +37,7 @@ public class GitHubModelsCandidateExtractionService {
         this.promptVersion = requireText(promptVersion, "promptVersion");
     }
 
+    @Override
     public CandidateExtractionResult extract(CandidateExtractionRequest request) {
         validateRequest(request);
         String systemPrompt = systemPrompt();
@@ -102,9 +103,22 @@ public class GitHubModelsCandidateExtractionService {
         int startLine = evidence.getLocation().getStartLine();
         int endLine = evidence.getLocation().getEndLine();
         String[] lines = request.getMarkdown().split("\\R", -1);
-        if (startLine < 1 || endLine < startLine || endLine > lines.length) {
-            throw new CandidateExtractionException("source evidence line range is out of bounds");
+        if (evidence.getExcerpt().isEmpty()) {
+            throw new CandidateExtractionException("source evidence excerpt must not be empty");
         }
+        boolean validRange = startLine >= 1 && endLine >= startLine && endLine <= lines.length;
+        if (!validRange || !referencedLines(lines, startLine, endLine)
+                .contains(evidence.getExcerpt())) {
+            if (relocateUniqueExactEvidence(request.getMarkdown(), candidate)) {
+                return;
+            }
+            throw new CandidateExtractionException(
+                    "source evidence is not uniquely present in the Markdown: "
+                            + candidate.getCandidateId() + "; excerpt=" + evidence.getExcerpt());
+        }
+    }
+
+    private String referencedLines(String[] lines, int startLine, int endLine) {
         StringBuilder referenced = new StringBuilder();
         for (int line = startLine; line <= endLine; line++) {
             if (!referenced.isEmpty()) {
@@ -112,11 +126,66 @@ public class GitHubModelsCandidateExtractionService {
             }
             referenced.append(lines[line - 1]);
         }
-        if (evidence.getExcerpt().isEmpty()
-                || !referenced.toString().contains(evidence.getExcerpt())) {
-            throw new CandidateExtractionException(
-                    "source evidence is not present in referenced markdown lines");
+        return referenced.toString();
+    }
+
+    private boolean relocateUniqueExactEvidence(String markdown, RuleCandidate candidate) {
+        String excerpt = candidate.getSourceEvidence().getExcerpt();
+        int first = markdown.indexOf(excerpt);
+        if (first < 0 || markdown.indexOf(excerpt, first + 1) >= 0) {
+            return relocateUniqueMarkdownFormattedLine(markdown, candidate);
         }
+        int startLine = 1;
+        for (int index = 0; index < first; index++) {
+            if (markdown.charAt(index) == '\n') {
+                startLine++;
+            }
+        }
+        int endLine = startLine;
+        for (int index = 0; index < excerpt.length(); index++) {
+            if (excerpt.charAt(index) == '\n') {
+                endLine++;
+            }
+        }
+        candidate.getSourceEvidence().setLocation(RuleCandidate.SourceLocation.builder()
+                .startLine(startLine)
+                .endLine(endLine)
+                .build());
+        return true;
+    }
+
+    private boolean relocateUniqueMarkdownFormattedLine(
+            String markdown,
+            RuleCandidate candidate) {
+        String expected = normalizeInlineMarkdown(candidate.getSourceEvidence().getExcerpt());
+        if (expected.isEmpty()) {
+            return false;
+        }
+        String[] lines = markdown.split("\\R", -1);
+        int matchedLine = -1;
+        for (int index = 0; index < lines.length; index++) {
+            if (normalizeInlineMarkdown(lines[index]).contains(expected)) {
+                if (matchedLine >= 0) {
+                    return false;
+                }
+                matchedLine = index;
+            }
+        }
+        if (matchedLine < 0) {
+            return false;
+        }
+        candidate.getSourceEvidence().setExcerpt(lines[matchedLine]);
+        candidate.getSourceEvidence().setLocation(RuleCandidate.SourceLocation.builder()
+                .startLine(matchedLine + 1)
+                .endLine(matchedLine + 1)
+                .build());
+        return true;
+    }
+
+    private String normalizeInlineMarkdown(String value) {
+        return value.replace("`", "")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private String systemPrompt() {
@@ -126,6 +195,13 @@ public class GitHubModelsCandidateExtractionService {
                 + "Never infer file existence, resource format, size, duration, runtime behavior, "
                 + "or engine capability from a path/string attribute. Description text may retain "
                 + "such documentation, but it must not become a static constraint. "
+                + "For a constraint, proposedChange.value must contain ruleId, condition, message, "
+                + "severity, staticTextOnly, evidenceConflict, positiveFixture, and negativeFixture. "
+                + "Fixtures are minimal XML or JSON text and must prove that the condition triggers "
+                + "on the positive fixture but not on the negative fixture. "
+                + "Set evidenceConflict=true only when the document makes contradictory claims "
+                + "about the same static DSL-text behavior. A disclaimer that string paths do not "
+                + "imply file metadata does not conflict with an explicit attribute co-occurrence rule. "
                 + "Return status extracted only. Do not publish, skip, validate, or repair candidates. "
                 + "Examples demonstrate condition syntax only and never transfer business semantics.";
     }
@@ -175,12 +251,26 @@ public class GitHubModelsCandidateExtractionService {
                 "attribute", nullableString.deepCopy()));
         target.add("required", strings("kind", "element", "attribute"));
 
-        JsonObject proposedChange = objectSchema();
+        JsonObject constraintValue = objectSchema();
+        constraintValue.add("properties", properties(
+                "ruleId", string.deepCopy(),
+                "condition", string.deepCopy(),
+                "message", string.deepCopy(),
+                "severity", enumSchema("error", "warning", "info"),
+                "staticTextOnly", type("boolean"),
+                "evidenceConflict", type("boolean"),
+                "positiveFixture", string.deepCopy(),
+                "negativeFixture", string.deepCopy()));
+        constraintValue.add("required", strings(
+                "ruleId", "condition", "message", "severity", "staticTextOnly",
+                "evidenceConflict", "positiveFixture", "negativeFixture"));
         JsonObject value = new JsonObject();
-        JsonArray valueTypes = new JsonArray();
-        valueTypes.add("string");
-        valueTypes.add("object");
-        value.add("type", valueTypes);
+        JsonArray valueAlternatives = new JsonArray();
+        valueAlternatives.add(string.deepCopy());
+        valueAlternatives.add(constraintValue);
+        value.add("anyOf", valueAlternatives);
+
+        JsonObject proposedChange = objectSchema();
         proposedChange.add("properties", properties(
                 "field", string.deepCopy(), "value", value));
         proposedChange.add("required", strings("field", "value"));
@@ -192,7 +282,7 @@ public class GitHubModelsCandidateExtractionService {
                 "documentRevision", string.deepCopy(),
                 "sourceEvidence", evidence,
                 "target", target,
-                "proposedKind", enumSchema("description", "constraint", "skipped"),
+                "proposedKind", enumSchema("description", "constraint"),
                 "proposedChange", proposedChange,
                 "status", enumSchema("extracted"),
                 "skipReason", type("null"),

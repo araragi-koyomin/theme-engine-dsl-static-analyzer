@@ -45,6 +45,13 @@ public class VerifiedConstraintExampleCatalog {
                 .toList();
     }
 
+    public List<VerifiedConstraintExample> allVerifiedExamples() {
+        return examples.stream()
+                .map(indexed -> indexed.example)
+                .sorted(Comparator.comparing(VerifiedConstraintExample::getRuleId))
+                .toList();
+    }
+
     private boolean hasPassingVerification(VerifiedConstraintExample example) {
         if (example == null
                 || example.getEvidenceScope() != ConstraintEvidenceScope.DSL_TEXT_ONLY

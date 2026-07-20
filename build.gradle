@@ -88,3 +88,11 @@ subprojects {
     }
 
 }
+
+tasks.register('ruleCenterValidateDocument', JavaExec) {
+    group = 'verification'
+    description = 'Extract and validate approved Markdown rule documents for the center workflow'
+    dependsOn ':feature:analysis:classes'
+    classpath = project(':feature:analysis').sourceSets.main.runtimeClasspath
+    mainClass = 'com.huawei.theme.analysis.core.rulecenter.RuleCenterWorkflowMain'
+}

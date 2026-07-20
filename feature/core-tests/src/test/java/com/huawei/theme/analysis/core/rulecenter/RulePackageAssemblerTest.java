@@ -155,6 +155,26 @@ class RulePackageAssemblerTest {
                         && error.contains("condition")));
     }
 
+    @Test
+    void baselineDuplicateDebtIsExplicitlyGrandfatheredButStillFailsWithoutDeclaration()
+            throws IOException {
+        String first = "[{\"ruleId\":\"SEM-LEGACY-001\","
+                + "\"condition\":\"element.attrs['a'] != null\","
+                + "\"message\":\"first\",\"severity\":\"error\",\"suggestedFixes\":[]}]";
+        String second = first.replace("first", "second");
+        write(rulesDirectory.resolve("elements/view/Image.json"), elementJson(first));
+        write(rulesDirectory.resolve("elements/view/Other.json"),
+                elementJson(second).replace("\"Image\"", "\"Other\""));
+
+        RulePackageAssemblyResult rejected = assembler.assemble(requestBuilder().build());
+        RulePackageAssemblyResult grandfathered = assembler.assemble(requestBuilder()
+                .grandfatheredDuplicateRuleIds(Set.of("SEM-LEGACY-001"))
+                .build());
+
+        assertEquals(ReleaseReportStatus.FAILED, rejected.getStatus());
+        assertEquals(ReleaseReportStatus.PASSED, grandfathered.getStatus());
+    }
+
     private RulePackageAssemblyRequest.RulePackageAssemblyRequestBuilder requestBuilder() {
         return RulePackageAssemblyRequest.builder()
                 .packageDirectory(tempDir.resolve("output-" + System.nanoTime()))

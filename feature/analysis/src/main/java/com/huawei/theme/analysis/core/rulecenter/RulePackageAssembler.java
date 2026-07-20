@@ -186,7 +186,8 @@ public class RulePackageAssembler {
             Path packageDirectory,
             RulePackageAssemblyRequest request,
             List<String> errors) throws IOException {
-        Map<String, JsonObject> constraints = readConstraints(packageDirectory, errors);
+        Map<String, JsonObject> constraints = readConstraints(
+                packageDirectory, errors, request.getGrandfatheredDuplicateRuleIds());
         Map<String, ConstraintVerification> verifications = new HashMap<>();
         for (ConstraintVerification verification : request.getVerifications()) {
             if (verification != null && verification.getRuleId() != null) {
@@ -216,7 +217,8 @@ public class RulePackageAssembler {
 
     private Map<String, JsonObject> readConstraints(
             Path packageDirectory,
-            List<String> errors) throws IOException {
+            List<String> errors,
+            Set<String> grandfatheredDuplicateRuleIds) throws IOException {
         Map<String, JsonObject> constraints = new LinkedHashMap<>();
         Set<String> duplicates = new HashSet<>();
         Path elements = packageDirectory.resolve("rules/elements");
@@ -236,14 +238,17 @@ public class RulePackageAssembler {
                     }
                     JsonObject constraint = item.getAsJsonObject();
                     String ruleId = constraint.get("ruleId").getAsString();
-                    if (constraints.putIfAbsent(ruleId, constraint) != null) {
+                    JsonObject existing = constraints.putIfAbsent(ruleId, constraint);
+                    if (existing != null && !existing.equals(constraint)) {
                         duplicates.add(ruleId);
                     }
                 }
             }
         }
         for (String duplicate : duplicates) {
-            errors.add("duplicate constraint ruleId: " + duplicate);
+            if (!grandfatheredDuplicateRuleIds.contains(duplicate)) {
+                errors.add("duplicate constraint ruleId: " + duplicate);
+            }
         }
         return constraints;
     }
@@ -370,6 +375,8 @@ public class RulePackageAssembler {
         Objects.requireNonNull(request.getVerifications(), "verifications");
         Objects.requireNonNull(request.getPublishedConstraintRuleIds(), "publishedConstraintRuleIds");
         Objects.requireNonNull(request.getCarriedForwardCandidateIds(), "carriedForwardCandidateIds");
+        Objects.requireNonNull(
+                request.getGrandfatheredDuplicateRuleIds(), "grandfatheredDuplicateRuleIds");
     }
 
     private void requireText(String value, String field) {

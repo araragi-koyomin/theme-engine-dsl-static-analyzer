@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.huawei.theme.analysis.core.rulecenter.model.CandidateStatus;
+import com.huawei.theme.analysis.core.rulecenter.model.RuleCandidate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -30,6 +31,9 @@ class GitHubModelsCandidateExtractionServiceTest {
         assertEquals(42, client.request.getSeed());
         assertEquals("json_schema", client.request.getResponseFormat().get("type").getAsString());
         assertTrue(client.request.getResponseFormat().toString().contains("sourceEvidence"));
+        assertTrue(client.request.getResponseFormat().toString().contains("staticTextOnly"));
+        assertTrue(client.request.getResponseFormat().toString().contains("positiveFixture"));
+        assertTrue(client.request.getSystemPrompt().contains("must prove"));
         assertTrue(client.request.getUserPrompt().contains("1: # Image"));
         assertTrue(client.request.getUserPrompt().contains("3: src is the image path"));
         assertEquals("md-to-rule-v1", result.getPromptVersion());
@@ -40,7 +44,7 @@ class GitHubModelsCandidateExtractionServiceTest {
     }
 
     @Test
-    void rejectsMissingEvidenceAndOutOfBoundsLineNumbers() {
+    void rejectsMissingEvidenceButDeterministicallyRelocatesUniqueExactExcerpt() {
         CapturingClient missingEvidence = new CapturingClient(response(candidateJson(
                 "extracted", 3, 3, "", "image path")));
         CapturingClient outOfBounds = new CapturingClient(response(candidateJson(
@@ -48,8 +52,9 @@ class GitHubModelsCandidateExtractionServiceTest {
 
         assertThrows(CandidateExtractionException.class,
                 () -> service(missingEvidence).extract(request()));
-        assertThrows(CandidateExtractionException.class,
-                () -> service(outOfBounds).extract(request()));
+        CandidateExtractionResult relocated = service(outOfBounds).extract(request());
+        assertEquals(3, relocated.getCandidates().get(0)
+                .getSourceEvidence().getLocation().getStartLine());
     }
 
     @Test
@@ -76,6 +81,26 @@ class GitHubModelsCandidateExtractionServiceTest {
                 () -> service(client).extract(request()));
 
         assertTrue(error.getMessage().contains("evidence"));
+    }
+
+    @Test
+    void recoversExactSourceLineWhenModelDropsInlineMarkdownBackticks() {
+        String markdown = "# Image\n\n`src` 与 `srcExp` 不能同时设置。";
+        String candidate = candidateJson(
+                "extracted", 1, 1, "src 与 srcExp 不能同时设置。", "description");
+        CandidateExtractionRequest request = CandidateExtractionRequest.builder()
+                .documentId("image")
+                .documentRevision("r42")
+                .markdown(markdown)
+                .examples(List.of())
+                .build();
+
+        RuleCandidate recovered = service(new CapturingClient(response(candidate)))
+                .extract(request).getCandidates().get(0);
+
+        assertEquals(3, recovered.getSourceEvidence().getLocation().getStartLine());
+        assertEquals("`src` 与 `srcExp` 不能同时设置。",
+                recovered.getSourceEvidence().getExcerpt());
     }
 
     @Test
