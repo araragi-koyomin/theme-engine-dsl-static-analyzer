@@ -8,12 +8,12 @@ import org.jetbrains.annotations.Nullable;
 
 import com.intellij.lang.documentation.AbstractDocumentationProvider;
 import com.intellij.lang.documentation.DocumentationMarkup;
-import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Key;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiLanguageInjectionHost;
+import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.xml.XmlAttribute;
@@ -31,18 +31,17 @@ import com.huawei.theme.analysis.core.expression.generated.DslExpressionParser;
 import com.huawei.theme.analysis.core.expression.model.FunctionParam;
 import com.huawei.theme.analysis.core.expression.model.FunctionSignature;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
+import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
+import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
 
 /**
- * Documentation provider for the DslExpression language (injected into ThemeDSL
- * attribute values). Provides hover/Quick-Documentation for:
- * <ul>
- *   <li>Global variables — from {@link DslGlobalVar#getDescription()}</li>
- *   <li>User-defined {@code <Var>} — "User-defined variable" + type</li>
- *   <li>Local {@code indexFlag} — "Local variable"</li>
- *   <li>Global functions — placeholder</li>
- * </ul>
+ * Documentation provider for DslExpression content, operating on the host
+ * ThemeDSL language. When the cursor is inside an expression-supporting
+ * attribute value, it creates a dummy DE PSI via {@link PsiFileFactory} to
+ * locate the exact element (variable ref or function call), then generates
+ * documentation from the rule library.
  */
 public class DslExpressionDocumentationProvider extends AbstractDocumentationProvider {
 
@@ -51,6 +50,9 @@ public class DslExpressionDocumentationProvider extends AbstractDocumentationPro
     private static final RuleIElementType VAR_NAME;
     private static final RuleIElementType FUNCTION_CALL;
     private static final int ID_TOKEN = DslExpressionParser.ID;
+
+    private static final Key<XmlFile> HOST_FILE_KEY = Key.create("DslExpressionDocProvider.hostFile");
+    private static final Key<XmlTag> HOST_TAG_KEY = Key.create("DslExpressionDocProvider.hostTag");
 
     static {
         PSIElementTypeFactory.defineLanguageIElementTypes(
@@ -72,39 +74,19 @@ public class DslExpressionDocumentationProvider extends AbstractDocumentationPro
 
     @Override
     public @Nullable PsiElement getCustomDocumentationElement(@NotNull Editor editor,
-                                                              @NotNull PsiFile file,
-                                                              @Nullable PsiElement contextElement,
-                                                              int targetOffset) {
+                                                               @NotNull PsiFile file,
+                                                               @Nullable PsiElement contextElement,
+                                                               int targetOffset) {
         if (contextElement == null) {
             return null;
         }
-        // Walk up to the nearest varRef, varName (inside a varRef), or function name ID.
-        PsiElement e = contextElement;
-        while (e != null) {
-            IElementType type = e.getNode() == null ? null : e.getNode().getElementType();
-            if (type == AT_VAR_REF || type == HASH_VAR_REF) {
-                return e;
-            }
-            if (type == VAR_NAME && e.getParent() != null) {
-                IElementType parentType = e.getParent().getNode() == null ? null : e.getParent().getNode().getElementType();
-                if (parentType == AT_VAR_REF || parentType == HASH_VAR_REF) {
-                    return e.getParent();
-                }
-            }
-            if (type == FUNCTION_CALL) {
-                return e;
-            }
-            // Function name: ID token whose parent is functionCall
-            if (type instanceof TokenIElementType tet && tet.getANTLRTokenType() == ID_TOKEN) {
-                PsiElement parent = e.getParent();
-                if (parent != null && parent.getNode() != null
-                        && parent.getNode().getElementType() == FUNCTION_CALL) {
-                    return e;
-                }
-            }
-            e = e.getParent();
+
+        // Cursor must be inside an expression-supporting attribute value
+        XmlAttributeValue attrValue = PsiTreeUtil.getParentOfType(contextElement, XmlAttributeValue.class);
+        if (attrValue == null) {
+            return null;
         }
-        return null;
+        return resolveFromHost(editor, file, contextElement, targetOffset, attrValue);
     }
 
     @Override
@@ -129,6 +111,94 @@ public class DslExpressionDocumentationProvider extends AbstractDocumentationPro
         return null;
     }
 
+    // ---- ThemeDSL host path ----
+
+    /**
+     * Creates a dummy DE file from the attribute value text, finds the element
+     * at the cursor offset, walks up to a varRef or functionCall, and returns it.
+     * The host XML file and tag are attached via {@link Key} so
+     * {@link #generateVarRefDoc} can look up user vars and indexFlag.
+     */
+    @Nullable
+    private static PsiElement resolveFromHost(@NotNull Editor editor,
+                                              @NotNull PsiFile file,
+                                              @NotNull PsiElement contextElement,
+                                              int targetOffset,
+                                              @NotNull XmlAttributeValue attrValue) {
+        XmlAttribute attr = PsiTreeUtil.getParentOfType(attrValue, XmlAttribute.class);
+        XmlTag tag = PsiTreeUtil.getParentOfType(attr, XmlTag.class);
+        if (attr == null || tag == null) {
+            return null;
+        }
+
+        RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
+        Optional<DslElementRule> ruleOpt = repo.getElementRule(tag.getName());
+        if (ruleOpt.isEmpty()) {
+            return null;
+        }
+        AttrTypeSpec spec = findAttrSpec(ruleOpt.get(), attr.getName());
+        if (spec == null || !spec.isSupportsExpression()) {
+            return null;
+        }
+
+        String valueText = attrValue.getValue();
+        if (valueText == null || valueText.isEmpty()) {
+            return null;
+        }
+
+        Project project = editor.getProject();
+        if (project == null) {
+            return null;
+        }
+
+        // Offset within the attribute value (excluding the opening quote)
+        int valueStart = attrValue.getTextRange().getStartOffset() + 1;
+        int relOffset = targetOffset - valueStart;
+        relOffset = Math.max(0, Math.min(relOffset, valueText.length() - 1));
+
+        PsiFile deFile = PsiFileFactory.getInstance(project)
+                .createFileFromText(DslExpressionLanguage.INSTANCE, valueText);
+        deFile.putUserData(HOST_FILE_KEY, file instanceof XmlFile xmlFile ? xmlFile : null);
+        deFile.putUserData(HOST_TAG_KEY, tag);
+
+        PsiElement leaf = deFile.findElementAt(relOffset);
+        if (leaf == null) {
+            return null;
+        }
+        return walkToResolvable(leaf);
+    }
+
+    @Nullable
+    private static PsiElement walkToResolvable(@NotNull PsiElement element) {
+        PsiElement e = element;
+        while (e != null) {
+            IElementType type = e.getNode() == null ? null : e.getNode().getElementType();
+            if (type == AT_VAR_REF || type == HASH_VAR_REF) {
+                return e;
+            }
+            if (type == VAR_NAME && e.getParent() != null) {
+                IElementType parentType = e.getParent().getNode() == null ? null : e.getParent().getNode().getElementType();
+                if (parentType == AT_VAR_REF || parentType == HASH_VAR_REF) {
+                    return e.getParent();
+                }
+            }
+            if (type == FUNCTION_CALL) {
+                return e;
+            }
+            if (type instanceof TokenIElementType tet && tet.getANTLRTokenType() == ID_TOKEN) {
+                PsiElement parent = e.getParent();
+                if (parent != null && parent.getNode() != null
+                        && parent.getNode().getElementType() == FUNCTION_CALL) {
+                    return e;
+                }
+            }
+            e = e.getParent();
+        }
+        return null;
+    }
+
+    // ---- Doc generation ----
+
     private String generateVarRefDoc(@NotNull PsiElement varRef) {
         String varName = extractVarName(varRef);
         if (varName == null) {
@@ -145,34 +215,31 @@ public class DslExpressionDocumentationProvider extends AbstractDocumentationPro
             return doc("Global Variable", sigil + gv.getName(), gv.getType(), desc);
         }
 
+        // Obtain host context (from dummy DE file)
+        PsiFile containingFile = varRef.getContainingFile();
+        XmlFile hostFile = containingFile != null ? containingFile.getUserData(HOST_FILE_KEY) : null;
+        XmlTag hostTag = containingFile != null ? containingFile.getUserData(HOST_TAG_KEY) : null;
+
         // 2. User-defined <Var>
-        Project project = varRef.getProject();
-        if (project != null) {
-            PsiLanguageInjectionHost host = InjectedLanguageManager.getInstance(project).getInjectionHost(varRef);
-            if (host instanceof XmlAttributeValue hostValue) {
-                PsiFile hostFile = hostValue.getContainingFile();
-                if (hostFile instanceof XmlFile xmlFile) {
-                    for (XmlTag tag : PsiTreeUtil.findChildrenOfType(xmlFile, XmlTag.class)) {
-                        if ("Var".equals(tag.getName()) && varName.equals(tag.getAttributeValue("name"))) {
-                            String varType = tag.getAttributeValue("type");
-                            if (varType == null || varType.isEmpty()) {
-                                varType = "number";
-                            }
-                            String sigil = varType.startsWith("string") ? "@" : "#";
-                            return doc("User-defined Variable", sigil + varName, varType, "User-defined variable");
-                        }
+        if (hostFile != null) {
+            for (XmlTag tag : PsiTreeUtil.findChildrenOfType(hostFile, XmlTag.class)) {
+                if ("Var".equals(tag.getName()) && varName.equals(tag.getAttributeValue("name"))) {
+                    String varType = tag.getAttributeValue("type");
+                    if (varType == null || varType.isEmpty()) {
+                        varType = "number";
                     }
+                    String sigil = varType.startsWith("string") ? "@" : "#";
+                    return doc("User-defined Variable", sigil + varName, varType, "User-defined variable");
                 }
-                // 3. Local indexFlag
-                XmlAttribute attr = PsiTreeUtil.getParentOfType(hostValue, XmlAttribute.class);
-                if (attr != null) {
-                    XmlTag enclosingTag = PsiTreeUtil.getParentOfType(attr, XmlTag.class);
-                    for (XmlTag t = enclosingTag; t != null; t = PsiTreeUtil.getParentOfType(t, XmlTag.class)) {
-                        String indexFlag = t.getAttributeValue("indexFlag");
-                        if (varName.equals(indexFlag)) {
-                            return doc("Local Variable", "#" + varName, "number", "Local index variable");
-                        }
-                    }
+            }
+        }
+
+        // 3. Local indexFlag
+        if (hostTag != null) {
+            for (XmlTag t = hostTag; t != null; t = PsiTreeUtil.getParentOfType(t, XmlTag.class)) {
+                String indexFlag = t.getAttributeValue("indexFlag");
+                if (varName.equals(indexFlag)) {
+                    return doc("Local Variable", "#" + varName, "number", "Local index variable");
                 }
             }
         }
@@ -221,6 +288,21 @@ public class DslExpressionDocumentationProvider extends AbstractDocumentationPro
             sb.append(DocumentationMarkup.CONTENT_END);
         }
         return sb.toString();
+    }
+
+    // ---- Helpers ----
+
+    private static AttrTypeSpec findAttrSpec(DslElementRule rule, String attrName) {
+        AttrTypeSpec spec = rule.getAttrTypes().get(attrName);
+        if (spec != null) {
+            return spec;
+        }
+        for (AttrTypeSpec candidate : rule.getAttrTypes().values()) {
+            if (candidate.getAliases() != null && candidate.getAliases().contains(attrName)) {
+                return candidate;
+            }
+        }
+        return null;
     }
 
     private String doc(String kind, String signature, String type, String content) {

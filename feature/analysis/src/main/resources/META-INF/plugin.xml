@@ -50,7 +50,7 @@
                                 implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionCompletionContributor"
                                 order="first"/>
 
-        <lang.documentationProvider language="DslExpression"
+        <lang.documentationProvider language="ThemeDSL"
                                      implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionDocumentationProvider"/>
 
         <lang.syntaxHighlighterFactory language="DslExpression"
