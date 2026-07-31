@@ -46,8 +46,9 @@
         <lang.parserDefinition language="VarName"
                                implementationClass="com.huawei.theme.analysis.plugin.editor.varname.VarNameParserDefinition"/>
 
-        <completion.contributor language="DslExpression"
-                                implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionCompletionContributor"/>
+        <completion.contributor language="ThemeDSL"
+                                implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionCompletionContributor"
+                                order="first"/>
 
         <lang.documentationProvider language="DslExpression"
                                      implementationClass="com.huawei.theme.analysis.plugin.editor.expr.DslExpressionDocumentationProvider"/>

@@ -105,9 +105,9 @@ public class ThemeDslExpressionInjector implements MultiHostInjector {
         // returns absolute document offsets, so shift it left by the host's start offset.
         TextRange rangeInsideHost =
                 value.getValueTextRange().shiftLeft(value.getTextRange().getStartOffset());
-        registrar.startInjecting(DslExpressionLanguage.INSTANCE)
-                .addPlace(null, null, (PsiLanguageInjectionHost) value, rangeInsideHost)
-                .doneInjecting();
+//        registrar.startInjecting(DslExpressionLanguage.INSTANCE)
+//                .addPlace(null, null, (PsiLanguageInjectionHost) value, rangeInsideHost)
+//                .doneInjecting();
     }
 
     /**

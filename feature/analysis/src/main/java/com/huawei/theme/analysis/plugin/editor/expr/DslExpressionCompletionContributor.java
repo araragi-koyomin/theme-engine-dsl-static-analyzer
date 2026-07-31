@@ -3,6 +3,7 @@ package com.huawei.theme.analysis.plugin.editor.expr;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -14,12 +15,10 @@ import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.icons.AllIcons;
-import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
-import com.intellij.psi.PsiLanguageInjectionHost;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.xml.XmlAttribute;
@@ -36,22 +35,27 @@ import com.huawei.theme.analysis.core.expression.generated.DslExpressionLexer;
 import com.huawei.theme.analysis.core.expression.generated.DslExpressionParser;
 import com.huawei.theme.analysis.core.expression.model.FunctionSignature;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
+import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
+import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
 
 /**
- * Completion contributor for the DslExpression language (injected into ThemeDSL
- * attribute values). Provides four candidate types at any position in the expression:
+ * Completion contributor for DE expressions running on the host ThemeDSL
+ * language (not on injected DE PSI). Fires when the cursor is inside the
+ * value of an expression-supporting attribute, and provides:
  * <ol>
  *   <li>Global variables (from the rule library)</li>
  *   <li>User {@code <Var>} declarations (from the host XML file)</li>
- *   <li>Local {@code indexFlag} variables (from enclosing {@code <Array>}/{@code <CycleCommand>})</li>
+ *   <li>Local {@code indexFlag} variables (from enclosing tags)</li>
  *   <li>Global functions (from {@code dsl_functions.json})</li>
  * </ol>
  *
- * <p>The platform filters candidates by the prefix the user has typed. Variables
- * are shown with a variable icon; functions with a function icon and signature
- * info in the tail text.</p>
+ * <p>Registered via {@code <completion.contributor language="ThemeDSL">} so it
+ * runs on the host XML PSI, avoiding the performance cost of DE language
+ * injection. Dummy DE PSI elements (created via {@link PsiFileFactory}) are
+ * linked to each candidate so the {@link DslExpressionDocumentationProvider}
+ * can render docs in the completion popup on hover.</p>
  */
 public class DslExpressionCompletionContributor extends CompletionContributor {
 
@@ -82,29 +86,42 @@ public class DslExpressionCompletionContributor extends CompletionContributor {
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters,
                                       @NotNull CompletionResultSet result) {
-        // Compute a prefix that includes the #/@ sigil so the platform replaces it
-        // when a candidate is selected (avoids "##x": user types "#", selects "#x",
-        // platform should replace "#" with "#x", not append "#x" after "#").
-        String prefix = computePrefix(parameters);
-        CompletionResultSet prefixedResult = result.withPrefixMatcher(prefix);
-
         PsiElement position = parameters.getPosition();
+
+        // Only fire inside attribute values
+        XmlAttributeValue attrValue = PsiTreeUtil.getParentOfType(position, XmlAttributeValue.class);
+        if (attrValue == null) {
+            return;
+        }
+        XmlAttribute attr = PsiTreeUtil.getParentOfType(attrValue, XmlAttribute.class);
+        if (attr == null) {
+            return;
+        }
+        XmlTag tag = PsiTreeUtil.getParentOfType(attr, XmlTag.class);
+        if (tag == null) {
+            return;
+        }
+
+        // Only fire for expression-supporting attributes
+        RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
+        Optional<DslElementRule> ruleOpt = repo.getElementRule(tag.getName());
+        if (ruleOpt.isEmpty()) {
+            return;
+        }
+        AttrTypeSpec spec = findAttrSpec(ruleOpt.get(), attr.getName());
+        if (spec == null || !spec.isSupportsExpression()) {
+            return;
+        }
+
         Project project = position.getProject();
         if (project == null) {
             return;
         }
 
-        // Find the host XML file via the injection host.
-        PsiLanguageInjectionHost host = InjectedLanguageManager.getInstance(project).getInjectionHost(position);
-        XmlFile hostFile = null;
-        XmlAttributeValue hostValue = null;
-        if (host instanceof XmlAttributeValue value) {
-            hostValue = value;
-            hostFile = value.getContainingFile() instanceof XmlFile xmlFile ? xmlFile : null;
-        }
+        String prefix = computePrefix(parameters);
+        CompletionResultSet prefixedResult = result.withPrefixMatcher(prefix);
 
         // 1. Global variables
-        RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
         for (DslGlobalVar gv : repo.getAllGlobalVars()) {
             String pfx = prefixForType(gv.getType());
             String lookupText = pfx + gv.getName();
@@ -118,48 +135,44 @@ public class DslExpressionCompletionContributor extends CompletionContributor {
         }
 
         // 2. User <Var> declarations
-        if (hostFile != null) {
-            for (XmlTag tag : PsiTreeUtil.findChildrenOfType(hostFile, XmlTag.class)) {
-                if (!"Var".equals(tag.getName())) {
+        PsiFile file = tag.getContainingFile();
+        if (file instanceof XmlFile xmlFile) {
+            for (XmlTag t : PsiTreeUtil.findChildrenOfType(xmlFile, XmlTag.class)) {
+                if (!"Var".equals(t.getName())) {
                     continue;
                 }
-                String name = tag.getAttributeValue("name");
-                if (name != null && !name.isEmpty()) {
-                    String type = tag.getAttributeValue("type");
-                    if (type == null || type.isEmpty()) {
-                        type = "number";
-                    }
-                    String pfx = prefixForType(type);
-                    String lookupText = pfx + name;
-                    PsiElement dummyVar = getDocVarRef(project, lookupText);
-                    LookupElementBuilder builder = dummyVar != null
-                            ? LookupElementBuilder.create(dummyVar, lookupText)
-                            : LookupElementBuilder.create(lookupText);
-                    prefixedResult.addElement(builder
-                            .withIcon(AllIcons.Nodes.Variable)
-                            .withTypeText(type));
+                String name = t.getAttributeValue("name");
+                if (name == null || name.isEmpty()) {
+                    continue;
                 }
+                String type = t.getAttributeValue("type");
+                if (type == null || type.isEmpty()) {
+                    type = "number";
+                }
+                String pfx = prefixForType(type);
+                String lookupText = pfx + name;
+                PsiElement dummyVar = getDocVarRef(project, lookupText);
+                LookupElementBuilder builder = dummyVar != null
+                        ? LookupElementBuilder.create(dummyVar, lookupText)
+                        : LookupElementBuilder.create(lookupText);
+                prefixedResult.addElement(builder
+                        .withIcon(AllIcons.Nodes.Variable)
+                        .withTypeText(type));
             }
         }
 
-        // 3. Local indexFlag variables from enclosing <Array>/<CycleCommand>
-        if (hostValue != null) {
-            XmlAttribute attr = PsiTreeUtil.getParentOfType(hostValue, XmlAttribute.class);
-            if (attr != null) {
-                XmlTag enclosingTag = PsiTreeUtil.getParentOfType(attr, XmlTag.class);
-                for (XmlTag t = enclosingTag; t != null; t = PsiTreeUtil.getParentOfType(t, XmlTag.class)) {
-                    String indexFlag = t.getAttributeValue("indexFlag");
-                    if (indexFlag != null && !indexFlag.isEmpty()) {
-                        String lookupText = "#" + indexFlag;
-                        PsiElement dummyVar = getDocVarRef(project, lookupText);
-                        LookupElementBuilder builder = dummyVar != null
-                                ? LookupElementBuilder.create(dummyVar, lookupText)
-                                : LookupElementBuilder.create(lookupText);
-                        prefixedResult.addElement(builder
-                                .withIcon(AllIcons.Nodes.Variable)
-                                .withTypeText("number"));
-                    }
-                }
+        // 3. Local indexFlag variables from enclosing tags
+        for (XmlTag t = tag; t != null; t = PsiTreeUtil.getParentOfType(t, XmlTag.class)) {
+            String indexFlag = t.getAttributeValue("indexFlag");
+            if (indexFlag != null && !indexFlag.isEmpty()) {
+                String lookupText = "#" + indexFlag;
+                PsiElement dummyVar = getDocVarRef(project, lookupText);
+                LookupElementBuilder builder = dummyVar != null
+                        ? LookupElementBuilder.create(dummyVar, lookupText)
+                        : LookupElementBuilder.create(lookupText);
+                prefixedResult.addElement(builder
+                        .withIcon(AllIcons.Nodes.Variable)
+                        .withTypeText("number"));
             }
         }
 
@@ -181,13 +194,11 @@ public class DslExpressionCompletionContributor extends CompletionContributor {
                         .withTypeText(returnType));
             }
         }
+
+        // Suppress default XML completion
+        result.stopHere();
     }
 
-    /**
-     * Computes the completion prefix including the {@code #}/{@code @} sigil and
-     * any identifier characters typed after it, so the platform replaces the full
-     * prefix (sigil + name) when a candidate is selected.
-     */
     private static String computePrefix(CompletionParameters parameters) {
         int offset = parameters.getOffset();
         CharSequence text = parameters.getEditor().getDocument().getCharsSequence();
@@ -206,11 +217,6 @@ public class DslExpressionCompletionContributor extends CompletionContributor {
         return text.subSequence(start, offset).toString();
     }
 
-    /**
-     * Returns the variable access sigil for a given type: {@code #} for numeric
-     * types (number, number[]), {@code @} for string types (string, string[]).
-     * Defaults to {@code #} (number) when type is null/empty/unknown.
-     */
     private static String prefixForType(String type) {
         if (type == null || type.isEmpty() || type.startsWith("number")) {
             return "#";
@@ -221,15 +227,19 @@ public class DslExpressionCompletionContributor extends CompletionContributor {
         return "#";
     }
 
-    /**
-     * Returns a cached dummy {@code functionCall} PSI element for the given
-     * function name, so the {@link DslExpressionDocumentationProvider} can
-     * render function docs in the completion popup on hover.
-     *
-     * <p>Creates a tiny DE file ({@code funcName()}) via {@link PsiFileFactory},
-     * parses it, and finds the {@code functionCall} rule node. The result is
-     * cached per function name.</p>
-     */
+    private static AttrTypeSpec findAttrSpec(DslElementRule rule, String attrName) {
+        AttrTypeSpec spec = rule.getAttrTypes().get(attrName);
+        if (spec != null) {
+            return spec;
+        }
+        for (AttrTypeSpec candidate : rule.getAttrTypes().values()) {
+            if (candidate.getAliases() != null && candidate.getAliases().contains(attrName)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
     @Nullable
     private static PsiElement getDocFunctionCall(@NotNull Project project, @NotNull String funcName) {
         PsiElement cached = DOC_FUNC_CACHE.get(funcName);
@@ -251,16 +261,6 @@ public class DslExpressionCompletionContributor extends CompletionContributor {
         return null;
     }
 
-    /**
-     * Returns a cached dummy {@code hashVarRef} or {@code atVarRef} PSI element
-     * for the given variable reference text (e.g. {@code "#screen_width"} or
-     * {@code "@time_sys"}), so the {@link DslExpressionDocumentationProvider}
-     * can render variable docs in the completion popup on hover.
-     *
-     * <p>Creates a tiny DE file with the variable reference text via
-     * {@link PsiFileFactory}, parses it, and finds the {@code hashVarRef} or
-     * {@code atVarRef} rule node. The result is cached per reference text.</p>
-     */
     @Nullable
     private static PsiElement getDocVarRef(@NotNull Project project, @NotNull String refText) {
         PsiElement cached = DOC_VAR_CACHE.get(refText);

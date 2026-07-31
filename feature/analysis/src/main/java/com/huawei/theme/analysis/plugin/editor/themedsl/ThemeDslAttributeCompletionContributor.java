@@ -78,6 +78,19 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
 
         // Case 2: Attribute value position → offer enum values
         if (position.getParent() instanceof XmlAttributeValue valueElement) {
+            // Skip expression-supporting attributes — handled by DslExpressionCompletionContributor
+            XmlAttribute attr = PsiTreeUtil.getParentOfType(valueElement, XmlAttribute.class);
+            XmlTag tag = PsiTreeUtil.getParentOfType(attr, XmlTag.class);
+            if (attr != null && tag != null) {
+                RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
+                Optional<DslElementRule> ruleOpt = repo.getElementRule(tag.getName());
+                if (ruleOpt.isPresent()) {
+                    AttrTypeSpec spec = findAttrSpec(ruleOpt.get(), attr.getName());
+                    if (spec != null && spec.isSupportsExpression()) {
+                        return;
+                    }
+                }
+            }
             fillAttributeValueCompletion(valueElement, result);
             // Suppress the default XML completion contributor.
             result.stopHere();
@@ -234,5 +247,18 @@ public class ThemeDslAttributeCompletionContributor extends CompletionContributo
         }
 
         return StringUtils.capitalize(typeSpec.getType());
+    }
+
+    private static AttrTypeSpec findAttrSpec(DslElementRule rule, String attrName) {
+        AttrTypeSpec spec = rule.getAttrTypes().get(attrName);
+        if (spec != null) {
+            return spec;
+        }
+        for (AttrTypeSpec candidate : rule.getAttrTypes().values()) {
+            if (candidate.getAliases() != null && candidate.getAliases().contains(attrName)) {
+                return candidate;
+            }
+        }
+        return null;
     }
 }
