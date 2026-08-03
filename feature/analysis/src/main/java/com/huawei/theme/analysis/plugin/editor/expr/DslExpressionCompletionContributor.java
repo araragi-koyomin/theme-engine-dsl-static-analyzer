@@ -37,8 +37,9 @@ import com.huawei.theme.analysis.core.expression.model.FunctionSignature;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
-import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
+import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
+import com.huawei.theme.analysis.plugin.editor.reference.VarNameResolver;
 
 /**
  * Completion contributor for DE expressions running on the host ThemeDSL
@@ -121,58 +122,21 @@ public class DslExpressionCompletionContributor extends CompletionContributor {
         String prefix = computePrefix(parameters);
         CompletionResultSet prefixedResult = result.withPrefixMatcher(prefix);
 
-        // 1. Global variables
-        for (DslGlobalVar gv : repo.getAllGlobalVars()) {
-            String pfx = prefixForType(gv.getType());
-            String lookupText = pfx + gv.getName();
-            PsiElement dummyVar = getDocVarRef(project, lookupText);
-            LookupElementBuilder builder = dummyVar != null
-                    ? LookupElementBuilder.create(dummyVar, lookupText)
-                    : LookupElementBuilder.create(lookupText);
-            prefixedResult.addElement(builder
-                    .withIcon(AllIcons.Nodes.Variable)
-                    .withTypeText(gv.getType()));
-        }
-
-        // 2. User <Var> declarations
-        PsiFile file = tag.getContainingFile();
-        if (file instanceof XmlFile xmlFile) {
-            for (XmlTag t : PsiTreeUtil.findChildrenOfType(xmlFile, XmlTag.class)) {
-                if (!"Var".equals(t.getName())) {
-                    continue;
-                }
-                String name = t.getAttributeValue("name");
-                if (name == null || name.isEmpty()) {
-                    continue;
-                }
-                String type = t.getAttributeValue("type");
-                if (type == null || type.isEmpty()) {
-                    type = "number";
-                }
-                String pfx = prefixForType(type);
-                String lookupText = pfx + name;
+        // 1-3. Visible variables (preset globals + user <Var> + in-scope indexFlag locals)
+        // discovered via the AST SymbolTable at the cursor's enclosing element.
+        XmlFile hostFile = tag.getContainingFile() instanceof XmlFile xmlFile ? xmlFile : null;
+        if (hostFile != null) {
+            for (VarDeclaration d : VarNameResolver.visibleDeclarations(project, hostFile, tag)) {
+                String pfx = VarNameResolver.sigilOf(d.getType());
+                String lookupText = pfx + d.getName();
+                String typeText = VarNameResolver.typeName(d.getType());
                 PsiElement dummyVar = getDocVarRef(project, lookupText);
                 LookupElementBuilder builder = dummyVar != null
                         ? LookupElementBuilder.create(dummyVar, lookupText)
                         : LookupElementBuilder.create(lookupText);
                 prefixedResult.addElement(builder
                         .withIcon(AllIcons.Nodes.Variable)
-                        .withTypeText(type));
-            }
-        }
-
-        // 3. Local indexFlag variables from enclosing tags
-        for (XmlTag t = tag; t != null; t = PsiTreeUtil.getParentOfType(t, XmlTag.class)) {
-            String indexFlag = t.getAttributeValue("indexFlag");
-            if (indexFlag != null && !indexFlag.isEmpty()) {
-                String lookupText = "#" + indexFlag;
-                PsiElement dummyVar = getDocVarRef(project, lookupText);
-                LookupElementBuilder builder = dummyVar != null
-                        ? LookupElementBuilder.create(dummyVar, lookupText)
-                        : LookupElementBuilder.create(lookupText);
-                prefixedResult.addElement(builder
-                        .withIcon(AllIcons.Nodes.Variable)
-                        .withTypeText("number"));
+                        .withTypeText(typeText));
             }
         }
 
@@ -215,16 +179,6 @@ public class DslExpressionCompletionContributor extends CompletionContributor {
             }
         }
         return text.subSequence(start, offset).toString();
-    }
-
-    private static String prefixForType(String type) {
-        if (type == null || type.isEmpty() || type.startsWith("number")) {
-            return "#";
-        }
-        if (type.startsWith("string")) {
-            return "@";
-        }
-        return "#";
     }
 
     private static AttrTypeSpec findAttrSpec(DslElementRule rule, String attrName) {

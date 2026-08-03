@@ -34,6 +34,8 @@ import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
+import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
+import com.huawei.theme.analysis.plugin.editor.reference.VarNameResolver;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
 
 /**
@@ -205,45 +207,46 @@ public class DslExpressionDocumentationProvider extends AbstractDocumentationPro
             return null;
         }
 
-        // 1. Global variable
-        RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
-        Optional<DslGlobalVar> gvOpt = repo.getGlobalVar(varName);
-        if (gvOpt.isPresent()) {
-            DslGlobalVar gv = gvOpt.get();
-            String sigil = gv.getType() != null && gv.getType().startsWith("string") ? "@" : "#";
-            String desc = gv.getDescription() != null ? gv.getDescription() : "No description available.";
-            return doc("Global Variable", sigil + gv.getName(), gv.getType(), desc);
-        }
-
-        // Obtain host context (from dummy DE file)
         PsiFile containingFile = varRef.getContainingFile();
         XmlFile hostFile = containingFile != null ? containingFile.getUserData(HOST_FILE_KEY) : null;
         XmlTag hostTag = containingFile != null ? containingFile.getUserData(HOST_TAG_KEY) : null;
+        Project project = hostFile != null ? hostFile.getProject() : null;
 
-        // 2. User-defined <Var>
-        if (hostFile != null) {
-            for (XmlTag tag : PsiTreeUtil.findChildrenOfType(hostFile, XmlTag.class)) {
-                if ("Var".equals(tag.getName()) && varName.equals(tag.getAttributeValue("name"))) {
-                    String varType = tag.getAttributeValue("type");
-                    if (varType == null || varType.isEmpty()) {
-                        varType = "number";
-                    }
-                    String sigil = varType.startsWith("string") ? "@" : "#";
-                    return doc("User-defined Variable", sigil + varName, varType, "User-defined variable");
-                }
-            }
+        if (hostFile == null || hostTag == null || project == null) {
+            return generateGlobalVarDoc(varName);
         }
 
-        // 3. Local indexFlag
-        if (hostTag != null) {
-            for (XmlTag t = hostTag; t != null; t = PsiTreeUtil.getParentOfType(t, XmlTag.class)) {
-                String indexFlag = t.getAttributeValue("indexFlag");
-                if (varName.equals(indexFlag)) {
-                    return doc("Local Variable", "#" + varName, "number", "Local index variable");
-                }
-            }
+        Optional<VarDeclaration> declOpt =
+                VarNameResolver.lookupDeclaration(project, hostFile, hostTag, varName);
+        if (declOpt.isEmpty()) {
+            return null;
         }
-        return null;
+        VarDeclaration d = declOpt.get();
+        String sigil = VarNameResolver.sigilOf(d.getType());
+        String typeText = VarNameResolver.typeName(d.getType());
+
+        if (d.isGlobal()) {
+            RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
+            Optional<DslGlobalVar> gv = repo.getGlobalVar(varName);
+            String desc = gv.map(DslGlobalVar::getDescription).orElse("No description available.");
+            return doc("Global Variable", sigil + varName, typeText, desc);
+        }
+        boolean isIndexFlag = "indexFlag".equals(d.getHostAttrName());
+        String kind = isIndexFlag ? "Local Variable" : "User-defined Variable";
+        String desc = isIndexFlag ? "Local index variable" : "User-defined variable";
+        return doc(kind, sigil + varName, typeText, desc);
+    }
+
+    private String generateGlobalVarDoc(@NotNull String varName) {
+        RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
+        Optional<DslGlobalVar> gvOpt = repo.getGlobalVar(varName);
+        if (gvOpt.isEmpty()) {
+            return null;
+        }
+        DslGlobalVar gv = gvOpt.get();
+        String sigil = gv.getType() != null && gv.getType().startsWith("string") ? "@" : "#";
+        String desc = gv.getDescription() != null ? gv.getDescription() : "No description available.";
+        return doc("Global Variable", sigil + gv.getName(), gv.getType(), desc);
     }
 
     private String generateFunctionDoc(@Nullable String funcName) {

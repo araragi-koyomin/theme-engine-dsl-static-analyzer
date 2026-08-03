@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,15 +14,11 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import com.huawei.theme.analysis.core.expression.ExpressionNode;
-import com.huawei.theme.analysis.core.expression.ExpressionParser;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
-import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
-import com.huawei.theme.analysis.core.shared.ast.ExpressionAstNode;
 
 public class AstBuilder implements DslAstProvider {
 
@@ -199,60 +194,7 @@ public class AstBuilder implements DslAstProvider {
 
     private void attachExpression(DslAttributeValueNode value, String attrValue, String tagName,
                                   String attrName, int valueDocLine, int valueDocCol) {
-        ExpressionAstNode exprNode = null;
-        boolean parseAttempted = false;
-        if (ruleRepository != null) {
-            Optional<AttrTypeSpec> specOpt = ruleRepository.getAttrTypeSpec(tagName, attrName);
-            if (specOpt.isPresent() && specOpt.get().isSupportsExpression()) {
-                String expressionKind = specOpt.get().getExpressionKind();
-                if (ExpressionParser.hasExpressionSyntax(attrValue, attrName)) {
-                    parseAttempted = true;
-                    exprNode = ExpressionParser.parseExpression(attrValue, expressionKind);
-                }
-            }
-        }
-        if (exprNode != null) {
-            offsetExprToDocument((ExpressionNode) exprNode, valueDocLine, valueDocCol);
-            value.setExpression(Optional.of(exprNode));
-            value.setLiteral(false);
-        } else if (parseAttempted) {
-            value.setExpression(Optional.empty());
-            value.setLiteral(false);
-        } else {
-            value.setExpression(Optional.empty());
-            value.setLiteral(true);
-        }
-    }
-
-    /**
-     * 将表达式节点树的位置从"属性值字符串内相对坐标"平移到"文档绝对坐标"。
-     *
-     * <p>ANTLR解析属性值字符串时，line/col相对于该字符串(line=1,col=0为值首字符)。
-     * AstBuilder已知属性值在文档中的起始(valueDocLine/valueDocCol)，据此平移：
-     * docLine = valueDocLine + (exprLine - 1)；
-     * docCol = (exprLine==1) ? valueDocCol + exprCol : exprCol（值内换行=文档换行，新行col独立）。
-     * 递归处理children和indexExpression。修复此前表达式诊断报line=1的坐标错误。</p>
-     */
-    private static void offsetExprToDocument(ExpressionNode node, int valueDocLine, int valueDocCol) {
-        if (node == null) {
-            return;
-        }
-        int line = node.getLine();
-        int col = node.getColumn();
-        int endLine = node.getEndLine();
-        int endCol = node.getEndColumn();
-        node.setLine(valueDocLine + line - 1);
-        node.setColumn(line == 1 ? valueDocCol + col : col);
-        node.setEndLine(valueDocLine + endLine - 1);
-        node.setEndColumn(endLine == 1 ? valueDocCol + endCol : endCol);
-        if (node.getChildren() != null) {
-            for (ExpressionNode child : node.getChildren()) {
-                offsetExprToDocument(child, valueDocLine, valueDocCol);
-            }
-        }
-        if (node.getIndexExpression() != null) {
-            offsetExprToDocument(node.getIndexExpression(), valueDocLine, valueDocCol);
-        }
+        ExpressionEmbedder.embed(value, attrValue, tagName, attrName, valueDocLine, valueDocCol, ruleRepository);
     }
 
     private static String safeAttrName(XMLStreamReader reader, int i) {

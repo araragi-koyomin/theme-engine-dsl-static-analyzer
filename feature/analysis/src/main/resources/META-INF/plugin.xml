@@ -16,6 +16,8 @@
 
         <applicationService serviceImplementation="com.huawei.theme.analysis.plugin.rule.RuleRepositoryService"/>
 
+        <projectService serviceImplementation="com.huawei.theme.analysis.plugin.ast.DslAstService"/>
+
         <fileType name="ThemeDSL"
                   implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslFileType"
                   fieldName="INSTANCE"
@@ -81,7 +83,6 @@
         <psi.referenceContributor implementation="com.huawei.theme.analysis.plugin.editor.reference.ThemeDslVariableReferenceContributor"
                                   language="ThemeDSL"/>
 
-        <multiHostInjector implementation="com.huawei.theme.analysis.plugin.editor.reference.ThemeDslExpressionInjector"/>
         <multiHostInjector implementation="com.huawei.theme.analysis.plugin.editor.reference.ThemeDslVarNameInjector"/>
     </extensions>
 </idea-plugin>

@@ -16,10 +16,16 @@ import com.intellij.psi.xml.XmlTag;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Injects the {@link VarNameLanguage} into the {@code name} attribute value of
- * {@code <Var>} tags (variable declarations only), turning the variable name into
- * a {@link VarNameElement} (a {@link com.intellij.psi.PsiNameIdentifierOwner}) so
- * rename and find-usages work from the declaration.
+ * Injects the {@link VarNameLanguage} into attribute values that *declare* a
+ * variable name, turning the name into a {@link VarNameElement} (a
+ * {@link com.intellij.psi.PsiNameIdentifierOwner}) so rename and find-usages
+ * work from the declaration. Two declaration sites:
+ *
+ * <ul>
+ *   <li>{@code <Var name="...">} — the variable's name attribute</li>
+ *   <li>{@code <Array indexFlag="...">} / {@code <CycleCommand indexFlag="...">}
+ *   — the loop-index local declared by {@code indexFlag}</li>
+ * </ul>
  *
  * <p>{@code <VariableCommand name="...">} is NOT a declaration — it's a reference.
  * It's handled by {@link ThemeDslVariableReferenceContributor} instead, which creates
@@ -39,11 +45,19 @@ public class ThemeDslVarNameInjector implements MultiHostInjector {
             return;
         }
         XmlAttribute attr = PsiTreeUtil.getParentOfType(value, XmlAttribute.class);
-        if (attr == null || !"name".equals(attr.getName())) {
+        if (attr == null) {
             return;
         }
+        String attrName = attr.getName();
         XmlTag tag = PsiTreeUtil.getParentOfType(attr, XmlTag.class);
-        if (tag == null || !"Var".equals(tag.getName())) {
+        if (tag == null) {
+            return;
+        }
+        String tagName = tag.getName();
+        boolean isVarName = "Var".equals(tagName) && "name".equals(attrName);
+        boolean isIndexFlag = ("Array".equals(tagName) || "CycleCommand".equals(tagName))
+                && "indexFlag".equals(attrName);
+        if (!isVarName && !isIndexFlag) {
             return;
         }
         String text = value.getValue();

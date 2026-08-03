@@ -1,6 +1,8 @@
 package com.huawei.theme.analysis.core.semanticanalysis.model;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -73,5 +75,26 @@ public class SymbolTable {
      */
     public SymbolTable getGlobalTable() {
         return parent != null ? parent.getGlobalTable() : this;
+    }
+
+    /**
+     * 枚举沿 parent 链可见的全部声明，内层作用域优先（同名内层覆盖外层）。
+     *
+     * <p>消费方：editor 层 completion / getVariants 据此填充候选列表。
+     * 预置全局变量与文件中 &lt;Var&gt; 同在全局表（同名以文件 &lt;Var&gt; 为准，
+     * 见 buildGlobal）；indexFlag 局部变量在各自 Array/CycleCommand 子树作用域。</p>
+     *
+     * @return 内层优先去重后的可见声明列表（保留首次出现顺序）
+     */
+    public java.util.List<VarDeclaration> visibleDeclarations() {
+        LinkedHashMap<String, VarDeclaration> seen = new LinkedHashMap<>();
+        for (SymbolTable s = this; s != null; s = s.parent) {
+            if (s.declarations != null) {
+                for (Map.Entry<String, VarDeclaration> e : s.declarations.entrySet()) {
+                    seen.putIfAbsent(e.getKey(), e.getValue());
+                }
+            }
+        }
+        return new ArrayList<>(seen.values());
     }
 }

@@ -14,14 +14,12 @@ import com.intellij.icons.AllIcons;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.ElementManipulators;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiLanguageInjectionHost;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
@@ -33,26 +31,18 @@ import org.antlr.intellij.adaptor.psi.ANTLRPsiNode;
 
 import com.huawei.theme.analysis.core.expression.generated.DslExpressionLexer;
 import com.huawei.theme.analysis.core.expression.generated.DslExpressionParser;
-import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
-import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
-import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
+import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
 
 /**
  * The {@code atVarRef}/{@code hashVarRef} PSI node (in an injected DE fragment),
- * which IS a {@link PsiReference} to the declaring {@code <Var name="...">} tag in
- * the host ThemeDSL XML file.
+ * which IS a {@link PsiReference} to the declaring {@code <Var name="...">} tag (or
+ * {@code <Array indexFlag="...">} local) in the host ThemeDSL XML file.
  *
- * <p>Because DE is injected into XML attribute values, host-side reference
- * contributors are bypassed (the {@code @x}/{@code #x} text belongs to the
- * injected DE PSI). So the reference must live on the DE PSI itself and reach
- * back to the host via {@link InjectedLanguageManager#getInjectionHost}.</p>
- *
- * <p><b>Whitespace note.</b> The DE lexer skips {@code WS}, and the PSI builder
- * glues trailing whitespace onto the preceding token's range, so the
- * {@code varName} child's text/range can include trailing spaces (e.g.
- * {@code "timeTest "} in {@code "#timeTest + 2"}). All name extraction and ranges
- * here trim surrounding whitespace so {@code resolve()} matches the declaration
- * and rename preserves the sigil and surrounding spaces.</p>
+ * <p>Resolution goes through the AST {@link com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable}
+ * via {@link VarNameResolver} (scope of the host element → lookup → PSI↔AST map →
+ * injected {@link VarNameElement}). {@link #handleElementRename(String)} remains a
+ * direct PSI edit on the host attribute value — it is the rename write path and is
+ * intentionally not routed through the (read-only) AST.</p>
  */
 public class DslVariableRefElement extends ANTLRPsiNode implements PsiReference {
 
@@ -95,26 +85,11 @@ public class DslVariableRefElement extends ANTLRPsiNode implements PsiReference 
         if (name == null || hostFile == null) {
             return null;
         }
-        for (XmlTag tag : PsiTreeUtil.findChildrenOfType(hostFile, XmlTag.class)) {
-            if (!"Var".equals(tag.getName())) {
-                continue;
-            }
-            if (name.equals(tag.getAttributeValue("name"))) {
-                XmlAttribute nameAttr = tag.getAttribute("name");
-                if (nameAttr == null) {
-                    return null;
-                }
-                XmlAttributeValue nameValue = nameAttr.getValueElement();
-                if (nameValue == null) {
-                    return null;
-                }
-                // Resolve to the injected VarNameElement (a PsiNameIdentifierOwner) so that
-                // find-usages/rename from the declaration target the variable name, not the tag.
-                VarNameElement varNameElement = findVarNameElement(nameValue);
-                return varNameElement != null ? varNameElement : nameValue;
-            }
+        Project project = getProject();
+        if (project == null) {
+            return null;
         }
-        return null;
+        return VarNameResolver.resolveDeclaration(project, hostFile, hostTagOf(), name);
     }
 
     @Override
@@ -162,26 +137,20 @@ public class DslVariableRefElement extends ANTLRPsiNode implements PsiReference 
 
     @Override
     public @NotNull Object @NotNull [] getVariants() {
-        List<LookupElement> variants = new ArrayList<>();
         XmlFile hostFile = getHostXmlFile();
-        if (hostFile != null) {
-            for (XmlTag tag : PsiTreeUtil.findChildrenOfType(hostFile, XmlTag.class)) {
-                if (!"Var".equals(tag.getName())) {
-                    continue;
-                }
-                String name = tag.getAttributeValue("name");
-                if (name != null && !name.isEmpty()) {
-                    variants.add(LookupElementBuilder.create(name)
-                            .withIcon(AllIcons.Nodes.Variable)
-                            .withTypeText("Var"));
-                }
-            }
+        if (hostFile == null) {
+            return new Object[0];
         }
-        RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
-        for (DslGlobalVar gv : repo.getAllGlobalVars()) {
-            variants.add(LookupElementBuilder.create(gv.getName())
+        Project project = getProject();
+        if (project == null) {
+            return new Object[0];
+        }
+        List<LookupElement> variants = new ArrayList<>();
+        for (VarDeclaration d : VarNameResolver.visibleDeclarations(project, hostFile, hostTagOf())) {
+            String typeText = d.isGlobal() ? VarNameResolver.typeName(d.getType()) : "Var";
+            variants.add(LookupElementBuilder.create(d.getName())
                     .withIcon(AllIcons.Nodes.Variable)
-                    .withTypeText(gv.getType()));
+                    .withTypeText(typeText));
         }
         return variants.toArray();
     }
@@ -233,23 +202,14 @@ public class DslVariableRefElement extends ANTLRPsiNode implements PsiReference 
     }
 
     @Nullable
-    private VarNameElement findVarNameElement(XmlAttributeValue nameValue) {
+    private XmlTag hostTagOf() {
         Project project = getProject();
         if (project == null) {
             return null;
         }
-        List<Pair<PsiElement, TextRange>> injected =
-                InjectedLanguageManager.getInstance(project).getInjectedPsiFiles(nameValue);
-        if (injected == null) {
-            return null;
-        }
-        for (Pair<PsiElement, TextRange> entry : injected) {
-            PsiElement e = entry.getFirst();
-            VarNameElement found = e instanceof VarNameElement vne ? vne
-                    : PsiTreeUtil.getChildOfType(e, VarNameElement.class);
-            if (found != null) {
-                return found;
-            }
+        PsiLanguageInjectionHost host = InjectedLanguageManager.getInstance(project).getInjectionHost(this);
+        if (host instanceof XmlAttributeValue hostValue) {
+            return PsiTreeUtil.getParentOfType(hostValue, XmlTag.class);
         }
         return null;
     }

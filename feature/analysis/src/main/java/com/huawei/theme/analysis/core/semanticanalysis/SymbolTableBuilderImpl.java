@@ -60,6 +60,7 @@ public class SymbolTableBuilderImpl implements SymbolTableBuilder {
                     .isConstAttr(false)
                     .isGlobal(true)
                     .astNode(null)
+                    .hostAttrName(null)
                     .build();
             declarations.put(globalVar.getName(), declaration);
         }
@@ -132,6 +133,7 @@ public class SymbolTableBuilderImpl implements SymbolTableBuilder {
                 .isConstAttr(isConstAttr)
                 .isGlobal(false)
                 .astNode(varNode)
+                .hostAttrName(NAME_ATTR)
                 .build();
         declarations.put(name, declaration);
     }
@@ -182,6 +184,7 @@ public class SymbolTableBuilderImpl implements SymbolTableBuilder {
                 .isConstAttr(false)
                 .isGlobal(false)
                 .astNode(elementNode)
+                .hostAttrName(INDEX_FLAG_ATTR)
                 .build();
         Map<String, VarDeclaration> declarations = new HashMap<>();
         declarations.put(indexFlag, declaration);
