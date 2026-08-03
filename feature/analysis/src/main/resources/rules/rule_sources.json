@@ -504,5 +504,15 @@
   "category": "SEM",
   "description": "StoryBoard name必须为固定命名",
   "docUrl": "https://developer.huawei.com/consumer/cn/doc/content/themes-engine-next-longtake-0000002499571316"
+}, {
+  "ruleId": "MACRO-001",
+  "category": "MACRO",
+  "description": "编译期插值 %{expr} 求值失败",
+  "docUrl": ""
+}, {
+  "ruleId": "MACRO-002",
+  "category": "MACRO",
+  "description": "<For> 宏无效（缺失/非法 name|from|to）",
+  "docUrl": ""
 }
 ]

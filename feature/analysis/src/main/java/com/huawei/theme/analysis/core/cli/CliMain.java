@@ -11,6 +11,7 @@ import com.huawei.theme.analysis.core.batchinspection.TerminalFormatter;
 import com.huawei.theme.analysis.core.batchinspection.model.BatchInspectionResult;
 import com.huawei.theme.analysis.core.expression.FunctionSignatureLibrary;
 import com.huawei.theme.analysis.core.function.JsonFunctionSignatureLoader;
+import com.huawei.theme.analysis.core.macro.MacroExpander;
 import com.huawei.theme.analysis.core.rulelibrary.JsonRuleLoader;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderImpl;
@@ -119,7 +120,8 @@ public class CliMain {
                     new SymbolTableBuilderImpl(),
                     effectiveRepo,
                     effectiveConfig,
-                    collector
+                    collector,
+                    new MacroExpander(effectiveRepo)
             );
 
             BatchInspectionResult result;

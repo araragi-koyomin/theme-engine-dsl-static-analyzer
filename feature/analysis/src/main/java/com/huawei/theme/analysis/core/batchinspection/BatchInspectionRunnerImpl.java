@@ -13,6 +13,9 @@ import com.huawei.theme.analysis.core.batchinspection.model.FileDiagnosticResult
 import com.huawei.theme.analysis.core.cli.InspectionConfig;
 import com.huawei.theme.analysis.core.cli.PipelineMode;
 import com.huawei.theme.analysis.core.fileidentification.DslFileMatcher;
+import com.huawei.theme.analysis.core.macro.DiagnosticDedup;
+import com.huawei.theme.analysis.core.macro.DemacroedAst;
+import com.huawei.theme.analysis.core.macro.MacroExpander;
 import com.huawei.theme.analysis.core.quickfix.FixAction;
 import com.huawei.theme.analysis.core.quickfix.QuickFixProvider;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
@@ -36,6 +39,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
     private final RuleRepository ruleRepository;
     private final InspectionConfig inspectionConfig;
     private final VerboseCollector verboseCollector;
+    private final MacroExpander macroExpander;
 
     public BatchInspectionRunnerImpl(
             DslFileMatcher fileMatcher,
@@ -46,7 +50,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
             RuleRepository ruleRepository,
             InspectionConfig inspectionConfig) {
         this(fileMatcher, astProvider, diagnosticProvider, quickFixProvider,
-                symbolTableBuilder, ruleRepository, inspectionConfig, null);
+                symbolTableBuilder, ruleRepository, inspectionConfig, null, null);
     }
 
     public BatchInspectionRunnerImpl(
@@ -58,6 +62,20 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
             RuleRepository ruleRepository,
             InspectionConfig inspectionConfig,
             VerboseCollector verboseCollector) {
+        this(fileMatcher, astProvider, diagnosticProvider, quickFixProvider,
+                symbolTableBuilder, ruleRepository, inspectionConfig, verboseCollector, null);
+    }
+
+    public BatchInspectionRunnerImpl(
+            DslFileMatcher fileMatcher,
+            DslAstProvider astProvider,
+            DiagnosticProvider diagnosticProvider,
+            QuickFixProvider quickFixProvider,
+            SymbolTableBuilder symbolTableBuilder,
+            RuleRepository ruleRepository,
+            InspectionConfig inspectionConfig,
+            VerboseCollector verboseCollector,
+            MacroExpander macroExpander) {
         this.fileMatcher = Objects.requireNonNull(fileMatcher, "fileMatcher must not be null");
         this.astProvider = Objects.requireNonNull(astProvider, "astProvider must not be null");
         this.diagnosticProvider = Objects.requireNonNull(diagnosticProvider, "diagnosticProvider must not be null");
@@ -66,6 +84,7 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
         this.ruleRepository = Objects.requireNonNull(ruleRepository, "ruleRepository must not be null");
         this.inspectionConfig = Objects.requireNonNull(inspectionConfig, "inspectionConfig must not be null");
         this.verboseCollector = verboseCollector;
+        this.macroExpander = macroExpander;
     }
 
     @Override
@@ -156,6 +175,13 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
                     .build();
         }
 
+        List<Diagnostic> macroDiagnostics = List.of();
+        if (macroExpander != null) {
+            DemacroedAst demacroed = macroExpander.expand(ast);
+            ast = demacroed.getDemacroed();
+            macroDiagnostics = demacroed.getMacroDiagnostics();
+        }
+
         List<Diagnostic> diagnostics;
         try {
             diagnostics = diagnosticProvider.analyze(ast, ruleRepository, symbolTableBuilder,
@@ -176,6 +202,14 @@ public class BatchInspectionRunnerImpl implements BatchInspectionRunner {
                     .hasInternalError(true)
                     .build();
         }
+
+        if (!macroDiagnostics.isEmpty()) {
+            List<Diagnostic> merged = new ArrayList<>(macroDiagnostics.size() + diagnostics.size());
+            merged.addAll(macroDiagnostics);
+            merged.addAll(diagnostics);
+            diagnostics = merged;
+        }
+        diagnostics = DiagnosticDedup.dedup(diagnostics);
 
         if (inspectionConfig.isQuiet()) {
             diagnostics = new ArrayList<>(diagnostics.stream()

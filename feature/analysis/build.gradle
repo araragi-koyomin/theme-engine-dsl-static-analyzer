@@ -8,6 +8,7 @@ configurations {
 
 dependencies {
     implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'com.ezylang:EvalEx:3.7.0'
     antlr4 'org.antlr:antlr4:4.13.1'
     implementation 'org.antlr:antlr4-runtime:4.13.1'
     implementation project(":antlr4-intellij-adaptor")
@@ -144,7 +145,7 @@ task buildFatJar(type: Jar) {
 
     from {
         configurations.runtimeClasspath.filter { file ->
-            file.name.contains('gson') || file.name.contains('antlr4-runtime')
+            file.name.contains('gson') || file.name.contains('antlr4-runtime') || file.name.contains('EvalEx')
         }.collect { it.isDirectory() ? it : zipTree(it) }
     }
 
