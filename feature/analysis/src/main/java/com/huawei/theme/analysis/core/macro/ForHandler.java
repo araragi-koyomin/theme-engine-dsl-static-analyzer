@@ -58,7 +58,10 @@ public final class ForHandler implements MacroHandler {
         }
 
         List<DslElementNode> result = new ArrayList<>();
-        for (int v = from; v <= to; v++) {
+        for (long v = from; v <= to; v++) {
+            if (!builder.tryConsumeLoopIteration(node)) {
+                break;
+            }
             Map<String, Object> childScope = new HashMap<>(scope);
             childScope.put(name, BigDecimal.valueOf(v));
             if (node.getChildElements() != null) {

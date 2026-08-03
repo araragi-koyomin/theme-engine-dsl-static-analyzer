@@ -4,14 +4,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.util.Key;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
@@ -28,10 +26,11 @@ import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
 
 public final class DslAstService {
 
+    private static final Key<Entry> CACHE_KEY = Key.create("DslAstService.entry");
+
     private final PsiAstBuilder astBuilder = new PsiAstBuilder();
     private final ScopeResolverImpl scopeResolver =
             new ScopeResolverImpl(new SymbolTableBuilderImpl());
-    private final ConcurrentHashMap<Object, Entry> cache = new ConcurrentHashMap<>();
 
     public DslAstService(Project project) {
     }
@@ -112,11 +111,8 @@ public final class DslAstService {
     }
 
     private Entry entryFor(@NotNull XmlFile xmlFile) {
-        VirtualFile vf = xmlFile.getVirtualFile();
-        Document doc = xmlFile.getViewProvider().getDocument();
-        long stamp = doc != null ? doc.getModificationStamp() : Long.MIN_VALUE;
-        Object key = vf != null ? vf : xmlFile;
-        Entry cached = cache.get(key);
+        long stamp = xmlFile.getModificationStamp();
+        Entry cached = xmlFile.getUserData(CACHE_KEY);
         if (cached != null && cached.modStamp == stamp) {
             return cached;
         }
@@ -125,7 +121,7 @@ public final class DslAstService {
         DemacroedAst demacroed = new MacroExpander(repo).expand(tree.getAst());
         SymbolTable demacroedGlobal = scopeResolver.globalScope(demacroed.getDemacroed(), repo);
         Entry entry = new Entry(tree, demacroed, demacroedGlobal, stamp);
-        cache.put(key, entry);
+        xmlFile.putUserData(CACHE_KEY, entry);
         return entry;
     }
 

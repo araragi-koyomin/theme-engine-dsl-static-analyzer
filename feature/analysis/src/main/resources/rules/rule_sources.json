@@ -514,5 +514,10 @@
   "category": "MACRO",
   "description": "<For> 宏无效（缺失/非法 name|from|to）",
   "docUrl": ""
+}, {
+  "ruleId": "MACRO-003",
+  "category": "MACRO",
+  "description": "宏展开超过单文件总循环预算",
+  "docUrl": ""
 }
 ]

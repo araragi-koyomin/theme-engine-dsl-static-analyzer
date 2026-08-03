@@ -1,6 +1,7 @@
 package com.huawei.theme.analysis.core.macro;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,13 +13,14 @@ import org.jetbrains.annotations.Nullable;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
+import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 
 public final class DemacroedAst {
 
     private final DslFileNode demacroed;
-    private final IdentityHashMap<DslElementNode, DslElementNode> demacroedToNormal;
-    private final IdentityHashMap<DslElementNode, List<DslElementNode>> normalToDemacroed;
-    private final IdentityHashMap<DslElementNode, Map<String, Object>> scopeByDemacroedNode;
+    private final Map<DslElementNode, DslElementNode> demacroedToNormal;
+    private final Map<DslElementNode, List<DslElementNode>> normalToDemacroed;
+    private final Map<DslElementNode, Map<String, Object>> scopeByDemacroedNode;
     private final List<Diagnostic> macroDiagnostics;
 
     DemacroedAst(@NotNull DslFileNode demacroed,
@@ -27,10 +29,10 @@ public final class DemacroedAst {
                  @NotNull IdentityHashMap<DslElementNode, Map<String, Object>> scopeByDemacroedNode,
                  @NotNull List<Diagnostic> macroDiagnostics) {
         this.demacroed = demacroed;
-        this.demacroedToNormal = demacroedToNormal;
-        this.normalToDemacroed = normalToDemacroed;
-        this.scopeByDemacroedNode = scopeByDemacroedNode;
-        this.macroDiagnostics = macroDiagnostics;
+        this.demacroedToNormal = immutableIdentityMap(demacroedToNormal);
+        this.normalToDemacroed = immutableNodeLists(normalToDemacroed);
+        this.scopeByDemacroedNode = immutableScopes(scopeByDemacroedNode);
+        this.macroDiagnostics = List.copyOf(macroDiagnostics);
     }
 
     public DslFileNode getDemacroed() {
@@ -48,7 +50,7 @@ public final class DemacroedAst {
         if (normalNode == null) {
             return Collections.emptyList();
         }
-        return normalToDemacroed.getOrDefault(normalNode, Collections.emptyList());
+        return normalToDemacroed.getOrDefault(normalNode, List.of());
     }
 
     /**
@@ -72,12 +74,36 @@ public final class DemacroedAst {
         return new Builder(filePath);
     }
 
+    private static <V> Map<DslElementNode, V> immutableIdentityMap(
+            IdentityHashMap<DslElementNode, V> source) {
+        IdentityHashMap<DslElementNode, V> copy = new IdentityHashMap<>();
+        copy.putAll(source);
+        return Collections.unmodifiableMap(copy);
+    }
+
+    private static Map<DslElementNode, List<DslElementNode>> immutableNodeLists(
+            IdentityHashMap<DslElementNode, List<DslElementNode>> source) {
+        IdentityHashMap<DslElementNode, List<DslElementNode>> copy = new IdentityHashMap<>();
+        source.forEach((node, copies) -> copy.put(node, List.copyOf(copies)));
+        return Collections.unmodifiableMap(copy);
+    }
+
+    private static Map<DslElementNode, Map<String, Object>> immutableScopes(
+            IdentityHashMap<DslElementNode, Map<String, Object>> source) {
+        IdentityHashMap<DslElementNode, Map<String, Object>> copy = new IdentityHashMap<>();
+        source.forEach((node, scope) ->
+                copy.put(node, Collections.unmodifiableMap(new HashMap<>(scope))));
+        return Collections.unmodifiableMap(copy);
+    }
+
     static final class Builder {
         final String filePath;
         final IdentityHashMap<DslElementNode, DslElementNode> demacroedToNormal = new IdentityHashMap<>();
         final IdentityHashMap<DslElementNode, List<DslElementNode>> normalToDemacroed = new IdentityHashMap<>();
         final IdentityHashMap<DslElementNode, Map<String, Object>> scopeByDemacroedNode = new IdentityHashMap<>();
         final List<Diagnostic> diagnostics = new java.util.ArrayList<>();
+        int loopIterations;
+        boolean expansionBudgetExceeded;
 
         Builder(@NotNull String filePath) {
             this.filePath = filePath;
@@ -89,7 +115,30 @@ public final class DemacroedAst {
         }
 
         void recordScope(@NotNull DslElementNode demacroed, @NotNull Map<String, Object> scope) {
-            scopeByDemacroedNode.put(demacroed, scope);
+            scopeByDemacroedNode.put(demacroed, new HashMap<>(scope));
+        }
+
+        boolean tryConsumeLoopIteration(@NotNull DslElementNode anchor) {
+            if (loopIterations >= MacroExpander.MAX_TOTAL_LOOP_ITERATIONS) {
+                if (!expansionBudgetExceeded) {
+                    diagnostics.add(Diagnostic.builder()
+                            .severity(DiagnosticSeverity.ERROR)
+                            .ruleId(MacroExpander.RULE_EXPANSION_BUDGET)
+                            .message("Macro expansion exceeded the total loop budget of "
+                                    + MacroExpander.MAX_TOTAL_LOOP_ITERATIONS + " iterations")
+                            .filePath(filePath)
+                            .astNode(anchor)
+                            .build());
+                }
+                expansionBudgetExceeded = true;
+                return false;
+            }
+            loopIterations++;
+            return true;
+        }
+
+        boolean isExpansionBudgetExceeded() {
+            return expansionBudgetExceeded;
         }
 
         List<Diagnostic> diagnostics() {

@@ -1,13 +1,16 @@
 package com.huawei.theme.analysis.core.macro;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import com.huawei.theme.analysis.core.cli.InspectionConfig;
 import com.huawei.theme.analysis.core.cli.PipelineMode;
+import com.huawei.theme.analysis.core.expression.ExpressionNode;
 import com.huawei.theme.analysis.core.rulelibrary.JsonRuleLoader;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderImpl;
@@ -18,12 +21,14 @@ import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.shared.ast.ExpressionAstNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
+import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 import com.huawei.theme.analysis.core.syntaxanalysis.AstBuilder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MacroExpanderTest {
@@ -226,6 +231,168 @@ class MacroExpanderTest {
         assertEquals(BigDecimal.valueOf(1), result.getCompileScope(copies.get(0)).get("i"));
         assertEquals(BigDecimal.valueOf(2), result.getCompileScope(copies.get(1)).get("i"));
         assertEquals(BigDecimal.valueOf(3), result.getCompileScope(copies.get(2)).get("i"));
+    }
+
+    @Test
+    void totalLoopBudgetAllowsExactlyOneHundredThousandIterations() {
+        DslElementNode root = buildRoot("<Lockscreen>"
+                + "<For name=\"i\" from=\"1\" to=\"100000\"/>"
+                + "</Lockscreen>");
+
+        DemacroedAst result = expander.expand(toFile(root));
+
+        assertTrue(result.getMacroDiagnostics().isEmpty());
+    }
+
+    @Test
+    void totalLoopBudgetReportsErrorOnOneHundredThousandAndFirstIteration() {
+        DslElementNode root = buildRoot("<Lockscreen>"
+                + "<For name=\"i\" from=\"1\" to=\"100001\"/>"
+                + "</Lockscreen>");
+
+        DemacroedAst result = expander.expand(toFile(root));
+
+        assertEquals(1, result.getMacroDiagnostics().size());
+        assertEquals(MacroExpander.RULE_EXPANSION_BUDGET,
+                result.getMacroDiagnostics().get(0).getRuleId());
+        assertEquals(DiagnosticSeverity.ERROR, result.getMacroDiagnostics().get(0).getSeverity());
+    }
+
+    @Test
+    void siblingLoopsShareOneTotalBudget() {
+        DslElementNode root = buildRoot("<Lockscreen>"
+                + "<For name=\"i\" from=\"1\" to=\"60000\"/>"
+                + "<For name=\"j\" from=\"1\" to=\"60000\"/>"
+                + "</Lockscreen>");
+
+        DemacroedAst result = expander.expand(toFile(root));
+
+        assertEquals(1, result.getMacroDiagnostics().size());
+        assertEquals(MacroExpander.RULE_EXPANSION_BUDGET,
+                result.getMacroDiagnostics().get(0).getRuleId());
+    }
+
+    @Test
+    void maxIntegerUpperBoundDoesNotOverflow() {
+        DslElementNode root = buildRoot("<Lockscreen>"
+                + "<For name=\"i\" from=\"2147483647\" to=\"2147483647\">"
+                + "<Var name=\"v_%{i}\"/>"
+                + "</For>"
+                + "</Lockscreen>");
+
+        DemacroedAst result = expander.expand(toFile(root));
+
+        assertTrue(result.getMacroDiagnostics().isEmpty());
+        assertEquals(1, result.getDemacroed().getRootElement().getChildElements().size());
+        assertEquals("v_2147483647", attr(result.getDemacroed().getRootElement().getChildElements().get(0), "name")
+                .getValue().getRawValue());
+    }
+
+    @Test
+    void interpolatedExpressionKeepsOriginalSourceCoordinates() {
+        DslElementNode root = buildRoot("<Lockscreen>\n"
+                + "  <For name=\"i\" from=\"1\" to=\"1\">\n"
+                + "    <Var name=\"v_1\" expression=\"#v_%{i} + #missing\"/>\n"
+                + "  </For>\n"
+                + "</Lockscreen>");
+        DslElementNode originalVar = root.getChildElements().get(0).getChildElements().get(0);
+        ExpressionNode originalExpression = (ExpressionNode) attr(originalVar, "expression")
+                .getValue().getExpression().orElseThrow();
+        ExpressionNode originalFirst = findVariable(originalExpression, "v_%{i}");
+        ExpressionNode originalMissing = findVariable(originalExpression, "missing");
+
+        DemacroedAst result = expander.expand(toFile(root));
+        DslElementNode expandedVar = result.getDemacroed().getRootElement().getChildElements().get(0);
+        ExpressionNode expandedExpression = (ExpressionNode) attr(expandedVar, "expression")
+                .getValue().getExpression().orElseThrow();
+        ExpressionNode expandedFirst = findVariable(expandedExpression, "v_1");
+        ExpressionNode expandedMissing = findVariable(expandedExpression, "missing");
+
+        assertEquals(originalFirst.getColumn(), expandedFirst.getColumn());
+        assertEquals(originalFirst.getEndColumn(), expandedFirst.getEndColumn());
+        assertEquals(originalMissing.getColumn(), expandedMissing.getColumn());
+        assertEquals(originalMissing.getEndColumn(), expandedMissing.getEndColumn());
+    }
+
+    @Test
+    void unclosedInterpolationProducesMacro001() {
+        DslElementNode root = buildRoot("<Lockscreen><Var name=\"v_%{missing\"/></Lockscreen>");
+
+        DemacroedAst result = expander.expand(toFile(root));
+
+        assertEquals(1, result.getMacroDiagnostics().size());
+        assertEquals(CompileTimeInterpolator.RULE_INTERP_FAIL,
+                result.getMacroDiagnostics().get(0).getRuleId());
+    }
+
+    @Test
+    void builtResultIsImmutableAndDetachedFromBuilderInputs() {
+        DslFileNode file = new DslFileNode();
+        DslElementNode normal = new DslElementNode();
+        DslElementNode demacroed = new DslElementNode();
+        DslElementNode later = new DslElementNode();
+        Map<String, Object> scope = new HashMap<>();
+        scope.put("i", BigDecimal.ONE);
+        Diagnostic diagnostic = Diagnostic.builder()
+                .ruleId("TEST")
+                .severity(DiagnosticSeverity.ERROR)
+                .message("test")
+                .filePath("test.xml")
+                .line(1)
+                .column(0)
+                .build();
+        DemacroedAst.Builder builder = DemacroedAst.builder("test.xml");
+        builder.put(demacroed, normal);
+        builder.recordScope(demacroed, scope);
+        builder.diagnostics().add(diagnostic);
+
+        DemacroedAst result = builder.build(file);
+        scope.put("later", BigDecimal.TEN);
+        builder.put(later, normal);
+        builder.diagnostics().clear();
+
+        assertEquals(List.of(demacroed), result.getDemacroedNodes(normal));
+        assertFalse(result.getCompileScope(demacroed).containsKey("later"));
+        assertEquals(List.of(diagnostic), result.getMacroDiagnostics());
+        assertThrows(UnsupportedOperationException.class,
+                () -> result.getDemacroedNodes(normal).clear());
+        assertThrows(UnsupportedOperationException.class,
+                () -> result.getCompileScope(demacroed).put("x", BigDecimal.ZERO));
+        assertThrows(UnsupportedOperationException.class,
+                () -> result.getMacroDiagnostics().clear());
+    }
+
+    private static ExpressionNode findVariable(ExpressionNode node, String name) {
+        if (name.equals(node.getVariableName())) {
+            return node;
+        }
+        for (ExpressionNode child : node.getChildren()) {
+            ExpressionNode found = findVariableOrNull(child, name);
+            if (found != null) {
+                return found;
+            }
+        }
+        ExpressionNode found = findVariableOrNull(node.getIndexExpression(), name);
+        if (found != null) {
+            return found;
+        }
+        throw new AssertionError("variable not found: " + name);
+    }
+
+    private static ExpressionNode findVariableOrNull(ExpressionNode node, String name) {
+        if (node == null) {
+            return null;
+        }
+        if (name.equals(node.getVariableName())) {
+            return node;
+        }
+        for (ExpressionNode child : node.getChildren()) {
+            ExpressionNode found = findVariableOrNull(child, name);
+            if (found != null) {
+                return found;
+            }
+        }
+        return findVariableOrNull(node.getIndexExpression(), name);
     }
 
     private DslFileNode toFile(DslElementNode root) {

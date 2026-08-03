@@ -8,6 +8,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.huawei.theme.analysis.core.expression.ExpressionNode;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
@@ -16,6 +17,9 @@ import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 import com.huawei.theme.analysis.core.syntaxanalysis.ExpressionEmbedder;
 
 public final class MacroExpander {
+
+    public static final String RULE_EXPANSION_BUDGET = "MACRO-003";
+    public static final int MAX_TOTAL_LOOP_ITERATIONS = 100_000;
 
     private final RuleRepository ruleRepository;
     private final List<MacroHandler> handlers;
@@ -51,6 +55,9 @@ public final class MacroExpander {
     public List<DslElementNode> expandElement(@NotNull DslElementNode node,
                                                 @NotNull Map<String, Object> scope,
                                                 @NotNull DemacroedAst.Builder builder) {
+        if (builder.isExpansionBudgetExceeded()) {
+            return List.of();
+        }
         for (MacroHandler handler : handlers) {
             if (handler.recognize(node)) {
                 return handler.expand(node, scope, this, builder);
@@ -122,8 +129,10 @@ public final class MacroExpander {
 
         DslAttributeValueNode orig = attr.getValue();
         String raw = orig != null ? orig.getRawValue() : null;
-        String interpolated = CompileTimeInterpolator.interpolate(
-                raw, scope, builder.diagnostics(), a, builder.filePath());
+        CompileTimeInterpolator.InterpolationResult interpolation =
+                CompileTimeInterpolator.interpolateWithSourceMap(
+                        raw, scope, builder.diagnostics(), a, builder.filePath());
+        String interpolated = interpolation.getValue();
 
         DslAttributeValueNode v = new DslAttributeValueNode();
         v.setRawValue(interpolated);
@@ -138,6 +147,11 @@ public final class MacroExpander {
         v.setEndColumn(vEndCol);
         ExpressionEmbedder.embed(v, interpolated != null ? interpolated : "", tagName, attr.getName(),
                 vLine, vCol, ruleRepository);
+        if (raw != null && v.getExpression().isPresent()) {
+            InterpolatedExpressionSourceMapper.remap(
+                    (ExpressionNode) v.getExpression().get(),
+                    interpolated != null ? interpolated : "", raw, interpolation, vLine, vCol);
+        }
         a.setValue(v);
         return a;
     }
