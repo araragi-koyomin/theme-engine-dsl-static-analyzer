@@ -18,7 +18,9 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.ElementManipulators;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiLanguageInjectionHost;
+import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.ResolveResult;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlFile;
@@ -44,7 +46,7 @@ import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
  * direct PSI edit on the host attribute value — it is the rename write path and is
  * intentionally not routed through the (read-only) AST.</p>
  */
-public class DslVariableRefElement extends ANTLRPsiNode implements PsiReference {
+public class DslVariableRefElement extends ANTLRPsiNode implements PsiPolyVariantReference {
 
     private static final RuleIElementType VAR_NAME_RULE;
 
@@ -80,16 +82,37 @@ public class DslVariableRefElement extends ANTLRPsiNode implements PsiReference 
 
     @Override
     public @Nullable PsiElement resolve() {
-        String name = getVariableName();
+        ResolveResult[] results = multiResolve(false);
+        return results.length == 0 ? null : results[0].getElement();
+    }
+
+    @Override
+    public ResolveResult @NotNull [] multiResolve(boolean incompleteCode) {
         XmlFile hostFile = getHostXmlFile();
-        if (name == null || hostFile == null) {
-            return null;
+        if (hostFile == null) {
+            return ResolveResult.EMPTY_ARRAY;
         }
         Project project = getProject();
         if (project == null) {
-            return null;
+            return ResolveResult.EMPTY_ARRAY;
         }
-        return VarNameResolver.resolveDeclaration(project, hostFile, hostTagOf(), name);
+        String name = getVariableName();
+        if (name == null) {
+            return ResolveResult.EMPTY_ARRAY;
+        }
+        List<PsiElement> targets = VarNameResolver.resolveDeclarationsMulti(project, hostFile, hostTagOf(), name);
+        return targets.stream().map(VarNameResolver.ElementResolveResult::new).toArray(ResolveResult[]::new);
+    }
+
+    @Override
+    public boolean isReferenceTo(@NotNull PsiElement element) {
+        for (ResolveResult r : multiResolve(false)) {
+            PsiElement e = r.getElement();
+            if (e != null && element.getManager().areElementsEquivalent(e, element)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -127,12 +150,6 @@ public class DslVariableRefElement extends ANTLRPsiNode implements PsiReference 
     @Override
     public PsiElement bindToElement(@NotNull PsiElement element) throws IncorrectOperationException {
         throw new IncorrectOperationException("Not supported");
-    }
-
-    @Override
-    public boolean isReferenceTo(@NotNull PsiElement element) {
-        PsiElement target = resolve();
-        return target != null && element.getManager().areElementsEquivalent(target, element);
     }
 
     @Override

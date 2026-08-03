@@ -12,7 +12,8 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiReferenceBase;
+import com.intellij.psi.PsiPolyVariantReferenceBase;
+import com.intellij.psi.ResolveResult;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlFile;
@@ -31,7 +32,7 @@ import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
  * (untouched) language injection yields the {@code VarNameElement}. Soft so that
  * built-in global variables (no PSI declaration) do not show unresolved squiggles.</p>
  */
-public class DslVariableReference extends PsiReferenceBase<XmlAttributeValue> {
+public class DslVariableReference extends PsiPolyVariantReferenceBase<XmlAttributeValue> {
 
     private final String varName;
 
@@ -41,17 +42,18 @@ public class DslVariableReference extends PsiReferenceBase<XmlAttributeValue> {
     }
 
     @Override
-    public @Nullable PsiElement resolve() {
+    public ResolveResult @NotNull [] multiResolve(boolean incompleteCode) {
         XmlFile file = getHostFile();
         if (file == null) {
-            return null;
+            return ResolveResult.EMPTY_ARRAY;
         }
         Project project = getElement().getProject();
         if (project == null) {
-            return null;
+            return ResolveResult.EMPTY_ARRAY;
         }
         XmlTag hostTag = PsiTreeUtil.getParentOfType(getElement(), XmlTag.class);
-        return VarNameResolver.resolveDeclaration(project, file, hostTag, varName);
+        List<PsiElement> targets = VarNameResolver.resolveDeclarationsMulti(project, file, hostTag, varName);
+        return targets.stream().map(VarNameResolver.ElementResolveResult::new).toArray(ResolveResult[]::new);
     }
 
     @Override

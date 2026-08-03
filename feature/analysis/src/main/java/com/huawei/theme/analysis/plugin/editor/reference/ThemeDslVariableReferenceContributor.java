@@ -168,8 +168,23 @@ public class ThemeDslVariableReferenceContributor extends PsiReferenceContributo
             if (c == '@' || c == '#') {
                 int nameStart = i + 1;
                 int j = nameStart;
-                while (j < n && isNameChar(text.charAt(j))) {
-                    j++;
+                while (j < n) {
+                    char ch = text.charAt(j);
+                    if (isNameChar(ch)) {
+                        j++;
+                        continue;
+                    }
+                    // Consume a compile-time interpolation %{...} as part of the name, so a
+                    // reference like #x_%{i} scans as one ref (x_%{i}), not a truncated x_.
+                    if (ch == '%' && j + 1 < n && text.charAt(j + 1) == '{') {
+                        int close = indexOfCloseBrace(text, j + 2, n);
+                        if (close < 0) {
+                            break;
+                        }
+                        j = close + 1;
+                        continue;
+                    }
+                    break;
                 }
                 while (j > nameStart && text.charAt(j - 1) == '.') {
                     j--;
@@ -185,6 +200,15 @@ public class ThemeDslVariableReferenceContributor extends PsiReferenceContributo
             i++;
         }
         return refs;
+    }
+
+    private static int indexOfCloseBrace(String text, int from, int end) {
+        for (int k = from; k < end; k++) {
+            if (text.charAt(k) == '}') {
+                return k;
+            }
+        }
+        return -1;
     }
 
     private static boolean isNameChar(char c) {

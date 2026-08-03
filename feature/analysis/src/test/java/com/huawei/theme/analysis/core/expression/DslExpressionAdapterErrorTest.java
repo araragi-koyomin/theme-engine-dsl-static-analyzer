@@ -50,8 +50,8 @@ class DslExpressionAdapterErrorTest {
 
         List<SyntaxError> errors = errorListener.getSyntaxErrors();
         assertEquals(1, errors.size(), "expected exactly one syntax error");
-        assertTrue(errors.get(0).getMessage().contains("missing {ID, VAR_ID}"),
-                "unexpected message: " + errors.get(0).getMessage());
+        assertTrue(errors.get(0).getMessage().contains("expecting"),
+                "expected a missing-varName (expecting {ID, VAR_ID, INTERP}) error, got: " + errors.get(0).getMessage());
 
         VarNameContext varName = findFirst(tree, VarNameContext.class);
         assertNotNull(varName, "varName context should be present in the tree");

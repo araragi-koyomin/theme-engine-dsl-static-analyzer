@@ -1,12 +1,17 @@
 package com.huawei.theme.analysis.core.macro;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
+import com.huawei.theme.analysis.core.cli.InspectionConfig;
+import com.huawei.theme.analysis.core.cli.PipelineMode;
 import com.huawei.theme.analysis.core.rulelibrary.JsonRuleLoader;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
+import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderImpl;
+import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilderImpl;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
@@ -182,6 +187,45 @@ class MacroExpanderTest {
         assertEquals("Var", dRoot.getChildElements().get(0).getTagName());
         assertEquals("v", attr(dRoot.getChildElements().get(0), "name").getValue().getRawValue());
         assertTrue(result.getMacroDiagnostics().isEmpty());
+    }
+
+    /**
+     * Decided behavior: a STATIC-named {@code <Var>} inside a {@code <For>} expands to N copies,
+     * which {@code buildGlobal} flags as duplicate declarations (SEM-REF-003). The N diagnostics
+     * share the original source position, so {@link DiagnosticDedup} collapses them to exactly 1.
+     * This is intentional — it nudges users to make names unique via {@code %{i}} (the {@code index_%{i}}
+     * pattern produces no error). Pins the decision so a future change cannot silently flip it.
+     */
+    @Test
+    void staticNamedVarInForFlagsSingleDedupedDuplicate() {
+        DslElementNode root = buildRoot("<Lockscreen>\n"
+                + "  <For name=\"i\" from=\"1\" to=\"3\">\n"
+                + "    <Var name=\"v\" type=\"number\"/>\n"
+                + "  </For>\n"
+                + "</Lockscreen>");
+        DemacroedAst demacroed = expander.expand(toFile(root));
+        List<Diagnostic> diags = new DiagnosticProviderImpl().analyze(
+                demacroed.getDemacroed(), repo, new SymbolTableBuilderImpl(),
+                PipelineMode.FULL, InspectionConfig.builder().build(), null);
+        diags = DiagnosticDedup.dedup(diags);
+        long dup = diags.stream().filter(d -> "SEM-REF-003".equals(d.getRuleId())).count();
+        assertEquals(1, dup, "static-named <Var> in <For>: 3 copies -> 1 deduped SEM-REF-003");
+    }
+
+    @Test
+    void demacoedNodeCarriesItsCompileTimeScope() {
+        DslElementNode root = buildRoot("<Lockscreen>\n"
+                + "  <For name=\"i\" from=\"1\" to=\"3\">\n"
+                + "    <Var name=\"v_%{i}\"/>\n"
+                + "  </For>\n"
+                + "</Lockscreen>");
+        DslElementNode origVar = root.getChildElements().get(0).getChildElements().get(0);
+        DemacroedAst result = expander.expand(toFile(root));
+        List<DslElementNode> copies = result.getDemacroedNodes(origVar);
+        assertEquals(3, copies.size());
+        assertEquals(BigDecimal.valueOf(1), result.getCompileScope(copies.get(0)).get("i"));
+        assertEquals(BigDecimal.valueOf(2), result.getCompileScope(copies.get(1)).get("i"));
+        assertEquals(BigDecimal.valueOf(3), result.getCompileScope(copies.get(2)).get("i"));
     }
 
     private DslFileNode toFile(DslElementNode root) {

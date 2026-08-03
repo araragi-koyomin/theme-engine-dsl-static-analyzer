@@ -47,7 +47,7 @@ functionCall          : ID '(' exprList? ')' ;
 variableRef           : hashVarRef | atVarRef ;
 hashVarRef            : '#' varName ('[' expression ']')? ;
 atVarRef              : '@' varName ('[' expression ']')? ;
-varName               : ID | VAR_ID ;
+varName               : (ID | VAR_ID | INTERP)+ ;
 literal               : NUMBER | STRING ;
 exprList              : expression (',' expression)* ;
 
@@ -56,4 +56,5 @@ NUMBER  : [0-9]+ ('.' [0-9]+)? ;
 STRING  : '\'' (~'\'' | '\\\'')* '\'' ;
 ID      : [a-zA-Z_][a-zA-Z0-9_]* ;
 VAR_ID  : [a-zA-Z_][a-zA-Z0-9_.]* ;
+INTERP  : '%{' ~'}'* '}' ;
 WS      : [ \t\r\n]+ -> skip ;

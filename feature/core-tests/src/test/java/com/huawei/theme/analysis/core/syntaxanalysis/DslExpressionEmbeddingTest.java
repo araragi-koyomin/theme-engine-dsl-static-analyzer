@@ -193,6 +193,15 @@ class DslExpressionEmbeddingTest {
     }
 
     @Test
+    void varNameWithInterpolationParsesAsSingleVarRef() {
+        DslElementNode image = build("<Image x=\"#v_%{i}\"/>");
+        ExpressionNode e = expr(image, "x");
+        assertEquals(ExpressionKind.VARIABLE_REF, e.getKind());
+        assertEquals("#", e.getPrefix());
+        assertEquals("v_%{i}", e.getVariableName(), "interpolation %{...} is part of the varName, not a parse error");
+    }
+
+    @Test
     void noArgBuilderTreatsAllAsLiteral() {
         DslAstProvider noRepo = new AstBuilder();
         DslElementNode var = noRepo.getDslAst("t.xml", "<Var expression=\"#battery_level\"/>").getRootElement();

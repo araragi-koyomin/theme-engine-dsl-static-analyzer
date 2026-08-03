@@ -58,6 +58,7 @@ public final class MacroExpander {
         }
         DslElementNode clone = cloneElementShallow(node, scope, builder);
         builder.put(clone, node);
+        builder.recordScope(clone, scope);
         List<DslElementNode> expandedChildren = new ArrayList<>();
         if (node.getChildElements() != null) {
             for (DslElementNode child : node.getChildElements()) {

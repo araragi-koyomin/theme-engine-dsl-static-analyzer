@@ -7,7 +7,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Lexer for the VarName language: emits one {@link VarNameElementTypes#ID} token for a
- *  leading identifier run (letters/digits/_/.), {@link TokenType#BAD_CHARACTER} otherwise. */
+ *  leading identifier run (letters/digits/_/.), {@link TokenType#BAD_CHARACTER} otherwise.
+ *  The ID run may contain compile-time interpolation {@code %{...}} segments (so a
+ *  declaration like {@code <Var name="index_%{i}">} produces a single ID whose text is
+ *  the full raw {@code index_%{i}}, not a truncated {@code index_}). */
 class VarNameLexer extends LexerBase {
 
     private CharSequence buffer;
@@ -36,8 +39,22 @@ class VarNameLexer extends LexerBase {
         char c = buffer.charAt(tokenStart);
         if (isIdentStart(c)) {
             int i = tokenStart + 1;
-            while (i < bufferEnd && isIdentPart(buffer.charAt(i))) {
-                i++;
+            while (i < bufferEnd) {
+                char ch = buffer.charAt(i);
+                if (isIdentPart(ch)) {
+                    i++;
+                    continue;
+                }
+                // Consume a compile-time interpolation %{...} as part of the identifier.
+                if (ch == '%' && i + 1 < bufferEnd && buffer.charAt(i + 1) == '{') {
+                    int close = indexOfCloseBrace(buffer, i + 2, bufferEnd);
+                    if (close < 0) {
+                        break;
+                    }
+                    i = close + 1;
+                    continue;
+                }
+                break;
             }
             tokenEnd = i;
             tokenType = VarNameElementTypes.ID;
@@ -45,6 +62,15 @@ class VarNameLexer extends LexerBase {
             tokenEnd = tokenStart + 1;
             tokenType = TokenType.BAD_CHARACTER;
         }
+    }
+
+    private static int indexOfCloseBrace(CharSequence buffer, int from, int to) {
+        for (int i = from; i < to; i++) {
+            if (buffer.charAt(i) == '}') {
+                return i;
+            }
+        }
+        return -1;
     }
 
     @Override

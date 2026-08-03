@@ -25,6 +25,11 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlTag;
 
+import com.huawei.theme.analysis.core.cli.InspectionConfig;
+import com.huawei.theme.analysis.core.cli.PipelineMode;
+import com.huawei.theme.analysis.core.macro.DiagnosticDedup;
+import com.huawei.theme.analysis.core.macro.DemacroedAst;
+import com.huawei.theme.analysis.core.macro.MacroExpander;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProvider;
 import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderImpl;
@@ -117,6 +122,7 @@ public class ThemeDslDiagnosticAnnotator implements Annotator {
             Project project = file.getProject();
             RuleRepository repo = RuleRepositoryService.getInstance().getRuleRepository();
             DslAstProvider astProvider = new AstBuilder(repo);
+            MacroExpander macroExpander = new MacroExpander(repo);
             DiagnosticProvider diagnosticProvider = new DiagnosticProviderImpl();
             SymbolTableBuilder symbolTableBuilder = new SymbolTableBuilderImpl();
 
@@ -125,12 +131,20 @@ public class ThemeDslDiagnosticAnnotator implements Annotator {
             String filePath = file.getVirtualFile() != null
                     ? file.getVirtualFile().getPath() : file.getName();
 
-            DslFileNode ast = astProvider.getDslAst(filePath, content);
+            DslFileNode normalAst = astProvider.getDslAst(filePath, content);
+            DemacroedAst demacroed = macroExpander.expand(normalAst);
+            DslFileNode analysisAst = demacroed.getDemacroed();
             List<Diagnostic> diagnostics = diagnosticProvider.analyze(
-                    ast, repo, symbolTableBuilder,
-                    com.huawei.theme.analysis.core.cli.PipelineMode.FULL,
-                    com.huawei.theme.analysis.core.cli.InspectionConfig.builder().build(),
+                    analysisAst, repo, symbolTableBuilder,
+                    PipelineMode.FULL,
+                    InspectionConfig.builder().build(),
                     null);
+            if (!demacroed.getMacroDiagnostics().isEmpty()) {
+                List<Diagnostic> merged = new ArrayList<>(demacroed.getMacroDiagnostics());
+                merged.addAll(diagnostics);
+                diagnostics = merged;
+            }
+            diagnostics = DiagnosticDedup.dedup(diagnostics);
             Map<PsiElement, List<Diagnostic>> map = new HashMap<>();
             for (Diagnostic diagnostic : diagnostics) {
                 int offset = lineColToOffset(document, diagnostic.getLine(), diagnostic.getColumn());
