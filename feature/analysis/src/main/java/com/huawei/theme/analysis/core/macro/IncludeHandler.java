@@ -7,9 +7,11 @@ import java.util.regex.Pattern;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.huawei.theme.analysis.core.expression.ExpressionNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
+import com.huawei.theme.analysis.core.shared.ast.ExpressionAstNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
 import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 
@@ -100,7 +102,13 @@ public final class IncludeHandler implements MacroHandler {
             }
         }
 
-        List<DslElementNode> demacroedSub = ctx.expandElement(subNormal.getRootElement(), paramScope, builder);
+        int includeInstanceId = builder.beginInclude(subPath, node, paramScope);
+        List<DslElementNode> demacroedSub;
+        try {
+            demacroedSub = ctx.expandElement(subNormal.getRootElement(), paramScope, builder);
+        } finally {
+            builder.endInclude(includeInstanceId);
+        }
         for (DslElementNode sub : demacroedSub) {
             remapPositions(sub, node);
         }
@@ -133,6 +141,14 @@ public final class IncludeHandler implements MacroHandler {
                     a.getValue().setColumn(anchor.getColumn());
                     a.getValue().setEndLine(anchor.getEndLine());
                     a.getValue().setEndColumn(anchor.getEndColumn());
+                    // Also remap the expression AST tree inside the value, so that diagnostics
+                    // raised on expression sub-nodes (e.g. SEM-REF-001 for an undefined #var)
+                    // land on the <Include> node, not the sub-file's source positions.
+                    a.getValue().getExpression().ifPresent(expr -> {
+                        if (expr instanceof ExpressionNode exprNode) {
+                            remapExpressionPositions(exprNode, anchor);
+                        }
+                    });
                 }
             }
         }
@@ -140,6 +156,21 @@ public final class IncludeHandler implements MacroHandler {
             for (DslElementNode c : node.getChildElements()) {
                 remapPositions(c, anchor);
             }
+        }
+    }
+
+    private static void remapExpressionPositions(@NotNull ExpressionNode node, @NotNull DslElementNode anchor) {
+        node.setLine(anchor.getLine());
+        node.setColumn(anchor.getColumn());
+        node.setEndLine(anchor.getEndLine());
+        node.setEndColumn(anchor.getEndColumn());
+        if (node.getChildren() != null) {
+            for (ExpressionNode child : node.getChildren()) {
+                remapExpressionPositions(child, anchor);
+            }
+        }
+        if (node.getIndexExpression() != null) {
+            remapExpressionPositions(node.getIndexExpression(), anchor);
         }
     }
 

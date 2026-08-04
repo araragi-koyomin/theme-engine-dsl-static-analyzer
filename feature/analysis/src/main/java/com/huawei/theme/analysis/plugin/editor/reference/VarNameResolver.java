@@ -1,6 +1,7 @@
 package com.huawei.theme.analysis.plugin.editor.reference;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -64,20 +65,19 @@ public final class VarNameResolver {
                                                              @Nullable XmlTag hostTag,
                                                              @NotNull String varName) {
         DslAstService svc = DslAstService.getInstance(project);
-        DslAstTree normalTree = svc.getTree(hostFile);
-        DemacroedAst demacroed = svc.getDemacroedTree(hostFile);
-        List<DslElementNode> copies = svc.demacroedTargetsFor(hostFile, hostTag);
         // Dedup by the FINAL PSI target (the VarNameElement/XmlAttributeValue at the original source),
         // not by the intermediate demacoed decl node: N macro-expanded copies of one <Var> all two-hop
         // to the same original source, so they must collapse to a single resolve target. Distinct
         // source declarations (e.g. manually-defined x_1 and x_2) remain separate entries.
         Set<PsiElement> seenTargets = new LinkedHashSet<>();
         List<PsiElement> result = new ArrayList<>();
-        for (DslElementNode copy : copies) {
+        for (DslAstService.ContextTarget contextTarget : svc.demacroedTargetsWithContext(hostFile, hostTag)) {
+            DslElementNode copy = contextTarget.getNode();
+            DemacroedAst demacroed = contextTarget.getContext().getDemacroed();
             Map<String, Object> scope = demacroed.getCompileScope(copy);
             String resolvedName = CompileTimeInterpolator.interpolate(
                     varName, scope, new ArrayList<>(), copy, "resolve");
-            Optional<VarDeclaration> declOpt = svc.scopeOfDemacroed(hostFile, copy).lookup(resolvedName);
+            Optional<VarDeclaration> declOpt = svc.scopeOf(contextTarget).lookup(resolvedName);
             if (declOpt.isEmpty()) {
                 continue;
             }
@@ -85,12 +85,17 @@ public final class VarNameResolver {
             if (d.isGlobal() || d.getAstNode() == null || d.getHostAttrName() == null) {
                 continue;
             }
-            // Two-hop: demacoed decl node -> normal node -> PSI XmlTag.
+            // Two-hop: demacoed decl node -> normal node -> PSI XmlTag. The normal node may
+            // belong to an included sub-file (recorded via DemacroedAst.getFilePathOfNormalNode),
+            // so pick the right per-file DslAstTree (main or cached sub) for the PSI lookup —
+            // this is what lets jump-to-def navigate into an included sub-file's source.
             Optional<DslElementNode> normalDecl = demacroed.getNormalNode(d.getAstNode());
             if (normalDecl.isEmpty()) {
                 continue;
             }
-            Optional<XmlTag> declTagOpt = normalTree.getTag(normalDecl.get());
+            String ownerFile = demacroed.getFilePathOfNormalNode(normalDecl.get());
+            DslAstTree ownerTree = svc.getTreeForFile(contextTarget, ownerFile);
+            Optional<XmlTag> declTagOpt = ownerTree.getTag(normalDecl.get());
             if (declTagOpt.isEmpty()) {
                 continue;
             }
@@ -116,17 +121,19 @@ public final class VarNameResolver {
                                                               @Nullable XmlTag hostTag,
                                                               @NotNull String varName) {
         DslAstService svc = DslAstService.getInstance(project);
-        DslElementNode target = svc.demacroedTargetFor(hostFile, hostTag);
-        if (target == null) {
+        List<DslAstService.ContextTarget> targets = svc.demacroedTargetsWithContext(hostFile, hostTag);
+        if (targets.isEmpty()) {
             return Optional.empty();
         }
         // A raw reference name like v_%{i} (inside a <For> body) must be interpolated with
         // the demacroed copy's compile-time scope before lookup, so it matches the copy's
         // concrete name v_1 in the demacroed SymbolTable. Clean names pass through unchanged.
-        Map<String, Object> scope = svc.compileScopeFor(hostFile, target);
+        DslAstService.ContextTarget contextTarget = targets.get(0);
+        DslElementNode target = contextTarget.getNode();
+        Map<String, Object> scope = contextTarget.getContext().getDemacroed().getCompileScope(target);
         String resolvedName = CompileTimeInterpolator.interpolate(
                 varName, scope, new ArrayList<>(), target, "resolve");
-        SymbolTable symbolTable = svc.scopeOfDemacroed(hostFile, target);
+        SymbolTable symbolTable = svc.scopeOf(contextTarget);
         return symbolTable.lookup(resolvedName);
     }
 
@@ -134,12 +141,14 @@ public final class VarNameResolver {
                                                             @NotNull XmlFile hostFile,
                                                             @Nullable XmlTag hostTag) {
         DslAstService svc = DslAstService.getInstance(project);
-        DslElementNode target = svc.demacroedTargetFor(hostFile, hostTag);
-        if (target == null) {
-            return List.of();
+        Map<String, VarDeclaration> declarations = new LinkedHashMap<>();
+        for (DslAstService.ContextTarget target : svc.demacroedTargetsWithContext(hostFile, hostTag)) {
+            SymbolTable scope = svc.scopeOf(target);
+            for (VarDeclaration declaration : scope.visibleDeclarations()) {
+                declarations.putIfAbsent(declaration.getName(), declaration);
+            }
         }
-        SymbolTable scope = svc.scopeOfDemacroed(hostFile, target);
-        return scope.visibleDeclarations();
+        return List.copyOf(declarations.values());
     }
 
     public static String sigilOf(@Nullable DslType type) {

@@ -14,7 +14,6 @@ import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
-import com.huawei.theme.analysis.core.syntaxanalysis.AstBuilder;
 import com.huawei.theme.analysis.core.syntaxanalysis.ExpressionEmbedder;
 
 public final class MacroExpander {
@@ -25,6 +24,7 @@ public final class MacroExpander {
     private final RuleRepository ruleRepository;
     private final List<MacroHandler> handlers;
     private final MacroFileLoader fileLoader;
+    private final NormalAstFactory normalAstFactory;
 
     public MacroExpander(@Nullable RuleRepository ruleRepository) {
         this(ruleRepository, List.of(new ForHandler(), new ForeachHandler(), new IfHandler(), new IncludeHandler()));
@@ -37,9 +37,17 @@ public final class MacroExpander {
     public MacroExpander(@Nullable RuleRepository ruleRepository,
                          @NotNull List<MacroHandler> handlers,
                          @NotNull MacroFileLoader fileLoader) {
+        this(ruleRepository, handlers, fileLoader, NormalAstFactory.text(ruleRepository));
+    }
+
+    public MacroExpander(@Nullable RuleRepository ruleRepository,
+                         @NotNull List<MacroHandler> handlers,
+                         @NotNull MacroFileLoader fileLoader,
+                         @NotNull NormalAstFactory normalAstFactory) {
         this.ruleRepository = ruleRepository;
         this.handlers = handlers;
         this.fileLoader = fileLoader;
+        this.normalAstFactory = normalAstFactory;
     }
 
     @Nullable
@@ -54,7 +62,7 @@ public final class MacroExpander {
 
     @NotNull
     public DslFileNode buildNormalAst(@NotNull String path, @NotNull String content) {
-        return new AstBuilder(ruleRepository).getDslAst(path, content);
+        return normalAstFactory.build(path, content);
     }
 
     @NotNull

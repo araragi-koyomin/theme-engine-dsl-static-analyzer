@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -368,6 +369,25 @@ class MacroExpanderTest {
         assertTrue(normalGroup.isPresent());
         assertEquals(dir.resolve("function_greeting.xml").toString().replace('\\', '/'),
                 result.getFilePathOfNormalNode(normalGroup.get()).replace('\\', '/'));
+    }
+
+    @Test
+    void includeUsesNormalAstFactoryForSubFile() throws Exception {
+        Path dir = Files.createTempDirectory("macro-include-factory-");
+        writeFile(dir, "function_greeting.xml", "<Group><Var name='v'/></Group>");
+        List<String> builtPaths = new ArrayList<>();
+        NormalAstFactory factory = (path, content) -> {
+            builtPaths.add(path);
+            return new AstBuilder(repo).getDslAst(path, content);
+        };
+        MacroExpander customExpander = new MacroExpander(repo,
+                List.of(new ForHandler(), new ForeachHandler(), new IfHandler(), new IncludeHandler()),
+                MacroFileLoader.DISK, factory);
+        String main = "<Lockscreen><Include name='function_greeting.xml' who='World'/></Lockscreen>";
+        DslFileNode ast = astBuilder.getDslAst(dir.resolve("main.xml").toString(), main);
+        customExpander.expand(ast);
+        assertTrue(builtPaths.stream().anyMatch(p -> p.endsWith("function_greeting.xml")),
+                "IncludeHandler must delegate sub-file parsing to the NormalAstFactory");
     }
 
     private static void writeFile(Path dir, String name, String content) throws Exception {

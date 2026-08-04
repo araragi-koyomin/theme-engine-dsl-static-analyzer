@@ -1,27 +1,42 @@
 package com.huawei.theme.analysis.plugin.editor.reference;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.intellij.find.findUsages.FindUsagesHandler;
+import com.intellij.find.findUsages.FindUsagesOptions;
 import com.intellij.ide.highlighter.XmlFileType;
+import com.intellij.lang.injection.InjectedLanguageManager;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFileFactory;
+import com.intellij.psi.PsiLanguageInjectionHost;
+import com.intellij.psi.PsiReference;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.testFramework.LightPlatformTestCase;
+import com.intellij.usageView.UsageInfo;
 
 import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
+import com.huawei.theme.analysis.plugin.ast.DslAstService;
 import com.huawei.theme.analysis.plugin.editor.varname.VarNameElement;
 
 public class VarNameResolverTest extends LightPlatformTestCase {
@@ -147,6 +162,215 @@ public class VarNameResolverTest extends LightPlatformTestCase {
         assertTrue("expanded v_1 visible", names.contains("v_1"));
         assertTrue("expanded v_2 visible", names.contains("v_2"));
         assertTrue("expanded v_3 visible", names.contains("v_3"));
+    }
+
+    public void testFunctionReferenceResolvesToMainFileDeclaration() {
+        XmlFile main = projectFile("script.xml", "<Lockscreen>"
+                + "<Var name='main_value' type='number'/>"
+                + "<Include name='function_child.xml'/>"
+                + "</Lockscreen>");
+        XmlFile child = projectFile("function_child.xml", "<Group><Text x='#main_value'/></Group>");
+        XmlTag text = firstSubTag(child.getRootTag(), "Text");
+
+        Set<String> contextPaths = DslAstService.getInstance(getProject()).getContextFilePaths(child);
+        assertTrue("context files must contain script main, actual=" + contextPaths,
+                contextPaths.contains(main.getVirtualFile().getPath().replace('\\', '/')));
+
+        PsiElement target = VarNameResolver.resolveDeclaration(
+                getProject(), child, text, "main_value");
+
+        assertNotNull("function reference must resolve in the including script context", target);
+        assertSame(main, hostFileOf(target));
+    }
+
+    public void testFunctionAutocompleteSeesMainFileSymbols() {
+        projectFile("script_main.xml", "<Lockscreen>"
+                + "<Var name='main_value' type='number'/>"
+                + "<Include name='function_child.xml'/>"
+                + "</Lockscreen>");
+        XmlFile child = projectFile("function_child.xml", "<Group><Text x='0'/></Group>");
+        XmlTag text = firstSubTag(child.getRootTag(), "Text");
+
+        Set<String> names = VarNameResolver.visibleDeclarations(getProject(), child, text).stream()
+                .map(VarDeclaration::getName)
+                .collect(Collectors.toSet());
+
+        assertTrue("main-file symbol must be offered in a function file", names.contains("main_value"));
+    }
+
+    public void testFunctionSeesMacroGeneratedMainSymbolsAndMainResolvesFunctionSymbol() {
+        XmlFile main = projectFile("script.xml", "<Lockscreen>"
+                + "<For name='i' from='1' to='3'><Var name='hello_%{i}'/></For>"
+                + "<For name='i' from='1' to='3'><Var name='hello_%{i+3}'/></For>"
+                + "<For name='i' from='1' to='6'>"
+                + "<Var name='hi_%{i}' expression='#hello_%{i}'/></For>"
+                + "<Include name='function_1.xml'/>"
+                + "<Var name='test' expression='#sub'/>"
+                + "</Lockscreen>");
+        XmlFile child = projectFile("function_1.xml", "<Var name='sub' expression='#hi_1'/>");
+
+        Set<String> childVisibleNames = visibleNames(child, child.getRootTag());
+        assertTrue("function autocomplete must contain macro-generated hi_1", childVisibleNames.contains("hi_1"));
+        PsiElement hiTarget = VarNameResolver.resolveDeclaration(
+                getProject(), child, child.getRootTag(), "hi_1");
+        assertNotNull("function reference #hi_1 must resolve to the main file", hiTarget);
+        assertSame(main, hostFileOf(hiTarget));
+
+        XmlTag testVar = main.getRootTag().findSubTags("Var")[0];
+        PsiElement subTarget = VarNameResolver.resolveDeclaration(
+                getProject(), main, testVar, "sub");
+        assertNotNull("main reference #sub must resolve to the function file", subTarget);
+        assertSame(child, hostFileOf(subTarget));
+    }
+
+    public void testFindUsagesFromMainFindsFunctionReferenceOnPooledThread() throws Exception {
+        XmlFile main = projectFile("script_main.xml", "<Lockscreen>"
+                + "<Var name='main_value' type='number'/>"
+                + "<Include name='function_child.xml'/>"
+                + "</Lockscreen>");
+        XmlFile child = projectFile("function_child.xml", "<Group><Text x='#main_value'/></Group>");
+        XmlTag declaration = firstSubTag(main.getRootTag(), "Var");
+        XmlAttributeValue nameValue = declaration.getAttribute("name").getValueElement();
+        VarNameElement target = VarNameResolver.findVarNameElement(getProject(), nameValue);
+        assertNotNull(target);
+        FindUsagesHandler handler = new ThemeDslVarFindUsagesHandlerFactory()
+                .createFindUsagesHandler(target, false);
+        assertNotNull(handler);
+        XmlTag childText = firstSubTag(child.getRootTag(), "Text");
+        PsiReference[] childReferences = childText.getAttribute("x").getValueElement().getReferences();
+        assertTrue("function expression must expose a host-side variable reference", childReferences.length > 0);
+        assertTrue("function reference must resolve to the main declaration before Find Usages",
+                Arrays.stream(childReferences)
+                        .filter(DslVariableReference.class::isInstance)
+                        .map(DslVariableReference.class::cast)
+                        .flatMap(reference -> Arrays.stream(reference.multiResolve(false)))
+                        .map(result -> result.getElement())
+                        .filter(Objects::nonNull)
+                        .anyMatch(element -> main.equals(hostFileOf(element))));
+
+        List<UsageInfo> usages = new CopyOnWriteArrayList<>();
+        Future<Boolean> search = ApplicationManager.getApplication().executeOnPooledThread(() ->
+                handler.processElementUsages(
+                        target, usage -> {
+                            usages.add(usage);
+                            return true;
+                        }, new FindUsagesOptions(getProject())));
+        boolean completed = search.get(30, TimeUnit.SECONDS);
+
+        assertTrue(completed);
+        assertTrue("Find Usages must include the function reference; usages="
+                        + usages.stream().map(UsageInfo::getElement).toList(), usages.stream()
+                .map(UsageInfo::getElement)
+                .filter(Objects::nonNull)
+                .anyMatch(element -> child.equals(hostFileOf(element))));
+    }
+
+    public void testFindUsagesForMacroDeclarationFindsInterpolatedReferenceOnPooledThread() throws Exception {
+        XmlFile main = projectFile("script.xml", "<Lockscreen>"
+                + "<For name='i' from='1' to='3'><Var name='hello_%{i}'/></For>"
+                + "<For name='i' from='1' to='3'><Var name='hello_%{i+3}'/></For>"
+                + "<For name='i' from='1' to='6'>"
+                + "<Var name='hi_%{i}' expression='#hello_%{i}'/></For>"
+                + "</Lockscreen>");
+        XmlTag firstFor = main.getRootTag().findSubTags("For")[0];
+        XmlTag declaration = firstSubTag(firstFor, "Var");
+        XmlAttributeValue nameValue = declaration.getAttribute("name").getValueElement();
+        VarNameElement target = VarNameResolver.findVarNameElement(getProject(), nameValue);
+        assertNotNull(target);
+        FindUsagesHandler handler = new ThemeDslVarFindUsagesHandlerFactory()
+                .createFindUsagesHandler(target, false);
+        assertNotNull(handler);
+
+        List<UsageInfo> usages = new CopyOnWriteArrayList<>();
+        Future<Boolean> search = ApplicationManager.getApplication().executeOnPooledThread(() ->
+                handler.processElementUsages(
+                        target, usage -> {
+                            usages.add(usage);
+                            return true;
+                        }, new FindUsagesOptions(getProject())));
+
+        assertTrue(search.get(30, TimeUnit.SECONDS));
+        assertTrue("macro declaration Find Usages must include #hello_%{i}", usages.stream()
+                .map(UsageInfo::getElement)
+                .filter(XmlAttributeValue.class::isInstance)
+                .map(XmlAttributeValue.class::cast)
+                .anyMatch(value -> "#hello_%{i}".equals(value.getValue())));
+    }
+
+    public void testNestedFunctionReferenceResolvesToMainFileDeclaration() {
+        XmlFile main = projectFile("script_main.xml", "<Lockscreen>"
+                + "<Var name='root_value' type='number'/>"
+                + "<Include name='function_middle.xml'/>"
+                + "</Lockscreen>");
+        projectFile("function_middle.xml", "<Group><Include name='function_leaf.xml'/></Group>");
+        XmlFile leaf = projectFile("function_leaf.xml", "<Group><Text x='#root_value'/></Group>");
+        XmlTag text = firstSubTag(leaf.getRootTag(), "Text");
+
+        Set<String> contextPaths = DslAstService.getInstance(getProject()).getContextFilePaths(leaf);
+        assertEquals(3, contextPaths.size());
+
+        PsiElement target = VarNameResolver.resolveDeclaration(
+                getProject(), leaf, text, "root_value");
+
+        assertNotNull("nested function reference must resolve in the script context", target);
+        assertSame(main, hostFileOf(target));
+    }
+
+    public void testFunctionContextCacheInvalidatesWhenMainFileChanges() {
+        XmlFile main = projectFile("script_main.xml",
+                "<Lockscreen><Include name='function_child.xml'/></Lockscreen>");
+        XmlFile child = projectFile("function_child.xml", "<Group><Text x='0'/></Group>");
+        XmlTag text = firstSubTag(child.getRootTag(), "Text");
+
+        Set<String> before = visibleNames(child, text);
+        assertFalse(before.contains("added_later"));
+
+        Document document = PsiDocumentManager.getInstance(getProject()).getDocument(main);
+        assertNotNull(document);
+        ApplicationManager.getApplication().runWriteAction((Runnable) () -> document.setText(
+                "<Lockscreen><Var name='added_later' type='number'/>"
+                        + "<Include name='function_child.xml'/></Lockscreen>"));
+        PsiDocumentManager.getInstance(getProject()).commitDocument(document);
+
+        assertTrue("editing the context root must invalidate the function cache",
+                visibleNames(child, text).contains("added_later"));
+    }
+
+    public void testFunctionUsesAllIncludingScriptContexts() {
+        XmlFile firstMain = projectFile("script_first.xml", "<Lockscreen>"
+                + "<Var name='first_value' type='number'/>"
+                + "<Include name='function_shared.xml'/>"
+                + "</Lockscreen>");
+        projectFile("script_second.xml", "<Lockscreen>"
+                + "<Var name='second_value' type='number'/>"
+                + "<Include name='function_shared.xml'/>"
+                + "</Lockscreen>");
+        XmlFile child = projectFile("function_shared.xml", "<Group><Text x='#first_value'/></Group>");
+        XmlTag text = firstSubTag(child.getRootTag(), "Text");
+
+        Set<String> names = visibleNames(child, text);
+
+        assertEquals(2, DslAstService.getInstance(getProject()).getAnalysisContexts(child).size());
+        assertTrue(names.contains("first_value"));
+        assertTrue(names.contains("second_value"));
+        PsiElement target = VarNameResolver.resolveDeclaration(
+                getProject(), child, text, "first_value");
+        assertNotNull(target);
+        assertSame(firstMain, hostFileOf(target));
+    }
+
+    public void testFunctionCompletionCopyUsesPhysicalFileContexts() {
+        projectFile("script.xml", "<Lockscreen>"
+                + "<Var name='main_value' type='number'/>"
+                + "<Include name='function_completion.xml'/>"
+                + "</Lockscreen>");
+        XmlFile child = projectFile("function_completion.xml", "<Group><Text x='0'/></Group>");
+        XmlFile completionCopy = (XmlFile) child.copy();
+        XmlTag copyText = firstSubTag(completionCopy.getRootTag(), "Text");
+
+        Set<String> names = visibleNames(completionCopy, copyText);
+
+        assertTrue("completion PSI copy must retain the physical function's contexts", names.contains("main_value"));
     }
 
     public void testCursorOnForTagResolvesViaEnclosingScope() {
@@ -278,5 +502,39 @@ public class VarNameResolverTest extends LightPlatformTestCase {
             }
         }
         return out;
+    }
+
+    private XmlFile projectFile(String name, String content) {
+        XmlFile[] result = new XmlFile[1];
+        ApplicationManager.getApplication().runWriteAction((Runnable) () -> {
+            try {
+                VirtualFile sourceRoot = getSourceRoot();
+                VirtualFile directory = sourceRoot.findChild("include-context");
+                if (directory == null) {
+                    directory = sourceRoot.createChildDirectory(this, "include-context");
+                }
+                VirtualFile file = directory.findChild(name);
+                if (file == null) {
+                    file = directory.createChildData(this, name);
+                }
+                VfsUtil.saveText(file, content);
+                result[0] = (XmlFile) getPsiManager().findFile(file);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+        assertNotNull(result[0]);
+        return result[0];
+    }
+
+    private Set<String> visibleNames(XmlFile file, XmlTag tag) {
+        return VarNameResolver.visibleDeclarations(getProject(), file, tag).stream()
+                .map(VarDeclaration::getName)
+                .collect(Collectors.toSet());
+    }
+
+    private PsiElement hostFileOf(PsiElement element) {
+        PsiLanguageInjectionHost host = InjectedLanguageManager.getInstance(getProject()).getInjectionHost(element);
+        return host != null ? host.getContainingFile() : element.getContainingFile();
     }
 }

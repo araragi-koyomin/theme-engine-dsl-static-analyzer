@@ -3,9 +3,11 @@ package com.huawei.theme.analysis.core.macro;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,10 +18,11 @@ import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
 
 /**
  * Resolves the "context root" for a {@code function_*.xml} sub-file: the
- * {@code script_*.xml} in the same directory that {@code <Include>}s this sub-file.
+ * {@code script.xml} or {@code script_*.xml} in the same directory that
+ * {@code <Include>}s this sub-file.
  *
  * <p>Per the Include design, a {@code function_*.xml} is never analyzed standalone —
- * its analysis context is the main {@code script_*.xml} that includes it. This class
+ * its analysis context is the main script file that includes it. This class
  * finds that main (or reports 0 / multiple) and, for the single-main case, extracts
  * the param key/value pairs the main's {@code <Include>} passes to this sub-file
  * (so the editor can demacro the sub-file standalone with those params as the
@@ -39,10 +42,6 @@ public final class ContextRootResolver {
         this.expander = expander;
     }
 
-    /**
-     * All {@code script_*.xml} files in the sub-file's directory that contain an
-     * {@code <Include name="<funcName>">}. Empty if none, >1 if multiple context roots.
-     */
     @NotNull
     public List<String> findContextRoots(@NotNull String functionFilePath) {
         String dir = parentDir(functionFilePath);
@@ -56,16 +55,20 @@ public final class ContextRootResolver {
         }
         List<String> roots = new ArrayList<>();
         for (String scriptName : scriptFiles) {
-            if (!scriptName.startsWith("script_") || !scriptName.endsWith(".xml")) {
+            if (!isScriptFile(scriptName)) {
                 continue;
             }
             String scriptPath = joinPath(dir, scriptName);
-            String content = expander.loadFile(scriptPath);
-            if (content != null && content.contains("<" + INCLUDE_TAG) && includesFunction(content, funcName)) {
+            if (includesFunction(scriptPath, funcName, new HashSet<>())) {
                 roots.add(scriptPath);
             }
         }
         return roots;
+    }
+
+    private static boolean isScriptFile(@NotNull String fileName) {
+        return "script.xml".equals(fileName)
+                || fileName.startsWith("script_") && fileName.endsWith(".xml");
     }
 
     /**
@@ -114,52 +117,47 @@ public final class ContextRootResolver {
         return Optional.empty();
     }
 
-    private static boolean includesFunction(@NotNull String content, @NotNull String funcName) {
-        int idx = content.indexOf("<" + INCLUDE_TAG);
-        while (idx >= 0) {
-            int end = content.indexOf('>', idx);
-            if (end < 0) {
-                break;
-            }
-            String tagText = content.substring(idx, end + 1);
-            if (matchesName(tagText, funcName)) {
+    private boolean includesFunction(@NotNull String filePath,
+                                     @NotNull String targetName,
+                                     @NotNull Set<String> visited) {
+        if (!visited.add(filePath)) {
+            return false;
+        }
+        String content = expander.loadFile(filePath);
+        if (content == null) {
+            return false;
+        }
+        DslElementNode root = expander.buildNormalAst(filePath, content).getRootElement();
+        if (root == null) {
+            return false;
+        }
+        List<String> includes = new ArrayList<>();
+        collectIncludes(root, includes);
+        String dir = parentDir(filePath);
+        for (String include : includes) {
+            if (targetName.equals(include)) {
                 return true;
             }
-            idx = content.indexOf("<" + INCLUDE_TAG, end);
+            if (dir != null && include.startsWith("function_") && include.endsWith(".xml")
+                    && includesFunction(joinPath(dir, include), targetName, visited)) {
+                return true;
+            }
         }
         return false;
     }
 
-    private static boolean matchesName(@NotNull String tagText, @NotNull String funcName) {
-        int nameIdx = tagText.indexOf(NAME_ATTR);
-        while (nameIdx >= 0) {
-            int eq = tagText.indexOf('=', nameIdx);
-            if (eq < 0) {
-                break;
+    private static void collectIncludes(@NotNull DslElementNode node, @NotNull List<String> includes) {
+        if (INCLUDE_TAG.equals(node.getTagName())) {
+            String name = attrValue(node, NAME_ATTR);
+            if (name != null) {
+                includes.add(name);
             }
-            int q1 = eq + 1;
-            while (q1 < tagText.length() && Character.isWhitespace(tagText.charAt(q1))) {
-                q1++;
-            }
-            if (q1 >= tagText.length()) {
-                break;
-            }
-            char quote = tagText.charAt(q1);
-            if (quote != '"' && quote != '\'') {
-                nameIdx = tagText.indexOf(NAME_ATTR, q1);
-                continue;
-            }
-            int q2 = tagText.indexOf(quote, q1 + 1);
-            if (q2 < 0) {
-                break;
-            }
-            String value = tagText.substring(q1 + 1, q2);
-            if (funcName.equals(value)) {
-                return true;
-            }
-            nameIdx = tagText.indexOf(NAME_ATTR, q2);
         }
-        return false;
+        if (node.getChildElements() != null) {
+            for (DslElementNode child : node.getChildElements()) {
+                collectIncludes(child, includes);
+            }
+        }
     }
 
     @Nullable

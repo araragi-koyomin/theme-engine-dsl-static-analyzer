@@ -31,7 +31,10 @@ public class PsiAstBuilder {
         DslAstTree.Builder mapBuilder = DslAstTree.builder();
 
         DslFileNode fileNode = new DslFileNode();
-        fileNode.setFilePath(xmlFile.getName());
+        // Use the full VirtualFile path (not just the name) so IncludeHandler.resolveSibling
+        // can find the file's directory and load included function_*.xml sub-files relative to it.
+        fileNode.setFilePath(xmlFile.getVirtualFile() != null
+                ? xmlFile.getVirtualFile().getPath() : xmlFile.getName());
         String fileText = document != null ? document.getText() : "";
         fileNode.setText(fileText);
         fileNode.setLine(1);

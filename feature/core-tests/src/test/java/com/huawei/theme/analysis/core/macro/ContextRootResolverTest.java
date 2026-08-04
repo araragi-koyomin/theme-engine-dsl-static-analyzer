@@ -25,11 +25,11 @@ class ContextRootResolverTest {
     void findsSingleContextRoot() throws Exception {
         Path dir = Files.createTempDirectory("ctx-root-");
         writeFile(dir, "function_greeting.xml", "<Group><Var name='v'/></Group>");
-        writeFile(dir, "script_main.xml",
+        writeFile(dir, "script.xml",
                 "<Lockscreen><Include name='function_greeting.xml' who='World'/></Lockscreen>");
         List<String> roots = resolver.findContextRoots(dir.resolve("function_greeting.xml").toString());
         assertEquals(1, roots.size());
-        assertTrue(roots.get(0).replace('\\', '/').endsWith("script_main.xml"));
+        assertTrue(roots.get(0).replace('\\', '/').endsWith("script.xml"));
     }
 
     @Test
@@ -52,6 +52,21 @@ class ContextRootResolverTest {
                 "<Lockscreen><Include name='function_greeting.xml'/></Lockscreen>");
         List<String> roots = resolver.findContextRoots(dir.resolve("function_greeting.xml").toString());
         assertEquals(2, roots.size());
+    }
+
+    @Test
+    void findsContextRootThroughNestedFunctionInclude() throws Exception {
+        Path dir = Files.createTempDirectory("ctx-nested-");
+        writeFile(dir, "function_leaf.xml", "<Group/>");
+        writeFile(dir, "function_middle.xml",
+                "<Group><Include name='function_leaf.xml'/></Group>");
+        writeFile(dir, "script_main.xml",
+                "<Lockscreen><Include name='function_middle.xml'/></Lockscreen>");
+
+        List<String> roots = resolver.findContextRoots(dir.resolve("function_leaf.xml").toString());
+
+        assertEquals(1, roots.size());
+        assertTrue(roots.get(0).replace('\\', '/').endsWith("script_main.xml"));
     }
 
     @Test

@@ -23,7 +23,7 @@
                   fieldName="INSTANCE"
                   language="ThemeDSL"
                   fileNames="script.xml"
-                  patterns="script_*.xml"/>
+                  patterns="script_*.xml;function_*.xml"/>
 
         <lang.parserDefinition language="ThemeDSL"
                                implementationClass="com.huawei.theme.analysis.plugin.editor.themedsl.ThemeDslParserDefinition"/>

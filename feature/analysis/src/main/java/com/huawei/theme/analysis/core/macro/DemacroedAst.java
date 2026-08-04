@@ -3,6 +3,9 @@ package com.huawei.theme.analysis.core.macro;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +27,8 @@ public final class DemacroedAst {
     private final Map<DslElementNode, Map<String, Object>> scopeByDemacroedNode;
     private final Map<DslElementNode, String> normalNodeFilePath;
     private final List<Diagnostic> macroDiagnostics;
+    private final List<IncludeInstance> includeInstances;
+    private final Map<DslElementNode, IncludeInstance> includeInstanceByNode;
 
     DemacroedAst(@NotNull DslFileNode demacroed,
                  @NotNull String mainFilePath,
@@ -31,7 +36,9 @@ public final class DemacroedAst {
                  @NotNull IdentityHashMap<DslElementNode, List<DslElementNode>> normalToDemacroed,
                  @NotNull IdentityHashMap<DslElementNode, Map<String, Object>> scopeByDemacroedNode,
                  @NotNull IdentityHashMap<DslElementNode, String> normalNodeFilePath,
-                 @NotNull List<Diagnostic> macroDiagnostics) {
+                 @NotNull List<Diagnostic> macroDiagnostics,
+                 @NotNull List<Builder.MutableIncludeInstance> mutableIncludeInstances,
+                 @NotNull IdentityHashMap<DslElementNode, Integer> includeInstanceIdByNode) {
         this.demacroed = demacroed;
         this.mainFilePath = mainFilePath;
         this.demacroedToNormal = immutableIdentityMap(demacroedToNormal);
@@ -39,6 +46,15 @@ public final class DemacroedAst {
         this.scopeByDemacroedNode = immutableScopes(scopeByDemacroedNode);
         this.normalNodeFilePath = immutableIdentityMap(normalNodeFilePath);
         this.macroDiagnostics = List.copyOf(macroDiagnostics);
+        List<IncludeInstance> instances = new ArrayList<>();
+        for (Builder.MutableIncludeInstance mutable : mutableIncludeInstances) {
+            instances.add(new IncludeInstance(mutable.id, mutable.parentId, mutable.filePath,
+                    mutable.includeNode, mutable.compileScope, mutable.generatedNodes));
+        }
+        this.includeInstances = List.copyOf(instances);
+        IdentityHashMap<DslElementNode, IncludeInstance> instanceMap = new IdentityHashMap<>();
+        includeInstanceIdByNode.forEach((node, id) -> instanceMap.put(node, instances.get(id)));
+        this.includeInstanceByNode = Collections.unmodifiableMap(instanceMap);
     }
 
     public DslFileNode getDemacroed() {
@@ -76,8 +92,31 @@ public final class DemacroedAst {
         return macroDiagnostics;
     }
 
+    public List<IncludeInstance> getIncludeInstances() {
+        return includeInstances;
+    }
+
+    public List<IncludeInstance> getIncludeInstances(@NotNull String filePath) {
+        String normalized = normalizePath(filePath);
+        return includeInstances.stream()
+                .filter(instance -> normalizePath(instance.getFilePath()).equals(normalized))
+                .toList();
+    }
+
+    public Optional<IncludeInstance> getIncludeInstance(@Nullable DslElementNode demacroedNode) {
+        return Optional.ofNullable(includeInstanceByNode.get(demacroedNode));
+    }
+
     public String getMainFilePath() {
         return mainFilePath;
+    }
+
+    /**
+     * All distinct file paths of included sub-files (from the {@code normalNodeFilePath} map).
+     * Used by the find-usages handler to scan included sub-files' PSI for references.
+     */
+    public java.util.Set<String> getIncludedFilePaths() {
+        return java.util.Collections.unmodifiableSet(new java.util.HashSet<>(normalNodeFilePath.values()));
     }
 
     /**
@@ -127,6 +166,9 @@ public final class DemacroedAst {
         final IdentityHashMap<DslElementNode, Map<String, Object>> scopeByDemacroedNode = new IdentityHashMap<>();
         final IdentityHashMap<DslElementNode, String> normalNodeFilePath = new IdentityHashMap<>();
         final List<Diagnostic> diagnostics = new java.util.ArrayList<>();
+        final List<MutableIncludeInstance> includeInstances = new ArrayList<>();
+        final IdentityHashMap<DslElementNode, Integer> includeInstanceIdByNode = new IdentityHashMap<>();
+        final Deque<MutableIncludeInstance> includeStack = new ArrayDeque<>();
         int loopIterations;
         boolean expansionBudgetExceeded;
 
@@ -137,6 +179,29 @@ public final class DemacroedAst {
         void put(@NotNull DslElementNode demacroed, @NotNull DslElementNode normal) {
             demacroedToNormal.put(demacroed, normal);
             normalToDemacroed.computeIfAbsent(normal, k -> new java.util.ArrayList<>()).add(demacroed);
+            if (!includeStack.isEmpty()) {
+                MutableIncludeInstance current = includeStack.peek();
+                current.generatedNodes.add(demacroed);
+                includeInstanceIdByNode.put(demacroed, current.id);
+            }
+        }
+
+        int beginInclude(@NotNull String filePath,
+                         @NotNull DslElementNode includeNode,
+                         @NotNull Map<String, Object> compileScope) {
+            int id = includeInstances.size();
+            Integer parentId = includeStack.isEmpty() ? null : includeStack.peek().id;
+            MutableIncludeInstance instance = new MutableIncludeInstance(
+                    id, parentId, filePath, includeNode, compileScope);
+            includeInstances.add(instance);
+            includeStack.push(instance);
+            return id;
+        }
+
+        void endInclude(int id) {
+            if (!includeStack.isEmpty() && includeStack.peek().id == id) {
+                includeStack.pop();
+            }
         }
 
         void recordScope(@NotNull DslElementNode demacroed, @NotNull Map<String, Object> scope) {
@@ -185,7 +250,33 @@ public final class DemacroedAst {
 
         DemacroedAst build(@NotNull DslFileNode demacroed) {
             return new DemacroedAst(demacroed, filePath, demacroedToNormal, normalToDemacroed,
-                    scopeByDemacroedNode, normalNodeFilePath, diagnostics);
+                    scopeByDemacroedNode, normalNodeFilePath, diagnostics,
+                    includeInstances, includeInstanceIdByNode);
         }
+
+        static final class MutableIncludeInstance {
+            final int id;
+            final Integer parentId;
+            final String filePath;
+            final DslElementNode includeNode;
+            final Map<String, Object> compileScope;
+            final List<DslElementNode> generatedNodes = new ArrayList<>();
+
+            MutableIncludeInstance(int id,
+                                   @Nullable Integer parentId,
+                                   @NotNull String filePath,
+                                   @NotNull DslElementNode includeNode,
+                                   @NotNull Map<String, Object> compileScope) {
+                this.id = id;
+                this.parentId = parentId;
+                this.filePath = filePath;
+                this.includeNode = includeNode;
+                this.compileScope = new HashMap<>(compileScope);
+            }
+        }
+    }
+
+    private static String normalizePath(@NotNull String path) {
+        return path.replace('\\', '/');
     }
 }

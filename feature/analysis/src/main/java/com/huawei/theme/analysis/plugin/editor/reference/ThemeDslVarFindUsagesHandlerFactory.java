@@ -4,7 +4,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.huawei.theme.analysis.plugin.editor.varname.VarNameElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,10 +11,12 @@ import com.intellij.find.findUsages.FindUsagesHandler;
 import com.intellij.find.findUsages.FindUsagesHandlerFactory;
 import com.intellij.find.findUsages.FindUsagesOptions;
 import com.intellij.lang.injection.InjectedLanguageManager;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiLanguageInjectionHost;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.ResolveResult;
@@ -24,9 +25,13 @@ import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
+import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.Processor;
+
+import com.huawei.theme.analysis.plugin.ast.DslAstService;
+import com.huawei.theme.analysis.plugin.editor.varname.VarNameElement;
 
 /**
  * Find Usages handler factory that redirects find-usages from the host XML
@@ -93,7 +98,12 @@ public class ThemeDslVarFindUsagesHandlerFactory extends FindUsagesHandlerFactor
                 }
                 // 2. Direct multi-resolve scan — bypasses the word-search pre-filter;
                 //    finds macro-interpolated refs (#hello_%{i}) that don't text-match hello_%{i+3}.
-                return processMultiResolveUsages(target, processor, processed);
+                return ReadAction.compute(() -> {
+                    if (!processMultiResolveUsages(target, processor, processed)) {
+                        return false;
+                    }
+                    return addCrossFileUsages(target, processor, processed);
+                });
             }
         };
     }
@@ -127,14 +137,82 @@ public class ThemeDslVarFindUsagesHandlerFactory extends FindUsagesHandlerFactor
         return true;
     }
 
+    private static boolean addCrossFileUsages(@NotNull VarNameElement target,
+                                               @NotNull Processor<? super UsageInfo> processor,
+                                               @NotNull Set<PsiReference> processed) {
+        Project project = target.getProject();
+        if (project == null) {
+            return true;
+        }
+        InjectedLanguageManager ilm = InjectedLanguageManager.getInstance(project);
+        PsiLanguageInjectionHost host = ilm.getInjectionHost(target);
+        PsiFile hostFile = host != null ? host.getContainingFile() : target.getContainingFile();
+        if (hostFile == null) {
+            return true;
+        }
+        if (!(hostFile instanceof XmlFile xmlFile)) {
+            return true;
+        }
+        List<XmlFile> contextFiles = DslAstService.getInstance(project).getContextFiles(xmlFile);
+        for (XmlFile contextFile : contextFiles) {
+            if (!scanFileForUsages(contextFile, target, processor, processed)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean scanFileForUsages(@NotNull XmlFile psiFile,
+                                             @NotNull VarNameElement target,
+                                             @NotNull Processor<? super UsageInfo> processor,
+                                             @NotNull Set<PsiReference> processed) {
+        for (XmlAttributeValue value : PsiTreeUtil.findChildrenOfType(psiFile, XmlAttributeValue.class)) {
+            for (PsiReference ref : value.getReferences()) {
+                if (ref instanceof DslVariableReference dvr
+                        && !processed.contains(ref)
+                        && multiResolvesTo(dvr, target)) {
+                    processed.add(ref);
+                    if (!processor.process(new UsageInfo(ref))) {
+                        return false;
+                    }
+                    break;
+                }
+            }
+        }
+        return true;
+    }
+
     private static boolean multiResolvesTo(@NotNull DslVariableReference ref, @NotNull PsiElement target) {
         for (ResolveResult r : ref.multiResolve(false)) {
             PsiElement e = r.getElement();
-            if (e != null && e.isEquivalentTo(target)) {
+            if (e != null && equivalentSourceElement(e, target)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static boolean equivalentSourceElement(@NotNull PsiElement left, @NotNull PsiElement right) {
+        if (left.isEquivalentTo(right)) {
+            return true;
+        }
+        Project project = left.getProject();
+        if (project == null || project != right.getProject()) {
+            return false;
+        }
+        InjectedLanguageManager manager = InjectedLanguageManager.getInstance(project);
+        PsiLanguageInjectionHost leftHost = manager.getInjectionHost(left);
+        PsiLanguageInjectionHost rightHost = manager.getInjectionHost(right);
+        PsiElement leftSource = leftHost != null ? leftHost : left;
+        PsiElement rightSource = rightHost != null ? rightHost : right;
+        if (leftSource.isEquivalentTo(rightSource)) {
+            return true;
+        }
+        PsiFile leftFile = leftSource.getContainingFile();
+        PsiFile rightFile = rightSource.getContainingFile();
+        return leftFile != null && rightFile != null
+                && leftFile.isEquivalentTo(rightFile)
+                && leftSource.getTextRange().equals(rightSource.getTextRange());
     }
 
     private static boolean isVarNameValue(XmlAttributeValue value) {
