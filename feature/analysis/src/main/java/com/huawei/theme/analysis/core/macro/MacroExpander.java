@@ -25,7 +25,7 @@ public final class MacroExpander {
     private final List<MacroHandler> handlers;
 
     public MacroExpander(@Nullable RuleRepository ruleRepository) {
-        this(ruleRepository, List.of(new ForHandler()));
+        this(ruleRepository, List.of(new ForHandler(), new ForeachHandler(), new IfHandler()));
     }
 
     public MacroExpander(@Nullable RuleRepository ruleRepository, @NotNull List<MacroHandler> handlers) {

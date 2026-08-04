@@ -183,6 +183,89 @@ class MacroExpanderTest {
     }
 
     @Test
+    void foreachExpandsOverListWithStringVar() {
+        DslElementNode root = buildRoot("<Lockscreen>\n"
+                + "  <Foreach name=\"side\" in=\"left,right,middle\">\n"
+                + "    <Var name=\"v_%{side}\"/>\n"
+                + "  </Foreach>\n"
+                + "</Lockscreen>");
+        DemacroedAst result = expander.expand(toFile(root));
+        DslElementNode dRoot = result.getDemacroed().getRootElement();
+        assertEquals(3, dRoot.getChildElements().size());
+        assertEquals("v_left", attr(dRoot.getChildElements().get(0), "name").getValue().getRawValue());
+        assertEquals("v_right", attr(dRoot.getChildElements().get(1), "name").getValue().getRawValue());
+        assertEquals("v_middle", attr(dRoot.getChildElements().get(2), "name").getValue().getRawValue());
+    }
+
+    @Test
+    void foreachSkipsEmptyListItems() {
+        DslElementNode root = buildRoot("<Lockscreen>\n"
+                + "  <Foreach name=\"s\" in=\"a,,c,\">\n"
+                + "    <Var name=\"v_%{s}\"/>\n"
+                + "  </Foreach>\n"
+                + "</Lockscreen>");
+        DemacroedAst result = expander.expand(toFile(root));
+        DslElementNode dRoot = result.getDemacroed().getRootElement();
+        assertEquals(2, dRoot.getChildElements().size());
+        assertEquals("v_a", attr(dRoot.getChildElements().get(0), "name").getValue().getRawValue());
+        assertEquals("v_c", attr(dRoot.getChildElements().get(1), "name").getValue().getRawValue());
+    }
+
+    @Test
+    void foreachMissingInEmitsMacro004() {
+        DslElementNode root = buildRoot("<Lockscreen>\n"
+                + "  <Foreach name=\"s\">\n"
+                + "    <Var name=\"v\"/>\n"
+                + "  </Foreach>\n"
+                + "</Lockscreen>");
+        DemacroedAst result = expander.expand(toFile(root));
+        assertEquals(1, result.getMacroDiagnostics().size());
+        assertEquals(ForeachHandler.RULE_FOREACH_INVALID, result.getMacroDiagnostics().get(0).getRuleId());
+    }
+
+    @Test
+    void ifKeepsBodyWhenCondTrueRemovesWhenFalse() {
+        DslElementNode root = buildRoot("<Lockscreen>\n"
+                + "  <For name=\"i\" from=\"1\" to=\"3\">\n"
+                + "    <If cond=\"i%2==1\">\n"
+                + "      <Var name=\"odd_%{i}\"/>\n"
+                + "    </If>\n"
+                + "  </For>\n"
+                + "</Lockscreen>");
+        DemacroedAst result = expander.expand(toFile(root));
+        DslElementNode dRoot = result.getDemacroed().getRootElement();
+        // i=1 (odd) kept, i=2 (even) removed, i=3 (odd) kept
+        assertEquals(2, dRoot.getChildElements().size());
+        assertEquals("odd_1", attr(dRoot.getChildElements().get(0), "name").getValue().getRawValue());
+        assertEquals("odd_3", attr(dRoot.getChildElements().get(1), "name").getValue().getRawValue());
+    }
+
+    @Test
+    void ifRemovesBodyWhenCondConstantlyFalse() {
+        DslElementNode root = buildRoot("<Lockscreen>\n"
+                + "  <If cond=\"1==2\">\n"
+                + "    <Var name=\"x\"/>\n"
+                + "  </If>\n"
+                + "</Lockscreen>");
+        DemacroedAst result = expander.expand(toFile(root));
+        assertTrue(result.getDemacroed().getRootElement().getChildElements().isEmpty());
+        assertTrue(result.getMacroDiagnostics().isEmpty());
+    }
+
+    @Test
+    void ifCondFailureEmitsMacro003AndDropsBody() {
+        DslElementNode root = buildRoot("<Lockscreen>\n"
+                + "  <If cond=\"undefinedVar\">\n"
+                + "    <Var name=\"x\"/>\n"
+                + "  </If>\n"
+                + "</Lockscreen>");
+        DemacroedAst result = expander.expand(toFile(root));
+        assertEquals(1, result.getMacroDiagnostics().size());
+        assertEquals(IfHandler.RULE_IF_COND_FAIL, result.getMacroDiagnostics().get(0).getRuleId());
+        assertTrue(result.getDemacroed().getRootElement().getChildElements().isEmpty());
+    }
+
+    @Test
     void noMacrosPassesThroughUnchanged() {
         DslElementNode root = buildRoot("<Lockscreen><Var name=\"v\"/></Lockscreen>");
         DemacroedAst result = expander.expand(toFile(root));

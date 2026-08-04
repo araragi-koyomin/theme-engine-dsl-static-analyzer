@@ -517,7 +517,12 @@
 }, {
   "ruleId": "MACRO-003",
   "category": "MACRO",
-  "description": "宏展开超过单文件总循环预算",
+  "description": "<If> 条件求值失败",
+  "docUrl": ""
+}, {
+  "ruleId": "MACRO-004",
+  "category": "MACRO",
+  "description": "<Foreach> 宏无效（缺失/非法 name|in）",
   "docUrl": ""
 }
 ]
