@@ -539,5 +539,15 @@
   "category": "MACRO",
   "description": "<Include> 引用的文件未找到或无法解析",
   "docUrl": ""
+}, {
+  "ruleId": "MACRO-008",
+  "category": "MACRO",
+  "description": "function 文件找不到引用它的 script_*.xml 上下文根",
+  "docUrl": ""
+}, {
+  "ruleId": "MACRO-009",
+  "category": "MACRO",
+  "description": "function 文件找到多个引用它的 script_*.xml 上下文根",
+  "docUrl": ""
 }
 ]

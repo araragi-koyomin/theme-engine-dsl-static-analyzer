@@ -27,6 +27,7 @@ import com.intellij.psi.xml.XmlTag;
 
 import com.huawei.theme.analysis.core.cli.InspectionConfig;
 import com.huawei.theme.analysis.core.cli.PipelineMode;
+import com.huawei.theme.analysis.core.macro.ContextRootResolver;
 import com.huawei.theme.analysis.core.macro.DiagnosticDedup;
 import com.huawei.theme.analysis.core.macro.DemacroedAst;
 import com.huawei.theme.analysis.core.macro.MacroExpander;
@@ -132,19 +133,45 @@ public class ThemeDslDiagnosticAnnotator implements Annotator {
                     ? file.getVirtualFile().getPath() : file.getName();
 
             DslFileNode normalAst = astProvider.getDslAst(filePath, content);
-            DemacroedAst demacroed = macroExpander.expand(normalAst);
+            // A function_*.xml is never analyzed standalone: its context is the script_*.xml
+            // that <Include>s it. Find that context root; if exactly one, demacro the sub-file
+            // with the <Include>'s params as the compile-time scope (errors at the sub's own
+            // source). If none/multiple, emit a single warning (MACRO-008/009) and demacro
+            // with an empty scope.
+            DemacroedAst demacroed;
+            List<Diagnostic> contextWarnings = new ArrayList<>();
+            String fileName = file.getName();
+            boolean isFunctionFile = fileName != null
+                    && fileName.startsWith("function_") && fileName.endsWith(".xml");
+            if (isFunctionFile) {
+                ContextRootResolver resolver = new ContextRootResolver(macroExpander);
+                List<String> roots = resolver.findContextRoots(filePath);
+                if (roots.size() == 1) {
+                    Map<String, String> params = resolver.extractIncludeParams(roots.get(0), fileName);
+                    Map<String, Object> scope = new HashMap<>();
+                    params.forEach(scope::put);
+                    demacroed = macroExpander.expand(normalAst, scope);
+                } else {
+                    demacroed = macroExpander.expand(normalAst);
+                    contextWarnings.add(roots.isEmpty()
+                            ? contextRootWarning(normalAst, filePath, ContextRootResolver.RULE_NO_CONTEXT_ROOT,
+                                    "Cannot find context root: no script_*.xml includes this function file")
+                            : contextRootWarning(normalAst, filePath, ContextRootResolver.RULE_MULTIPLE_CONTEXT_ROOT,
+                                    "Found " + roots.size() + " context roots (script_*.xml files including this function); analysis is ambiguous"));
+                }
+            } else {
+                demacroed = macroExpander.expand(normalAst);
+            }
             DslFileNode analysisAst = demacroed.getDemacroed();
             List<Diagnostic> diagnostics = diagnosticProvider.analyze(
                     analysisAst, repo, symbolTableBuilder,
                     PipelineMode.FULL,
                     InspectionConfig.builder().build(),
                     null);
-            if (!demacroed.getMacroDiagnostics().isEmpty()) {
-                List<Diagnostic> merged = new ArrayList<>(demacroed.getMacroDiagnostics());
-                merged.addAll(diagnostics);
-                diagnostics = merged;
-            }
-            diagnostics = DiagnosticDedup.dedup(diagnostics);
+            List<Diagnostic> merged = new ArrayList<>(demacroed.getMacroDiagnostics());
+            merged.addAll(contextWarnings);
+            merged.addAll(diagnostics);
+            diagnostics = DiagnosticDedup.dedup(merged);
             Map<PsiElement, List<Diagnostic>> map = new HashMap<>();
             for (Diagnostic diagnostic : diagnostics) {
                 int offset = lineColToOffset(document, diagnostic.getLine(), diagnostic.getColumn());
@@ -166,6 +193,20 @@ public class ThemeDslDiagnosticAnnotator implements Annotator {
             LOG.warn("ThemeDSL diagnostic analysis failed for " + file.getName(), e);
             return new CachedAnalysis(modStamp, Collections.emptyMap());
         }
+    }
+
+    private static Diagnostic contextRootWarning(DslFileNode ast, String filePath, String ruleId, String message) {
+        Diagnostic.DiagnosticBuilder b = Diagnostic.builder()
+                .severity(DiagnosticSeverity.WARNING)
+                .ruleId(ruleId)
+                .message(message)
+                .filePath(filePath);
+        if (ast.getRootElement() != null) {
+            b.astNode(ast.getRootElement());
+        } else {
+            b.line(1).column(0);
+        }
+        return b.build();
     }
 
     private static PsiElement walkUpToTarget(PsiElement leaf) {

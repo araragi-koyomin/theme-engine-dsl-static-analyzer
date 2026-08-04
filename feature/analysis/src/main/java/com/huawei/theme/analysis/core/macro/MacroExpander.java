@@ -47,6 +47,11 @@ public final class MacroExpander {
         return fileLoader.loadFile(path);
     }
 
+    @Nullable
+    public java.util.List<String> loadFileNames(@NotNull String dirPath) {
+        return fileLoader.listFiles(dirPath);
+    }
+
     @NotNull
     public DslFileNode buildNormalAst(@NotNull String path, @NotNull String content) {
         return new AstBuilder(ruleRepository).getDslAst(path, content);
@@ -54,13 +59,24 @@ public final class MacroExpander {
 
     @NotNull
     public DemacroedAst expand(@NotNull DslFileNode normal) {
+        return expand(normal, new HashMap<>());
+    }
+
+    /**
+     * Demacro with a non-empty initial compile-time scope — used when a {@code function_*.xml}
+     * is analyzed standalone with the params the main's {@code <Include>} passes (Phase 2
+     * context-root). Errors land on the sub-file's own source positions (no include-node remap,
+     * since the sub is the file being analyzed, not the main).
+     */
+    @NotNull
+    public DemacroedAst expand(@NotNull DslFileNode normal, @NotNull Map<String, Object> initialScope) {
         DemacroedAst.Builder builder = DemacroedAst.builder(normal.getFilePath());
         DslElementNode root = normal.getRootElement();
         DslFileNode demacroedFile = cloneFile(normal);
         if (root == null) {
             return builder.build(demacroedFile);
         }
-        List<DslElementNode> expandedRoots = expandElement(root, new HashMap<>(), builder);
+        List<DslElementNode> expandedRoots = expandElement(root, initialScope, builder);
         if (expandedRoots.isEmpty()) {
             return builder.build(demacroedFile);
         }
