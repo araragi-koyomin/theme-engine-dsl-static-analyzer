@@ -14,23 +14,42 @@ import com.huawei.theme.analysis.core.shared.ast.DslAttributeNode;
 import com.huawei.theme.analysis.core.shared.ast.DslAttributeValueNode;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
+import com.huawei.theme.analysis.core.syntaxanalysis.AstBuilder;
 import com.huawei.theme.analysis.core.syntaxanalysis.ExpressionEmbedder;
 
 public final class MacroExpander {
 
-    public static final String RULE_EXPANSION_BUDGET = "MACRO-003";
+    public static final String RULE_EXPANSION_BUDGET = "MACRO-005";
     public static final int MAX_TOTAL_LOOP_ITERATIONS = 100_000;
 
     private final RuleRepository ruleRepository;
     private final List<MacroHandler> handlers;
+    private final MacroFileLoader fileLoader;
 
     public MacroExpander(@Nullable RuleRepository ruleRepository) {
-        this(ruleRepository, List.of(new ForHandler(), new ForeachHandler(), new IfHandler()));
+        this(ruleRepository, List.of(new ForHandler(), new ForeachHandler(), new IfHandler(), new IncludeHandler()));
     }
 
     public MacroExpander(@Nullable RuleRepository ruleRepository, @NotNull List<MacroHandler> handlers) {
+        this(ruleRepository, handlers, MacroFileLoader.DISK);
+    }
+
+    public MacroExpander(@Nullable RuleRepository ruleRepository,
+                         @NotNull List<MacroHandler> handlers,
+                         @NotNull MacroFileLoader fileLoader) {
         this.ruleRepository = ruleRepository;
         this.handlers = handlers;
+        this.fileLoader = fileLoader;
+    }
+
+    @Nullable
+    public String loadFile(@NotNull String path) {
+        return fileLoader.loadFile(path);
+    }
+
+    @NotNull
+    public DslFileNode buildNormalAst(@NotNull String path, @NotNull String content) {
+        return new AstBuilder(ruleRepository).getDslAst(path, content);
     }
 
     @NotNull

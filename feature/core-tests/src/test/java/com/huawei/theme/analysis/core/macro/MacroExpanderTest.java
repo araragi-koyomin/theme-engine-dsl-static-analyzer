@@ -1,6 +1,9 @@
 package com.huawei.theme.analysis.core.macro;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -275,6 +278,100 @@ class MacroExpanderTest {
         assertEquals("Var", dRoot.getChildElements().get(0).getTagName());
         assertEquals("v", attr(dRoot.getChildElements().get(0), "name").getValue().getRawValue());
         assertTrue(result.getMacroDiagnostics().isEmpty());
+    }
+
+    @Test
+    void includeExpandsSubFileWithParams() throws Exception {
+        Path dir = Files.createTempDirectory("macro-include-");
+        writeFile(dir, "function_greeting.xml",
+                "<Group><Var name=\"msg_%{who}\" type=\"string\"/></Group>");
+        String main = "<Lockscreen><Include name=\"function_greeting.xml\" who=\"World\"/></Lockscreen>";
+        DslFileNode ast = astBuilder.getDslAst(dir.resolve("main.xml").toString(), main);
+        DemacroedAst result = expander.expand(ast);
+        DslElementNode dRoot = result.getDemacroed().getRootElement();
+        assertEquals(1, dRoot.getChildElements().size());
+        DslElementNode group = dRoot.getChildElements().get(0);
+        assertEquals("Group", group.getTagName());
+        DslElementNode v = group.getChildElements().get(0);
+        assertEquals("Var", v.getTagName());
+        assertEquals("msg_World", attr(v, "name").getValue().getRawValue());
+        assertTrue(result.getMacroDiagnostics().isEmpty());
+    }
+
+    @Test
+    void includeRecursionIntoAnotherFunction() throws Exception {
+        Path dir = Files.createTempDirectory("macro-include-rec-");
+        writeFile(dir, "function_greeting.xml",
+                "<Group><Var name=\"msg_%{who}\" type=\"string\"/></Group>");
+        writeFile(dir, "function_nested.xml",
+                "<Group><Include name=\"function_greeting.xml\" who=\"Inner\"/></Group>");
+        String main = "<Lockscreen><Include name=\"function_nested.xml\"/></Lockscreen>";
+        DslFileNode ast = astBuilder.getDslAst(dir.resolve("main.xml").toString(), main);
+        DemacroedAst result = expander.expand(ast);
+        DslElementNode dRoot = result.getDemacroed().getRootElement();
+        // outer Group (function_nested) -> inner Group (function_greeting) -> <Var name="msg_Inner">
+        DslElementNode outer = dRoot.getChildElements().get(0);
+        assertEquals("Group", outer.getTagName());
+        DslElementNode inner = outer.getChildElements().get(0);
+        assertEquals("Group", inner.getTagName());
+        DslElementNode v = inner.getChildElements().get(0);
+        assertEquals("msg_Inner", attr(v, "name").getValue().getRawValue());
+    }
+
+    @Test
+    void includeSubNodesRemapToIncludePosition() throws Exception {
+        Path dir = Files.createTempDirectory("macro-include-pos-");
+        writeFile(dir, "function_greeting.xml",
+                "<Group><Var name=\"msg_%{who}\" type=\"string\"/></Group>");
+        String main = "<Lockscreen>\n  <Include name=\"function_greeting.xml\" who=\"World\"/>\n</Lockscreen>";
+        DslFileNode ast = astBuilder.getDslAst(dir.resolve("main.xml").toString(), main);
+        DemacroedAst result = expander.expand(ast);
+        // The <Include> is at line 2; all demacoed sub nodes must be remapped to line 2 so that
+        // sub-file diagnostics land on the include site.
+        DslElementNode group = result.getDemacroed().getRootElement().getChildElements().get(0);
+        assertEquals(2, group.getLine());
+        DslElementNode v = group.getChildElements().get(0);
+        assertEquals(2, v.getLine());
+    }
+
+    @Test
+    void includeInvalidNameEmitsMacro006() throws Exception {
+        Path dir = Files.createTempDirectory("macro-include-inv-");
+        String main = "<Lockscreen><Include name=\"not_a_function.xml\"/></Lockscreen>";
+        DslFileNode ast = astBuilder.getDslAst(dir.resolve("main.xml").toString(), main);
+        DemacroedAst result = expander.expand(ast);
+        assertTrue(result.getMacroDiagnostics().stream()
+                .anyMatch(d -> IncludeHandler.RULE_INCLUDE_INVALID_NAME.equals(d.getRuleId())));
+    }
+
+    @Test
+    void includeFileNotFoundEmitsMacro007() throws Exception {
+        Path dir = Files.createTempDirectory("macro-include-nf-");
+        String main = "<Lockscreen><Include name=\"function_nonexistent.xml\"/></Lockscreen>";
+        DslFileNode ast = astBuilder.getDslAst(dir.resolve("main.xml").toString(), main);
+        DemacroedAst result = expander.expand(ast);
+        assertTrue(result.getMacroDiagnostics().stream()
+                .anyMatch(d -> IncludeHandler.RULE_INCLUDE_NOT_FOUND.equals(d.getRuleId())));
+    }
+
+    @Test
+    void includeSubNodeRecordsOwningFilePath() throws Exception {
+        Path dir = Files.createTempDirectory("macro-include-file-");
+        writeFile(dir, "function_greeting.xml",
+                "<Group><Var name=\"msg_%{who}\" type=\"string\"/></Group>");
+        String main = "<Lockscreen><Include name=\"function_greeting.xml\" who=\"World\"/></Lockscreen>";
+        DslFileNode ast = astBuilder.getDslAst(dir.resolve("main.xml").toString(), main);
+        DemacroedAst result = expander.expand(ast);
+        DslElementNode group = result.getDemacroed().getRootElement().getChildElements().get(0);
+        // The demacoed Group's normal node belongs to the sub-file, not the main.
+        Optional<DslElementNode> normalGroup = result.getNormalNode(group);
+        assertTrue(normalGroup.isPresent());
+        assertEquals(dir.resolve("function_greeting.xml").toString().replace('\\', '/'),
+                result.getFilePathOfNormalNode(normalGroup.get()).replace('\\', '/'));
+    }
+
+    private static void writeFile(Path dir, String name, String content) throws Exception {
+        Files.writeString(dir.resolve(name), content, StandardCharsets.UTF_8);
     }
 
     /**

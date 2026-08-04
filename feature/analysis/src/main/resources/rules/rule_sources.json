@@ -524,5 +524,20 @@
   "category": "MACRO",
   "description": "<Foreach> 宏无效（缺失/非法 name|in）",
   "docUrl": ""
+}, {
+  "ruleId": "MACRO-005",
+  "category": "MACRO",
+  "description": "宏展开超出总循环预算（100000 次迭代）",
+  "docUrl": ""
+}, {
+  "ruleId": "MACRO-006",
+  "category": "MACRO",
+  "description": "<Include> name 不匹配 function_*.xml",
+  "docUrl": ""
+}, {
+  "ruleId": "MACRO-007",
+  "category": "MACRO",
+  "description": "<Include> 引用的文件未找到或无法解析",
+  "docUrl": ""
 }
 ]

@@ -18,20 +18,26 @@ import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 public final class DemacroedAst {
 
     private final DslFileNode demacroed;
+    private final String mainFilePath;
     private final Map<DslElementNode, DslElementNode> demacroedToNormal;
     private final Map<DslElementNode, List<DslElementNode>> normalToDemacroed;
     private final Map<DslElementNode, Map<String, Object>> scopeByDemacroedNode;
+    private final Map<DslElementNode, String> normalNodeFilePath;
     private final List<Diagnostic> macroDiagnostics;
 
     DemacroedAst(@NotNull DslFileNode demacroed,
+                 @NotNull String mainFilePath,
                  @NotNull IdentityHashMap<DslElementNode, DslElementNode> demacroedToNormal,
                  @NotNull IdentityHashMap<DslElementNode, List<DslElementNode>> normalToDemacroed,
                  @NotNull IdentityHashMap<DslElementNode, Map<String, Object>> scopeByDemacroedNode,
+                 @NotNull IdentityHashMap<DslElementNode, String> normalNodeFilePath,
                  @NotNull List<Diagnostic> macroDiagnostics) {
         this.demacroed = demacroed;
+        this.mainFilePath = mainFilePath;
         this.demacroedToNormal = immutableIdentityMap(demacroedToNormal);
         this.normalToDemacroed = immutableNodeLists(normalToDemacroed);
         this.scopeByDemacroedNode = immutableScopes(scopeByDemacroedNode);
+        this.normalNodeFilePath = immutableIdentityMap(normalNodeFilePath);
         this.macroDiagnostics = List.copyOf(macroDiagnostics);
     }
 
@@ -70,6 +76,24 @@ public final class DemacroedAst {
         return macroDiagnostics;
     }
 
+    public String getMainFilePath() {
+        return mainFilePath;
+    }
+
+    /**
+     * The file path that the given NORMAL node belongs to. For main-file nodes this is
+     * the main file's path (the default); for nodes pulled in via {@code <Include>} it is
+     * the included sub-file's path (recorded by {@link IncludeHandler}). Used by the editor
+     * (Phase 3) to look up the right per-file PSI↔normal map when resolving a demacroed
+     * declaration back to PSI.
+     */
+    public String getFilePathOfNormalNode(@Nullable DslElementNode normalNode) {
+        if (normalNode == null) {
+            return mainFilePath;
+        }
+        return normalNodeFilePath.getOrDefault(normalNode, mainFilePath);
+    }
+
     static Builder builder(@NotNull String filePath) {
         return new Builder(filePath);
     }
@@ -101,6 +125,7 @@ public final class DemacroedAst {
         final IdentityHashMap<DslElementNode, DslElementNode> demacroedToNormal = new IdentityHashMap<>();
         final IdentityHashMap<DslElementNode, List<DslElementNode>> normalToDemacroed = new IdentityHashMap<>();
         final IdentityHashMap<DslElementNode, Map<String, Object>> scopeByDemacroedNode = new IdentityHashMap<>();
+        final IdentityHashMap<DslElementNode, String> normalNodeFilePath = new IdentityHashMap<>();
         final List<Diagnostic> diagnostics = new java.util.ArrayList<>();
         int loopIterations;
         boolean expansionBudgetExceeded;
@@ -116,6 +141,15 @@ public final class DemacroedAst {
 
         void recordScope(@NotNull DslElementNode demacroed, @NotNull Map<String, Object> scope) {
             scopeByDemacroedNode.put(demacroed, new HashMap<>(scope));
+        }
+
+        /**
+         * Record that a normal-AST node belongs to a particular file (the main file by default;
+         * an included sub-file's path for nodes pulled in via {@code <Include>}). Lets the editor
+         * pick the right per-file PSI↔normal map when resolving a demacroed node back to PSI.
+         */
+        void recordFile(@NotNull DslElementNode normalNode, @NotNull String filePath) {
+            normalNodeFilePath.put(normalNode, filePath);
         }
 
         boolean tryConsumeLoopIteration(@NotNull DslElementNode anchor) {
@@ -150,8 +184,8 @@ public final class DemacroedAst {
         }
 
         DemacroedAst build(@NotNull DslFileNode demacroed) {
-            return new DemacroedAst(demacroed, demacroedToNormal, normalToDemacroed,
-                    scopeByDemacroedNode, diagnostics);
+            return new DemacroedAst(demacroed, filePath, demacroedToNormal, normalToDemacroed,
+                    scopeByDemacroedNode, normalNodeFilePath, diagnostics);
         }
     }
 }
