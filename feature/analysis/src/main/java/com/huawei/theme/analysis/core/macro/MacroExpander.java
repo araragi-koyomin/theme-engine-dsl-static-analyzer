@@ -19,7 +19,10 @@ import com.huawei.theme.analysis.core.syntaxanalysis.ExpressionEmbedder;
 public final class MacroExpander {
 
     public static final String RULE_EXPANSION_BUDGET = "MACRO-005";
+    public static final String RULE_INCLUDE_BUDGET = "MACRO-010";
     public static final int MAX_TOTAL_LOOP_ITERATIONS = 100_000;
+    public static final int MAX_TOTAL_INCLUDE_EXPANSIONS = 1_000;
+    public static final int MAX_INCLUDE_NESTING_DEPTH = 128;
 
     private final RuleRepository ruleRepository;
     private final List<MacroHandler> handlers;
@@ -55,36 +58,26 @@ public final class MacroExpander {
         return fileLoader.loadFile(path);
     }
 
-    @Nullable
-    public java.util.List<String> loadFileNames(@NotNull String dirPath) {
-        return fileLoader.listFiles(dirPath);
-    }
-
     @NotNull
     public DslFileNode buildNormalAst(@NotNull String path, @NotNull String content) {
         return normalAstFactory.build(path, content);
     }
 
     @NotNull
-    public DemacroedAst expand(@NotNull DslFileNode normal) {
-        return expand(normal, new HashMap<>());
+    DslFileNode buildNormalAst(@NotNull String path, @NotNull String content,
+                               @NotNull DemacroedAst.Builder builder) {
+        return builder.getOrBuildNormalAst(path, content, normalAstFactory);
     }
 
-    /**
-     * Demacro with a non-empty initial compile-time scope — used when a {@code function_*.xml}
-     * is analyzed standalone with the params the main's {@code <Include>} passes (Phase 2
-     * context-root). Errors land on the sub-file's own source positions (no include-node remap,
-     * since the sub is the file being analyzed, not the main).
-     */
     @NotNull
-    public DemacroedAst expand(@NotNull DslFileNode normal, @NotNull Map<String, Object> initialScope) {
+    public DemacroedAst expand(@NotNull DslFileNode normal) {
         DemacroedAst.Builder builder = DemacroedAst.builder(normal.getFilePath());
         DslElementNode root = normal.getRootElement();
         DslFileNode demacroedFile = cloneFile(normal);
         if (root == null) {
             return builder.build(demacroedFile);
         }
-        List<DslElementNode> expandedRoots = expandElement(root, initialScope, builder);
+        List<DslElementNode> expandedRoots = expandElement(root, new HashMap<>(), builder);
         if (expandedRoots.isEmpty()) {
             return builder.build(demacroedFile);
         }

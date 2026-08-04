@@ -13,7 +13,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.intellij.psi.xml.XmlFile;
 
-import com.huawei.theme.analysis.core.macro.ContextRootResolver;
 import com.huawei.theme.analysis.core.macro.DemacroedAst;
 import com.huawei.theme.analysis.core.macro.DiagnosticDedup;
 import com.huawei.theme.analysis.core.macro.IncludeInstance;
@@ -25,6 +24,8 @@ import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
 
 final class ContextDiagnosticProjector {
 
+    static final String RULE_NO_CONTEXT_ROOT = "MACRO-008";
+
     private ContextDiagnosticProjector() {
     }
 
@@ -33,7 +34,9 @@ final class ContextDiagnosticProjector {
                                     @NotNull List<DslAnalysisContext> contexts) {
         if (!isFunctionFile(file.getName())) {
             return contexts.isEmpty() ? List.of()
-                    : DiagnosticDedup.dedup(contexts.get(0).getDiagnostics());
+                    : DiagnosticDedup.dedup(contexts.get(0).getDiagnostics()).stream()
+                            .map(ContextDiagnosticProjector::detachedCopy)
+                            .toList();
         }
         String requestedPath = normalizePath(pathOf(file));
         int totalInstances = contexts.stream()
@@ -139,13 +142,30 @@ final class ContextDiagnosticProjector {
     private static Diagnostic noContextDiagnostic(@NotNull String path) {
         return Diagnostic.builder()
                 .severity(DiagnosticSeverity.WARNING)
-                .ruleId(ContextRootResolver.RULE_NO_CONTEXT_ROOT)
+                .ruleId(RULE_NO_CONTEXT_ROOT)
                 .message("Cannot find context root")
                 .filePath(path)
                 .line(1)
                 .column(0)
                 .endLine(1)
                 .endColumn(1)
+                .build();
+    }
+
+    @NotNull
+    private static Diagnostic detachedCopy(@NotNull Diagnostic source) {
+        return Diagnostic.builder()
+                .severity(source.getSeverity())
+                .ruleId(source.getRuleId())
+                .message(source.getMessage())
+                .filePath(source.getFilePath())
+                .line(source.getLine())
+                .column(source.getColumn())
+                .endLine(source.getEndLine())
+                .endColumn(source.getEndColumn())
+                .suggestedFixes(source.getSuggestedFixes() == null
+                        ? List.of() : List.copyOf(source.getSuggestedFixes()))
+                .ruleDocUrl(source.getRuleDocUrl())
                 .build();
     }
 

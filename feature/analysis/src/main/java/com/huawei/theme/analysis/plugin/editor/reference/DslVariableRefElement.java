@@ -33,7 +33,7 @@ import org.antlr.intellij.adaptor.psi.ANTLRPsiNode;
 
 import com.huawei.theme.analysis.core.expression.generated.DslExpressionLexer;
 import com.huawei.theme.analysis.core.expression.generated.DslExpressionParser;
-import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
+import com.huawei.theme.analysis.plugin.ast.DslAstService;
 
 /**
  * The {@code atVarRef}/{@code hashVarRef} PSI node (in an injected DE fragment),
@@ -163,8 +163,11 @@ public class DslVariableRefElement extends ANTLRPsiNode implements PsiPolyVarian
             return new Object[0];
         }
         List<LookupElement> variants = new ArrayList<>();
-        for (VarDeclaration d : VarNameResolver.visibleDeclarations(project, hostFile, hostTagOf())) {
-            String typeText = d.isGlobal() ? VarNameResolver.typeName(d.getType()) : "Var";
+        for (VarNameResolver.ContextualDeclaration contextual
+                : VarNameResolver.visibleContextualDeclarations(project, hostFile, hostTagOf())) {
+            DslAstService.ContextDeclaration d = contextual.getDeclaration();
+            String baseType = d.isGlobal() ? VarNameResolver.typeName(d.getType()) : "Var";
+            String typeText = VarNameResolver.contextualTypeText(contextual, baseType);
             variants.add(LookupElementBuilder.create(d.getName())
                     .withIcon(AllIcons.Nodes.Variable)
                     .withTypeText(typeText));

@@ -545,9 +545,9 @@
   "description": "function 文件找不到引用它的 script_*.xml 上下文根",
   "docUrl": ""
 }, {
-  "ruleId": "MACRO-009",
+  "ruleId": "MACRO-010",
   "category": "MACRO",
-  "description": "function 文件找到多个引用它的 script_*.xml 上下文根",
+  "description": "<Include> 展开超过总预算或嵌套深度预算",
   "docUrl": ""
 }
 ]

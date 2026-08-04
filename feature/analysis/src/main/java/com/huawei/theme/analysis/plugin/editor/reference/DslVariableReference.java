@@ -19,7 +19,7 @@ import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 
-import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
+import com.huawei.theme.analysis.plugin.ast.DslAstService;
 
 /**
  * A host-side reference from an {@code @name}/{@code #name} usage (inside an
@@ -68,8 +68,11 @@ public class DslVariableReference extends PsiPolyVariantReferenceBase<XmlAttribu
         }
         XmlTag hostTag = PsiTreeUtil.getParentOfType(getElement(), XmlTag.class);
         List<LookupElement> variants = new ArrayList<>();
-        for (VarDeclaration d : VarNameResolver.visibleDeclarations(project, file, hostTag)) {
-            String typeText = d.isGlobal() ? VarNameResolver.typeName(d.getType()) : "Var";
+        for (VarNameResolver.ContextualDeclaration contextual
+                : VarNameResolver.visibleContextualDeclarations(project, file, hostTag)) {
+            DslAstService.ContextDeclaration d = contextual.getDeclaration();
+            String baseType = d.isGlobal() ? VarNameResolver.typeName(d.getType()) : "Var";
+            String typeText = VarNameResolver.contextualTypeText(contextual, baseType);
             variants.add(LookupElementBuilder.create(d.getName())
                     .withIcon(AllIcons.Nodes.Variable)
                     .withTypeText(typeText));

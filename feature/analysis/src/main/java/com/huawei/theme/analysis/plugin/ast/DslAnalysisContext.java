@@ -49,7 +49,7 @@ public final class DslAnalysisContext {
     }
 
     @NotNull
-    public DemacroedAst getDemacroed() {
+    DemacroedAst getDemacroed() {
         return demacroed;
     }
 
@@ -59,12 +59,12 @@ public final class DslAnalysisContext {
     }
 
     @NotNull
-    public List<Diagnostic> getDiagnostics() {
+    List<Diagnostic> getDiagnostics() {
         return diagnostics;
     }
 
     @NotNull
-    public List<IncludeInstance> getIncludeInstances(@NotNull String filePath) {
+    List<IncludeInstance> getIncludeInstances(@NotNull String filePath) {
         return demacroed.getIncludeInstances(filePath);
     }
 

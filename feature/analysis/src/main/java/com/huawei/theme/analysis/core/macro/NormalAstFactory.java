@@ -9,7 +9,7 @@ import com.huawei.theme.analysis.core.shared.ast.DslFileNode;
  * Builds a normal (pre-demacro) AST for a file, given its path + text content.
  *
  * <p>The default (text) implementation uses {@code AstBuilder} — fine for the CLI and the
- * text-based diagnostic annotator. The editor (Phase 3) supplies a PSI-backed implementation
+ * text-based diagnostic annotator. The editor supplies a PSI-backed implementation
  * that loads the sub-file's {@code XmlFile} via {@code PsiManager.findFile} and builds the
  * normal AST via {@code PsiAstBuilder}, so the demacroed↔normal map's sub entries are
  * PSI-aligned (same node instances the editor's per-file {@code DslAstTree} maps to PSI).

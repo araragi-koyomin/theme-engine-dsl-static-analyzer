@@ -71,6 +71,44 @@ public class DslAnalysisContextTest extends LightPlatformTestCase {
         assertTrue(unresolved.getMessage().contains("1/1 include contexts"));
     }
 
+    public void testContextIndexUsesExpandedDynamicIncludeName() {
+        projectFile("script.xml", "<Lockscreen><For name='i' from='1' to='1'>"
+                + "<Include name='function_%{i}.xml' value='%{i}'/>"
+                + "</For></Lockscreen>");
+        XmlFile child = projectFile("function_1.xml", "<Var name='child_%{value}'/>");
+
+        List<DslAnalysisContext> contexts = DslAstService.getInstance(getProject()).getAnalysisContexts(child);
+
+        assertEquals(1, contexts.size());
+        assertEquals(1, contexts.get(0).getIncludeInstances(child.getVirtualFile().getPath()).size());
+    }
+
+    public void testContextIndexIgnoresIncludeRemovedByMacroExpansion() {
+        projectFile("script.xml", "<Lockscreen><If cond='1==2'>"
+                + "<Include name='function_dead.xml'/>"
+                + "</If></Lockscreen>");
+        XmlFile child = projectFile("function_dead.xml", "<Var name='dead'/>");
+
+        DslAstService service = DslAstService.getInstance(getProject());
+
+        assertTrue(service.getAnalysisContexts(child).isEmpty());
+        assertEquals(ContextDiagnosticProjector.RULE_NO_CONTEXT_ROOT,
+                service.getProjectedDiagnostics(child).get(0).getRuleId());
+    }
+
+    public void testUnrelatedFunctionEditDoesNotRebuildRootContext() {
+        projectFile("script.xml", "<Lockscreen><Include name='function_used.xml'/></Lockscreen>");
+        XmlFile child = projectFile("function_used.xml", "<Var name='used'/>");
+        projectFile("function_unrelated.xml", "<Var name='before'/>");
+        DslAstService service = DslAstService.getInstance(getProject());
+        DslAnalysisContext before = service.getAnalysisContexts(child).get(0);
+
+        projectFile("function_unrelated.xml", "<Var name='after'/>");
+        DslAnalysisContext after = service.getAnalysisContexts(child).get(0);
+
+        assertSame(before, after);
+    }
+
     private XmlFile projectFile(String name, String content) {
         XmlFile[] result = new XmlFile[1];
         ApplicationManager.getApplication().runWriteAction((Runnable) () -> {

@@ -18,21 +18,15 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.ResolveResult;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 
-import com.huawei.theme.analysis.core.macro.CompileTimeInterpolator;
-import com.huawei.theme.analysis.core.macro.DemacroedAst;
-import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
 import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
-import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.type.DslArrayType;
 import com.huawei.theme.analysis.core.shared.type.DslStringType;
 import com.huawei.theme.analysis.core.shared.type.DslType;
 import com.huawei.theme.analysis.plugin.ast.DslAstService;
-import com.huawei.theme.analysis.plugin.ast.DslAstTree;
 import com.huawei.theme.analysis.plugin.editor.varname.VarNameElement;
 
 public final class VarNameResolver {
@@ -72,43 +66,22 @@ public final class VarNameResolver {
         Set<PsiElement> seenTargets = new LinkedHashSet<>();
         List<PsiElement> result = new ArrayList<>();
         for (DslAstService.ContextTarget contextTarget : svc.demacroedTargetsWithContext(hostFile, hostTag)) {
-            DslElementNode copy = contextTarget.getNode();
-            DemacroedAst demacroed = contextTarget.getContext().getDemacroed();
-            Map<String, Object> scope = demacroed.getCompileScope(copy);
-            String resolvedName = CompileTimeInterpolator.interpolate(
-                    varName, scope, new ArrayList<>(), copy, "resolve");
-            Optional<VarDeclaration> declOpt = svc.scopeOf(contextTarget).lookup(resolvedName);
+            String resolvedName = svc.interpolateName(contextTarget, varName);
+            Optional<DslAstService.ContextDeclaration> declOpt =
+                    svc.lookupDeclaration(contextTarget, resolvedName);
             if (declOpt.isEmpty()) {
                 continue;
             }
-            VarDeclaration d = declOpt.get();
-            if (d.isGlobal() || d.getAstNode() == null || d.getHostAttrName() == null) {
+            DslAstService.ContextDeclaration d = declOpt.get();
+            if (d.isGlobal()) {
                 continue;
             }
-            // Two-hop: demacoed decl node -> normal node -> PSI XmlTag. The normal node may
-            // belong to an included sub-file (recorded via DemacroedAst.getFilePathOfNormalNode),
-            // so pick the right per-file DslAstTree (main or cached sub) for the PSI lookup —
-            // this is what lets jump-to-def navigate into an included sub-file's source.
-            Optional<DslElementNode> normalDecl = demacroed.getNormalNode(d.getAstNode());
-            if (normalDecl.isEmpty()) {
+            Optional<XmlAttributeValue> nameValue = svc.getDeclarationValue(contextTarget, d);
+            if (nameValue.isEmpty()) {
                 continue;
             }
-            String ownerFile = demacroed.getFilePathOfNormalNode(normalDecl.get());
-            DslAstTree ownerTree = svc.getTreeForFile(contextTarget, ownerFile);
-            Optional<XmlTag> declTagOpt = ownerTree.getTag(normalDecl.get());
-            if (declTagOpt.isEmpty()) {
-                continue;
-            }
-            XmlAttribute attr = declTagOpt.get().getAttribute(d.getHostAttrName());
-            if (attr == null) {
-                continue;
-            }
-            XmlAttributeValue nameValue = attr.getValueElement();
-            if (nameValue == null) {
-                continue;
-            }
-            VarNameElement vne = findVarNameElement(project, nameValue);
-            PsiElement target = vne != null ? vne : nameValue;
+            VarNameElement vne = findVarNameElement(project, nameValue.get());
+            PsiElement target = vne != null ? vne : nameValue.get();
             if (seenTargets.add(target)) {
                 result.add(target);
             }
@@ -116,39 +89,84 @@ public final class VarNameResolver {
         return result;
     }
 
-    public static Optional<VarDeclaration> lookupDeclaration(@NotNull Project project,
-                                                              @NotNull XmlFile hostFile,
-                                                              @Nullable XmlTag hostTag,
-                                                              @NotNull String varName) {
+    public static Optional<ContextualDeclaration> lookupContextualDeclaration(
+            @NotNull Project project,
+            @NotNull XmlFile hostFile,
+            @Nullable XmlTag hostTag,
+            @NotNull String varName) {
         DslAstService svc = DslAstService.getInstance(project);
         List<DslAstService.ContextTarget> targets = svc.demacroedTargetsWithContext(hostFile, hostTag);
         if (targets.isEmpty()) {
             return Optional.empty();
         }
-        // A raw reference name like v_%{i} (inside a <For> body) must be interpolated with
-        // the demacroed copy's compile-time scope before lookup, so it matches the copy's
-        // concrete name v_1 in the demacroed SymbolTable. Clean names pass through unchanged.
-        DslAstService.ContextTarget contextTarget = targets.get(0);
-        DslElementNode target = contextTarget.getNode();
-        Map<String, Object> scope = contextTarget.getContext().getDemacroed().getCompileScope(target);
-        String resolvedName = CompileTimeInterpolator.interpolate(
-                varName, scope, new ArrayList<>(), target, "resolve");
-        SymbolTable symbolTable = svc.scopeOf(contextTarget);
-        return symbolTable.lookup(resolvedName);
+        Set<String> allOccurrences = occurrenceKeys(svc, targets);
+        DeclarationAccumulator accumulator = new DeclarationAccumulator();
+        for (DslAstService.ContextTarget contextTarget : targets) {
+            String resolvedName = svc.interpolateName(contextTarget, varName);
+            svc.lookupDeclaration(contextTarget, resolvedName).ifPresent(declaration ->
+                    accumulator.add(declaration, svc.getOccurrenceKey(contextTarget)));
+        }
+        return accumulator.isEmpty() ? Optional.empty()
+                : Optional.of(accumulator.build(allOccurrences.size()));
     }
 
     public static List<VarDeclaration> visibleDeclarations(@NotNull Project project,
                                                             @NotNull XmlFile hostFile,
                                                             @Nullable XmlTag hostTag) {
+        return visibleContextualDeclarations(project, hostFile, hostTag).stream()
+                .map(contextual -> {
+                    DslAstService.ContextDeclaration declaration = contextual.getDeclaration();
+                    return VarDeclaration.builder()
+                            .name(declaration.getName())
+                            .type(declaration.getType())
+                            .isGlobal(declaration.isGlobal())
+                            .hostAttrName(declaration.getHostAttrName())
+                            .build();
+                })
+                .toList();
+    }
+
+    public static List<ContextualDeclaration> visibleContextualDeclarations(@NotNull Project project,
+                                                                              @NotNull XmlFile hostFile,
+                                                                              @Nullable XmlTag hostTag) {
         DslAstService svc = DslAstService.getInstance(project);
-        Map<String, VarDeclaration> declarations = new LinkedHashMap<>();
-        for (DslAstService.ContextTarget target : svc.demacroedTargetsWithContext(hostFile, hostTag)) {
-            SymbolTable scope = svc.scopeOf(target);
-            for (VarDeclaration declaration : scope.visibleDeclarations()) {
-                declarations.putIfAbsent(declaration.getName(), declaration);
+        List<DslAstService.ContextTarget> targets = svc.demacroedTargetsWithContext(hostFile, hostTag);
+        Set<String> allOccurrences = occurrenceKeys(svc, targets);
+        Map<String, DeclarationAccumulator> declarations = new LinkedHashMap<>();
+        for (DslAstService.ContextTarget target : targets) {
+            String occurrence = svc.getOccurrenceKey(target);
+            for (DslAstService.ContextDeclaration declaration : svc.visibleDeclarations(target)) {
+                declarations.computeIfAbsent(declaration.getName(), ignored -> new DeclarationAccumulator())
+                        .add(declaration, occurrence);
             }
         }
-        return List.copyOf(declarations.values());
+        return declarations.values().stream()
+                .map(accumulator -> accumulator.build(allOccurrences.size()))
+                .toList();
+    }
+
+    @NotNull
+    private static Set<String> occurrenceKeys(@NotNull DslAstService service,
+                                               @NotNull List<DslAstService.ContextTarget> targets) {
+        Set<String> result = new LinkedHashSet<>();
+        for (DslAstService.ContextTarget target : targets) {
+            result.add(service.getOccurrenceKey(target));
+        }
+        return result;
+    }
+
+    @NotNull
+    public static String contextualTypeText(@NotNull ContextualDeclaration contextual,
+                                             @NotNull String baseType) {
+        List<String> details = new ArrayList<>();
+        if (contextual.hasConflictingTypes()) {
+            details.add("conflicting types");
+        }
+        if (contextual.getAvailableContexts() < contextual.getTotalContexts()) {
+            details.add("available " + contextual.getAvailableContexts() + "/"
+                    + contextual.getTotalContexts() + " contexts");
+        }
+        return details.isEmpty() ? baseType : baseType + " · " + String.join(" · ", details);
     }
 
     public static String sigilOf(@Nullable DslType type) {
@@ -200,6 +218,64 @@ public final class VarNameResolver {
         @Override
         public boolean isValidResult() {
             return element != null && element.isValid();
+        }
+    }
+
+    public static final class ContextualDeclaration {
+        private final DslAstService.ContextDeclaration declaration;
+        private final int availableContexts;
+        private final int totalContexts;
+        private final boolean conflictingTypes;
+
+        private ContextualDeclaration(@NotNull DslAstService.ContextDeclaration declaration,
+                                      int availableContexts,
+                                      int totalContexts, boolean conflictingTypes) {
+            this.declaration = declaration;
+            this.availableContexts = availableContexts;
+            this.totalContexts = totalContexts;
+            this.conflictingTypes = conflictingTypes;
+        }
+
+        @NotNull
+        public DslAstService.ContextDeclaration getDeclaration() {
+            return declaration;
+        }
+
+        public int getAvailableContexts() {
+            return availableContexts;
+        }
+
+        public int getTotalContexts() {
+            return totalContexts;
+        }
+
+        public boolean hasConflictingTypes() {
+            return conflictingTypes;
+        }
+    }
+
+    private static final class DeclarationAccumulator {
+        private final List<DslAstService.ContextDeclaration> declarations = new ArrayList<>();
+        private final Set<String> occurrences = new LinkedHashSet<>();
+
+        private void add(@NotNull DslAstService.ContextDeclaration declaration,
+                         @NotNull String occurrence) {
+            declarations.add(declaration);
+            occurrences.add(occurrence);
+        }
+
+        private boolean isEmpty() {
+            return declarations.isEmpty();
+        }
+
+        @NotNull
+        private ContextualDeclaration build(int totalContexts) {
+            Set<String> types = new LinkedHashSet<>();
+            for (DslAstService.ContextDeclaration declaration : declarations) {
+                types.add(typeName(declaration.getType()));
+            }
+            return new ContextualDeclaration(declarations.get(0), occurrences.size(), totalContexts,
+                    types.size() > 1);
         }
     }
 }

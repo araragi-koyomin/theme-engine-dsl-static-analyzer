@@ -25,14 +25,15 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.util.PsiModificationTracker;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.xml.XmlAttribute;
+import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 
 import com.huawei.theme.analysis.core.cli.InspectionConfig;
 import com.huawei.theme.analysis.core.cli.PipelineMode;
-import com.huawei.theme.analysis.core.macro.ContextRootResolver;
+import com.huawei.theme.analysis.core.macro.CompileTimeInterpolator;
 import com.huawei.theme.analysis.core.macro.DemacroedAst;
 import com.huawei.theme.analysis.core.macro.ForeachHandler;
 import com.huawei.theme.analysis.core.macro.ForHandler;
@@ -47,14 +48,18 @@ import com.huawei.theme.analysis.core.semanticanalysis.DiagnosticProviderImpl;
 import com.huawei.theme.analysis.core.semanticanalysis.ScopeResolverImpl;
 import com.huawei.theme.analysis.core.semanticanalysis.SymbolTableBuilderImpl;
 import com.huawei.theme.analysis.core.semanticanalysis.model.SymbolTable;
+import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
 import com.huawei.theme.analysis.core.shared.ast.DslElementNode;
 import com.huawei.theme.analysis.core.shared.diagnostic.Diagnostic;
+import com.huawei.theme.analysis.core.shared.type.DslType;
 import com.huawei.theme.analysis.core.syntaxanalysis.AstBuilder;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
 
 public final class DslAstService {
 
     private static final Key<DslAnalysisContext> CACHE_KEY = Key.create("DslAstService.rootContext");
+    private static final Key<DirectoryContextIndex> DIRECTORY_INDEX_KEY =
+            Key.create("DslAstService.directoryContextIndex");
     private static final List<MacroHandler> HANDLERS =
             List.of(new ForHandler(), new ForeachHandler(), new IfHandler(), new IncludeHandler());
 
@@ -71,80 +76,26 @@ public final class DslAstService {
     }
 
     @NotNull
-    public List<DslAnalysisContext> getAnalysisContexts(@NotNull XmlFile xmlFile) {
+    List<DslAnalysisContext> getAnalysisContexts(@NotNull XmlFile xmlFile) {
         XmlFile physicalFile = physicalFileOf(xmlFile);
         if (!isFunctionFile(physicalFile.getName()) || physicalFile.getVirtualFile() == null) {
             return List.of(contextForRoot(physicalFile));
         }
-        RuleRepository repository = getRuleRepository();
-        VirtualFile anchorDirectory = physicalFile.getVirtualFile().getParent();
-        MacroFileLoader loader = createVfsFileLoader(anchorDirectory);
-        MacroExpander resolverExpander = new MacroExpander(
-                repository, HANDLERS, loader, NormalAstFactory.text(repository));
-        List<DslAnalysisContext> contexts = new ArrayList<>();
-        for (String rootPath : new ContextRootResolver(resolverExpander).findContextRoots(pathOf(physicalFile))) {
-            findXmlFile(rootPath, anchorDirectory).ifPresent(root -> contexts.add(contextForRoot(root)));
+        VirtualFile directory = physicalFile.getVirtualFile().getParent();
+        if (directory == null) {
+            return List.of();
         }
-        contexts.sort(Comparator.comparing(DslAnalysisContext::getRootFilePath));
-        return List.copyOf(contexts);
+        return directoryContextIndex(directory).contextsFor(pathOf(physicalFile));
+    }
+
+    public int getAnalysisContextCount(@NotNull XmlFile xmlFile) {
+        return getAnalysisContexts(xmlFile).size();
     }
 
     public DslAstTree getTree(@NotNull XmlFile xmlFile) {
         XmlFile physicalFile = physicalFileOf(xmlFile);
         DslAnalysisContext context = primaryContext(physicalFile);
         return context.treeFor(pathOf(physicalFile)).orElse(context.getRootTree());
-    }
-
-    public DemacroedAst getDemacroedTree(@NotNull XmlFile xmlFile) {
-        return primaryContext(physicalFileOf(xmlFile)).getDemacroed();
-    }
-
-    public SymbolTable demacroedGlobalScope(@NotNull XmlFile xmlFile) {
-        return primaryContext(physicalFileOf(xmlFile)).getGlobalScope();
-    }
-
-    public SymbolTable scopeOfDemacroed(@NotNull XmlFile xmlFile, @NotNull DslElementNode demacroedTarget) {
-        for (DslAnalysisContext context : contextsOrStandalone(physicalFileOf(xmlFile))) {
-            if (context.getDemacroed().getNormalNode(demacroedTarget).isPresent()
-                    || context.getDemacroed().getDemacroed().getRootElement() == demacroedTarget) {
-                return scopeOf(context, demacroedTarget);
-            }
-        }
-        DslAnalysisContext context = primaryContext(physicalFileOf(xmlFile));
-        return scopeOf(context, demacroedTarget);
-    }
-
-    public List<Diagnostic> getMacroDiagnostics(@NotNull XmlFile xmlFile) {
-        List<Diagnostic> diagnostics = new ArrayList<>();
-        for (DslAnalysisContext context : getAnalysisContexts(physicalFileOf(xmlFile))) {
-            diagnostics.addAll(context.getDemacroed().getMacroDiagnostics());
-        }
-        return List.copyOf(diagnostics);
-    }
-
-    @NotNull
-    public Map<String, Object> compileScopeFor(@NotNull XmlFile xmlFile,
-                                               @Nullable DslElementNode demacroedTarget) {
-        if (demacroedTarget == null) {
-            return Collections.emptyMap();
-        }
-        for (DslAnalysisContext context : contextsOrStandalone(physicalFileOf(xmlFile))) {
-            if (context.getDemacroed().getNormalNode(demacroedTarget).isPresent()) {
-                return context.getDemacroed().getCompileScope(demacroedTarget);
-            }
-        }
-        return Collections.emptyMap();
-    }
-
-    @Nullable
-    public DslElementNode demacroedTargetFor(@NotNull XmlFile xmlFile, @Nullable XmlTag hostTag) {
-        List<ContextTarget> targets = demacroedTargetsWithContext(xmlFile, hostTag);
-        return targets.isEmpty() ? null : targets.get(0).getNode();
-    }
-
-    @NotNull
-    public List<DslElementNode> demacroedTargetsFor(@NotNull XmlFile xmlFile, @Nullable XmlTag hostTag) {
-        return demacroedTargetsWithContext(xmlFile, hostTag).stream().map(ContextTarget::getNode).toList();
     }
 
     @NotNull
@@ -176,26 +127,52 @@ public final class DslAstService {
     }
 
     @NotNull
-    public DslAstTree getTreeForFile(@NotNull XmlFile contextFile, @Nullable String ownerFilePath) {
-        DslAnalysisContext context = primaryContext(physicalFileOf(contextFile));
-        if (ownerFilePath != null) {
-            Optional<DslAstTree> ownerTree = context.treeFor(ownerFilePath);
-            if (ownerTree.isPresent()) {
-                return ownerTree.get();
-            }
-        }
-        return context.treeFor(pathOf(physicalFileOf(contextFile))).orElse(context.getRootTree());
+    public String getOccurrenceKey(@NotNull ContextTarget target) {
+        String suffix = target.context.getDemacroed().getIncludeInstance(target.node)
+                .map(instance -> Integer.toString(instance.getId()))
+                .orElse("root");
+        return target.context.getRootFilePath() + "#" + suffix;
     }
 
     @NotNull
-    public DslAstTree getTreeForFile(@NotNull ContextTarget target, @Nullable String ownerFilePath) {
-        if (ownerFilePath != null) {
-            Optional<DslAstTree> ownerTree = target.getContext().treeFor(ownerFilePath);
-            if (ownerTree.isPresent()) {
-                return ownerTree.get();
-            }
+    public String interpolateName(@NotNull ContextTarget target, @NotNull String rawName) {
+        return CompileTimeInterpolator.interpolate(rawName,
+                target.context.getDemacroed().getCompileScope(target.node),
+                new ArrayList<>(), target.node, "resolve");
+    }
+
+    @NotNull
+    public Optional<ContextDeclaration> lookupDeclaration(@NotNull ContextTarget target,
+                                                           @NotNull String name) {
+        return scopeOf(target.context, target.node).lookup(name).map(ContextDeclaration::new);
+    }
+
+    @NotNull
+    public List<ContextDeclaration> visibleDeclarations(@NotNull ContextTarget target) {
+        return scopeOf(target.context, target.node).visibleDeclarations().stream()
+                .map(ContextDeclaration::new)
+                .toList();
+    }
+
+    @NotNull
+    public Optional<XmlAttributeValue> getDeclarationValue(@NotNull ContextTarget target,
+                                                            @NotNull ContextDeclaration declaration) {
+        if (declaration.astNode == null || declaration.hostAttrName == null) {
+            return Optional.empty();
         }
-        return target.getContext().getRootTree();
+        DemacroedAst demacroed = target.context.getDemacroed();
+        Optional<DslElementNode> normal = demacroed.getNormalNode(declaration.astNode);
+        if (normal.isEmpty()) {
+            return Optional.empty();
+        }
+        String ownerPath = demacroed.getFilePathOfNormalNode(normal.get());
+        DslAstTree tree = target.context.treeFor(ownerPath).orElse(target.context.getRootTree());
+        Optional<XmlTag> tag = tree.getTag(normal.get());
+        if (tag.isEmpty()) {
+            return Optional.empty();
+        }
+        XmlAttribute attribute = tag.get().getAttribute(declaration.hostAttrName);
+        return attribute == null ? Optional.empty() : Optional.ofNullable(attribute.getValueElement());
     }
 
     @NotNull
@@ -220,18 +197,19 @@ public final class DslAstService {
     }
 
     public long getContextVersion(@NotNull XmlFile xmlFile) {
-        return PsiModificationTracker.getInstance(project).getModificationCount();
+        XmlFile physicalFile = physicalFileOf(xmlFile);
+        VirtualFile virtualFile = physicalFile.getVirtualFile();
+        if (isFunctionFile(physicalFile.getName()) && virtualFile != null && virtualFile.getParent() != null) {
+            return directoryContextIndex(virtualFile.getParent()).fingerprint;
+        }
+        DslAnalysisContext context = contextForRoot(physicalFile);
+        return context.getFingerprint();
     }
 
     @NotNull
     public List<Diagnostic> getProjectedDiagnostics(@NotNull XmlFile xmlFile) {
         XmlFile physicalFile = physicalFileOf(xmlFile);
         return ContextDiagnosticProjector.project(physicalFile, getAnalysisContexts(physicalFile));
-    }
-
-    @NotNull
-    public SymbolTable scopeOf(@NotNull ContextTarget target) {
-        return scopeOf(target.getContext(), target.getNode());
     }
 
     @NotNull
@@ -246,16 +224,10 @@ public final class DslAstService {
         return contexts.isEmpty() ? contextForRoot(physicalFile) : contexts.get(0);
     }
 
-    @NotNull
-    private List<DslAnalysisContext> contextsOrStandalone(@NotNull XmlFile physicalFile) {
-        List<DslAnalysisContext> contexts = getAnalysisContexts(physicalFile);
-        return contexts.isEmpty() ? List.of(contextForRoot(physicalFile)) : contexts;
-    }
-
     private DslAnalysisContext contextForRoot(@NotNull XmlFile rootFile) {
-        long fingerprint = contextFingerprint(rootFile);
         DslAnalysisContext cached = rootFile.getUserData(CACHE_KEY);
-        if (cached != null && cached.getFingerprint() == fingerprint) {
+        if (cached != null
+                && cached.getFingerprint() == contextFingerprint(rootFile, cached.getFilePaths())) {
             return cached;
         }
 
@@ -274,6 +246,7 @@ public final class DslAstService {
         diagnostics.addAll(new DiagnosticProviderImpl().analyze(
                 demacroed.getDemacroed(), repository, new SymbolTableBuilderImpl(),
                 PipelineMode.FULL, InspectionConfig.builder().build(), null));
+        long fingerprint = contextFingerprint(rootFile, treesByPath.keySet());
         DslAnalysisContext context = new DslAnalysisContext(pathOf(rootFile), rootTree, demacroed,
                 globalScope, treesByPath, diagnostics, fingerprint);
         rootFile.putUserData(CACHE_KEY, context);
@@ -319,20 +292,6 @@ public final class DslAstService {
                 }
             }
 
-            @Override
-            public @Nullable List<String> listFiles(@NotNull String dirPath) {
-                Optional<VirtualFile> directory = findVirtualFile(dirPath, anchorDirectory);
-                if (directory.isEmpty() || !directory.get().isDirectory()) {
-                    return MacroFileLoader.DISK.listFiles(dirPath);
-                }
-                List<String> names = new ArrayList<>();
-                for (VirtualFile child : directory.get().getChildren()) {
-                    if (!child.isDirectory()) {
-                        names.add(child.getName());
-                    }
-                }
-                return names;
-            }
         };
     }
 
@@ -390,12 +349,67 @@ public final class DslAstService {
         return Optional.empty();
     }
 
-    private long contextFingerprint(@NotNull XmlFile rootFile) {
+    private long contextFingerprint(@NotNull XmlFile rootFile, @NotNull Set<String> dependencyPaths) {
         VirtualFile virtualFile = rootFile.getVirtualFile();
         if (virtualFile == null || virtualFile.getParent() == null) {
             return rootFile.getModificationStamp();
         }
         VirtualFile directory = virtualFile.getParent();
+        long fingerprint = directory.getModificationStamp();
+        List<VirtualFile> files = new ArrayList<>();
+        for (String path : dependencyPaths) {
+            findVirtualFile(path, directory).ifPresent(files::add);
+        }
+        if (!files.contains(virtualFile)) {
+            files.add(virtualFile);
+        }
+        files = new ArrayList<>(new LinkedHashSet<>(files));
+        files.sort(Comparator.comparing(VirtualFile::getPath));
+        PsiManager psiManager = PsiManager.getInstance(project);
+        for (VirtualFile file : files) {
+            PsiFile psiFile = psiManager.findFile(file);
+            long stamp = psiFile != null ? psiFile.getModificationStamp() : file.getModificationStamp();
+            fingerprint = 31 * fingerprint + normalizePath(file.getPath()).hashCode();
+            fingerprint = 31 * fingerprint + stamp;
+        }
+        return fingerprint;
+    }
+
+    @NotNull
+    private DirectoryContextIndex directoryContextIndex(@NotNull VirtualFile directory) {
+        long fingerprint = directoryFingerprint(directory);
+        DirectoryContextIndex cached = directory.getUserData(DIRECTORY_INDEX_KEY);
+        if (cached != null && cached.fingerprint == fingerprint) {
+            return cached;
+        }
+        Map<String, List<DslAnalysisContext>> contextsByIncludedPath = new LinkedHashMap<>();
+        List<VirtualFile> roots = new ArrayList<>();
+        for (VirtualFile child : directory.getChildren()) {
+            if (!child.isDirectory() && isRootFile(child.getName())) {
+                roots.add(child);
+            }
+        }
+        roots.sort(Comparator.comparing(VirtualFile::getName));
+        PsiManager psiManager = PsiManager.getInstance(project);
+        for (VirtualFile root : roots) {
+            PsiFile psiFile = psiManager.findFile(root);
+            if (!(psiFile instanceof XmlFile xmlRoot)) {
+                continue;
+            }
+            DslAnalysisContext context = contextForRoot(xmlRoot);
+            for (String includedPath : context.getFilePaths()) {
+                if (!context.getIncludeInstances(includedPath).isEmpty()) {
+                    contextsByIncludedPath.computeIfAbsent(normalizePath(includedPath), ignored -> new ArrayList<>())
+                            .add(context);
+                }
+            }
+        }
+        DirectoryContextIndex rebuilt = new DirectoryContextIndex(fingerprint, contextsByIncludedPath);
+        directory.putUserData(DIRECTORY_INDEX_KEY, rebuilt);
+        return rebuilt;
+    }
+
+    private long directoryFingerprint(@NotNull VirtualFile directory) {
         long fingerprint = directory.getModificationStamp();
         List<VirtualFile> files = new ArrayList<>();
         for (VirtualFile child : directory.getChildren()) {
@@ -435,8 +449,11 @@ public final class DslAstService {
     }
 
     private static boolean isContextFile(@NotNull String name) {
-        return "script.xml".equals(name)
-                || (name.startsWith("script_") || name.startsWith("function_")) && name.endsWith(".xml");
+        return isRootFile(name) || isFunctionFile(name);
+    }
+
+    private static boolean isRootFile(@NotNull String name) {
+        return "script.xml".equals(name) || name.startsWith("script_") && name.endsWith(".xml");
     }
 
     private static boolean isFunctionFile(@NotNull String name) {
@@ -459,6 +476,56 @@ public final class DslAstService {
         return slash < 0 ? path : path.substring(slash + 1);
     }
 
+    private static final class DirectoryContextIndex {
+        private final long fingerprint;
+        private final Map<String, List<DslAnalysisContext>> contextsByIncludedPath;
+
+        private DirectoryContextIndex(long fingerprint,
+                                      @NotNull Map<String, List<DslAnalysisContext>> contextsByIncludedPath) {
+            this.fingerprint = fingerprint;
+            Map<String, List<DslAnalysisContext>> immutable = new LinkedHashMap<>();
+            contextsByIncludedPath.forEach((path, contexts) -> immutable.put(path, List.copyOf(contexts)));
+            this.contextsByIncludedPath = Collections.unmodifiableMap(immutable);
+        }
+
+        @NotNull
+        private List<DslAnalysisContext> contextsFor(@NotNull String filePath) {
+            return contextsByIncludedPath.getOrDefault(normalizePath(filePath), List.of());
+        }
+    }
+
+    public static final class ContextDeclaration {
+        private final String name;
+        private final DslType type;
+        private final boolean global;
+        private final String hostAttrName;
+        private final DslElementNode astNode;
+
+        private ContextDeclaration(@NotNull VarDeclaration source) {
+            this.name = source.getName();
+            this.type = source.getType();
+            this.global = source.isGlobal();
+            this.hostAttrName = source.getHostAttrName();
+            this.astNode = source.getAstNode();
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public DslType getType() {
+            return type;
+        }
+
+        public boolean isGlobal() {
+            return global;
+        }
+
+        public String getHostAttrName() {
+            return hostAttrName;
+        }
+    }
+
     public static final class ContextTarget {
         private final DslAnalysisContext context;
         private final DslElementNode node;
@@ -468,15 +535,6 @@ public final class DslAstService {
             this.node = node;
         }
 
-        @NotNull
-        public DslAnalysisContext getContext() {
-            return context;
-        }
-
-        @NotNull
-        public DslElementNode getNode() {
-            return node;
-        }
     }
 
 }

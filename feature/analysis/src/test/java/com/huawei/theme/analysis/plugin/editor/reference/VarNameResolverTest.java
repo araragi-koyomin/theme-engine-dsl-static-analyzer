@@ -263,6 +263,9 @@ public class VarNameResolverTest extends LightPlatformTestCase {
                 .map(UsageInfo::getElement)
                 .filter(Objects::nonNull)
                 .anyMatch(element -> child.equals(hostFileOf(element))));
+        assertEquals("the same physical function reference must not be emitted twice", 1,
+                usages.stream().map(UsageInfo::getElement).filter(Objects::nonNull)
+                        .filter(element -> child.equals(hostFileOf(element))).count());
     }
 
     public void testFindUsagesForMacroDeclarationFindsInterpolatedReferenceOnPooledThread() throws Exception {
@@ -350,7 +353,7 @@ public class VarNameResolverTest extends LightPlatformTestCase {
 
         Set<String> names = visibleNames(child, text);
 
-        assertEquals(2, DslAstService.getInstance(getProject()).getAnalysisContexts(child).size());
+        assertEquals(2, DslAstService.getInstance(getProject()).getAnalysisContextCount(child));
         assertTrue(names.contains("first_value"));
         assertTrue(names.contains("second_value"));
         PsiElement target = VarNameResolver.resolveDeclaration(
@@ -402,9 +405,38 @@ public class VarNameResolverTest extends LightPlatformTestCase {
         XmlTag root = xmlFile.getRootTag();
         XmlTag forTag = firstSubTag(root, "For");
         XmlTag text = firstSubTag(forTag, "Text");
-        Optional<VarDeclaration> decl = VarNameResolver.lookupDeclaration(getProject(), xmlFile, text, "v_%{i}");
+        Optional<VarNameResolver.ContextualDeclaration> decl =
+                VarNameResolver.lookupContextualDeclaration(getProject(), xmlFile, text, "v_%{i}");
         assertTrue("raw v_%{i} must interpolate to v_1 and resolve", decl.isPresent());
-        assertEquals("v_1", decl.get().getName());
+        assertEquals("v_1", decl.get().getDeclaration().getName());
+    }
+
+    public void testVisibleDeclarationsReportAvailabilityAndTypeConflictsAcrossContexts() {
+        projectFile("script_first.xml", "<Lockscreen>"
+                + "<Var name='only_first' type='number'/>"
+                + "<Var name='shared' type='number'/>"
+                + "<Include name='function_contextual.xml'/>"
+                + "</Lockscreen>");
+        projectFile("script_second.xml", "<Lockscreen>"
+                + "<Var name='shared' type='string'/>"
+                + "<Include name='function_contextual.xml'/>"
+                + "</Lockscreen>");
+        XmlFile child = projectFile("function_contextual.xml", "<Group><Text x='0'/></Group>");
+        XmlTag text = firstSubTag(child.getRootTag(), "Text");
+
+        List<VarNameResolver.ContextualDeclaration> declarations =
+                VarNameResolver.visibleContextualDeclarations(getProject(), child, text);
+        VarNameResolver.ContextualDeclaration onlyFirst = declarations.stream()
+                .filter(d -> "only_first".equals(d.getDeclaration().getName())).findFirst().orElseThrow();
+        VarNameResolver.ContextualDeclaration shared = declarations.stream()
+                .filter(d -> "shared".equals(d.getDeclaration().getName())).findFirst().orElseThrow();
+
+        assertEquals(1, onlyFirst.getAvailableContexts());
+        assertEquals(2, onlyFirst.getTotalContexts());
+        assertFalse(onlyFirst.hasConflictingTypes());
+        assertEquals(2, shared.getAvailableContexts());
+        assertEquals(2, shared.getTotalContexts());
+        assertTrue(shared.hasConflictingTypes());
     }
 
     public void testMacroReferenceMultiResolvesToAllCopies() {

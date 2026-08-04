@@ -34,7 +34,7 @@ import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslGlobalVar;
-import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
+import com.huawei.theme.analysis.plugin.ast.DslAstService;
 import com.huawei.theme.analysis.plugin.editor.reference.VarNameResolver;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
 
@@ -216,12 +216,13 @@ public class DslExpressionDocumentationProvider extends AbstractDocumentationPro
             return generateGlobalVarDoc(varName);
         }
 
-        Optional<VarDeclaration> declOpt =
-                VarNameResolver.lookupDeclaration(project, hostFile, hostTag, varName);
-        if (declOpt.isEmpty()) {
+        Optional<VarNameResolver.ContextualDeclaration> contextualOpt =
+                VarNameResolver.lookupContextualDeclaration(project, hostFile, hostTag, varName);
+        if (contextualOpt.isEmpty()) {
             return null;
         }
-        VarDeclaration d = declOpt.get();
+        VarNameResolver.ContextualDeclaration contextual = contextualOpt.get();
+        DslAstService.ContextDeclaration d = contextual.getDeclaration();
         String sigil = VarNameResolver.sigilOf(d.getType());
         String typeText = VarNameResolver.typeName(d.getType());
 
@@ -234,6 +235,13 @@ public class DslExpressionDocumentationProvider extends AbstractDocumentationPro
         boolean isIndexFlag = "indexFlag".equals(d.getHostAttrName());
         String kind = isIndexFlag ? "Local Variable" : "User-defined Variable";
         String desc = isIndexFlag ? "Local index variable" : "User-defined variable";
+        if (contextual.getAvailableContexts() < contextual.getTotalContexts()) {
+            desc += ". Available in " + contextual.getAvailableContexts() + "/"
+                    + contextual.getTotalContexts() + " include contexts";
+        }
+        if (contextual.hasConflictingTypes()) {
+            desc += ". Conflicting types across include contexts";
+        }
         return doc(kind, sigil + varName, typeText, desc);
     }
 

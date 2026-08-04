@@ -1,11 +1,11 @@
 package com.huawei.theme.analysis.core.macro;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,7 +45,7 @@ public final class DemacroedAst {
         this.normalToDemacroed = immutableNodeLists(normalToDemacroed);
         this.scopeByDemacroedNode = immutableScopes(scopeByDemacroedNode);
         this.normalNodeFilePath = immutableIdentityMap(normalNodeFilePath);
-        this.macroDiagnostics = List.copyOf(macroDiagnostics);
+        this.macroDiagnostics = macroDiagnostics.stream().map(DemacroedAst::copyDiagnostic).toList();
         List<IncludeInstance> instances = new ArrayList<>();
         for (Builder.MutableIncludeInstance mutable : mutableIncludeInstances) {
             instances.add(new IncludeInstance(mutable.id, mutable.parentId, mutable.filePath,
@@ -89,7 +89,7 @@ public final class DemacroedAst {
     }
 
     public List<Diagnostic> getMacroDiagnostics() {
-        return macroDiagnostics;
+        return macroDiagnostics.stream().map(DemacroedAst::copyDiagnostic).toList();
     }
 
     public List<IncludeInstance> getIncludeInstances() {
@@ -123,7 +123,7 @@ public final class DemacroedAst {
      * The file path that the given NORMAL node belongs to. For main-file nodes this is
      * the main file's path (the default); for nodes pulled in via {@code <Include>} it is
      * the included sub-file's path (recorded by {@link IncludeHandler}). Used by the editor
-     * (Phase 3) to look up the right per-file PSI↔normal map when resolving a demacroed
+     * to look up the right per-file PSI↔normal map when resolving a demacroed
      * declaration back to PSI.
      */
     public String getFilePathOfNormalNode(@Nullable DslElementNode normalNode) {
@@ -159,6 +159,25 @@ public final class DemacroedAst {
         return Collections.unmodifiableMap(copy);
     }
 
+    private static Diagnostic copyDiagnostic(@NotNull Diagnostic source) {
+        Diagnostic.DiagnosticBuilder builder = Diagnostic.builder()
+                .severity(source.getSeverity())
+                .ruleId(source.getRuleId())
+                .message(source.getMessage())
+                .filePath(source.getFilePath())
+                .line(source.getLine())
+                .column(source.getColumn())
+                .endLine(source.getEndLine())
+                .endColumn(source.getEndColumn())
+                .suggestedFixes(source.getSuggestedFixes() == null
+                        ? List.of() : List.copyOf(source.getSuggestedFixes()))
+                .ruleDocUrl(source.getRuleDocUrl());
+        if (source.getAstNode() != null) {
+            builder.astNode(source.getAstNode());
+        }
+        return builder.build();
+    }
+
     static final class Builder {
         final String filePath;
         final IdentityHashMap<DslElementNode, DslElementNode> demacroedToNormal = new IdentityHashMap<>();
@@ -169,8 +188,11 @@ public final class DemacroedAst {
         final List<MutableIncludeInstance> includeInstances = new ArrayList<>();
         final IdentityHashMap<DslElementNode, Integer> includeInstanceIdByNode = new IdentityHashMap<>();
         final Deque<MutableIncludeInstance> includeStack = new ArrayDeque<>();
+        final Map<String, CachedNormalAst> normalAstByPath = new HashMap<>();
         int loopIterations;
+        int includeExpansions;
         boolean expansionBudgetExceeded;
+        boolean includeBudgetExceeded;
 
         Builder(@NotNull String filePath) {
             this.filePath = filePath;
@@ -186,9 +208,20 @@ public final class DemacroedAst {
             }
         }
 
-        int beginInclude(@NotNull String filePath,
-                         @NotNull DslElementNode includeNode,
-                         @NotNull Map<String, Object> compileScope) {
+        int tryBeginInclude(@NotNull String filePath,
+                            @NotNull DslElementNode includeNode,
+                            @NotNull Map<String, Object> compileScope) {
+            if (includeExpansions >= MacroExpander.MAX_TOTAL_INCLUDE_EXPANSIONS) {
+                reportIncludeBudget(includeNode, "Macro expansion exceeded the total Include budget of "
+                        + MacroExpander.MAX_TOTAL_INCLUDE_EXPANSIONS + " expansions");
+                return -1;
+            }
+            if (includeStack.size() >= MacroExpander.MAX_INCLUDE_NESTING_DEPTH) {
+                reportIncludeBudget(includeNode, "Macro expansion exceeded the Include nesting limit of "
+                        + MacroExpander.MAX_INCLUDE_NESTING_DEPTH);
+                return -1;
+            }
+            includeExpansions++;
             int id = includeInstances.size();
             Integer parentId = includeStack.isEmpty() ? null : includeStack.peek().id;
             MutableIncludeInstance instance = new MutableIncludeInstance(
@@ -196,6 +229,19 @@ public final class DemacroedAst {
             includeInstances.add(instance);
             includeStack.push(instance);
             return id;
+        }
+
+        private void reportIncludeBudget(@NotNull DslElementNode anchor, @NotNull String message) {
+            if (!includeBudgetExceeded) {
+                diagnostics.add(Diagnostic.builder()
+                        .severity(DiagnosticSeverity.ERROR)
+                        .ruleId(MacroExpander.RULE_INCLUDE_BUDGET)
+                        .message(message)
+                        .filePath(filePath)
+                        .astNode(anchor)
+                        .build());
+            }
+            includeBudgetExceeded = true;
         }
 
         void endInclude(int id) {
@@ -215,6 +261,19 @@ public final class DemacroedAst {
          */
         void recordFile(@NotNull DslElementNode normalNode, @NotNull String filePath) {
             normalNodeFilePath.put(normalNode, filePath);
+        }
+
+        @NotNull
+        DslFileNode getOrBuildNormalAst(@NotNull String path, @NotNull String content,
+                                        @NotNull NormalAstFactory factory) {
+            String normalizedPath = normalizePath(path);
+            CachedNormalAst cached = normalAstByPath.get(normalizedPath);
+            if (cached != null && cached.content.equals(content)) {
+                return cached.ast;
+            }
+            DslFileNode ast = factory.build(path, content);
+            normalAstByPath.put(normalizedPath, new CachedNormalAst(content, ast));
+            return ast;
         }
 
         boolean tryConsumeLoopIteration(@NotNull DslElementNode anchor) {
@@ -272,6 +331,16 @@ public final class DemacroedAst {
                 this.filePath = filePath;
                 this.includeNode = includeNode;
                 this.compileScope = new HashMap<>(compileScope);
+            }
+        }
+
+        private static final class CachedNormalAst {
+            private final String content;
+            private final DslFileNode ast;
+
+            private CachedNormalAst(@NotNull String content, @NotNull DslFileNode ast) {
+                this.content = content;
+                this.ast = ast;
             }
         }
     }

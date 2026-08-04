@@ -25,15 +25,14 @@ import com.huawei.theme.analysis.core.shared.diagnostic.DiagnosticSeverity;
  *       with the active scope first, so it can reference outer compile-time vars.</li>
  *   <li>every other attribute becomes a compile-time var for the sub-file's scope, its value
  *       interpolated with the active (outer) scope before being bound.</li>
- *   <li>each expansion consumes one unit of the shared loop budget
- *       ({@link DemacroedAst.Builder#tryConsumeLoopIteration}) — caps recursion depth.</li>
+ *   <li>Include has an independent total budget and a stack-safety nesting limit.</li>
  *   <li>every demacoed sub node's position is remapped to the {@code <Include>} node's
  *       position, so diagnostics raised inside the sub-file land on the include site
  *       (per the "highlight on the Include node" requirement) and are deduped by
  *       {@link DiagnosticDedup}.</li>
  *   <li>each sub normal node is tagged with the sub-file's path via
  *       {@link DemacroedAst.Builder#recordFile} so the editor can resolve a demacoed
- *       declaration back to the right per-file PSI (Phase 3).</li>
+ *       declaration back to the right per-file PSI.</li>
  * </ul>
  *
  * <p>Recursion (a function file that itself contains {@code <Include>}) is handled by the
@@ -72,9 +71,6 @@ public final class IncludeHandler implements MacroHandler {
                     "<Include> name=\"" + name + "\" must match function_*.xml"));
             return List.of();
         }
-        if (!builder.tryConsumeLoopIteration(node)) {
-            return List.of();
-        }
         String subPath = resolveSibling(filePath, name);
         String content = ctx.loadFile(subPath);
         if (content == null) {
@@ -82,7 +78,7 @@ public final class IncludeHandler implements MacroHandler {
                     "<Include> file not found: " + name));
             return List.of();
         }
-        DslFileNode subNormal = ctx.buildNormalAst(subPath, content);
+        DslFileNode subNormal = ctx.buildNormalAst(subPath, content, builder);
         if (subNormal.getRootElement() == null) {
             builder.diagnostics().add(macro(filePath, RULE_INCLUDE_NOT_FOUND, node,
                     "<Include> file unparseable: " + name));
@@ -90,7 +86,7 @@ public final class IncludeHandler implements MacroHandler {
         }
         recordFileForTree(subNormal.getRootElement(), subPath, builder);
 
-        Map<String, Object> paramScope = new HashMap<>(scope);
+        Map<String, Object> paramScope = new HashMap<>();
         if (node.getAttributes() != null) {
             for (DslAttributeNode a : node.getAttributes()) {
                 if (!NAME_ATTR.equals(a.getName()) && a.getValue() != null && a.getName() != null) {
@@ -102,7 +98,10 @@ public final class IncludeHandler implements MacroHandler {
             }
         }
 
-        int includeInstanceId = builder.beginInclude(subPath, node, paramScope);
+        int includeInstanceId = builder.tryBeginInclude(subPath, node, paramScope);
+        if (includeInstanceId < 0) {
+            return List.of();
+        }
         List<DslElementNode> demacroedSub;
         try {
             demacroedSub = ctx.expandElement(subNormal.getRootElement(), paramScope, builder);

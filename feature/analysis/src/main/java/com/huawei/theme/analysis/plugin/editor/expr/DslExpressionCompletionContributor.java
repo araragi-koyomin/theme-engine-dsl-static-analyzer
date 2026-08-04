@@ -37,7 +37,7 @@ import com.huawei.theme.analysis.core.expression.model.FunctionSignature;
 import com.huawei.theme.analysis.core.rulelibrary.RuleRepository;
 import com.huawei.theme.analysis.core.rulelibrary.model.AttrTypeSpec;
 import com.huawei.theme.analysis.core.rulelibrary.model.DslElementRule;
-import com.huawei.theme.analysis.core.semanticanalysis.model.VarDeclaration;
+import com.huawei.theme.analysis.plugin.ast.DslAstService;
 import com.huawei.theme.analysis.plugin.rule.RuleRepositoryService;
 import com.huawei.theme.analysis.plugin.editor.reference.VarNameResolver;
 
@@ -126,10 +126,13 @@ public class DslExpressionCompletionContributor extends CompletionContributor {
         // discovered via the AST SymbolTable at the cursor's enclosing element.
         XmlFile hostFile = tag.getContainingFile() instanceof XmlFile xmlFile ? xmlFile : null;
         if (hostFile != null) {
-            for (VarDeclaration d : VarNameResolver.visibleDeclarations(project, hostFile, tag)) {
+            for (VarNameResolver.ContextualDeclaration contextual
+                    : VarNameResolver.visibleContextualDeclarations(project, hostFile, tag)) {
+                DslAstService.ContextDeclaration d = contextual.getDeclaration();
                 String pfx = VarNameResolver.sigilOf(d.getType());
                 String lookupText = pfx + d.getName();
-                String typeText = VarNameResolver.typeName(d.getType());
+                String typeText = VarNameResolver.contextualTypeText(
+                        contextual, VarNameResolver.typeName(d.getType()));
                 PsiElement dummyVar = getDocVarRef(project, lookupText);
                 LookupElementBuilder builder = dummyVar != null
                         ? LookupElementBuilder.create(dummyVar, lookupText)

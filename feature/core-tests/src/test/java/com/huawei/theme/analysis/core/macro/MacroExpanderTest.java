@@ -300,6 +300,29 @@ class MacroExpanderTest {
     }
 
     @Test
+    void includeChildScopeContainsOnlyExplicitParameters() throws Exception {
+        Path dir = Files.createTempDirectory("macro-include-scope-");
+        writeFile(dir, "function_scope.xml",
+                "<Group><Var name=\"explicit_%{arg}\"/><Var name=\"outer_%{i}\"/></Group>");
+        String main = "<Lockscreen><For name=\"i\" from=\"7\" to=\"7\">"
+                + "<Include name=\"function_scope.xml\" arg=\"value_%{i}\"/>"
+                + "</For></Lockscreen>";
+
+        DemacroedAst result = expander.expand(
+                astBuilder.getDslAst(dir.resolve("script.xml").toString(), main));
+
+        IncludeInstance instance = result.getIncludeInstances().get(0);
+        assertEquals(Map.of("arg", "value_7"), instance.getCompileScope());
+        DslElementNode group = result.getDemacroed().getRootElement().getChildElements().get(0);
+        assertEquals("explicit_value_7",
+                attr(group.getChildElements().get(0), "name").getValue().getRawValue());
+        assertEquals("outer_%{i}",
+                attr(group.getChildElements().get(1), "name").getValue().getRawValue());
+        assertTrue(result.getMacroDiagnostics().stream()
+                .anyMatch(d -> CompileTimeInterpolator.RULE_INTERP_FAIL.equals(d.getRuleId())));
+    }
+
+    @Test
     void includeRecursionIntoAnotherFunction() throws Exception {
         Path dir = Files.createTempDirectory("macro-include-rec-");
         writeFile(dir, "function_greeting.xml",
@@ -383,11 +406,48 @@ class MacroExpanderTest {
         MacroExpander customExpander = new MacroExpander(repo,
                 List.of(new ForHandler(), new ForeachHandler(), new IfHandler(), new IncludeHandler()),
                 MacroFileLoader.DISK, factory);
-        String main = "<Lockscreen><Include name='function_greeting.xml' who='World'/></Lockscreen>";
+        String main = "<Lockscreen>"
+                + "<Include name='function_greeting.xml' who='World'/>"
+                + "<Include name='function_greeting.xml' who='Again'/>"
+                + "</Lockscreen>";
         DslFileNode ast = astBuilder.getDslAst(dir.resolve("main.xml").toString(), main);
         customExpander.expand(ast);
-        assertTrue(builtPaths.stream().anyMatch(p -> p.endsWith("function_greeting.xml")),
-                "IncludeHandler must delegate sub-file parsing to the NormalAstFactory");
+        assertEquals(1, builtPaths.stream().filter(p -> p.endsWith("function_greeting.xml")).count(),
+                "one source file must be parsed once per root context");
+    }
+
+    @Test
+    void includeBudgetReportsErrorOnOneThousandAndFirstExpansion() throws Exception {
+        Path dir = Files.createTempDirectory("macro-include-budget-");
+        writeFile(dir, "function_empty.xml", "<Group/>");
+        StringBuilder main = new StringBuilder("<Lockscreen>");
+        for (int i = 0; i <= MacroExpander.MAX_TOTAL_INCLUDE_EXPANSIONS; i++) {
+            main.append("<Include name=\"function_empty.xml\"/>");
+        }
+        main.append("</Lockscreen>");
+
+        DemacroedAst result = expander.expand(astBuilder.getDslAst(
+                dir.resolve("script.xml").toString(), main.toString()));
+
+        assertEquals(1, result.getMacroDiagnostics().stream()
+                .filter(d -> MacroExpander.RULE_INCLUDE_BUDGET.equals(d.getRuleId())).count());
+        assertEquals(MacroExpander.MAX_TOTAL_INCLUDE_EXPANSIONS,
+                result.getIncludeInstances().size());
+    }
+
+    @Test
+    void recursiveIncludeStopsWithDiagnosticInsteadOfStackOverflow() throws Exception {
+        Path dir = Files.createTempDirectory("macro-include-recursion-");
+        writeFile(dir, "function_loop.xml",
+                "<Group><Include name=\"function_loop.xml\"/></Group>");
+        String main = "<Lockscreen><Include name=\"function_loop.xml\"/></Lockscreen>";
+
+        DemacroedAst result = expander.expand(
+                astBuilder.getDslAst(dir.resolve("script.xml").toString(), main));
+
+        assertTrue(result.getMacroDiagnostics().stream()
+                .anyMatch(d -> MacroExpander.RULE_INCLUDE_BUDGET.equals(d.getRuleId())));
+        assertTrue(result.getIncludeInstances().size() <= MacroExpander.MAX_INCLUDE_NESTING_DEPTH);
     }
 
     private static void writeFile(Path dir, String name, String content) throws Exception {
@@ -560,6 +620,8 @@ class MacroExpanderTest {
                 () -> result.getCompileScope(demacroed).put("x", BigDecimal.ZERO));
         assertThrows(UnsupportedOperationException.class,
                 () -> result.getMacroDiagnostics().clear());
+        result.getMacroDiagnostics().get(0).setMessage("polluted");
+        assertEquals("test", result.getMacroDiagnostics().get(0).getMessage());
     }
 
     private static ExpressionNode findVariable(ExpressionNode node, String name) {

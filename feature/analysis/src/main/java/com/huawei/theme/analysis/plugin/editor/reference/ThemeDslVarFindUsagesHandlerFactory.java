@@ -12,6 +12,7 @@ import com.intellij.find.findUsages.FindUsagesHandlerFactory;
 import com.intellij.find.findUsages.FindUsagesOptions;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.TextRange;
@@ -53,7 +54,7 @@ import com.huawei.theme.analysis.plugin.editor.varname.VarNameElement;
  *       pre-filter that would otherwise miss them.</li>
  * </ol>
  *
- * <p>Results are deduped by reference identity.</p>
+ * <p>Results are deduped by physical source range.</p>
  */
 public class ThemeDslVarFindUsagesHandlerFactory extends FindUsagesHandlerFactory {
 
@@ -83,11 +84,11 @@ public class ThemeDslVarFindUsagesHandlerFactory extends FindUsagesHandlerFactor
             public boolean processElementUsages(@NotNull PsiElement element,
                                                 @NotNull Processor<? super UsageInfo> processor,
                                                 @NotNull FindUsagesOptions options) {
-                Set<PsiReference> processed = new LinkedHashSet<>();
+                Set<UsageKey> processed = new LinkedHashSet<>();
                 // 1. ReferencesSearch (word search + isReferenceTo/multiResolve).
                 //    Catches text-matching refs, including parse failures that still text-match.
                 Processor<PsiReference> refProcessor = ref -> {
-                    if (processed.add(ref)) {
+                    if (processed.add(UsageKey.of(ref))) {
                         return processor.process(new UsageInfo(ref));
                     }
                     return true;
@@ -98,64 +99,32 @@ public class ThemeDslVarFindUsagesHandlerFactory extends FindUsagesHandlerFactor
                 }
                 // 2. Direct multi-resolve scan — bypasses the word-search pre-filter;
                 //    finds macro-interpolated refs (#hello_%{i}) that don't text-match hello_%{i+3}.
-                return ReadAction.compute(() -> {
-                    if (!processMultiResolveUsages(target, processor, processed)) {
-                        return false;
-                    }
-                    return addCrossFileUsages(target, processor, processed);
-                });
+                return addCrossFileUsages(target, processor, processed);
             }
         };
     }
 
-    private static boolean processMultiResolveUsages(@NotNull VarNameElement target,
-                                                      @NotNull Processor<? super UsageInfo> processor,
-                                                      @NotNull Set<PsiReference> processed) {
-        Project project = target.getProject();
-        if (project == null) {
-            return true;
-        }
-        InjectedLanguageManager ilm = InjectedLanguageManager.getInstance(project);
-        PsiLanguageInjectionHost host = ilm.getInjectionHost(target);
-        PsiElement scopeRoot = host != null ? host.getContainingFile() : target.getContainingFile();
-        if (scopeRoot == null) {
-            return true;
-        }
-        for (XmlAttributeValue value : PsiTreeUtil.findChildrenOfType(scopeRoot, XmlAttributeValue.class)) {
-            for (PsiReference ref : value.getReferences()) {
-                if (ref instanceof DslVariableReference dvr
-                        && !processed.contains(ref)
-                        && multiResolvesTo(dvr, target)) {
-                    processed.add(ref);
-                    if (!processor.process(new UsageInfo(ref))) {
-                        return false;
-                    }
-                    break;
-                }
-            }
-        }
-        return true;
-    }
-
     private static boolean addCrossFileUsages(@NotNull VarNameElement target,
                                                @NotNull Processor<? super UsageInfo> processor,
-                                               @NotNull Set<PsiReference> processed) {
+                                               @NotNull Set<UsageKey> processed) {
         Project project = target.getProject();
         if (project == null) {
             return true;
         }
-        InjectedLanguageManager ilm = InjectedLanguageManager.getInstance(project);
-        PsiLanguageInjectionHost host = ilm.getInjectionHost(target);
-        PsiFile hostFile = host != null ? host.getContainingFile() : target.getContainingFile();
-        if (hostFile == null) {
-            return true;
-        }
-        if (!(hostFile instanceof XmlFile xmlFile)) {
-            return true;
-        }
-        List<XmlFile> contextFiles = DslAstService.getInstance(project).getContextFiles(xmlFile);
+        List<XmlFile> contextFiles = ReadAction.compute(() -> {
+            InjectedLanguageManager ilm = InjectedLanguageManager.getInstance(project);
+            PsiLanguageInjectionHost host = ilm.getInjectionHost(target);
+            PsiFile hostFile = host != null ? host.getContainingFile() : target.getContainingFile();
+            if (!(hostFile instanceof XmlFile xmlFile)) {
+                return List.of();
+            }
+            return DslAstService.getInstance(project).getContextFiles(xmlFile);
+        });
         for (XmlFile contextFile : contextFiles) {
-            if (!scanFileForUsages(contextFile, target, processor, processed)) {
+            ProgressManager.checkCanceled();
+            boolean keepGoing = ReadAction.compute(
+                    () -> scanFileForUsages(contextFile, target, processor, processed));
+            if (!keepGoing) {
                 return false;
             }
         }
@@ -165,13 +134,15 @@ public class ThemeDslVarFindUsagesHandlerFactory extends FindUsagesHandlerFactor
     private static boolean scanFileForUsages(@NotNull XmlFile psiFile,
                                              @NotNull VarNameElement target,
                                              @NotNull Processor<? super UsageInfo> processor,
-                                             @NotNull Set<PsiReference> processed) {
+                                             @NotNull Set<UsageKey> processed) {
         for (XmlAttributeValue value : PsiTreeUtil.findChildrenOfType(psiFile, XmlAttributeValue.class)) {
+            ProgressManager.checkCanceled();
             for (PsiReference ref : value.getReferences()) {
+                UsageKey key = UsageKey.of(ref);
                 if (ref instanceof DslVariableReference dvr
-                        && !processed.contains(ref)
+                        && !processed.contains(key)
                         && multiResolvesTo(dvr, target)) {
-                    processed.add(ref);
+                    processed.add(key);
                     if (!processor.process(new UsageInfo(ref))) {
                         return false;
                     }
@@ -213,6 +184,20 @@ public class ThemeDslVarFindUsagesHandlerFactory extends FindUsagesHandlerFactor
         return leftFile != null && rightFile != null
                 && leftFile.isEquivalentTo(rightFile)
                 && leftSource.getTextRange().equals(rightSource.getTextRange());
+    }
+
+    private record UsageKey(String file, int startOffset, int endOffset, String canonicalText) {
+        @NotNull
+        private static UsageKey of(@NotNull PsiReference reference) {
+            PsiElement element = reference.getElement();
+            PsiFile containingFile = element.getContainingFile();
+            String fileId = containingFile != null && containingFile.getVirtualFile() != null
+                    ? containingFile.getVirtualFile().getPath().replace('\\', '/')
+                    : String.valueOf(containingFile);
+            TextRange range = reference.getRangeInElement().shiftRight(element.getTextOffset());
+            return new UsageKey(fileId, range.getStartOffset(), range.getEndOffset(),
+                    reference.getCanonicalText());
+        }
     }
 
     private static boolean isVarNameValue(XmlAttributeValue value) {
