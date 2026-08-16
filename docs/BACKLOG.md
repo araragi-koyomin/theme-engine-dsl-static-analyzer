@@ -29,7 +29,7 @@ created: 2026-07-15
 | 阶段 | 名称 | 状态 | 证据 | 入口 |
 |---|---|---|---|---|
 | P0 | Beta 闭环修复 | done | PR #86 合入 main。949 tests 全绿。SDD PHASE 1-6 完整文档。SyntaxChecker 接线 + CLI 参数语义 + 异常退出码 + FixActionRegistry init | [→](development/specs/p0-bugfix/) |
-| P1 | Editor 交互交付 | planned | 函数库接线(RuleRepositoryService) + Quick Fix UI(IntentionAction) + ToolWindow 诊断面板 + 右键批量检查 + 报告导出 | — |
+| P1 | 重点功能交付 | in-progress (FEAT001 PHASE 5) | FEAT001：GitHub Models 全文候选提取、Actions 发布、完整规则包同步与 IDEA Editor 更新/回滚；真实基线见 Phase 5 TDD 日志，LSP/CLI 后续接入 | [→](development/specs/FEAT001-rule-center-sync/tasks.md) |
 | P2 | 扩展性与一致性 | planned | 规则/函数热更新 + Analyzer 实例级注册(ServiceLoader) + 统一诊断契约 + 作用域感知符号解析 + 规则数据质量工具 + 文档对齐 + 性能 benchmark | — |
 | P3 | 锦上添花 | planned | 自定义报告模板 + 定时自动检查 + 规则编辑器 UI + Plugin Verifier | — |
 
@@ -47,6 +47,7 @@ created: 2026-07-15
 | 分支 | 描述 | PR |
 |---|---|---|
 | feature/doc-restructure | 文档管理体系重构(三层记忆 + frontmatter + stale 更新) | 待创建 |
+| codex/dsl-rule-sync-discovery | FEAT001 规则中心仓同步（PHASE 5） | — |
 
 ## E2E 测试门禁
 

@@ -1,0 +1,176 @@
+name: Validate DSL rule document
+
+on:
+  pull_request_target:
+    branches: [main]
+    paths:
+      - 'rule-center/docs/**/*.md'
+      - '.github/workflows/validate-document.yml'
+  workflow_dispatch:
+    inputs:
+      document:
+        description: Repository-relative Markdown path to validate
+        required: true
+        type: string
+
+concurrency:
+  group: rule-document-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  validate-pull-request:
+    if: github.event_name == 'pull_request_target' && github.event.pull_request.base.ref == 'main'
+    permissions:
+      contents: read
+      models: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out trusted base implementation
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          path: trusted
+
+      - name: Check out proposed Markdown as untrusted data only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: proposal
+          persist-credentials: false
+          allow-unsafe-pr-checkout: true
+          sparse-checkout: rule-center/docs
+          sparse-checkout-cone-mode: false
+
+      - name: Validate trusted Gradle wrapper
+        uses: gradle/actions/wrapper-validation@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Resolve changed Markdown data through the GitHub API
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          mkdir -p trusted/build/rule-center
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100" \
+            --jq '.[] | select(.status != "removed") | .filename' \
+            > trusted/build/rule-center/changed-files.txt
+          while IFS= read -r file; do
+            case "$file" in
+              rule-center/docs/*.md)
+                printf '%s/proposal/%s\n' "$GITHUB_WORKSPACE" "$file" \
+                  >> trusted/build/rule-center/documents.txt
+                ;;
+            esac
+          done < trusted/build/rule-center/changed-files.txt
+          if [[ ! -s trusted/build/rule-center/documents.txt ]]; then
+            echo "No added or modified rule Markdown documents were found" >&2
+            exit 1
+          fi
+
+      - name: Extract, validate, repair, and assemble report with trusted code
+        working-directory: trusted
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RULE_CENTER_DOCUMENT_LIST: build/rule-center/documents.txt
+          RULE_CENTER_DOCUMENT_ROOT: ${{ github.workspace }}/proposal/rule-center/docs
+          RULE_CENTER_DOCUMENT_REVISION: ${{ github.event.pull_request.head.sha }}
+          RULE_CENTER_OUTPUT: build/rule-center
+          RULE_CENTER_MODEL: openai/gpt-4.1
+          RULE_CENTER_PROMPT_VERSION: md-to-rule-v1
+        run: ./gradlew --no-daemon ruleCenterValidateDocument
+
+      - name: Upload immutable validation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rule-document-validation-${{ github.run_id }}
+          if-no-files-found: error
+          path: |
+            trusted/build/rule-center/candidates.json
+            trusted/build/rule-center/feedback.json
+            trusted/build/rule-center/release-report.json
+            trusted/build/rule-center/audit.json
+
+      - name: Publish author-facing PR feedback
+        if: always()
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'trusted/build/rule-center/feedback-summary.md';
+            const body = fs.existsSync(path)
+              ? fs.readFileSync(path, 'utf8')
+              : 'DSL rule validation did not produce feedback. Inspect the workflow logs.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+  validate-manual:
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      models: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out trusted default branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          path: trusted
+
+      - name: Validate trusted Gradle wrapper
+        uses: gradle/actions/wrapper-validation@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Resolve requested approved Markdown document
+        shell: bash
+        env:
+          MANUAL_DOCUMENT: ${{ inputs.document }}
+        run: |
+          set -euo pipefail
+          mkdir -p trusted/build/rule-center
+          printf '%s\n' "$MANUAL_DOCUMENT" > trusted/build/rule-center/documents.txt
+
+      - name: Extract, validate, repair, and assemble report
+        working-directory: trusted
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RULE_CENTER_DOCUMENT_LIST: build/rule-center/documents.txt
+          RULE_CENTER_DOCUMENT_ROOT: rule-center/docs
+          RULE_CENTER_OUTPUT: build/rule-center
+          RULE_CENTER_MODEL: openai/gpt-4.1
+          RULE_CENTER_PROMPT_VERSION: md-to-rule-v1
+        run: ./gradlew --no-daemon ruleCenterValidateDocument
+
+      - name: Upload immutable validation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rule-document-validation-${{ github.run_id }}
+          if-no-files-found: error
+          path: |
+            trusted/build/rule-center/candidates.json
+            trusted/build/rule-center/feedback.json
+            trusted/build/rule-center/release-report.json
+            trusted/build/rule-center/audit.json

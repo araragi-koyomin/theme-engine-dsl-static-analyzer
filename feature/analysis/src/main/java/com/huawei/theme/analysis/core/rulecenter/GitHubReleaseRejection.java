@@ -1,0 +1,12 @@
+package com.huawei.theme.analysis.core.rulecenter;
+
+public enum GitHubReleaseRejection {
+    NOT_APPROVED_RELEASE,
+    MISSING_REQUIRED_ASSET,
+    INVALID_RELEASE_METADATA,
+    REPORT_NOT_PUBLISHABLE,
+    VERSION_MISMATCH,
+    DIGEST_MISMATCH,
+    INVALID_ASSET_DIGEST,
+    INCOMPATIBLE_ANALYZER
+}

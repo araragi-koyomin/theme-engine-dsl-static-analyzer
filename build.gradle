@@ -88,3 +88,35 @@ subprojects {
     }
 
 }
+
+tasks.register('ruleCenterValidateDocument', JavaExec) {
+    group = 'verification'
+    description = 'Extract and validate approved Markdown rule documents for the center workflow'
+    dependsOn ':feature:analysis:classes'
+    classpath = project(':feature:analysis').sourceSets.main.runtimeClasspath
+    mainClass = 'com.huawei.theme.analysis.core.rulecenter.RuleCenterWorkflowMain'
+}
+
+tasks.register('ruleCenterPrepareRelease', JavaExec) {
+    group = 'verification'
+    description = 'Gate and prepare immutable rule package release assets'
+    dependsOn ':feature:analysis:classes'
+    classpath = project(':feature:analysis').sourceSets.main.runtimeClasspath
+    mainClass = 'com.huawei.theme.analysis.core.rulecenter.RuleCenterPublishGateMain'
+}
+
+tasks.register('ruleCenterExtractBaseline', JavaExec) {
+    group = 'verification'
+    description = 'Securely extract and validate the previous approved rule package baseline'
+    dependsOn ':feature:analysis:classes'
+    classpath = project(':feature:analysis').sourceSets.main.runtimeClasspath
+    mainClass = 'com.huawei.theme.analysis.core.rulecenter.RuleCenterBaselineExtractorMain'
+}
+
+tasks.register('ruleCenterSelectReleaseBaseline', JavaExec) {
+    group = 'verification'
+    description = 'Select the highest approved rule release using analyzer version semantics'
+    dependsOn ':feature:analysis:classes'
+    classpath = project(':feature:analysis').sourceSets.main.runtimeClasspath
+    mainClass = 'com.huawei.theme.analysis.core.rulecenter.RuleCenterReleaseBaselineSelectorMain'
+}

@@ -1,0 +1,227 @@
+name: Publish approved DSL rule package
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rule-center/docs/**/*.md'
+  workflow_dispatch:
+    inputs:
+      package_version:
+        description: Unique numeric dotted package version
+        required: true
+        type: string
+      document:
+        description: One repository-relative Markdown path; blank validates all center docs
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  models: read
+
+concurrency:
+  group: publish-dsl-rule-package
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: dsl-rule-production
+    steps:
+      - name: Check out approved main commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Reject manual dispatch outside main
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" \
+                && "$EVENT_REF" != "refs/heads/main" ]]; then
+            echo "Rule package publication can only run from refs/heads/main" >&2
+            exit 1
+          fi
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Require repository-level immutable releases before inference
+        env:
+          GH_TOKEN: ${{ secrets.RULE_CENTER_ADMIN_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo "dsl-rule-production must provide RULE_CENTER_ADMIN_TOKEN with Administration: read" >&2
+            exit 1
+          fi
+          enabled="$(gh api "repos/${GITHUB_REPOSITORY}/immutable-releases" \
+            -H 'X-GitHub-Api-Version: 2026-03-10' --jq '.enabled')"
+          if [[ "$enabled" != "true" ]]; then
+            echo "GitHub immutable releases are not enabled" >&2
+            exit 1
+          fi
+
+      - name: Resolve immutable version and changed documents
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          MANUAL_VERSION: ${{ inputs.package_version }}
+          MANUAL_DOCUMENT: ${{ inputs.document }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/rule-center-publish
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            version="$MANUAL_VERSION"
+            if [[ -n "$MANUAL_DOCUMENT" ]]; then
+              printf '%s\n' "$MANUAL_DOCUMENT" > build/rule-center-publish/documents.txt
+            else
+              git ls-files 'rule-center/docs/**/*.md' > build/rule-center-publish/documents.txt
+            fi
+          else
+            version="$(date -u +%Y.%m.%d).${GITHUB_RUN_NUMBER}"
+            if [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
+              git ls-files 'rule-center/docs/**/*.md' > build/rule-center-publish/documents.txt
+            else
+              git diff --name-only --diff-filter=AM "$BEFORE_SHA" "$GITHUB_SHA" \
+                -- 'rule-center/docs/**/*.md' > build/rule-center-publish/documents.txt
+            fi
+          fi
+          if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+)+$ ]]; then
+            echo "Package version must contain only numeric dot-separated parts" >&2
+            exit 1
+          fi
+          if [[ ! -s build/rule-center-publish/documents.txt ]]; then
+            echo "No added or modified rule Markdown documents were found" >&2
+            exit 1
+          fi
+          echo "RULE_CENTER_PACKAGE_VERSION=$version" >> "$GITHUB_ENV"
+          echo "RULE_CENTER_CREATED_AT=$(git show -s --format=%cI "$GITHUB_SHA")" \
+            >> "$GITHUB_ENV"
+
+      - name: Reject release or conflicting tag reuse before model inference
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="rules-v${RULE_CENTER_PACKAGE_VERSION}"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag already exists and versions are immutable" >&2
+            exit 1
+          fi
+          remote_sha="$(git ls-remote --tags origin "refs/tags/$tag" \
+            "refs/tags/$tag^{}" | tail -n 1 | cut -f 1)"
+          if [[ -n "$remote_sha" && "$remote_sha" != "$GITHUB_SHA" ]]; then
+            echo "Existing tag $tag does not point to the approved commit" >&2
+            exit 1
+          fi
+
+      - name: Restore the previous approved complete-package baseline
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --paginate \
+            "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            --jq '.[] | select(.draft == false and .prerelease == false and .immutable == true and (.tag_name | test("^rules-v[0-9]+(\\.[0-9]+)+$"))) | .tag_name' \
+            > build/rule-center-publish/approved-release-tags.txt
+          RULE_CENTER_RELEASE_TAGS=build/rule-center-publish/approved-release-tags.txt \
+          RULE_CENTER_LATEST_TAG_OUTPUT=build/rule-center-publish/latest-approved-tag.txt \
+            ./gradlew --no-daemon ruleCenterSelectReleaseBaseline
+          latest_tag="$(cat build/rule-center-publish/latest-approved-tag.txt)"
+          if [[ -z "$latest_tag" ]]; then
+            echo "No previous approved Release; using repository built-in rules as initial baseline"
+            git ls-files 'rule-center/docs/**/*.md' \
+              > build/rule-center-publish/documents.txt
+            exit 0
+          fi
+          mkdir -p build/rule-center-publish/baseline-download
+          gh release download "$latest_tag" --repo "$GITHUB_REPOSITORY" \
+            --pattern rule-package.zip --dir build/rule-center-publish/baseline-download
+          RULE_CENTER_BASELINE_ZIP=build/rule-center-publish/baseline-download/rule-package.zip \
+          RULE_CENTER_BASELINE_OUTPUT=build/rule-center-publish/baseline-package \
+            ./gradlew --no-daemon ruleCenterExtractBaseline
+          echo "RULE_CENTER_BASELINE_RULES=build/rule-center-publish/baseline-package/rules" >> "$GITHUB_ENV"
+          echo "RULE_CENTER_BASELINE_FUNCTIONS=build/rule-center-publish/baseline-package/functions" >> "$GITHUB_ENV"
+          echo "RULE_CENTER_BASELINE_SOURCE_MARKDOWN=build/rule-center-publish/baseline-package/source-markdown" >> "$GITHUB_ENV"
+          echo "RULE_CENTER_BASELINE_MANIFEST=build/rule-center-publish/baseline-package/manifest.json" >> "$GITHUB_ENV"
+
+      - name: Re-extract and revalidate on the approved main commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RULE_CENTER_DOCUMENT_LIST: build/rule-center-publish/documents.txt
+          RULE_CENTER_DOCUMENT_ROOT: rule-center/docs
+          RULE_CENTER_DOCUMENT_REVISION: ${{ github.sha }}
+          RULE_CENTER_OUTPUT: build/rule-center-publish/validation
+          RULE_CENTER_MODEL: openai/gpt-4.1
+          RULE_CENTER_PROMPT_VERSION: md-to-rule-v1
+          RULE_CENTER_PACKAGE_VERSION: ${{ env.RULE_CENTER_PACKAGE_VERSION }}
+          RULE_CENTER_CREATED_AT: ${{ env.RULE_CENTER_CREATED_AT }}
+          RULE_CENTER_BASELINE_RULES: ${{ env.RULE_CENTER_BASELINE_RULES }}
+          RULE_CENTER_BASELINE_FUNCTIONS: ${{ env.RULE_CENTER_BASELINE_FUNCTIONS }}
+          RULE_CENTER_BASELINE_SOURCE_MARKDOWN: ${{ env.RULE_CENTER_BASELINE_SOURCE_MARKDOWN }}
+          RULE_CENTER_BASELINE_MANIFEST: ${{ env.RULE_CENTER_BASELINE_MANIFEST }}
+        run: ./gradlew --no-daemon ruleCenterValidateDocument
+
+      - name: Trip final publication gate and prepare fixed assets
+        env:
+          RULE_CENTER_PACKAGE_DIRECTORY: build/rule-center-publish/validation/work/rule-package
+          RULE_CENTER_RELEASE_OUTPUT: build/rule-center-publish/release
+        run: ./gradlew --no-daemon ruleCenterPrepareRelease
+
+      - name: Upload final validation evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: approved-rule-package-evidence-${{ github.run_id }}
+          if-no-files-found: error
+          path: |
+            build/rule-center-publish/validation/candidates.json
+            build/rule-center-publish/validation/feedback.json
+            build/rule-center-publish/validation/release-report.json
+            build/rule-center-publish/validation/audit.json
+
+      - name: Create immutable approved GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="rules-v${RULE_CENTER_PACKAGE_VERSION}"
+          remote_sha="$(git ls-remote --tags origin "refs/tags/$tag" \
+            "refs/tags/$tag^{}" | tail -n 1 | cut -f 1)"
+          if [[ -z "$remote_sha" ]]; then
+            git tag "$tag" "$GITHUB_SHA"
+            git push origin "refs/tags/$tag"
+          elif [[ "$remote_sha" != "$GITHUB_SHA" ]]; then
+            echo "Tag $tag moved during publication" >&2
+            exit 1
+          fi
+          gh release create "$tag" \
+            build/rule-center-publish/release/rule-package.zip \
+            build/rule-center-publish/release/manifest.json \
+            build/rule-center-publish/release/release-report.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "DSL rules ${RULE_CENTER_PACKAGE_VERSION}" \
+            --notes-file build/rule-center-publish/release/release-notes.md
+          immutable="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/$tag" \
+            -H 'X-GitHub-Api-Version: 2026-03-10' --jq '.immutable == true')"
+          if [[ "$immutable" != "true" ]]; then
+            echo "Published Release is not immutable" >&2
+            exit 1
+          fi
